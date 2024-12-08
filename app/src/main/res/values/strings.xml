@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Deadliner</string>
+    <string name="add_event">Add Event</string>
+    <string name="expired">Expired</string>
+    <string name="add_ddl_name">添加待办的Deadline</string>
+    <string name="add_title">添加Deadline</string>
+    <string name="save">保存</string>
+</resources>
