@@ -17,7 +17,7 @@
         android:scaleType="centerInside"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/mdiclose" />
+        app:srcCompat="@drawable/ic_close" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/ddlNameInputLayout"

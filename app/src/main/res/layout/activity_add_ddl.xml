@@ -18,15 +18,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="@id/textView"
-        app:srcCompat="@drawable/mdiarrowleft" />
+        app:srcCompat="@drawable/ic_back" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="16dp"
         android:text="Deadline"
-        android:textSize="32sp"
+        android:textSize="28sp"
         android:textStyle="bold"
         android:textColor="?attr/colorOnSurface"
         app:layout_constraintStart_toEndOf="@id/backButton"
