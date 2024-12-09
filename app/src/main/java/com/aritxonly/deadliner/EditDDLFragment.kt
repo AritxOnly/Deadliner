@@ -3,112 +3,110 @@ package com.aritxonly.deadliner
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.util.TypedValue
-import android.view.View
-import android.view.WindowInsetsController
-import android.view.WindowManager
-import android.widget.Button
-import android.widget.EditText
+import android.view.*
 import android.widget.ImageButton
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.card.MaterialCardView
-import com.google.android.material.color.DynamicColors
-import java.sql.Time
-import java.text.SimpleDateFormat
+import androidx.compose.material3.DatePickerDialog
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.DialogFragment
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-@SuppressLint("SimpleDateFormat")
-class AddDDLActivity : AppCompatActivity() {
+class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLItem) -> Unit) : DialogFragment() {
 
-    private lateinit var databaseHelper: DatabaseHelper
-    private lateinit var ddlNameEditText: EditText
-    private lateinit var startTimeCard: MaterialCardView
-    private lateinit var endTimeCard: MaterialCardView
-    private lateinit var saveButton: Button
+    private lateinit var ddlNameEditText: TextInputEditText
+    private lateinit var startTimeCard: View
+    private lateinit var endTimeCard: View
+    private lateinit var startTimeContent: TextView
+    private lateinit var endTimeContent: TextView
+    private lateinit var saveButton: MaterialButton
     private lateinit var backButton: ImageButton
 
-    private var startTime: LocalDateTime? = null
-    private var endTime: LocalDateTime? = null
+    private var startTime: LocalDateTime = LocalDateTime.parse(ddlItem.startTime)
+    private var endTime: LocalDateTime = LocalDateTime.parse(ddlItem.endTime)
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        Log.d("AddDDLActivity", "available: ${DynamicColors.isDynamicColorAvailable()}")
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.apply {
+            setWindowAnimations(R.style.DialogAnimation)
+        }
+    }
 
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_add_ddl)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        val view = inflater.inflate(R.layout.fragment_edit_ddl, container, false)
 
-        DynamicColors.applyToActivitiesIfAvailable(application)
+        // 获取主题中的 colorBackground 并设置为背景
+        val typedValue = TypedValue()
+        requireContext().theme.resolveAttribute(android.R.attr.colorBackground, typedValue, true)
+        view.setBackgroundColor(typedValue.data)
+        return view
+    }
 
-        // 获取主题中的 colorSurface 值
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        ddlNameEditText = view.findViewById(R.id.ddlNameEditText)
+        startTimeCard = view.findViewById(R.id.startTimeCard)
+        endTimeCard = view.findViewById(R.id.endTimeCard)
+        startTimeContent = view.findViewById(R.id.startTimeContent)
+        endTimeContent = view.findViewById(R.id.endTimeContent)
+        saveButton = view.findViewById(R.id.saveButton)
+        backButton = view.findViewById(R.id.backButton)
+
+        ddlNameEditText.setText(ddlItem.name)
+        startTimeContent.text = formatLocalDateTime(startTime)
+        endTimeContent.text = formatLocalDateTime(endTime)
+
+        // 设置沉浸式状态栏和导航栏
         val colorSurface = getThemeColor(android.R.attr.colorBackground)
-
-        // 设置状态栏和导航栏颜色
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
-        databaseHelper = DatabaseHelper(this)
-        ddlNameEditText = findViewById(R.id.ddlNameEditText)
-        startTimeCard = findViewById(R.id.startTimeCard) // MaterialCardView
-        endTimeCard = findViewById(R.id.endTimeCard) // MaterialCardView
-        saveButton = findViewById(R.id.saveButton)
-        backButton = findViewById(R.id.backButton)
-
-        val startTimeContent: TextView = findViewById(R.id.startTimeContent)
-        val endTimeContent: TextView = findViewById(R.id.endTimeContent)
-
-        // 默认时间
-        startTime = LocalDateTime.now()
-        startTimeContent.text = formatLocalDateTime(startTime!!)
-
-        // 设置开始时间选择
+        // 选择开始时间
         startTimeCard.setOnClickListener {
             showDateTimePicker { selectedTime ->
                 startTime = selectedTime
-                startTimeContent.text = formatLocalDateTime(startTime!!)
+                startTimeContent.text = formatLocalDateTime(startTime)
             }
         }
 
-        // 设置结束时间选择
+        // 选择结束时间
         endTimeCard.setOnClickListener {
             showDateTimePicker { selectedTime ->
                 endTime = selectedTime
-                endTimeContent.text = formatLocalDateTime(endTime!!)
+                endTimeContent.text = formatLocalDateTime(endTime)
             }
         }
 
         // 保存按钮点击事件
         saveButton.setOnClickListener {
-            val ddlName = ddlNameEditText.text.toString()
-            if (ddlName.isNotBlank() && startTime != null && endTime != null) {
-                // 保存到数据库
-                databaseHelper.insertDDL(ddlName, startTime.toString(), endTime.toString())
-                setResult(RESULT_OK)
-                finishAfterTransition() // 返回 MainActivity
-            }
+            val updatedDDL = ddlItem.copy(
+                name = ddlNameEditText.text.toString(),
+                startTime = startTime.toString(),
+                endTime = endTime.toString()
+            )
+            onUpdate(updatedDDL)
+            dismiss()
         }
 
         backButton.setOnClickListener {
-            finishAfterTransition()
+            dismiss()
         }
-    }
-
-    fun formatLocalDateTime(dateTime: LocalDateTime): String {
-        // 定义格式化器
-        val formatter = DateTimeFormatter.ofPattern("MM月dd日 HH:mm", Locale.CHINA)
-        // 格式化 LocalDateTime
-        return dateTime.format(formatter)
     }
 
     /**
      * 设置状态栏和导航栏颜色及图标颜色
      */
     private fun setSystemBarColors(color: Int, lightIcons: Boolean) {
-        window.apply {
+        dialog?.window?.apply {
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             statusBarColor = color
             navigationBarColor = color
@@ -141,7 +139,7 @@ class AddDDLActivity : AppCompatActivity() {
      */
     private fun getThemeColor(attributeId: Int): Int {
         val typedValue = TypedValue()
-        theme.resolveAttribute(attributeId, typedValue, true)
+        requireContext().theme.resolveAttribute(attributeId, typedValue, true)
         return typedValue.data
     }
 
@@ -156,16 +154,26 @@ class AddDDLActivity : AppCompatActivity() {
     }
 
     /**
+     * 格式化 LocalDateTime 为字符串
+     */
+    private fun formatLocalDateTime(dateTime: LocalDateTime): String {
+        val formatter = DateTimeFormatter.ofPattern("MM月dd日 HH:mm", Locale.CHINA)
+        return dateTime.format(formatter)
+    }
+
+    /**
      * 显示日期和时间选择器
      */
     private fun showDateTimePicker(onDateTimeSelected: (LocalDateTime) -> Unit) {
         val calendar = Calendar.getInstance()
 
-        DatePickerDialog(this, { _, year, month, dayOfMonth ->
-            TimePickerDialog(this, { _, hourOfDay, minute ->
+        DatePickerDialog(requireContext(), { _, year, month, dayOfMonth ->
+            TimePickerDialog(requireContext(), { _, hourOfDay, minute ->
                 val selectedDateTime = LocalDateTime.of(year, month + 1, dayOfMonth, hourOfDay, minute)
                 onDateTimeSelected(selectedDateTime)
             }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
     }
+
+    override fun getTheme(): Int = android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen
 }

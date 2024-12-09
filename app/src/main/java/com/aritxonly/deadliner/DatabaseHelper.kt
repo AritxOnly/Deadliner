@@ -17,6 +17,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         private const val COLUMN_NAME = "name"
         private const val COLUMN_START_TIME = "start_time"
         private const val COLUMN_END_TIME = "end_time"
+        private const val COLUMN_IS_COMPLETED = "is_completed"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -25,7 +26,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 $COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 $COLUMN_NAME TEXT NOT NULL,
                 $COLUMN_START_TIME TEXT NOT NULL,
-                $COLUMN_END_TIME TEXT NOT NULL
+                $COLUMN_END_TIME TEXT NOT NULL,
+                $COLUMN_IS_COMPLETED INTEGER
             )
         """.trimIndent()
         db.execSQL(createTableQuery)
@@ -59,10 +61,30 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 val name = getString(getColumnIndexOrThrow(COLUMN_NAME))
                 val startTime = getString(getColumnIndexOrThrow(COLUMN_START_TIME))
                 val endTime = getString(getColumnIndexOrThrow(COLUMN_END_TIME))
-                ddlList.add(DDLItem(id, name, startTime, endTime))
+                val isCompleted = getInt(getColumnIndexOrThrow(COLUMN_IS_COMPLETED))
+                ddlList.add(DDLItem(id, name, startTime, endTime, isCompleted.toBoolean()))
             }
             close()
         }
         return ddlList
     }
+
+    fun updateDDL(item: DDLItem) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_NAME, item.name)
+            put(COLUMN_START_TIME, item.startTime)
+            put(COLUMN_END_TIME, item.endTime)
+            put(COLUMN_IS_COMPLETED, item.isCompleted.toInt()) // 假设您在数据库中添加了一个isCompleted列
+        }
+        db.update(TABLE_NAME, values, "$COLUMN_ID = ?", arrayOf(item.id.toString()))
+    }
+
+    fun deleteDDL(id: Long) {
+        val db = writableDatabase
+        db.delete(TABLE_NAME, "$COLUMN_ID = ?", arrayOf(id.toString()))
+    }
 }
+
+fun Boolean.toInt() = if (this) 1 else 0
+fun Int.toBoolean() = this != 0

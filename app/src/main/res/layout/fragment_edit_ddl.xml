@@ -6,8 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
+    <!-- 选择开始时间 -->
 
-    <!-- 输入DDL名称 -->
     <ImageButton
         android:id="@+id/backButton"
         android:layout_width="28dp"
@@ -17,36 +17,7 @@
         android:scaleType="centerInside"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="@id/textView"
-        app:srcCompat="@drawable/mdiarrowleft" />
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:text="Deadline"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:textColor="?attr/colorOnSurface"
-        app:layout_constraintStart_toEndOf="@id/backButton"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="@id/backButton"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-<!--    <TextView-->
-<!--        android:id="@+id/textView"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginStart="12dp"-->
-<!--        android:text="Deadline"-->
-<!--        android:textSize="32sp"-->
-<!--        android:textStyle="bold"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toEndOf="@+id/backButton"-->
-<!--        app:layout_constraintTop_toTopOf="parent" />-->
-
-    <!-- 选择开始时间 -->
+        app:srcCompat="@drawable/mdiclose" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/ddlNameInputLayout"
@@ -61,14 +32,13 @@
         app:boxCornerRadiusTopStart="12dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textView">
+        app:layout_constraintTop_toBottomOf="@id/backButton">
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/ddlNameEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text" />
     </com.google.android.material.textfield.TextInputLayout>
-
 
     <!-- 开始时间选择 -->
     <com.google.android.material.card.MaterialCardView
@@ -164,16 +134,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
-<!--    <ImageButton-->
-<!--        android:id="@+id/backButton"-->
-<!--        android:layout_width="28dp"-->
-<!--        android:layout_height="28dp"-->
-<!--        android:layout_marginTop="7dp"-->
-<!--        android:background="?attr/selectableItemBackgroundBorderless"-->
-<!--        android:scaleType="centerInside"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toTopOf="parent"-->
-<!--        app:srcCompat="@drawable/epback" />-->
+    <!--    <ImageButton-->
+    <!--        android:id="@+id/backButton"-->
+    <!--        android:layout_width="28dp"-->
+    <!--        android:layout_height="28dp"-->
+    <!--        android:layout_marginTop="7dp"-->
+    <!--        android:background="?attr/selectableItemBackgroundBorderless"-->
+    <!--        android:scaleType="centerInside"-->
+    <!--        app:layout_constraintStart_toStartOf="parent"-->
+    <!--        app:layout_constraintTop_toTopOf="parent"-->
+    <!--        app:srcCompat="@drawable/epback" />-->
 
     <!-- 选择结束时间 -->
 

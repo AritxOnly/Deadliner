@@ -35,46 +35,50 @@ class CustomAdapter(
         swipeListener = listener
     }
 
+    fun onSwipeLeft(position: Int) {
+        swipeListener?.onSwipeLeft(position)
+    }
+
+    fun onSwipeRight(position: Int) {
+        swipeListener?.onSwipeRight(position)
+    }
+
+    interface OnItemClickListener {
+        fun onItemClick(position: Int)
+    }
+
+    private var itemClickListener: OnItemClickListener? = null
+
+    fun setOnItemClickListener(listener: OnItemClickListener) {
+        itemClickListener = listener
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_layout, parent, false)
-        val viewHolder = ViewHolder(view)
-        val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
-            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-                return false
-            }
+        return ViewHolder(view)
+    }
+    
+    // 尝试解析时间字符串的函数
+    fun parseDateTime(dateTimeString: String): LocalDateTime {
+        val formatters = listOf(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+        )
 
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                when (direction) {
-                    ItemTouchHelper.LEFT -> swipeListener?.onSwipeLeft(viewHolder.adapterPosition)
-                    ItemTouchHelper.RIGHT -> swipeListener?.onSwipeRight(viewHolder.adapterPosition)
-                }
+        for (formatter in formatters) {
+            try {
+                return LocalDateTime.parse(dateTimeString, formatter)
+            } catch (e: Exception) {
+                // 尝试下一个格式
             }
         }
-        ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(parent.findViewById(R.id.recyclerView)) // edited
-        return viewHolder
+        throw IllegalArgumentException("Invalid date format: $dateTimeString")
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = itemList[position]
         val currentTime = LocalDateTime.now()
-
-        // 尝试解析时间字符串的函数
-        fun parseDateTime(dateTimeString: String): LocalDateTime {
-            val formatters = listOf(
-                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
-            )
-
-            for (formatter in formatters) {
-                try {
-                    return LocalDateTime.parse(dateTimeString, formatter)
-                } catch (e: Exception) {
-                    // 尝试下一个格式
-                }
-            }
-            throw IllegalArgumentException("Invalid date format: $dateTimeString")
-        }
 
         // 将字符串时间转换为 LocalDateTime
         val startTime = parseDateTime(item.startTime)
@@ -98,8 +102,17 @@ class CustomAdapter(
         }
 
         // 计算并设置进度条进度，确保至少为 1
-        val progress = (remainingMinutes * 100 / totalDuration).coerceIn(1, 100)
+        val progress = if (totalDuration > 0 && remainingMinutes <= totalDuration) {
+            (remainingMinutes * 100 / totalDuration).coerceIn(1, 100)
+        } else {
+            100
+        }
         holder.progressBar.setProgressCompat(progress, true)
+
+        // 绑定单击事件
+        holder.itemView.setOnClickListener {
+            itemClickListener?.onItemClick(position)
+        }
 
         // 使用 getThemeColor 获取主题颜色
         val progressColor = getThemeColor(android.R.attr.colorPrimary)
@@ -107,10 +120,16 @@ class CustomAdapter(
         val progressPassedColor = getThemeColor(android.R.attr.colorControlHighlight)
         if (remainingMinutes < 0) {
             holder.progressBar.setIndicatorColor(progressPassedColor)
+            holder.progressBar.setBackgroundColor(progressPassedColor)
         } else if (remainingMinutes <= 720) {
             holder.progressBar.setIndicatorColor(progressNearbyColor)
         } else {
             holder.progressBar.setIndicatorColor(progressColor)
+        }
+
+        if (item.isCompleted) {
+            val finishedColor = getThemeColor(android.R.attr.colorControlActivated)
+            holder.progressBar.setIndicatorColor(finishedColor)
         }
     }
 
@@ -127,7 +146,12 @@ class CustomAdapter(
 
     // 更新数据的方法，用于动态刷新 RecyclerView
     fun updateData(newList: List<DDLItem>) {
-        itemList = newList
+        itemList = newList.sortedWith(compareBy<DDLItem> { it.isCompleted }
+            .thenBy {
+                val endTime = parseDateTime(it.endTime)
+                val remainingMinutes = Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
+                remainingMinutes
+            })
         notifyDataSetChanged()
     }
 }

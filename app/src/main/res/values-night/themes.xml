@@ -1,15 +1,21 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Theme.Deadliner" parent="Theme.Material3.DayNight.NoActionBar">
-<!--        <item name="colorPrimary">@color/primary</item>-->
-<!--        <item name="colorSecondary">@color/secondary</item>-->
-<!--&lt;!&ndash;        <item name="colorBackground">@color/background</item>&ndash;&gt;-->
-<!--        <item name="colorSurface">@color/surface</item>-->
-<!--        <item name="colorOnPrimary">@color/onPrimary</item>-->
-<!--        <item name="colorOnSecondary">@color/onSecondary</item>-->
-<!--        <item name="colorOnBackground">@color/onBackground</item>-->
-<!--&lt;!&ndash;        <item name="colorOnSurface">@color/onSurface</item>&ndash;&gt;-->
-<!--&lt;!&ndash;        <item name="windowLightStatusBar">false</item>&ndash;&gt;-->
+        <!--        <item name="colorPrimary">@color/primary</item>-->
+        <!--        <item name="colorSecondary">@color/secondary</item>-->
+        <!--&lt;!&ndash;        <item name="colorBackground">@color/background</item>&ndash;&gt;-->
+        <!--        <item name="colorSurface">@color/surface</item>-->
+        <!--        <item name="colorOnPrimary">@color/onPrimary</item>-->
+        <!--        <item name="colorOnSecondary">@color/onSecondary</item>-->
+        <!--        <item name="colorOnBackground">@color/onBackground</item>-->
+        <!--&lt;!&ndash;        <item name="colorOnSurface">@color/onSurface</item>&ndash;&gt;-->
+        <!--&lt;!&ndash;        <item name="windowLightStatusBar">false</item>&ndash;&gt;-->
     </style>
+
     <item name="colorBorder" type="color">#50ffffff</item>
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Deadliner" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your dark theme here. -->
+        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+    </style>
 </resources>
