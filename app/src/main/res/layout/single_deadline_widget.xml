@@ -41,7 +41,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorPrimary"
+                android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:gravity="center_vertical"/>
@@ -50,7 +50,7 @@
                 android:id="@+id/item_progress_text_1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorPrimary"
+                android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textSize="14sp"
                 android:gravity="center_vertical"/>
         </LinearLayout>
@@ -87,7 +87,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorPrimary"
+                android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:gravity="center_vertical"/>
@@ -96,7 +96,7 @@
                 android:id="@+id/item_progress_text_2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorPrimary"
+                android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textSize="14sp"
                 android:gravity="center_vertical"/>
         </LinearLayout>
@@ -133,7 +133,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorPrimary"
+                android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:gravity="center_vertical"/>
@@ -142,7 +142,7 @@
                 android:id="@+id/item_progress_text_3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorPrimary"
+                android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textSize="14sp"
                 android:gravity="center_vertical"/>
         </LinearLayout>

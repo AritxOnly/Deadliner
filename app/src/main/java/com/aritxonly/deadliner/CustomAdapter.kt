@@ -124,7 +124,6 @@ class CustomAdapter(
         val progressPassedColor = getThemeColor(android.R.attr.colorControlHighlight)
         if (remainingMinutes < 0) {
             holder.progressBar.setIndicatorColor(progressPassedColor)
-            holder.progressBar.setBackgroundColor(progressPassedColor)
             holder.constraintLayout.setBackgroundResource(R.drawable.item_background_passed)
         } else if (remainingMinutes <= 720) {
             holder.progressBar.setIndicatorColor(progressNearbyColor)
