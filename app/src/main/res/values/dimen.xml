@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="icon_margin">16dp</dimen>
+    <dimen name="item_corner_radius">24dp</dimen> <!-- 圆角半径 -->
+</resources>

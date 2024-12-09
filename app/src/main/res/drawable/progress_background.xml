@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 圆角背景 -->
+    <item
+        android:drawable="@drawable/app_widget_inner_view_background" />
+
+    <!-- 进度条前景 -->
+    <item>
+        <scale
+            android:scaleWidth="50%"
+            android:drawable="?android:attr/colorPrimary"
+            android:gravity="left" />
+    </item>
+</layer-list>

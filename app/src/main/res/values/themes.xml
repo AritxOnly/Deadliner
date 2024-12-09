@@ -1,0 +1,36 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.Deadliner" parent="Theme.Material3.DayNight.NoActionBar">
+        <!--        <item name="colorPrimary">@color/primary</item>-->
+        <!--        <item name="colorSecondary">@color/secondary</item>-->
+        <!--&lt;!&ndash;        <item name="colorBackground">@color/background</item>&ndash;&gt;-->
+        <!--        <item name="colorSurface">@color/surface</item>-->
+        <!--        <item name="colorOnPrimary">@color/onPrimary</item>-->
+        <!--        <item name="colorOnSecondary">@color/onSecondary</item>-->
+        <!--        <item name="colorOnBackground">@color/onBackground</item>-->
+        <!--&lt;!&ndash;        <item name="colorOnSurface">@color/onSurface</item>&ndash;&gt;-->
+        <!--&lt;!&ndash;        <item name="windowLightStatusBar">true</item>&ndash;&gt;-->
+    </style>
+
+    <item name="colorBorder" type="color">#50000000</item>
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Deadliner" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    </style>
+
+    <style name="Theme.Deadliner.AppWidgetContainerParent" parent="@android:style/Theme.DeviceDefault">
+        <!-- Radius of the outer bound of widgets to make the rounded corners -->
+        <item name="appWidgetRadius">16dp</item>
+        <!--
+        Radius of the inner view's bound of widgets to make the rounded corners.
+        It needs to be 8dp or less than the value of appWidgetRadius
+        -->
+        <item name="appWidgetInnerRadius">8dp</item>
+    </style>
+
+    <style name="Theme.Deadliner.AppWidgetContainer" parent="Theme.Deadliner.AppWidgetContainerParent">
+        <!-- Apply padding to avoid the content of the widget colliding with the rounded corners -->
+        <item name="appWidgetPadding">16dp</item>
+    </style>
+</resources>

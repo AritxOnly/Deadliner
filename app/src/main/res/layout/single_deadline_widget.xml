@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp"
+    style="@style/Widget.Deadliner.AppWidget.Container"
+    android:theme="@style/Theme.Deadliner.AppWidgetContainer"
+    android:gravity="center_vertical">
+
+    <!-- Deadline Item 1 -->
+    <FrameLayout
+        android:id="@+id/ddl_item_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:layout_marginVertical="4dp">
+
+        <ProgressBar
+            android:id="@+id/item_progress_1"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="36dp"
+            android:max="100"
+            android:progressDrawable="@drawable/progress_deadline_item"
+            android:layout_gravity="center_vertical"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="8dp">
+
+            <TextView
+                android:id="@+id/item_title_1"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimaryInverse"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:gravity="center_vertical"/>
+
+            <TextView
+                android:id="@+id/item_progress_text_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimaryInverse"
+                android:textSize="14sp"
+                android:gravity="center_vertical"/>
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Deadline Item 2 -->
+    <FrameLayout
+        android:id="@+id/ddl_item_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:layout_marginVertical="4dp">
+
+        <ProgressBar
+            android:id="@+id/item_progress_2"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="36dp"
+            android:max="100"
+            android:progressDrawable="@drawable/progress_deadline_item"
+            android:layout_gravity="center_vertical"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="8dp">
+
+            <TextView
+                android:id="@+id/item_title_2"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimaryInverse"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:gravity="center_vertical"/>
+
+            <TextView
+                android:id="@+id/item_progress_text_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimaryInverse"
+                android:textSize="14sp"
+                android:gravity="center_vertical"/>
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Deadline Item 3 -->
+    <FrameLayout
+        android:id="@+id/ddl_item_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:layout_marginVertical="4dp">
+
+        <ProgressBar
+            android:id="@+id/item_progress_3"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="36dp"
+            android:max="100"
+            android:progressDrawable="@drawable/progress_deadline_item"
+            android:layout_gravity="center_vertical"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="8dp">
+
+            <TextView
+                android:id="@+id/item_title_3"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimaryInverse"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:gravity="center_vertical"/>
+
+            <TextView
+                android:id="@+id/item_progress_text_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimaryInverse"
+                android:textSize="14sp"
+                android:gravity="center_vertical"/>
+        </LinearLayout>
+    </FrameLayout>
+
+</LinearLayout>

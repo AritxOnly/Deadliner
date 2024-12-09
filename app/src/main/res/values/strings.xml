@@ -1,0 +1,45 @@
+<resources>
+    <string name="app_name">Deadliner</string>
+    <string name="add_event">Add Event</string>
+    <string name="expired">Expired</string>
+    <string name="add_ddl_name">添加待办的Deadline</string>
+    <string name="add_title">添加Deadline</string>
+    <string name="save">保存</string>
+    <string name="alert_delete_title">删除Deadline</string>
+    <string name="alert_delete_message">你确定要删除这个Deadline吗？</string>
+    <string name="cancel">取消</string>
+    <string name="accept">确定</string>
+    <string name="toast_deletion">已删除1项Deadline❌</string>
+    <string name="toast_finished">恭喜完成Deadline！🎉</string>
+    <string name="alert_edit_title">操作Deadline</string>
+    <string name="alert_edit_modify">编辑</string>
+    <string name="alert_edit_delete">删除</string>
+    <string name="alert_edit_finished">完成</string>
+    <string name="alert_edit_definish">撤销完成</string>
+    <string name="toast_definished">撤销完成Deadline...😭</string>
+    <string name="settings_vibration">启用震动反馈</string>
+    <string name="settings_nearby_notification">Deadline临近通知</string>
+    <string name="settings_everyday_notification">每日Deadline统计通知</string>
+    <string name="settings_excitement">主菜单鼓励语句</string>
+    <string name="settings_homepage">访问作者主页</string>
+    <string-array name="excitement_array">
+        <item>今天你Deadline了吗？😝</item>
+        <item>Deadline临近了🥺</item>
+        <item>再坚持一下，很快就能做完啦☺️</item>
+        <item>提前开始Deadline是一件好事哦😉</item>
+        <item>保持专注，你一定能搞定！💪</item>
+        <item>不要担心，你比你想象的更强大！✨</item>
+        <item>完成Deadline后，奖励自己一个小惊喜吧！🎉</item>
+        <item>Deadline不再是敌人，而是你超越自己的机会！🚀</item>
+        <item>放轻松，深呼吸，你可以做到！🌟</item>
+        <item>你的努力不会白费，每一步都在靠近目标！🏃‍♂️💨</item>
+        <item>加油！完成Deadline，你就是今天的英雄！🦸‍♀️🦸‍♂️</item>
+        <item>记住，Deadline是你进步的最佳见证者！📈</item>
+        <item>坚持住！完成后你会感谢现在努力的自己！🙏</item>
+        <item>每个小目标的达成都值得庆祝！🥳</item>
+        <item>再努力一下，成功就在前方！🏆</item>
+    </string-array>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="add_widget">Add widget</string>
+    <string name="app_widget_description">This is an app widget description</string>
+</resources>
