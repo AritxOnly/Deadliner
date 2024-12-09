@@ -1,11 +1,14 @@
 package com.aritxonly.deadliner
 
 import android.content.Context
+import android.graphics.drawable.GradientDrawable
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -22,6 +25,7 @@ class CustomAdapter(
         val titleText: TextView = itemView.findViewById(R.id.titleText)
         val remainingTimeText: TextView = itemView.findViewById(R.id.remainingTimeText)
         val progressBar: LinearProgressIndicator = itemView.findViewById(R.id.progressBar)
+        val constraintLayout: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
     }
 
     interface SwipeListener {
@@ -121,15 +125,19 @@ class CustomAdapter(
         if (remainingMinutes < 0) {
             holder.progressBar.setIndicatorColor(progressPassedColor)
             holder.progressBar.setBackgroundColor(progressPassedColor)
+            holder.constraintLayout.setBackgroundResource(R.drawable.item_background_passed)
         } else if (remainingMinutes <= 720) {
             holder.progressBar.setIndicatorColor(progressNearbyColor)
+            holder.constraintLayout.setBackgroundResource(R.drawable.item_background_nearby)
         } else {
             holder.progressBar.setIndicatorColor(progressColor)
+            holder.constraintLayout.setBackgroundResource(R.drawable.item_background)
         }
 
         if (item.isCompleted) {
             val finishedColor = getThemeColor(android.R.attr.colorControlActivated)
             holder.progressBar.setIndicatorColor(finishedColor)
+            holder.constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
         }
     }
 

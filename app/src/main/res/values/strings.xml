@@ -39,4 +39,7 @@
         <item>每个小目标的达成都值得庆祝！🥳</item>
         <item>再努力一下，成功就在前方！🏆</item>
     </string-array>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="add_widget">Add widget</string>
+    <string name="app_widget_description">This is an app widget description</string>
 </resources>

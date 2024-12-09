@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="16dp"
+    android:layout_marginHorizontal="0dp"
+    android:layout_marginBottom="8dp">
+
+    <!-- 自定义进度条(类似电池条) -->
+    <ProgressBar
+        android:id="@+id/item_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="36dp"
+        android:max="100"
+        android:progressDrawable="@drawable/progress_deadline_item"
+        android:layout_gravity="center_vertical"/>
+
+    <!-- 文本覆盖层 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:id="@+id/item_title"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="DDL Title"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:gravity="center_vertical"/>
+
+        <TextView
+            android:id="@+id/item_progress_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:gravity="center_vertical"/>
+    </LinearLayout>
+</FrameLayout>

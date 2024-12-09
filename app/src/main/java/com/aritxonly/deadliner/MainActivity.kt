@@ -1,4 +1,6 @@
 package com.aritxonly.deadliner
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -292,6 +294,20 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 检查鼓励语句开关状态
         val isMotivationalQuotesEnabled = sharedPreferences.getBoolean("motivational_quotes", true)
         updateTitleAndExcitementText(isMotivationalQuotesEnabled)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // 触发小组件更新
+        updateWidget()
+    }
+
+    private fun updateWidget() {
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, SingleDeadlineWidget::class.java))
+        for (appWidgetId in appWidgetIds) {
+            SingleDeadlineWidget.updateWidget(this, appWidgetManager, appWidgetId)
+        }
     }
 
     private fun refreshData() {
