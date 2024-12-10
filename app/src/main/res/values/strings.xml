@@ -18,6 +18,8 @@
     <string name="alert_edit_definish">撤销完成</string>
     <string name="toast_definished">撤销完成Deadline...😭</string>
     <string name="settings_vibration">启用震动反馈</string>
+    <string name="settings_progress_dir_main">主界面正向进度条</string>
+    <string name="settings_progress_widget">小组件正向进度条</string>
     <string name="settings_nearby_notification">Deadline临近通知</string>
     <string name="settings_everyday_notification">每日Deadline统计通知</string>
     <string name="settings_excitement">主菜单鼓励语句</string>
@@ -40,6 +42,6 @@
         <item>再努力一下，成功就在前方！🏆</item>
     </string-array>
     <string name="appwidget_text">EXAMPLE</string>
-    <string name="add_widget">Add widget</string>
-    <string name="app_widget_description">This is an app widget description</string>
+    <string name="add_widget">添加小组件</string>
+    <string name="app_widget_description">主屏幕倒计时小组件</string>
 </resources>

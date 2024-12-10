@@ -67,7 +67,7 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
         endTimeContent.text = formatLocalDateTime(endTime)
 
         // 设置沉浸式状态栏和导航栏
-        val colorSurface = getThemeColor(android.R.attr.colorBackground)
+        val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
         // 选择开始时间

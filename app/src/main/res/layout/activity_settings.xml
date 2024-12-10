@@ -38,6 +38,24 @@
                 android:textSize="16sp"
                 app:useMaterialThemeColors="true"/>
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchProgressDir"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                android:text="@string/settings_progress_dir_main"
+                android:textSize="16sp"
+                app:useMaterialThemeColors="true"/>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchProgressWidget"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                android:text="@string/settings_progress_widget"
+                android:textSize="16sp"
+                app:useMaterialThemeColors="true"/>
+
             <!-- Deadline临近通知开关 -->
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/switchDeadlineNotification"

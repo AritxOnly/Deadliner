@@ -22,6 +22,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -60,10 +61,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         DynamicColors.applyToActivityIfAvailable(this)
 
         // 获取主题中的 colorSurface 值
-        val colorSurface = getThemeColor(android.R.attr.colorBackground)
+        val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
 
         // 设置状态栏和导航栏颜色
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
+        val mainPage: ConstraintLayout = findViewById(R.id.main)
+        mainPage.setBackgroundColor(colorSurface)
 
         databaseHelper = DatabaseHelper(this)
 

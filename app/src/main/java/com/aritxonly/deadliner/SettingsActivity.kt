@@ -19,6 +19,8 @@ import com.google.android.material.materialswitch.MaterialSwitch
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var switchVibration: MaterialSwitch
+    private lateinit var switchProgressDir: MaterialSwitch
+    private lateinit var switchProgressWidget: MaterialSwitch
     private lateinit var switchDeadlineNotification: MaterialSwitch
     private lateinit var switchDailyStatsNotification: MaterialSwitch
     private lateinit var switchMotivationalQuotes: MaterialSwitch
@@ -31,13 +33,15 @@ class SettingsActivity : AppCompatActivity() {
         DynamicColors.applyToActivityIfAvailable(this)
 
         // 获取主题中的 colorSurface 值
-        val colorSurface = getThemeColor(android.R.attr.colorBackground)
+        val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
 
         // 设置状态栏和导航栏颜色
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
         // 初始化控件
         switchVibration = findViewById(R.id.switchVibration)
+        switchProgressDir = findViewById(R.id.switchProgressDir)
+        switchProgressWidget = findViewById(R.id.switchProgressWidget)
         switchDeadlineNotification = findViewById(R.id.switchDeadlineNotification)
         switchDailyStatsNotification = findViewById(R.id.switchDailyStatsNotification)
         switchMotivationalQuotes = findViewById(R.id.switchMotivationalQuotes)
@@ -47,6 +51,8 @@ class SettingsActivity : AppCompatActivity() {
         val sharedPreferences = getSharedPreferences("app_settings", MODE_PRIVATE)
 
         switchVibration.isChecked = sharedPreferences.getBoolean("vibration", true)
+        switchProgressDir.isChecked = sharedPreferences.getBoolean("main_progress_dir", false)
+        switchProgressWidget.isChecked = sharedPreferences.getBoolean("widget_progress_dir", false)
         switchDeadlineNotification.isChecked = sharedPreferences.getBoolean("deadline_notification", false)
         switchDailyStatsNotification.isChecked = sharedPreferences.getBoolean("daily_stats_notification", false)
         switchMotivationalQuotes.isChecked = sharedPreferences.getBoolean("motivational_quotes", true)
@@ -54,6 +60,14 @@ class SettingsActivity : AppCompatActivity() {
         // 监听开关状态变化并保存设置
         switchVibration.setOnCheckedChangeListener { _, isChecked ->
             sharedPreferences.edit().putBoolean("vibration", isChecked).apply()
+        }
+
+        switchProgressDir.setOnCheckedChangeListener { _, isChecked ->
+            sharedPreferences.edit().putBoolean("main_progress_dir", isChecked).apply()
+        }
+
+        switchProgressWidget.setOnCheckedChangeListener { _, isChecked ->
+            sharedPreferences.edit().putBoolean("widget_progress_dir", isChecked).apply()
         }
 
         switchDeadlineNotification.setOnCheckedChangeListener { _, isChecked ->
@@ -70,7 +84,7 @@ class SettingsActivity : AppCompatActivity() {
 
         // 设置超链接按钮点击事件
         buttonAuthorPage.setOnClickListener {
-            val url = "https://your-author-page.com" // 替换为实际链接
+            val url = "https://github.com/AritxOnly"
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             startActivity(intent)
         }
