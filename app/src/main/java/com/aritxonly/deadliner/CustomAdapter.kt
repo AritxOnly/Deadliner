@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.GradientDrawable
 import android.util.TypedValue
@@ -7,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity.MODE_PRIVATE
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -80,7 +82,11 @@ class CustomAdapter(
         throw IllegalArgumentException("Invalid date format: $dateTimeString")
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val sharedPreferences = context.getSharedPreferences("app_settings", MODE_PRIVATE)
+        val direction = sharedPreferences.getBoolean("main_progress_dir", false)
+
         val item = itemList[position]
         val currentTime = LocalDateTime.now()
 
@@ -111,7 +117,14 @@ class CustomAdapter(
         } else {
             100
         }
-        holder.progressBar.setProgressCompat(progress, true)
+        holder.progressBar.setProgressCompat(
+            if (direction) {
+                100 - progress
+            } else {
+                progress
+            },
+            true
+        )
 
         // 绑定单击事件
         holder.itemView.setOnClickListener {
@@ -137,6 +150,8 @@ class CustomAdapter(
             val finishedColor = getThemeColor(android.R.attr.colorControlActivated)
             holder.progressBar.setIndicatorColor(finishedColor)
             holder.constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
+            holder.progressBar.setProgressCompat(100, true)
+            holder.remainingTimeText.text = "DDL已完成🎉"
         }
     }
 

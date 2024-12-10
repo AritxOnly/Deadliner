@@ -4,7 +4,7 @@
     <item>
         <shape android:shape="rectangle">
             <!-- 深色背景，代表空进度部分 -->
-            <solid android:color="#552C2C2C" />
+            <solid android:color="@color/progress_bg" />
             <corners android:radius="12dp"/>
         </shape>
     </item>

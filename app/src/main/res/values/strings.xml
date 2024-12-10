@@ -17,6 +17,10 @@
     <string name="alert_edit_finished">完成</string>
     <string name="alert_edit_definish">撤销完成</string>
     <string name="toast_definished">撤销完成Deadline...😭</string>
+
+    <string name="settings_general">通用</string>
+    <string name="settings_notification">通知</string>
+    <string name="settings_highlight">关于</string>
     <string name="settings_vibration">启用震动反馈</string>
     <string name="settings_progress_dir_main">主界面正向进度条</string>
     <string name="settings_progress_widget">小组件正向进度条</string>
@@ -44,4 +48,6 @@
     <string name="appwidget_text">EXAMPLE</string>
     <string name="add_widget">添加小组件</string>
     <string name="app_widget_description">主屏幕倒计时小组件</string>
+
+    <string name="unfinished_settings">通知功能还在抓紧开发中哦～\n预计v1.1版本上线</string>
 </resources>

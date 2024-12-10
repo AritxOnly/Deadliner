@@ -9,4 +9,6 @@
     <color name="onSecondary">#000000</color>
     <color name="onBackground">#000000</color>
     <color name="onSurface">#000000</color>
+
+    <color name="progress_bg">#55DDDDDD</color> <!-- 适合暗色模式的颜色 -->
 </resources>

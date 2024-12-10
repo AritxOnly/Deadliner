@@ -44,6 +44,7 @@
                 android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textStyle="bold"
                 android:textSize="14sp"
+                android:textAlignment="gravity"
                 android:gravity="center_vertical"/>
 
             <TextView
@@ -78,6 +79,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:textAlignment="gravity"
             android:gravity="center_vertical"
             android:paddingHorizontal="8dp"
             android:paddingVertical="8dp">
@@ -133,6 +135,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
+                android:textAlignment="gravity"
                 android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textStyle="bold"
                 android:textSize="14sp"

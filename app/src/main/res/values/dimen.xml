@@ -2,4 +2,5 @@
 <resources>
     <dimen name="icon_margin">16dp</dimen>
     <dimen name="item_corner_radius">24dp</dimen> <!-- 圆角半径 -->
+    <dimen name="settings_title_font_size">28sp</dimen>
 </resources>

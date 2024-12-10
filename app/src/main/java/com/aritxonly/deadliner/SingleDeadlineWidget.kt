@@ -1,12 +1,15 @@
 package com.aritxonly.deadliner
 
 import android.app.PendingIntent
+import android.app.UiModeManager
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.util.Log
 import android.view.View
+import android.widget.ProgressBar
 import android.widget.RemoteViews
 import java.time.Duration
 import java.time.LocalDateTime
@@ -58,9 +61,13 @@ internal fun updateAppWidget(
     appWidgetId: Int
 ) {
     val views = RemoteViews(context.packageName, R.layout.single_deadline_widget)
+    val sharedPreferences = context.getSharedPreferences("app_settings", MODE_PRIVATE)
+    val direction = sharedPreferences.getBoolean("widget_progress_dir", false)
 
     // 设置点击事件，点击小组件打开 MainActivity
-    val intent = Intent(context, MainActivity::class.java)
+    val intent = Intent(context, MainActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
     val pendingIntent = PendingIntent.getActivity(
         context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
@@ -111,16 +118,29 @@ internal fun updateAppWidget(
         val (containerId, titleId, progressId) = itemContainers[index]
         val progressTextId = progressTextIds[index]
 
+        if (parsed.isCompleted) {
+            continue    // 设置已完成的不显示
+        }
+
         views.setViewVisibility(containerId, View.VISIBLE)
         views.setTextViewText(titleId, parsed.ddl.name)
 
         val progress = calculateProgress(parsed.startTime, parsed.endTime)
-        views.setProgressBar(progressId, 100, progress, false)
+        views.setProgressBar(
+            progressId,
+            100,
+            if (!direction) {
+                100 - progress
+            } else {
+                progress
+            },
+            false)
 
         // 将剩余时间转换为小时和分钟格式
         val remainingMillis = parsed.remainingMillis
-        val timeText = if (remainingMillis <= 0) {
-            "0.0h" // 如果已过期或剩余时间为负数，则显示0.0h
+        val timeText = if (remainingMillis < 0) {
+            views.setProgressBar(progressId, 100, 0, false)
+            "逾期" // 如果已过期或剩余时间为负数，则显示0.0h
         } else {
             val hours: Double = remainingMillis.toDouble() / 3600000
             "%.1f".format(hours) + "h"
