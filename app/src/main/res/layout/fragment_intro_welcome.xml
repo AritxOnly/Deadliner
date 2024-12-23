@@ -1,0 +1,41 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 顶部的欢迎文字 -->
+    <TextView
+        android:id="@+id/welcome_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginVertical="240dp"
+        android:text="@string/welcome"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 圆形按钮 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/circular_button"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:insetBottom="0dp"
+        android:insetTop="0dp"
+        android:layout_marginVertical="240dp"
+        app:cornerRadius="36dp"
+        app:icon="@drawable/ic_finish"
+        app:iconSize="36dp"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        android:backgroundTint="?attr/colorPrimary"
+        android:focusable="true"
+        android:clickable="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="24dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

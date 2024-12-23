@@ -4,17 +4,22 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.Html
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.Switch
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.snackbar.Snackbar
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -24,7 +29,14 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var switchDeadlineNotification: MaterialSwitch
     private lateinit var switchDailyStatsNotification: MaterialSwitch
     private lateinit var switchMotivationalQuotes: MaterialSwitch
+    private lateinit var switchFireworksOnFinish: MaterialSwitch
+    private lateinit var buttonHomePage: MaterialButton
     private lateinit var buttonAuthorPage: MaterialButton
+    private lateinit var buttonIssues: MaterialButton
+    private lateinit var versionNumber: TextView
+    private lateinit var aboutCard: MaterialCardView
+
+    private var resetTimes = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +57,12 @@ class SettingsActivity : AppCompatActivity() {
         switchDeadlineNotification = findViewById(R.id.switchDeadlineNotification)
         switchDailyStatsNotification = findViewById(R.id.switchDailyStatsNotification)
         switchMotivationalQuotes = findViewById(R.id.switchMotivationalQuotes)
+        switchFireworksOnFinish = findViewById(R.id.switchFireworksOnFinish)
         buttonAuthorPage = findViewById(R.id.buttonAuthorPage)
+        buttonHomePage = findViewById(R.id.buttonHomePage)
+        buttonIssues = findViewById(R.id.buttonIssues)
+        versionNumber = findViewById(R.id.versionNumber)
+        aboutCard = findViewById(R.id.aboutCard)
 
         // 加载保存的设置
         val sharedPreferences = getSharedPreferences("app_settings", MODE_PRIVATE)
@@ -56,6 +73,7 @@ class SettingsActivity : AppCompatActivity() {
         switchDeadlineNotification.isChecked = sharedPreferences.getBoolean("deadline_notification", false)
         switchDailyStatsNotification.isChecked = sharedPreferences.getBoolean("daily_stats_notification", false)
         switchMotivationalQuotes.isChecked = sharedPreferences.getBoolean("motivational_quotes", true)
+        switchFireworksOnFinish.isChecked = sharedPreferences.getBoolean("fireworks_anim", true)
 
         // 监听开关状态变化并保存设置
         switchVibration.setOnCheckedChangeListener { _, isChecked ->
@@ -82,12 +100,60 @@ class SettingsActivity : AppCompatActivity() {
             sharedPreferences.edit().putBoolean("motivational_quotes", isChecked).apply()
         }
 
+        switchFireworksOnFinish.setOnCheckedChangeListener { _, isChecked ->
+            sharedPreferences.edit().putBoolean("fireworks_anim", isChecked).apply()
+        }
+
         // 设置超链接按钮点击事件
         buttonAuthorPage.setOnClickListener {
             val url = "https://github.com/AritxOnly"
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             startActivity(intent)
         }
+
+        buttonHomePage.setOnClickListener {
+            val url = "https://github.com/AritxOnly/Deadliner"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(intent)
+        }
+
+        buttonIssues.setOnClickListener {
+            val url = "https://github.com/AritxOnly/Deadliner/issues"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(intent)
+        }
+
+        aboutCard.setOnClickListener {
+            if (sharedPreferences.getBoolean("first_run", true)) {
+                Snackbar.make(
+                    aboutCard,
+                    "你已经设置了下次打开显示欢迎页面",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+            resetTimes++
+            when (resetTimes) {
+                in 2..4 -> {
+                    Snackbar.make(
+                        aboutCard,
+                        "再点击${5 - resetTimes}次即可在下次打开时显示欢迎页面",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                }
+                5 -> {
+                    Snackbar.make(
+                        aboutCard,
+                        "下次打开Deadliner将显示欢迎页面",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                    sharedPreferences.edit().putBoolean("first_run", true).apply()
+                    resetTimes = 0
+                }
+            }
+        }
+
+        versionNumber.setText(Html.fromHtml(getString(R.string.app_version)))
 
         val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
         toolbar.setNavigationOnClickListener {

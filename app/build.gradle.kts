@@ -9,10 +9,10 @@ android {
 
     defaultConfig {
         applicationId = "com.aritxonly.deadliner"
-        minSdk = 33
+        minSdk = 32
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -41,6 +41,10 @@ android {
 dependencies {
 
     implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.work:work-runtime-ktx:2.7.1")
+    implementation("nl.dionsegijn:konfetti-xml:2.0.4")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("com.google.code.gson:gson:2.10.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

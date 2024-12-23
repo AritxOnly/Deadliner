@@ -24,10 +24,13 @@
     <string name="settings_vibration">启用震动反馈</string>
     <string name="settings_progress_dir_main">主界面正向进度条</string>
     <string name="settings_progress_widget">小组件正向进度条</string>
+    <string name="settings_fireworks">完成时显示动画效果</string>
     <string name="settings_nearby_notification">Deadline临近通知</string>
     <string name="settings_everyday_notification">每日Deadline统计通知</string>
     <string name="settings_excitement">主菜单鼓励语句</string>
     <string name="settings_homepage">访问作者主页</string>
+    <string name="settings_github">访问项目主页</string>
+    <string name="settings_issues">提交错误报告</string>
     <string-array name="excitement_array">
         <item>今天你Deadline了吗？😝</item>
         <item>Deadline临近了🥺</item>
@@ -48,6 +51,30 @@
     <string name="appwidget_text">EXAMPLE</string>
     <string name="add_widget">添加小组件</string>
     <string name="app_widget_description">主屏幕倒计时小组件</string>
+    <string name="app_version">
+        <![CDATA[<strong>Dealiner</strong> v1.1.0-build1<br>]]>
+        <![CDATA[By Author <strong>Aritx Zhou</strong>]]>
+    </string>
 
-    <string name="unfinished_settings">通知功能还在抓紧开发中哦～\n预计v1.1版本上线</string>
+    <string name="unfinished_settings">实验功能，尚未测试完成</string>
+
+    <string name="go_next">下一步</string>
+
+    <!--下面是开始页面的内容-->
+    <string name="main_description">欢迎来到Deadliner💕</string>
+    <string name="main_description_content">专注高效任务管理，帮你轻松掌控每个截止日期</string>
+
+    <string name="widget_description">🗓 桌面小组件</string>
+    <string name="widget_description_content">随时查看任务进度，管理更加便捷</string>
+
+    <string name="swipe_to_finish">✅ 右滑完成任务</string>
+    <string name="swipe_to_finish_content">右滑即可完成任务，直观操作让效率更高</string>
+
+    <string name="swipe_to_delete">🗑 左滑删除任务</string>
+    <string name="swipe_to_delete_content">左滑快速删除任务，轻松保持任务列表整洁</string>
+
+    <string name="material_you">🖌 Material Design</string>
+    <string name="material_you_content">遵循Material Design设计，支持动态取色</string>
+
+    <string name="welcome">欢迎使用！👏</string>
 </resources>

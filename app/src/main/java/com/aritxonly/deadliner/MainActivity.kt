@@ -1,14 +1,14 @@
 package com.aritxonly.deadliner
+
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.*
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
@@ -21,6 +21,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
@@ -28,10 +29,21 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.work.*
+import androidx.work.PeriodicWorkRequestBuilder
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.*
+import nl.dionsegijn.konfetti.xml.KonfettiView
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import org.json.JSONObject
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -46,8 +58,22 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var excitementText: TextView
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var konfettiViewMain: KonfettiView
 
+    private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
+
+    // 定义权限请求启动器
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Toast.makeText(this, "通知权限已授予", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "通知权限被拒绝，请在设置中手动开启", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 跟随主题色
@@ -56,7 +82,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        DynamicColors.applyToActivitiesIfAvailable(application)
+//        DynamicColors.applyToActivitiesIfAvailable(application)
 
         DynamicColors.applyToActivityIfAvailable(this)
 
@@ -70,6 +96,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         databaseHelper = DatabaseHelper(this)
 
+        konfettiViewMain = findViewById(R.id.konfettiViewMain)
         recyclerView = findViewById(R.id.recyclerView)
         addEventButton = findViewById(R.id.addEvent)
         settingsButton = findViewById(R.id.settingsButton)
@@ -294,9 +321,18 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         sharedPreferences = getSharedPreferences("app_settings", MODE_PRIVATE)
 
+        // 获取变量
+        isFireworksAnimEnable = sharedPreferences.getBoolean("fireworks_anim", true)
+
         // 检查鼓励语句开关状态
         val isMotivationalQuotesEnabled = sharedPreferences.getBoolean("motivational_quotes", true)
         updateTitleAndExcitementText(isMotivationalQuotesEnabled)
+
+        // 设置通知定时任务
+        val isNotificationDeadlineEnabled = sharedPreferences.getBoolean("deadline_notification", false)
+        updateNotification(isNotificationDeadlineEnabled)
+
+        checkForUpdates()
     }
 
     override fun onStop() {
@@ -340,6 +376,113 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         }
     }
 
+    private fun updateNotification(isEnabled: Boolean) {
+        if (!isEnabled) {
+            Log.d("Notification", "Here")
+            // 如果开关关闭，取消定时任务
+            WorkManager.getInstance(this).cancelUniqueWork("DeadlineCheckWork")
+            return
+        }
+
+        // 检查是否已有相同的任务在队列中
+        WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData("DeadlineCheckWork").observe(this) { workInfos ->
+            val isWorkScheduled = workInfos.any { workInfo ->
+                workInfo.state == WorkInfo.State.ENQUEUED || workInfo.state == WorkInfo.State.RUNNING
+            }
+
+            // 如果任务未调度，则启动新的任务
+            if (!isWorkScheduled) {
+                val workRequest = PeriodicWorkRequestBuilder<DeadlineWorker>(1, TimeUnit.HOURS)
+                    .setConstraints(
+                        Constraints.Builder()
+                            .setRequiresBatteryNotLow(true)
+                            .build()
+                    )
+                    .build()
+
+                WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                    "DeadlineCheckWork",
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    workRequest
+                )
+            }
+        }
+    }
+
+    private fun checkForUpdates() {
+        // GitHub Releases API 地址
+        val url = "https://api.github.com/repos/AritxOnly/Deadliner/releases/latest"
+
+        // 创建 OkHttp 客户端
+        val client = OkHttpClient()
+
+        // 创建请求
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .build()
+
+        // 执行请求
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace() // 网络请求失败时的处理
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    response.body?.string()?.let { responseBody ->
+                        val json = JSONObject(responseBody)
+
+                        // 获取最新版本号
+                        val latestVersion = json.getString("tag_name") // GitHub 上的版本标签
+                        val releaseNotes = json.getString("body") // 更新说明
+                        val downloadUrl = json.getJSONArray("assets")
+                            .getJSONObject(0)
+                            .getString("browser_download_url") // 下载链接
+
+                        // 获取本地版本号
+                        val localVersion = packageManager.getPackageInfo(packageName, 0).versionName
+
+                        // 比较版本号
+                        if (isNewVersionAvailable(localVersion, latestVersion)) {
+                            runOnUiThread {
+                                showUpdateDialog(latestVersion, releaseNotes, downloadUrl)
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    // 判断是否有新版本（版本号格式：x.y.z）
+    private fun isNewVersionAvailable(localVersion: String, latestVersion: String): Boolean {
+        val localParts = localVersion.split(".")
+        val latestParts = latestVersion.split(".")
+
+        for (i in 0 until minOf(localParts.size, latestParts.size)) {
+            val localPart = localParts[i].toIntOrNull() ?: 0
+            val latestPart = latestParts[i].toIntOrNull() ?: 0
+            if (localPart < latestPart) return true
+            if (localPart > latestPart) return false
+        }
+
+        return latestParts.size > localParts.size
+    }
+
+    // 显示更新提示对话框
+    private fun showUpdateDialog(version: String, releaseNotes: String, downloadUrl: String) {
+        AlertDialog.Builder(this)
+            .setTitle("发现新版本：v$version")
+            .setMessage("更新内容：\n\n$releaseNotes")
+            .setPositiveButton("更新") { _, _ ->
+                // 打开浏览器下载最新版本
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
+                startActivity(intent)
+            }
+            .setNegativeButton("稍后再说", null)
+            .show()
+    }
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -357,6 +500,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         databaseHelper.updateDDL(item)
         adapter.updateData(databaseHelper.getAllDDLs())
         if (item.isCompleted) {
+            if (isFireworksAnimEnable) { konfettiViewMain.start(PartyPresets.festive()) }
             Toast.makeText(this, R.string.toast_finished, Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(this, R.string.toast_definished, Toast.LENGTH_SHORT).show()
@@ -457,6 +601,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         super.onResume()
         val isMotivationalQuotesEnabled = sharedPreferences.getBoolean("motivational_quotes", true)
         updateTitleAndExcitementText(isMotivationalQuotesEnabled)
+        val isNotificationDeadlineEnabled = sharedPreferences.getBoolean("deadline_notification", false)
+        updateNotification(isNotificationDeadlineEnabled)
+        isFireworksAnimEnable = sharedPreferences.getBoolean("fireworks_anim", true)
     }
 
     companion object {

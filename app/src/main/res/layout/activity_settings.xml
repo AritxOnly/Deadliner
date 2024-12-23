@@ -93,6 +93,15 @@
                         android:textSize="16sp"
                         app:useMaterialThemeColors="true"/>
 
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchFireworksOnFinish"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="8dp"
+                        android:text="@string/settings_fireworks"
+                        android:textSize="16sp"
+                        app:useMaterialThemeColors="true"/>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -113,7 +122,7 @@
                 app:cardCornerRadius="@dimen/item_corner_radius"
                 android:layout_marginBottom="16dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="?attr/colorSecondaryContainer"
+                app:cardBackgroundColor="?attr/colorErrorContainer"
                 app:strokeWidth="0dp">
 
                 <LinearLayout
@@ -126,7 +135,7 @@
                         android:src="@drawable/ic_alert"
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="16dp"
-                        app:tint="?attr/colorOnSecondaryContainer" />
+                        app:tint="?attr/colorOnErrorContainer" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -188,6 +197,40 @@
                 android:textSize="@dimen/settings_title_font_size"
                 android:layout_marginVertical="8dp"/>
 
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/aboutCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="@dimen/item_corner_radius"
+                android:layout_marginBottom="16dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="?attr/colorSecondaryContainer"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_info"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="16dp"
+                        app:tint="?attr/colorOnSecondaryContainer" />
+
+                    <TextView
+                        android:id="@+id/versionNumber"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="16sp"
+                        android:text="@string/app_version"
+                        android:layout_margin="16dp"
+                        />
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- 分组 3 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -206,6 +249,19 @@
                     android:paddingVertical="12dp">
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonHomePage"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginVertical="8dp"
+                        android:text="@string/settings_github"
+                        android:textSize="16sp"
+                        style="?attr/materialButtonOutlinedStyle"
+                        app:cornerRadius="16dp"
+                        app:icon="@drawable/ic_github"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp"/>
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonAuthorPage"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
@@ -214,7 +270,20 @@
                         android:textSize="16sp"
                         style="?attr/materialButtonOutlinedStyle"
                         app:cornerRadius="16dp"
-                        app:icon="@drawable/ic_link"
+                        app:icon="@drawable/ic_author"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonIssues"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginVertical="8dp"
+                        android:text="@string/settings_issues"
+                        android:textSize="16sp"
+                        style="?attr/materialButtonOutlinedStyle"
+                        app:cornerRadius="16dp"
+                        app:icon="@drawable/ic_bug"
                         app:iconGravity="textStart"
                         app:iconPadding="8dp"/>
 
