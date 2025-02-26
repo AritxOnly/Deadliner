@@ -7,5 +7,6 @@ data class DDLItem(
     val name: String,
     val startTime: String,
     val endTime: String,
-    var isCompleted: Boolean = false
+    var isCompleted: Boolean = false,
+    var completeTime: String = ""
 )

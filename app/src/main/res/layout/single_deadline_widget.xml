@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -26,7 +27,7 @@
             android:minHeight="36dp"
             android:max="100"
             android:progressDrawable="@drawable/progress_deadline_item"
-            android:layout_gravity="center_vertical"/>
+            android:layout_gravity="center_vertical" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -45,7 +46,7 @@
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:textAlignment="gravity"
-                android:gravity="center_vertical"/>
+                android:gravity="center_vertical" />
 
             <TextView
                 android:id="@+id/item_progress_text_1"
@@ -53,7 +54,7 @@
                 android:layout_height="wrap_content"
                 android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textSize="14sp"
-                android:gravity="center_vertical"/>
+                android:gravity="center_vertical" />
         </LinearLayout>
     </FrameLayout>
 
@@ -73,7 +74,7 @@
             android:minHeight="36dp"
             android:max="100"
             android:progressDrawable="@drawable/progress_deadline_item"
-            android:layout_gravity="center_vertical"/>
+            android:layout_gravity="center_vertical" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -92,7 +93,7 @@
                 android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textStyle="bold"
                 android:textSize="14sp"
-                android:gravity="center_vertical"/>
+                android:gravity="center_vertical" />
 
             <TextView
                 android:id="@+id/item_progress_text_2"
@@ -100,7 +101,7 @@
                 android:layout_height="wrap_content"
                 android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textSize="14sp"
-                android:gravity="center_vertical"/>
+                android:gravity="center_vertical" />
         </LinearLayout>
     </FrameLayout>
 
@@ -120,7 +121,7 @@
             android:minHeight="36dp"
             android:max="100"
             android:progressDrawable="@drawable/progress_deadline_item"
-            android:layout_gravity="center_vertical"/>
+            android:layout_gravity="center_vertical" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -139,7 +140,7 @@
                 android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textStyle="bold"
                 android:textSize="14sp"
-                android:gravity="center_vertical"/>
+                android:gravity="center_vertical" />
 
             <TextView
                 android:id="@+id/item_progress_text_3"
@@ -147,8 +148,34 @@
                 android:layout_height="wrap_content"
                 android:textColor="?android:attr/textColorPrimaryInverse"
                 android:textSize="14sp"
-                android:gravity="center_vertical"/>
+                android:gravity="center_vertical" />
         </LinearLayout>
     </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="16dp"
+        android:id="@+id/widgetFinishNotice"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_ccheck"
+            android:contentDescription="完成图标"
+            android:layout_marginBottom="16dp"
+            android:id="@+id/widgetFinishIcon" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/finish_notice"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorPrimary"/>
+
+    </LinearLayout>
 
 </LinearLayout>

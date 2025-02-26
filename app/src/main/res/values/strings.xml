@@ -52,7 +52,7 @@
     <string name="add_widget">添加小组件</string>
     <string name="app_widget_description">主屏幕倒计时小组件</string>
     <string name="app_version">
-        <![CDATA[<strong>Dealiner</strong> v1.1.0-build1<br>]]>
+        <![CDATA[<strong>Dealiner</strong> v1.1.0-build2<br>]]>
         <![CDATA[By Author <strong>Aritx Zhou</strong>]]>
     </string>
 
@@ -77,4 +77,10 @@
     <string name="material_you_content">遵循Material Design设计，支持动态取色</string>
 
     <string name="welcome">欢迎使用！👏</string>
+
+    <string name="finish_notice">没有剩余的工作了</string>
+    <string name="add_ddl_tile_label">添加新任务</string>
+    <string name="unselected">请指定时间</string>
+    <string name="end_time">结束时间</string>
+    <string name="start_time">开始时间</string>
 </resources>

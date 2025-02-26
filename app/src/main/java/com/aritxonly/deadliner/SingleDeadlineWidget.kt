@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.UiModeManager
 import android.appwidget.AppWidgetManager
@@ -7,10 +8,13 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.graphics.Color
 import android.util.Log
+import android.util.TypedValue
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -55,6 +59,17 @@ class SingleDeadlineWidget : AppWidgetProvider() {
     }
 }
 
+fun getThemeColor(context: Context, attrResId: Int): Int {
+    val typedValue = TypedValue()
+    val theme = context.theme
+    theme.resolveAttribute(attrResId, typedValue, true)
+    return if (typedValue.resourceId != 0) {
+        ContextCompat.getColor(context, typedValue.resourceId)
+    } else {
+        typedValue.data
+    }
+}
+
 internal fun updateAppWidget(
     context: Context,
     appWidgetManager: AppWidgetManager,
@@ -65,7 +80,7 @@ internal fun updateAppWidget(
     val direction = sharedPreferences.getBoolean("widget_progress_dir", false)
 
     // 设置点击事件，点击小组件打开 MainActivity
-    val intent = Intent(context, MainActivity::class.java).apply {
+    val intent = Intent(context, LauncherActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
     val pendingIntent = PendingIntent.getActivity(
@@ -77,6 +92,9 @@ internal fun updateAppWidget(
 
     val dbHelper = DatabaseHelper(context)
     val allDDLs = dbHelper.getAllDDLs()
+
+    val color = getThemeColor(context, android.R.attr.textColorPrimary)
+    views.setInt(R.id.widgetFinishIcon, "setColorFilter", color)
 
     val now = LocalDateTime.now()
     val parsedDDLs = allDDLs.map { ddl ->
@@ -113,6 +131,8 @@ internal fun updateAppWidget(
         views.setViewVisibility(containerId, View.GONE)
     }
 
+    var showCount = 0
+
     // 显示数据
     for ((index, parsed) in showList.withIndex()) {
         val (containerId, titleId, progressId) = itemContainers[index]
@@ -142,12 +162,19 @@ internal fun updateAppWidget(
             views.setProgressBar(progressId, 100, 0, false)
             "逾期" // 如果已过期或剩余时间为负数，则显示0.0h
         } else {
-            val hours: Double = remainingMillis.toDouble() / 3600000
-            "%.1f".format(hours) + "h"
+            val days: Double = remainingMillis.toDouble() / (3600000 * 24)
+            "%.1f".format(days) + "天" + " $progress%"
         }
 
+        showCount++
         views.setTextViewText(progressTextId, timeText)
     }
+
+    views.setViewVisibility(R.id.widgetFinishNotice, if (showCount == 0) {
+        View.VISIBLE
+    } else {
+        View.GONE
+    })
 
     appWidgetManager.updateAppWidget(appWidgetId, views)
 }

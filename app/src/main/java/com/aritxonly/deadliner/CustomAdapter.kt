@@ -3,6 +3,7 @@ package com.aritxonly.deadliner
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.GradientDrawable
+import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -168,12 +169,33 @@ class CustomAdapter(
 
     // 更新数据的方法，用于动态刷新 RecyclerView
     fun updateData(newList: List<DDLItem>) {
-        itemList = newList.sortedWith(compareBy<DDLItem> { it.isCompleted }
-            .thenBy {
-                val endTime = parseDateTime(it.endTime)
-                val remainingMinutes = Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
-                remainingMinutes
-            })
+        val filteredList = newList.filter { item ->
+            Log.d("updateData", "item ${item.id}, " +
+                    "name ${item.name}, " +
+                    "completeTime ${item.completeTime}")
+            if (item.completeTime.isNotEmpty()) {
+                try {
+                    val completeTime = parseDateTime(item.completeTime)
+                    val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
+                    Log.d("updateData", "remains $daysSinceCompletion")
+                    daysSinceCompletion <= 7 // 仅保留完成时间在7天以内的项目
+                } catch (e: Exception) {
+                    Log.e("updateData", "Error parse")
+                    true // 如果解析失败，默认保留
+                }
+            } else {
+                true // 如果 completeTime 为空，保留该项目
+            }
+        }.sortedWith(
+            compareBy<DDLItem> { it.isCompleted }
+                .thenBy {
+                    val endTime = parseDateTime(it.endTime)
+                    val remainingMinutes = Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
+                    remainingMinutes
+                }
+        )
+
+        itemList = filteredList
         notifyDataSetChanged()
     }
 }

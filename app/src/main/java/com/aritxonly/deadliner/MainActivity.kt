@@ -17,6 +17,7 @@ import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -43,6 +44,7 @@ import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
 import java.io.IOException
+import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
@@ -59,6 +61,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private lateinit var konfettiViewMain: KonfettiView
+    private lateinit var finishNotice: LinearLayout
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
@@ -96,10 +99,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         databaseHelper = DatabaseHelper(this)
 
+        finishNotice = findViewById(R.id.finishNotice)
         konfettiViewMain = findViewById(R.id.konfettiViewMain)
         recyclerView = findViewById(R.id.recyclerView)
         addEventButton = findViewById(R.id.addEvent)
         settingsButton = findViewById(R.id.settingsButton)
+
+        decideShowEmptyNotice()
 
         // 设置 RecyclerView
         val itemList = databaseHelper.getAllDDLs()
@@ -107,6 +113,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         adapter.setSwipeListener(this)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
+
 
         // 设置 RecyclerView
         adapter = CustomAdapter(itemList, this)
@@ -169,6 +176,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 triggerVibration(this@MainActivity, 100)
                                 val item = adapter.itemList[position]
                                 item.isCompleted = !item.isCompleted
+                                item.completeTime = if (item.isCompleted) {
+                                    LocalDateTime.now().toString()
+                                } else {
+                                    ""
+                                }
                                 databaseHelper.updateDDL(item)
                                 adapter.updateData(databaseHelper.getAllDDLs())
                                 if (item.isCompleted) {
@@ -357,6 +369,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
             adapter.updateData(newData)
             swipeRefreshLayout.isRefreshing = false // 停止刷新动画
+            decideShowEmptyNotice()
         }
     }
 
@@ -492,11 +505,18 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             // 刷新数据
             adapter.updateData(databaseHelper.getAllDDLs())
         }
+
+        decideShowEmptyNotice()
     }
 
     override fun onSwipeRight(position: Int) {
         val item = adapter.itemList[position]
         item.isCompleted = !item.isCompleted
+        item.completeTime = if (item.isCompleted) {
+            LocalDateTime.now().toString()
+        } else {
+            ""
+        }
         databaseHelper.updateDDL(item)
         adapter.updateData(databaseHelper.getAllDDLs())
         if (item.isCompleted) {
@@ -521,9 +541,18 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 databaseHelper.deleteDDL(item.id)
                 adapter.updateData(databaseHelper.getAllDDLs())
                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
+                decideShowEmptyNotice()
                 pauseRefresh = false
             }
             .show()
+    }
+
+    private fun decideShowEmptyNotice() {
+        finishNotice.visibility = if (databaseHelper.getAllDDLs().isEmpty()) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
     }
 
     /*
@@ -604,6 +633,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val isNotificationDeadlineEnabled = sharedPreferences.getBoolean("deadline_notification", false)
         updateNotification(isNotificationDeadlineEnabled)
         isFireworksAnimEnable = sharedPreferences.getBoolean("fireworks_anim", true)
+        decideShowEmptyNotice()
     }
 
     companion object {

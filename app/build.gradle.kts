@@ -9,10 +9,10 @@ android {
 
     defaultConfig {
         applicationId = "com.aritxonly.deadliner"
-        minSdk = 32
+        minSdk = 31
         targetSdk = 34
         versionCode = 1
-        versionName = "1.1.0"
+        versionName = "1.2.0.55"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

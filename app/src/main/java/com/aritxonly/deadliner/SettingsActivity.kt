@@ -10,15 +10,20 @@ import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.transition.Slide
+import androidx.transition.Visibility
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.slider.Slider
 import com.google.android.material.snackbar.Snackbar
 
 class SettingsActivity : AppCompatActivity() {
