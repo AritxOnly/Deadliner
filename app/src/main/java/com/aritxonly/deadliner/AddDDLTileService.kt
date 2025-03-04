@@ -3,6 +3,7 @@ package com.aritxonly.deadliner
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
@@ -47,5 +48,12 @@ class AddDDLTileService : TileService() {
         } else {
             startActivityAndCollapse(intent)
         }
+    }
+
+    override fun onBind(intent: Intent?): IBinder {
+        TileService.requestListeningState(this,
+            ComponentName(this, AddDDLTileService::class.java)
+        )
+        return super.onBind(intent)!!
     }
 }

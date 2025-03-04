@@ -43,6 +43,7 @@ class AddDDLActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_ddl)
 
+        DynamicColors.applyToActivitiesIfAvailable(this.application)
         DynamicColors.applyToActivityIfAvailable(this)
 
         // 获取主题中的 colorSurface 值
