@@ -12,7 +12,7 @@ android {
         minSdk = 31
         targetSdk = 34
         versionCode = 1
-        versionName = "1.2.0.105"
+        versionName = "1.2.0.120"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -38,6 +38,13 @@ android {
     }
 }
 
+//repositories {
+//    maven {
+////        setUrl("https://jitpack.io")
+//    }
+//    mavenCentral()
+//}
+
 dependencies {
 
     implementation("com.google.android.material:material:1.9.0")
@@ -54,6 +61,7 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.swiperefreshlayout)
+//    implementation("com.github.pdog18:dimension-extensions:1.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

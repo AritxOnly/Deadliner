@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner
 
+import android.annotation.SuppressLint
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -13,9 +14,13 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.util.TypedValue
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
+import android.view.View.OnTouchListener
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -24,6 +29,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -65,6 +71,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
+
+    var isBottomReached = false
+    val triggerThreshold = 100f.dp // 触发跳转的阈值（100dp）
 
     // 定义权限请求启动器
     private val requestPermissionLauncher = registerForActivityResult(
@@ -205,6 +214,25 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
+
+//        recyclerView.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+//                super.onScrolled(recyclerView, dx, dy)
+//
+//                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+//                val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
+//                val totalItemCount = layoutManager.itemCount
+//
+//                isBottomReached = lastVisiblePosition == totalItemCount - 1
+//            }
+//
+//            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+//                if (isBottomReached && newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+//                    Log.d("Scroll", "Reached the end")
+//                    isBottomReached = false
+//                }
+//            }
+//        })
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         swipeRefreshLayout.setOnRefreshListener {
@@ -564,7 +592,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             return
         }
 
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        val vibrator = context.getSystemService(VIBRATOR_SERVICE) as Vibrator
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // API 26 及以上版本使用 VibrationEffect
@@ -638,5 +666,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     companion object {
         private const val REQUEST_CODE_ADD_DDL = 1
+    }
+}
+
+fun View.safePerformClick() {
+    performClick()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (!isAccessibilityFocused) {
+            sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_CLICKED)
+        }
     }
 }
