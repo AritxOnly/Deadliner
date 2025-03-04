@@ -13,6 +13,18 @@
     <!-- 标题栏 -->
 
     <ImageButton
+        android:id="@+id/archivedButton"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_marginTop="23dp"
+        android:layout_marginEnd="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_archive"
+        app:layout_constraintEnd_toEndOf="@id/settingsButton"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
         android:id="@+id/settingsButton"
         android:layout_width="26dp"
         android:layout_height="26dp"

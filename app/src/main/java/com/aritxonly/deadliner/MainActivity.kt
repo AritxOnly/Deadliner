@@ -59,6 +59,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var addEventButton: FloatingActionButton
     private lateinit var settingsButton: ImageButton
+    private lateinit var archivedButton: ImageButton
     private val itemList = mutableListOf<DDLItem>()
     private lateinit var adapter: CustomAdapter
     private lateinit var addDDLLauncher: ActivityResultLauncher<Intent>
@@ -113,6 +114,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         recyclerView = findViewById(R.id.recyclerView)
         addEventButton = findViewById(R.id.addEvent)
         settingsButton = findViewById(R.id.settingsButton)
+        archivedButton = findViewById(R.id.archivedButton)
 
         decideShowEmptyNotice()
 
@@ -214,25 +216,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
-
-//        recyclerView.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-//                super.onScrolled(recyclerView, dx, dy)
-//
-//                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-//                val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
-//                val totalItemCount = layoutManager.itemCount
-//
-//                isBottomReached = lastVisiblePosition == totalItemCount - 1
-//            }
-//
-//            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-//                if (isBottomReached && newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-//                    Log.d("Scroll", "Reached the end")
-//                    isBottomReached = false
-//                }
-//            }
-//        })
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         swipeRefreshLayout.setOnRefreshListener {
@@ -353,6 +336,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         settingsButton.setOnClickListener {
 //            Log.d("MainActivity", "Settings triggered")
             val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+        }
+
+        archivedButton.setOnClickListener {
+            Log.d("MainActivity", "Archive triggered")
+            val intent = Intent(this, ArchiveActivity::class.java)
             startActivity(intent)
         }
 

@@ -18,16 +18,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Deadliner"
         tools:targetApi="31">
+        <activity
+            android:name=".ArchiveActivity"
+            android:exported="false" />
+
         <service
             android:name=".AddDDLTileService"
             android:exported="true"
-            android:label="@string/add_ddl_tile_label"
             android:icon="@drawable/ic_add_ddl_tile"
+            android:label="@string/add_ddl_tile_label"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
-            <meta-data android:name="android.service.quicksettings.ACTIVE_TILE"
+
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
                 android:value="true" />
         </service>
 
