@@ -52,6 +52,7 @@ dependencies {
     implementation("nl.dionsegijn:konfetti-xml:2.0.4")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("io.noties.markwon:core:4.6.2")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

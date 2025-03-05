@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner
 
+import ApkDownloaderInstaller
 import android.annotation.SuppressLint
 import android.app.ActivityOptions
 import android.appwidget.AppWidgetManager
@@ -13,6 +14,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.text.Spanned
 import android.util.Log
 import android.util.TypedValue
 import android.view.GestureDetector
@@ -42,6 +44,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import io.noties.markwon.Markwon
 import kotlinx.coroutines.*
 import nl.dionsegijn.konfetti.xml.KonfettiView
 import okhttp3.Call
@@ -472,8 +475,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                         // 获取最新版本号
                         val latestVersion = json.getString("tag_name") // GitHub 上的版本标签
-                        val releaseNotes = json.getString("body") // 更新说明
+                        val releaseNotesMarkdown = json.getString("body") // 更新说明
                         val assetsArray = json.getJSONArray("assets")
+
+                        val markwon = Markwon.create(this@MainActivity)
+                        val releaseNotes = markwon.toMarkdown(releaseNotesMarkdown)
 
                         val downloadUrl: String?
                         if (assetsArray.length() > 0) {
@@ -492,7 +498,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         val localVersion = packageManager.getPackageInfo(packageName, 0).versionName
 
                         // 比较版本号
-                        if (isNewVersionAvailable(localVersion, latestVersion)) {
+//                        if (isNewVersionAvailable(localVersion, latestVersion)) {
                             runOnUiThread {
                                 downloadUrl?.let {
                                     showUpdateDialog(latestVersion, releaseNotes,
@@ -500,7 +506,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                     )
                                 }
                             }
-                        }
+//                        }
                     }
                 }
             }
@@ -529,15 +535,17 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     // 显示更新提示对话框
-    private fun showUpdateDialog(version: String, releaseNotes: String, downloadUrl: String) {
+    private fun showUpdateDialog(version: String, releaseNotes: Spanned, downloadUrl: String) {
         MaterialAlertDialogBuilder(this)
             .setIcon(R.drawable.ic_update)
             .setTitle("发现新版本：$version")
-            .setMessage("更新内容：\n\n$releaseNotes")
+            .setMessage(releaseNotes)
             .setPositiveButton("更新") { _, _ ->
-                // 打开浏览器下载最新版本
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
-                startActivity(intent)
+//                // 打开浏览器下载最新版本
+//                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
+//                startActivity(intent)
+                val downloaderInstaller = ApkDownloaderInstaller(this)
+                downloaderInstaller.downloadAndInstall(downloadUrl)
             }
             .setNegativeButton("稍后再说", null)
             .show()

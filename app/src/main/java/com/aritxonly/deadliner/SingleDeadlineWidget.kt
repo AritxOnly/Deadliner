@@ -42,6 +42,7 @@ class SingleDeadlineWidget : AppWidgetProvider() {
         // 尝试解析时间字符串的函数
         fun parseDateTime(dateTimeString: String): LocalDateTime {
             val formatters = listOf(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
                 DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
                 DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
                 DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
