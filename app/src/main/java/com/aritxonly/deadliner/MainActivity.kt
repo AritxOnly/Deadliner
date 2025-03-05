@@ -466,9 +466,20 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         // 获取最新版本号
                         val latestVersion = json.getString("tag_name") // GitHub 上的版本标签
                         val releaseNotes = json.getString("body") // 更新说明
-                        val downloadUrl = json.getJSONArray("assets")
-                            .getJSONObject(0)
-                            .getString("browser_download_url") // 下载链接
+                        val assetsArray = json.getJSONArray("assets")
+
+                        val downloadUrl: String?
+                        if (assetsArray.length() > 0) {
+                            downloadUrl = assetsArray.optJSONObject(0)?.optString("browser_download_url", "")
+                            if (!downloadUrl.isNullOrEmpty()) {
+                                Log.d("DownloadURL", "$downloadUrl")
+                            } else {
+                                Log.e("DownloadURL", "downloadUrl null")
+                            }
+                        } else {
+                            Log.e("DownloadURL", "assets null")
+                            return@let
+                        }
 
                         // 获取本地版本号
                         val localVersion = packageManager.getPackageInfo(packageName, 0).versionName
@@ -476,7 +487,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         // 比较版本号
                         if (isNewVersionAvailable(localVersion, latestVersion)) {
                             runOnUiThread {
-                                showUpdateDialog(latestVersion, releaseNotes, downloadUrl)
+                                downloadUrl?.let {
+                                    showUpdateDialog(latestVersion, releaseNotes,
+                                        it
+                                    )
+                                }
                             }
                         }
                     }
@@ -487,23 +502,30 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     // 判断是否有新版本（版本号格式：x.y.z）
     private fun isNewVersionAvailable(localVersion: String, latestVersion: String): Boolean {
-        val localParts = localVersion.split(".")
-        val latestParts = latestVersion.split(".")
+        // 去掉前缀 'v'，确保格式为 x.y.z
+        val cleanedLocalVersion = localVersion.removePrefix("v")
+        val cleanedLatestVersion = latestVersion.removePrefix("v")
+
+        val localParts = cleanedLocalVersion.split(".")
+        val latestParts = cleanedLatestVersion.split(".")
 
         for (i in 0 until minOf(localParts.size, latestParts.size)) {
             val localPart = localParts[i].toIntOrNull() ?: 0
             val latestPart = latestParts[i].toIntOrNull() ?: 0
-            if (localPart < latestPart) return true
-            if (localPart > latestPart) return false
+
+            if (localPart < latestPart) return true  // 有新版本
+            if (localPart > latestPart) return false // 本地版本更新
         }
 
+        // 如果最新版本的部分比本地多，例如 v1.2.3 -> v1.2.3.1，说明有新版本
         return latestParts.size > localParts.size
     }
 
     // 显示更新提示对话框
     private fun showUpdateDialog(version: String, releaseNotes: String, downloadUrl: String) {
-        AlertDialog.Builder(this)
-            .setTitle("发现新版本：v$version")
+        MaterialAlertDialogBuilder(this)
+            .setIcon(R.drawable.ic_update)
+            .setTitle("发现新版本：$version")
             .setMessage("更新内容：\n\n$releaseNotes")
             .setPositiveButton("更新") { _, _ ->
                 // 打开浏览器下载最新版本
