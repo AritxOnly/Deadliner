@@ -1,6 +1,7 @@
 package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
+import android.app.ActivityOptions
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -342,7 +343,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         archivedButton.setOnClickListener {
             Log.d("MainActivity", "Archive triggered")
             val intent = Intent(this, ArchiveActivity::class.java)
-            startActivity(intent)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                val options = ActivityOptions.makeSceneTransitionAnimation(this).toBundle()
+                startActivity(intent, options)
+            } else {
+                startActivity(intent)
+            }
         }
 
         titleBar = findViewById(R.id.titleBar)

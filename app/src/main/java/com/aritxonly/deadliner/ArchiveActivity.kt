@@ -2,11 +2,15 @@ package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract.Data
+import android.transition.Fade
+import android.transition.Slide
 import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewConfiguration
+import android.view.Window
 import android.widget.ImageButton
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -32,8 +36,13 @@ class ArchiveActivity : AppCompatActivity() {
     private lateinit var databaseHelper: DatabaseHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        window.requestFeature(Window.FEATURE_ACTIVITY_TRANSITIONS)
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        setupWindowTransitions()
+
         setContentView(R.layout.activity_archive)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -84,6 +93,23 @@ class ArchiveActivity : AppCompatActivity() {
                     finishAfterTransition()
                 }.setNegativeButton(resources.getString(R.string.cancel), null)
                 .show()
+        }
+    }
+
+    /**
+     * 设置窗口动画
+     */
+    private fun setupWindowTransitions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val fade = Fade()
+            fade.duration = 300  // 过渡动画时长 300ms
+
+            val slide = Slide()
+            slide.slideEdge = android.view.Gravity.BOTTOM // 从底部滑入
+            slide.duration = 300
+
+            window.enterTransition = slide // 进入动画
+            window.exitTransition = fade   // 退出动画
         }
     }
 

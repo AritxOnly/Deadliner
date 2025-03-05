@@ -18,9 +18,13 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import java.sql.Time
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -162,11 +166,47 @@ class AddDDLActivity : AppCompatActivity() {
     private fun showDateTimePicker(onDateTimeSelected: (LocalDateTime) -> Unit) {
         val calendar = Calendar.getInstance()
 
-        DatePickerDialog(this, { _, year, month, dayOfMonth ->
-            TimePickerDialog(this, { _, hourOfDay, minute ->
-                val selectedDateTime = LocalDateTime.of(year, month + 1, dayOfMonth, hourOfDay, minute)
-                onDateTimeSelected(selectedDateTime)
-            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
-        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+        // 创建日期选择器
+        val datePicker = MaterialDatePicker.Builder.datePicker()
+            .setSelection(MaterialDatePicker.todayInUtcMilliseconds())  // 设置默认日期
+            .build()
+
+        datePicker.addOnPositiveButtonClickListener { selectedDate ->
+            // 获取选择的日期（毫秒）
+            val selectedDateTime = LocalDateTime.ofInstant(
+                Date(selectedDate).toInstant(), ZoneId.systemDefault())
+
+            // 显示时间选择器
+            showTimePicker(selectedDateTime, onDateTimeSelected)
+        }
+
+        // 显示日期选择器
+        datePicker.show(supportFragmentManager, datePicker.toString())
+    }
+
+    /**
+     * 显示时间选择器
+     */
+    private fun showTimePicker(selectedDateTime: LocalDateTime, onDateTimeSelected: (LocalDateTime) -> Unit) {
+        val timePicker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_24H)
+            .setHour(selectedDateTime.hour) // 设置当前时间的小时
+            .setMinute(selectedDateTime.minute) // 设置当前时间的分钟
+            .build()
+
+        timePicker.addOnPositiveButtonClickListener {
+            // 获取选择的时间
+            val hourOfDay = timePicker.hour
+            val minute = timePicker.minute
+
+            // 创建最终的 LocalDateTime
+            val finalDateTime = selectedDateTime.withHour(hourOfDay).withMinute(minute)
+
+            // 回调选中的日期时间
+            onDateTimeSelected(finalDateTime)
+        }
+
+        // 显示时间选择器
+        timePicker.show(supportFragmentManager, timePicker.toString())
     }
 }
