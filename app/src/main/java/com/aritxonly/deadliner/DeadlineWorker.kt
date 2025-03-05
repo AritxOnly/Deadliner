@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter
 
 class DeadlineWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
-    private val databaseHelper = DatabaseHelper(context)
+    private val databaseHelper = DatabaseHelper.getInstance(applicationContext)
 
     override suspend fun doWork(): Result {
         Log.d("DeadlineWorker", "Checking deadlines for notifications...")

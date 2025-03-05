@@ -107,7 +107,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val mainPage: ConstraintLayout = findViewById(R.id.main)
         mainPage.setBackgroundColor(colorSurface)
 
-        databaseHelper = DatabaseHelper(this)
+        databaseHelper = DatabaseHelper.getInstance(applicationContext)
 
         finishNotice = findViewById(R.id.finishNotice)
         konfettiViewMain = findViewById(R.id.konfettiViewMain)
@@ -650,6 +650,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val isNotificationDeadlineEnabled = sharedPreferences.getBoolean("deadline_notification", false)
         updateNotification(isNotificationDeadlineEnabled)
         isFireworksAnimEnable = sharedPreferences.getBoolean("fireworks_anim", true)
+        adapter.updateData(databaseHelper.getAllDDLs())
         decideShowEmptyNotice()
     }
 
