@@ -7,9 +7,21 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.util.Log
 
 
-class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class DatabaseHelper private constructor(context: Context) :
+    SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
+        @Volatile
+        private var instance: DatabaseHelper? = null
+
+        fun getInstance(context: Context): DatabaseHelper {
+            return instance ?: synchronized(this) {
+                instance ?: DatabaseHelper(context.applicationContext).also {
+                    instance = it
+                }
+            }
+        }
+
         private const val DATABASE_NAME = "deadliner.db"
         private const val DATABASE_VERSION = 2
         private const val TABLE_NAME = "ddl_items"

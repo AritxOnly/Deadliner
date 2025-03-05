@@ -21,7 +21,7 @@ import java.time.format.DateTimeFormatter
 
 class CustomAdapter(
     public var itemList: List<DDLItem>,
-    private val context: Context // 传递 Context
+    private val context: Context
 ) : RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

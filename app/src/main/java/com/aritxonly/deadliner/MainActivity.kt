@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner
 
+import android.annotation.SuppressLint
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -13,9 +14,13 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.util.TypedValue
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
+import android.view.View.OnTouchListener
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -24,6 +29,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -53,6 +59,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var addEventButton: FloatingActionButton
     private lateinit var settingsButton: ImageButton
+    private lateinit var archivedButton: ImageButton
     private val itemList = mutableListOf<DDLItem>()
     private lateinit var adapter: CustomAdapter
     private lateinit var addDDLLauncher: ActivityResultLauncher<Intent>
@@ -65,6 +72,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
+
+    var isBottomReached = false
+    val triggerThreshold = 100f.dp // 触发跳转的阈值（100dp）
 
     // 定义权限请求启动器
     private val requestPermissionLauncher = registerForActivityResult(
@@ -97,13 +107,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val mainPage: ConstraintLayout = findViewById(R.id.main)
         mainPage.setBackgroundColor(colorSurface)
 
-        databaseHelper = DatabaseHelper(this)
+        databaseHelper = DatabaseHelper.getInstance(applicationContext)
 
         finishNotice = findViewById(R.id.finishNotice)
         konfettiViewMain = findViewById(R.id.konfettiViewMain)
         recyclerView = findViewById(R.id.recyclerView)
         addEventButton = findViewById(R.id.addEvent)
         settingsButton = findViewById(R.id.settingsButton)
+        archivedButton = findViewById(R.id.archivedButton)
 
         decideShowEmptyNotice()
 
@@ -328,6 +339,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             startActivity(intent)
         }
 
+        archivedButton.setOnClickListener {
+            Log.d("MainActivity", "Archive triggered")
+            val intent = Intent(this, ArchiveActivity::class.java)
+            startActivity(intent)
+        }
+
         titleBar = findViewById(R.id.titleBar)
         excitementText = findViewById(R.id.excitementText)
 
@@ -449,9 +466,20 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         // 获取最新版本号
                         val latestVersion = json.getString("tag_name") // GitHub 上的版本标签
                         val releaseNotes = json.getString("body") // 更新说明
-                        val downloadUrl = json.getJSONArray("assets")
-                            .getJSONObject(0)
-                            .getString("browser_download_url") // 下载链接
+                        val assetsArray = json.getJSONArray("assets")
+
+                        val downloadUrl: String?
+                        if (assetsArray.length() > 0) {
+                            downloadUrl = assetsArray.optJSONObject(0)?.optString("browser_download_url", "")
+                            if (!downloadUrl.isNullOrEmpty()) {
+                                Log.d("DownloadURL", "$downloadUrl")
+                            } else {
+                                Log.e("DownloadURL", "downloadUrl null")
+                            }
+                        } else {
+                            Log.e("DownloadURL", "assets null")
+                            return@let
+                        }
 
                         // 获取本地版本号
                         val localVersion = packageManager.getPackageInfo(packageName, 0).versionName
@@ -459,7 +487,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         // 比较版本号
                         if (isNewVersionAvailable(localVersion, latestVersion)) {
                             runOnUiThread {
-                                showUpdateDialog(latestVersion, releaseNotes, downloadUrl)
+                                downloadUrl?.let {
+                                    showUpdateDialog(latestVersion, releaseNotes,
+                                        it
+                                    )
+                                }
                             }
                         }
                     }
@@ -470,23 +502,30 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     // 判断是否有新版本（版本号格式：x.y.z）
     private fun isNewVersionAvailable(localVersion: String, latestVersion: String): Boolean {
-        val localParts = localVersion.split(".")
-        val latestParts = latestVersion.split(".")
+        // 去掉前缀 'v'，确保格式为 x.y.z
+        val cleanedLocalVersion = localVersion.removePrefix("v")
+        val cleanedLatestVersion = latestVersion.removePrefix("v")
+
+        val localParts = cleanedLocalVersion.split(".")
+        val latestParts = cleanedLatestVersion.split(".")
 
         for (i in 0 until minOf(localParts.size, latestParts.size)) {
             val localPart = localParts[i].toIntOrNull() ?: 0
             val latestPart = latestParts[i].toIntOrNull() ?: 0
-            if (localPart < latestPart) return true
-            if (localPart > latestPart) return false
+
+            if (localPart < latestPart) return true  // 有新版本
+            if (localPart > latestPart) return false // 本地版本更新
         }
 
+        // 如果最新版本的部分比本地多，例如 v1.2.3 -> v1.2.3.1，说明有新版本
         return latestParts.size > localParts.size
     }
 
     // 显示更新提示对话框
     private fun showUpdateDialog(version: String, releaseNotes: String, downloadUrl: String) {
-        AlertDialog.Builder(this)
-            .setTitle("发现新版本：v$version")
+        MaterialAlertDialogBuilder(this)
+            .setIcon(R.drawable.ic_update)
+            .setTitle("发现新版本：$version")
             .setMessage("更新内容：\n\n$releaseNotes")
             .setPositiveButton("更新") { _, _ ->
                 // 打开浏览器下载最新版本
@@ -564,7 +603,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             return
         }
 
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        val vibrator = context.getSystemService(VIBRATOR_SERVICE) as Vibrator
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // API 26 及以上版本使用 VibrationEffect
@@ -633,10 +672,20 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val isNotificationDeadlineEnabled = sharedPreferences.getBoolean("deadline_notification", false)
         updateNotification(isNotificationDeadlineEnabled)
         isFireworksAnimEnable = sharedPreferences.getBoolean("fireworks_anim", true)
+        adapter.updateData(databaseHelper.getAllDDLs())
         decideShowEmptyNotice()
     }
 
     companion object {
         private const val REQUEST_CODE_ADD_DDL = 1
+    }
+}
+
+fun View.safePerformClick() {
+    performClick()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (!isAccessibilityFocused) {
+            sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_CLICKED)
+        }
     }
 }

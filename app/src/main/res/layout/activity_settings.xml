@@ -215,9 +215,9 @@
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_info"
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="16dp"
+                        android:src="@drawable/ic_package"
                         app:tint="?attr/colorOnSecondaryContainer" />
 
                     <TextView

@@ -52,7 +52,7 @@ class AddDDLActivity : AppCompatActivity() {
         // 设置状态栏和导航栏颜色
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
-        databaseHelper = DatabaseHelper(this)
+        databaseHelper = DatabaseHelper.getInstance(applicationContext)
         ddlNameEditText = findViewById(R.id.ddlNameEditText)
         startTimeCard = findViewById(R.id.startTimeCard) // MaterialCardView
         endTimeCard = findViewById(R.id.endTimeCard) // MaterialCardView

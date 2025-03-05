@@ -158,7 +158,11 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        versionNumber.setText(Html.fromHtml(getString(R.string.app_version)))
+        val appVersionString = """
+            <strong>Dealiner</strong> ${packageManager.getPackageInfo(packageName, 0).versionName}<br>
+            By Author <strong>Aritx Zhou</strong>
+        """.trimIndent()
+        versionNumber.setText(Html.fromHtml(appVersionString))
 
         val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
         toolbar.setNavigationOnClickListener {

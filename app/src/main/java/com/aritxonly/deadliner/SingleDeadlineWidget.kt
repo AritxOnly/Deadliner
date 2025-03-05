@@ -90,7 +90,7 @@ internal fun updateAppWidget(
 
     appWidgetManager.updateAppWidget(appWidgetId, views)
 
-    val dbHelper = DatabaseHelper(context)
+    val dbHelper = DatabaseHelper.getInstance(context)
     val allDDLs = dbHelper.getAllDDLs()
 
     val color = getThemeColor(context, android.R.attr.textColorPrimary)
