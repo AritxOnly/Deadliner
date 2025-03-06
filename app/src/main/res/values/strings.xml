@@ -20,6 +20,7 @@
 
     <string name="settings_general">通用</string>
     <string name="settings_notification">通知</string>
+    <string name="settings_archive">归档</string>
     <string name="settings_highlight">关于</string>
     <string name="settings_vibration">启用震动反馈</string>
     <string name="settings_progress_dir_main">主界面正向进度条</string>

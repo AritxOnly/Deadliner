@@ -68,6 +68,7 @@ class CustomAdapter(
     // 尝试解析时间字符串的函数
     fun parseDateTime(dateTimeString: String): LocalDateTime {
         val formatters = listOf(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
@@ -178,7 +179,7 @@ class CustomAdapter(
                     val completeTime = parseDateTime(item.completeTime)
                     val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
                     Log.d("updateData", "remains $daysSinceCompletion")
-                    daysSinceCompletion <= 7 // 仅保留完成时间在7天以内的项目
+                    daysSinceCompletion <= GlobalUtils.autoArchiveTime
                 } catch (e: Exception) {
                     Log.e("updateData", "Error parse")
                     true // 如果解析失败，默认保留

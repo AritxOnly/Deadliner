@@ -47,7 +47,7 @@
                 app:cardCornerRadius="@dimen/item_corner_radius"
                 android:layout_marginBottom="16dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
                 app:strokeWidth="0dp">
 
                 <LinearLayout
@@ -102,6 +102,56 @@
                         android:textSize="16sp"
                         app:useMaterialThemeColors="true"/>
 
+                    <TextView
+                        android:id="@+id/toggleGroupHint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="自定义自动归档时间"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="0dp"
+                        android:layout_marginEnd="16dp" />
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/toggleGroupArchiveTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true"
+                        android:orientation="horizontal"
+                        android:layout_marginVertical="8dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/button1Day"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="1天"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/button3Day"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="3天"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/button7Day"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="7天"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"/>
+
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -154,7 +204,7 @@
                 app:cardCornerRadius="@dimen/item_corner_radius"
                 android:layout_marginBottom="16dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
                 app:strokeWidth="0dp">
 
                 <LinearLayout
@@ -239,7 +289,7 @@
                 app:cardCornerRadius="@dimen/item_corner_radius"
                 android:layout_marginBottom="16dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
                 app:strokeWidth="0dp">
 
                 <LinearLayout

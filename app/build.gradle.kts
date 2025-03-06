@@ -11,8 +11,8 @@ android {
         applicationId = "com.aritxonly.deadliner"
         minSdk = 31
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.2.1"
+        versionCode = 6
+        versionName = "1.2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -52,6 +52,7 @@ dependencies {
     implementation("nl.dionsegijn:konfetti-xml:2.0.4")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("io.noties.markwon:core:4.6.2")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -61,6 +62,7 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.androidx.animation.tooling.internal)
 //    implementation("com.github.pdog18:dimension-extensions:1.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -35,6 +35,7 @@ class DeadlineWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
     fun parseDateTime(dateTimeString: String): LocalDateTime {
         val formatters = listOf(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")

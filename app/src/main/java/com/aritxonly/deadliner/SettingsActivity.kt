@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.Html
+import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowInsetsController
@@ -15,6 +16,7 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.transition.Explode
 import androidx.transition.Slide
 import androidx.transition.Visibility
 import com.google.android.material.appbar.MaterialToolbar
@@ -40,6 +42,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var buttonIssues: MaterialButton
     private lateinit var versionNumber: TextView
     private lateinit var aboutCard: MaterialCardView
+    private lateinit var toggleGroupArchiveTime: MaterialButtonToggleGroup
 
     private var resetTimes = 0
 
@@ -55,6 +58,8 @@ class SettingsActivity : AppCompatActivity() {
         // 设置状态栏和导航栏颜色
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
+        GlobalUtils.readConfigInSettings(this)
+
         // 初始化控件
         switchVibration = findViewById(R.id.switchVibration)
         switchProgressDir = findViewById(R.id.switchProgressDir)
@@ -68,6 +73,7 @@ class SettingsActivity : AppCompatActivity() {
         buttonIssues = findViewById(R.id.buttonIssues)
         versionNumber = findViewById(R.id.versionNumber)
         aboutCard = findViewById(R.id.aboutCard)
+        toggleGroupArchiveTime = findViewById(R.id.toggleGroupArchiveTime)
 
         // 加载保存的设置
         val sharedPreferences = getSharedPreferences("app_settings", MODE_PRIVATE)
@@ -158,6 +164,15 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        toggleGroupArchiveTime.check(hashButton())
+        toggleGroupArchiveTime.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                GlobalUtils.autoArchiveTime = deHashButton(checkedId)
+                Log.d("GlobalUtils", "${deHashButton(checkedId)}")
+                GlobalUtils.writeConfigInSettings(this)
+            }
+        }
+
         val appVersionString = """
             <strong>Dealiner</strong> ${packageManager.getPackageInfo(packageName, 0).versionName}<br>
             By Author <strong>Aritx Zhou</strong>
@@ -167,6 +182,24 @@ class SettingsActivity : AppCompatActivity() {
         val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
         toolbar.setNavigationOnClickListener {
             finishAfterTransition() // 返回上一个界面
+        }
+    }
+
+    private fun hashButton() : Int {
+        when (GlobalUtils.autoArchiveTime) {
+            1 -> return R.id.button1Day
+            3 -> return R.id.button3Day
+            7 -> return R.id.button7Day
+            else -> throw Exception("Hash button Error")
+        }
+    }
+
+    private fun deHashButton(buttonId: Int): Int {
+        when (buttonId) {
+            R.id.button1Day -> return 1
+            R.id.button3Day -> return 3
+            R.id.button7Day -> return 7
+            else -> throw Exception("DeHash button Error")
         }
     }
 
