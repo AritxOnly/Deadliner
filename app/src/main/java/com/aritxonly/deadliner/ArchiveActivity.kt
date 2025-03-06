@@ -82,7 +82,7 @@ class ArchiveActivity : AppCompatActivity() {
                             val completeTime = parseDateTime(item.completeTime)
                             val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
                             Log.d("updateData", "remains $daysSinceCompletion days")
-                            daysSinceCompletion <= 7
+                            daysSinceCompletion <= GlobalUtils.autoArchiveTime
                         } catch (e: Exception) {
                             Log.e("updateData", "Error parsing date: ${item.completeTime}", e)
                             true

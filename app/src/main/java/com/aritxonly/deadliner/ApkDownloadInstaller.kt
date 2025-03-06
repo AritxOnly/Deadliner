@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.*
 import android.util.Log
 import android.view.LayoutInflater
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -74,6 +75,9 @@ class ApkDownloaderInstaller(private val context: AppCompatActivity) {
                 isDownloading = false
             }
             .show()
+
+        val installButton = progressDialog?.getButton(AlertDialog.BUTTON_POSITIVE)
+        installButton?.isClickable = false
     }
 
     /**
@@ -99,7 +103,8 @@ class ApkDownloaderInstaller(private val context: AppCompatActivity) {
                     if (status == DownloadManager.STATUS_SUCCESSFUL) {
                         isDownloading = false
                         Handler(Looper.getMainLooper()).post {
-//                            progressDialog?.dismiss()
+                            val installButton = progressDialog?.getButton(AlertDialog.BUTTON_POSITIVE)
+                            installButton?.isClickable = true
                             downloaded = true
                             // 如果广播未触发，则直接调用安装
                             installApk(apkFile)

@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.*
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -18,6 +19,8 @@ import android.text.Spanned
 import android.util.Log
 import android.util.TypedValue
 import android.view.GestureDetector
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnTouchListener
@@ -110,6 +113,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
         val mainPage: ConstraintLayout = findViewById(R.id.main)
         mainPage.setBackgroundColor(colorSurface)
+
+        GlobalUtils.readConfigInSettings(this)
 
         databaseHelper = DatabaseHelper.getInstance(applicationContext)
 
@@ -536,16 +541,20 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     // 显示更新提示对话框
     private fun showUpdateDialog(version: String, releaseNotes: Spanned, downloadUrl: String) {
-        MaterialAlertDialogBuilder(this)
-            .setIcon(R.drawable.ic_update)
-            .setTitle("发现新版本：$version")
+        val customTitleView = LayoutInflater.from(this).inflate(R.layout.custom_dialog_title, null)
+        customTitleView.findViewById<TextView>(R.id.dialogTitle).text = "发现新版本：$version"
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setCustomTitle(customTitleView)
             .setMessage(releaseNotes)
             .setPositiveButton("更新") { _, _ ->
-//                // 打开浏览器下载最新版本
-//                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
-//                startActivity(intent)
                 val downloaderInstaller = ApkDownloaderInstaller(this)
                 downloaderInstaller.downloadAndInstall(downloadUrl)
+            }
+            .setNeutralButton("下载") { _, _ ->
+                // 打开浏览器下载最新版本
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
+                startActivity(intent)
             }
             .setNegativeButton("稍后再说", null)
             .show()
