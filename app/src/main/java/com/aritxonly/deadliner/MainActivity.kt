@@ -498,7 +498,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         val localVersion = packageManager.getPackageInfo(packageName, 0).versionName
 
                         // 比较版本号
-//                        if (isNewVersionAvailable(localVersion, latestVersion)) {
+                        if (isNewVersionAvailable(localVersion, latestVersion)) {
                             runOnUiThread {
                                 downloadUrl?.let {
                                     showUpdateDialog(latestVersion, releaseNotes,
@@ -506,7 +506,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                     )
                                 }
                             }
-//                        }
+                        }
                     }
                 }
             }

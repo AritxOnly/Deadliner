@@ -18,6 +18,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.ViewConfigurationCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.get
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
@@ -35,6 +36,11 @@ class ArchiveActivity : AppCompatActivity() {
     private lateinit var adapter: ArchiveAdapter
     private lateinit var databaseHelper: DatabaseHelper
 
+    private lateinit var rootView: ConstraintLayout
+    private var initialY = 0f
+    private var isDragging = false
+
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         window.requestFeature(Window.FEATURE_ACTIVITY_TRANSITIONS)
 
@@ -93,6 +99,71 @@ class ArchiveActivity : AppCompatActivity() {
                     finishAfterTransition()
                 }.setNegativeButton(resources.getString(R.string.cancel), null)
                 .show()
+        }
+
+        rootView = findViewById(R.id.main)
+
+        // 给 RecyclerView 设置触摸监听
+        archiveRecyclerView.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    initialY = event.rawY
+                    isDragging = false
+                    // 不拦截 ACTION_DOWN，让 RecyclerView 也能响应
+                    false
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    // 判断 RecyclerView 是否在顶部
+                    val atTop = !archiveRecyclerView.canScrollVertically(-1)
+                    val deltaY = event.rawY - initialY
+                    if (!atTop) {
+                        // RecyclerView 没有滚动到顶部，允许正常滚动
+                        isDragging = false
+                        false
+                    } else {
+                        // RecyclerView 在顶部
+                        if (!isDragging && deltaY > GlobalUtils.dpToPx(15f, this)) {
+                            isDragging = true
+                        }
+                        if (isDragging) {
+                            // 拦截事件，更新根布局的 translationY 和透明度
+                            rootView.translationY = deltaY
+                            rootView.alpha = 1 - (deltaY / rootView.height).coerceAtMost(0.5f)
+                            true  // 消费事件，RecyclerView 不再处理
+                        } else {
+                            // 没达到拦截阈值，不拦截，让 RecyclerView 处理可能的 overscroll
+                            false
+                        }
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (isDragging) {
+                        val deltaY = event.rawY - initialY
+                        if (deltaY > rootView.height * 0.4f) {
+                            // 超过 40% 的拖动距离，执行退出动画并 finish
+                            rootView.animate()
+                                .translationY(rootView.height.toFloat())
+                                .alpha(0f)
+                                .setDuration(200)
+                                .withEndAction {
+                                    finishAfterTransition()
+                                }
+                                .start()
+                        } else {
+                            // 恢复原状
+                            rootView.animate()
+                                .translationY(0f)
+                                .alpha(1f)
+                                .setDuration(200)
+                                .start()
+                        }
+                        true  // 拦截 ACTION_UP
+                    } else {
+                        false
+                    }
+                }
+                else -> false
+            }
         }
     }
 

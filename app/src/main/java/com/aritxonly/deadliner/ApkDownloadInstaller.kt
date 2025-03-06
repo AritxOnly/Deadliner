@@ -24,6 +24,7 @@ class ApkDownloaderInstaller(private val context: AppCompatActivity) {
     private lateinit var progressBar: ProgressBar
     private lateinit var progressText: TextView
     private var isDownloading = true
+    private var downloaded = false
 
     /**
      * 下载并安装 APK
@@ -34,25 +35,27 @@ class ApkDownloaderInstaller(private val context: AppCompatActivity) {
         // 删除旧的 APK
         if (apkFile.exists()) apkFile.delete()
 
+        registerDownloadReceiver(apkFile)
+
         val request = DownloadManager.Request(Uri.parse(apkUrl)).apply {
             setTitle("正在下载更新")
             setDescription("请稍候...")
-            setDestinationUri(Uri.fromFile(apkFile))
+            // 使用 setDestinationInExternalFilesDir() 替代 setDestinationUri(Uri.fromFile(apkFile))
+            setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, apkName)
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             setMimeType("application/vnd.android.package-archive")
             setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
         }
 
         downloadId = downloadManager.enqueue(request)
-        showProgressDialog()
-        monitorDownloadProgress()
-        registerDownloadReceiver(apkFile)
+        showProgressDialog(apkFile)
+        monitorDownloadProgress(apkFile)
     }
 
     /**
      * 显示下载进度条对话框
      */
-    private fun showProgressDialog() {
+    private fun showProgressDialog(apkFile: File) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_progress, null)
         progressBar = dialogView.findViewById(R.id.downloadProgressBar)
         progressText = dialogView.findViewById(R.id.downloadProgressText)
@@ -61,6 +64,11 @@ class ApkDownloaderInstaller(private val context: AppCompatActivity) {
             .setTitle("下载更新")
             .setView(dialogView)
             .setCancelable(false)
+            .setPositiveButton("安装") { _, _ ->
+                if (downloaded) {
+                    installApk(apkFile)
+                }
+            }
             .setNegativeButton("取消") { _, _ ->
                 downloadManager.remove(downloadId)
                 isDownloading = false
@@ -71,17 +79,15 @@ class ApkDownloaderInstaller(private val context: AppCompatActivity) {
     /**
      * 监听下载进度
      */
-    private fun monitorDownloadProgress() {
+    private fun monitorDownloadProgress(apkFile: File) {
         Thread {
             while (isDownloading) {
                 val query = DownloadManager.Query().setFilterById(downloadId)
                 val cursor: Cursor = downloadManager.query(query)
                 if (cursor.moveToFirst()) {
-                    val bytesDownloaded =
-                        cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
-                    val totalBytes =
-                        cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
-
+                    val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                    val bytesDownloaded = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                    val totalBytes = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
                     if (totalBytes > 0) {
                         val progress = (bytesDownloaded * 100L / totalBytes).toInt()
                         Handler(Looper.getMainLooper()).post {
@@ -89,9 +95,19 @@ class ApkDownloaderInstaller(private val context: AppCompatActivity) {
                             progressText.text = "下载进度: $progress%"
                         }
                     }
+                    // 当状态为成功时调用安装逻辑
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                        isDownloading = false
+                        Handler(Looper.getMainLooper()).post {
+//                            progressDialog?.dismiss()
+                            downloaded = true
+                            // 如果广播未触发，则直接调用安装
+                            installApk(apkFile)
+                        }
+                    }
                 }
                 cursor.close()
-                Thread.sleep(500) // 每 500ms 更新一次进度
+                Thread.sleep(500)
             }
         }.start()
     }
@@ -104,19 +120,22 @@ class ApkDownloaderInstaller(private val context: AppCompatActivity) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+                Log.d("Downloader", "Received broadcast, id: $id, downloadId: $downloadId")
                 if (id == downloadId) {
                     isDownloading = false
                     progressDialog?.dismiss()
+                    // 使用 applicationContext 取消注册 receiver
                     context.unregisterReceiver(this)
                     installApk(apkFile)
                 }
             }
         }
 
+        val intentFilter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_NOT_EXPORTED)
+            context.applicationContext.registerReceiver(receiver, intentFilter, Context.RECEIVER_NOT_EXPORTED)
         } else {
-            context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+            context.applicationContext.registerReceiver(receiver, intentFilter)
         }
     }
 

@@ -83,7 +83,7 @@ class ArchiveAdapter(
 
             try {
                 val completeTime = parseDateTime(item.completeTime)
-                val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
+                val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toSeconds()
                 daysSinceCompletion <= 7
             } catch (e: Exception) {
                 true
