@@ -64,25 +64,6 @@ class CustomAdapter(
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_layout, parent, false)
         return ViewHolder(view)
     }
-    
-    // 尝试解析时间字符串的函数
-    fun parseDateTime(dateTimeString: String): LocalDateTime {
-        val formatters = listOf(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
-        )
-
-        for (formatter in formatters) {
-            try {
-                return LocalDateTime.parse(dateTimeString, formatter)
-            } catch (e: Exception) {
-                // 尝试下一个格式
-            }
-        }
-        throw IllegalArgumentException("Invalid date format: $dateTimeString")
-    }
 
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -93,8 +74,8 @@ class CustomAdapter(
         val currentTime = LocalDateTime.now()
 
         // 将字符串时间转换为 LocalDateTime
-        val startTime = parseDateTime(item.startTime)
-        val endTime = parseDateTime(item.endTime)
+        val startTime = GlobalUtils.parseDateTime(item.startTime)
+        val endTime = GlobalUtils.parseDateTime(item.endTime)
 
         // 计算剩余时间
         val remainingDuration = Duration.between(currentTime, endTime)
@@ -176,7 +157,7 @@ class CustomAdapter(
                     "completeTime ${item.completeTime}")
             if (item.completeTime.isNotEmpty()) {
                 try {
-                    val completeTime = parseDateTime(item.completeTime)
+                    val completeTime = GlobalUtils.parseDateTime(item.completeTime)
                     val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
                     Log.d("updateData", "remains $daysSinceCompletion")
                     daysSinceCompletion <= GlobalUtils.autoArchiveTime
@@ -190,7 +171,7 @@ class CustomAdapter(
         }.sortedWith(
             compareBy<DDLItem> { it.isCompleted }
                 .thenBy {
-                    val endTime = parseDateTime(it.endTime)
+                    val endTime = GlobalUtils.parseDateTime(it.endTime)
                     val remainingMinutes = Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
                     remainingMinutes
                 }

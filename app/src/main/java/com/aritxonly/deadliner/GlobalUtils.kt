@@ -3,6 +3,8 @@ package com.aritxonly.deadliner
 import android.content.Context
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity.MODE_PRIVATE
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class GlobalUtils {
     // TODO: 保证代码的可复用性
@@ -25,6 +27,24 @@ class GlobalUtils {
 
         fun dpToPx(dp: Float, context: Context): Float {
             return dp * context.resources.displayMetrics.density
+        }
+
+        fun parseDateTime(dateTimeString: String): LocalDateTime {
+            val formatters = listOf(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+            )
+
+            for (formatter in formatters) {
+                try {
+                    return LocalDateTime.parse(dateTimeString, formatter)
+                } catch (e: Exception) {
+                    // 尝试下一个格式
+                }
+            }
+            throw IllegalArgumentException("Invalid date format: $dateTimeString")
         }
     }
 }

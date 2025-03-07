@@ -79,7 +79,7 @@ class ArchiveActivity : AppCompatActivity() {
                         if (!item.isCompleted) return@filterNot true
 
                         try {
-                            val completeTime = parseDateTime(item.completeTime)
+                            val completeTime = GlobalUtils.parseDateTime(item.completeTime)
                             val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
                             Log.d("updateData", "remains $daysSinceCompletion days")
                             daysSinceCompletion <= GlobalUtils.autoArchiveTime
@@ -182,22 +182,5 @@ class ArchiveActivity : AppCompatActivity() {
             window.enterTransition = slide // 进入动画
             window.exitTransition = fade   // 退出动画
         }
-    }
-
-    fun parseDateTime(dateTimeString: String): LocalDateTime {
-        val formatters = listOf(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
-        )
-
-        for (formatter in formatters) {
-            try {
-                return LocalDateTime.parse(dateTimeString, formatter)
-            } catch (e: Exception) {
-                // 尝试下一个格式
-            }
-        }
-        throw IllegalArgumentException("Invalid date format: $dateTimeString")
     }
 }

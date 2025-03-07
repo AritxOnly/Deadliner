@@ -32,7 +32,7 @@ class ArchiveAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = filteredItemList[position]
-        val endTime = parseDateTime(item.endTime)
+        val endTime = GlobalUtils.parseDateTime(item.endTime)
 
         holder.archiveTitleText.text = item.name
 
@@ -57,32 +57,13 @@ class ArchiveAdapter(
 
     override fun getItemCount(): Int = filteredItemList.size
 
-    // 解析日期时间
-    private fun parseDateTime(dateTimeString: String): LocalDateTime {
-        val formatters = listOf(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
-        )
-
-        for (formatter in formatters) {
-            try {
-                return LocalDateTime.parse(dateTimeString, formatter)
-            } catch (e: Exception) {
-                // 忽略错误，尝试下一个格式
-            }
-        }
-        throw IllegalArgumentException("Invalid date format: $dateTimeString")
-    }
-
     // 过滤列表，仅保留符合条件的项目
     private fun filterItems(itemList: List<DDLItem>): List<DDLItem> {
         return itemList.filterNot { item ->
             if (!item.isCompleted) return@filterNot true
 
             try {
-                val completeTime = parseDateTime(item.completeTime)
+                val completeTime = GlobalUtils.parseDateTime(item.completeTime)
                 val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
                 daysSinceCompletion <= GlobalUtils.autoArchiveTime
             } catch (e: Exception) {
