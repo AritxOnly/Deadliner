@@ -59,6 +59,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
+import javax.microedition.khronos.opengles.GL
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -72,7 +73,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var addDDLLauncher: ActivityResultLauncher<Intent>
     private lateinit var titleBar: TextView
     private lateinit var excitementText: TextView
-    private lateinit var sharedPreferences: SharedPreferences
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private lateinit var konfettiViewMain: KonfettiView
     private lateinit var finishNotice: LinearLayout
@@ -113,8 +113,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
         val mainPage: ConstraintLayout = findViewById(R.id.main)
         mainPage.setBackgroundColor(colorSurface)
-
-        GlobalUtils.readConfigInSettings(this)
 
         databaseHelper = DatabaseHelper.getInstance(applicationContext)
 
@@ -363,18 +361,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         titleBar = findViewById(R.id.titleBar)
         excitementText = findViewById(R.id.excitementText)
 
-        sharedPreferences = getSharedPreferences("app_settings", MODE_PRIVATE)
-
         // 获取变量
-        isFireworksAnimEnable = sharedPreferences.getBoolean("fireworks_anim", true)
+        isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
 
         // 检查鼓励语句开关状态
-        val isMotivationalQuotesEnabled = sharedPreferences.getBoolean("motivational_quotes", true)
-        updateTitleAndExcitementText(isMotivationalQuotesEnabled)
+        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
 
         // 设置通知定时任务
-        val isNotificationDeadlineEnabled = sharedPreferences.getBoolean("deadline_notification", false)
-        updateNotification(isNotificationDeadlineEnabled)
+        updateNotification(GlobalUtils.deadlineNotification)
 
         checkForUpdates()
     }
@@ -622,8 +616,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     * 震动效果📳
     */
     fun triggerVibration(context: Context, duration: Long = 100) {
-        val isVibrationOn = sharedPreferences.getBoolean("vibration", true)
-        if (!isVibrationOn) {
+        if (!GlobalUtils.vibration) {
             return
         }
 
@@ -691,11 +684,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     override fun onResume() {
         super.onResume()
-        val isMotivationalQuotesEnabled = sharedPreferences.getBoolean("motivational_quotes", true)
-        updateTitleAndExcitementText(isMotivationalQuotesEnabled)
-        val isNotificationDeadlineEnabled = sharedPreferences.getBoolean("deadline_notification", false)
-        updateNotification(isNotificationDeadlineEnabled)
-        isFireworksAnimEnable = sharedPreferences.getBoolean("fireworks_anim", true)
+        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+        updateNotification(GlobalUtils.deadlineNotification)
+        isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
         adapter.updateData(databaseHelper.getAllDDLs())
         decideShowEmptyNotice()
     }

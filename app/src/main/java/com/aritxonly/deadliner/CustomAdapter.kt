@@ -67,8 +67,7 @@ class CustomAdapter(
 
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val sharedPreferences = context.getSharedPreferences("app_settings", MODE_PRIVATE)
-        val direction = sharedPreferences.getBoolean("main_progress_dir", false)
+        val direction = GlobalUtils.progressDir
 
         val item = itemList[position]
         val currentTime = LocalDateTime.now()

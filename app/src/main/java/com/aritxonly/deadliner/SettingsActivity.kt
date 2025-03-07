@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings.Global
 import android.text.Html
 import android.util.Log
 import android.util.TypedValue
@@ -58,8 +59,6 @@ class SettingsActivity : AppCompatActivity() {
         // 设置状态栏和导航栏颜色
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
-        GlobalUtils.readConfigInSettings(this)
-
         // 初始化控件
         switchVibration = findViewById(R.id.switchVibration)
         switchProgressDir = findViewById(R.id.switchProgressDir)
@@ -75,44 +74,41 @@ class SettingsActivity : AppCompatActivity() {
         aboutCard = findViewById(R.id.aboutCard)
         toggleGroupArchiveTime = findViewById(R.id.toggleGroupArchiveTime)
 
-        // 加载保存的设置
-        val sharedPreferences = getSharedPreferences("app_settings", MODE_PRIVATE)
-
-        switchVibration.isChecked = sharedPreferences.getBoolean("vibration", true)
-        switchProgressDir.isChecked = sharedPreferences.getBoolean("main_progress_dir", false)
-        switchProgressWidget.isChecked = sharedPreferences.getBoolean("widget_progress_dir", false)
-        switchDeadlineNotification.isChecked = sharedPreferences.getBoolean("deadline_notification", false)
-        switchDailyStatsNotification.isChecked = sharedPreferences.getBoolean("daily_stats_notification", false)
-        switchMotivationalQuotes.isChecked = sharedPreferences.getBoolean("motivational_quotes", true)
-        switchFireworksOnFinish.isChecked = sharedPreferences.getBoolean("fireworks_anim", true)
+        switchVibration.isChecked = GlobalUtils.vibration
+        switchProgressDir.isChecked = GlobalUtils.progressDir
+        switchProgressWidget.isChecked = GlobalUtils.progressWidget
+        switchDeadlineNotification.isChecked = GlobalUtils.deadlineNotification
+        switchDailyStatsNotification.isChecked = GlobalUtils.dailyStatsNotification
+        switchMotivationalQuotes.isChecked = GlobalUtils.motivationalQuotes
+        switchFireworksOnFinish.isChecked = GlobalUtils.fireworksOnFinish
 
         // 监听开关状态变化并保存设置
         switchVibration.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit().putBoolean("vibration", isChecked).apply()
+            GlobalUtils.vibration = isChecked
         }
 
         switchProgressDir.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit().putBoolean("main_progress_dir", isChecked).apply()
+            GlobalUtils.progressDir = isChecked
         }
 
         switchProgressWidget.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit().putBoolean("widget_progress_dir", isChecked).apply()
+            GlobalUtils.progressWidget = isChecked
         }
 
         switchDeadlineNotification.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit().putBoolean("deadline_notification", isChecked).apply()
+            GlobalUtils.deadlineNotification = isChecked
         }
 
         switchDailyStatsNotification.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit().putBoolean("daily_stats_notification", isChecked).apply()
+            GlobalUtils.dailyStatsNotification = isChecked
         }
 
         switchMotivationalQuotes.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit().putBoolean("motivational_quotes", isChecked).apply()
+            GlobalUtils.motivationalQuotes = isChecked
         }
 
         switchFireworksOnFinish.setOnCheckedChangeListener { _, isChecked ->
-            sharedPreferences.edit().putBoolean("fireworks_anim", isChecked).apply()
+            GlobalUtils.fireworksOnFinish = isChecked
         }
 
         // 设置超链接按钮点击事件
@@ -135,7 +131,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         aboutCard.setOnClickListener {
-            if (sharedPreferences.getBoolean("first_run", true)) {
+            if (GlobalUtils.firstRun) {
                 Snackbar.make(
                     aboutCard,
                     "你已经设置了下次打开显示欢迎页面",
@@ -158,7 +154,7 @@ class SettingsActivity : AppCompatActivity() {
                         "下次打开Deadliner将显示欢迎页面",
                         Snackbar.LENGTH_SHORT
                     ).show()
-                    sharedPreferences.edit().putBoolean("first_run", true).apply()
+                    GlobalUtils.firstRun = true
                     resetTimes = 0
                 }
             }
@@ -169,7 +165,6 @@ class SettingsActivity : AppCompatActivity() {
             if (isChecked) {
                 GlobalUtils.autoArchiveTime = deHashButton(checkedId)
                 Log.d("GlobalUtils", "${deHashButton(checkedId)}")
-                GlobalUtils.writeConfigInSettings(this)
             }
         }
 

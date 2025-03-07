@@ -95,8 +95,7 @@ class IntroActivity : AppCompatActivity() {
         val konfettiView: KonfettiView = findViewById(R.id.konfetti_view)
         konfettiView.start(PartyPresets.explode())
 
-        val sharedPreferences = getSharedPreferences("app_settings", MODE_PRIVATE)
-        sharedPreferences.edit().putBoolean("first_run", false).apply()
+        GlobalUtils.firstRun = false
 
         // 延迟关闭当前 Activity，与动画同步
         Handler(Looper.getMainLooper()).postDelayed({
