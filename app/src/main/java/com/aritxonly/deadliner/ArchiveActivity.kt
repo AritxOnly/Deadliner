@@ -78,15 +78,7 @@ class ArchiveActivity : AppCompatActivity() {
                     val filteredList = itemList.filterNot { item ->
                         if (!item.isCompleted) return@filterNot true
 
-                        try {
-                            val completeTime = GlobalUtils.parseDateTime(item.completeTime)
-                            val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
-                            Log.d("updateData", "remains $daysSinceCompletion days")
-                            daysSinceCompletion <= GlobalUtils.autoArchiveTime
-                        } catch (e: Exception) {
-                            Log.e("updateData", "Error parsing date: ${item.completeTime}", e)
-                            true
-                        }
+                        GlobalUtils.filterArchived(item)
                     }
 
                     for (item in filteredList) {

@@ -62,13 +62,7 @@ class ArchiveAdapter(
         return itemList.filterNot { item ->
             if (!item.isCompleted) return@filterNot true
 
-            try {
-                val completeTime = GlobalUtils.parseDateTime(item.completeTime)
-                val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
-                daysSinceCompletion <= GlobalUtils.autoArchiveTime
-            } catch (e: Exception) {
-                true
-            }
+            GlobalUtils.filterArchived(item)
         }
     }
 

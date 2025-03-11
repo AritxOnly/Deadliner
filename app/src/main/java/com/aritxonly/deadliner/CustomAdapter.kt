@@ -29,6 +29,7 @@ class CustomAdapter(
         val remainingTimeText: TextView = itemView.findViewById(R.id.remainingTimeText)
         val progressBar: LinearProgressIndicator = itemView.findViewById(R.id.progressBar)
         val constraintLayout: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
+        val noteText: TextView = itemView.findViewById(R.id.noteText)
     }
 
     interface SwipeListener {
@@ -85,6 +86,7 @@ class CustomAdapter(
 
         // 设置标题
         holder.titleText.text = item.name
+        holder.noteText.text = item.note
 
         // 设置剩余时间显示
         holder.remainingTimeText.text = if (remainingMinutes >= 0) {
@@ -155,15 +157,7 @@ class CustomAdapter(
                     "name ${item.name}, " +
                     "completeTime ${item.completeTime}")
             if (item.completeTime.isNotEmpty()) {
-                try {
-                    val completeTime = GlobalUtils.parseDateTime(item.completeTime)
-                    val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
-                    Log.d("updateData", "remains $daysSinceCompletion")
-                    daysSinceCompletion <= GlobalUtils.autoArchiveTime
-                } catch (e: Exception) {
-                    Log.e("updateData", "Error parse")
-                    true // 如果解析失败，默认保留
-                }
+                GlobalUtils.filterArchived(item)
             } else {
                 true // 如果 completeTime 为空，保留该项目
             }

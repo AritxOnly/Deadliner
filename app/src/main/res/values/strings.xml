@@ -84,6 +84,7 @@
     <string name="unselected">请指定时间</string>
     <string name="end_time">结束时间</string>
     <string name="start_time">开始时间</string>
+    <string name="add_ddl_note">备注</string>
 
     <string name="clear_all">全部清除</string>
 </resources>

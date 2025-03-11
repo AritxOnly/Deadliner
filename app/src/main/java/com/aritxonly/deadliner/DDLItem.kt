@@ -8,5 +8,6 @@ data class DDLItem(
     val startTime: String,
     val endTime: String,
     var isCompleted: Boolean = false,
-    var completeTime: String = ""
+    var completeTime: String = "",
+    val note: String
 )

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -95,5 +96,15 @@ object GlobalUtils {
             }
         }
         throw IllegalArgumentException("Invalid date format: $dateTimeString")
+    }
+
+    fun filterArchived(item: DDLItem): Boolean {
+        try {
+            val completeTime = parseDateTime(item.completeTime)
+            val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
+            return daysSinceCompletion <= autoArchiveTime
+        } catch (e: Exception) {
+            return true // 如果解析失败，默认保留
+        }
     }
 }
