@@ -23,7 +23,7 @@ class DatabaseHelper private constructor(context: Context) :
         }
 
         private const val DATABASE_NAME = "deadliner.db"
-        private const val DATABASE_VERSION = 3
+        private const val DATABASE_VERSION = 4
         private const val TABLE_NAME = "ddl_items"
         private const val COLUMN_ID = "id"
         private const val COLUMN_NAME = "name"
@@ -32,6 +32,7 @@ class DatabaseHelper private constructor(context: Context) :
         private const val COLUMN_IS_COMPLETED = "is_completed"
         private const val COLUMN_COMPLETE_TIME = "complete_time"
         private const val COLUMN_NOTE = "note"
+        private const val COLUMN_IS_ARCHIVED = "is_archived"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -43,7 +44,8 @@ class DatabaseHelper private constructor(context: Context) :
                 $COLUMN_END_TIME TEXT NOT NULL,
                 $COLUMN_IS_COMPLETED INTEGER,
                 $COLUMN_COMPLETE_TIME TEXT NOT NULL,
-                $COLUMN_NOTE TEXT NOT NULL
+                $COLUMN_NOTE TEXT NOT NULL,
+                $COLUMN_IS_ARCHIVED INTEGER
             )
         """.trimIndent()
         db.execSQL(createTableQuery)
@@ -59,6 +61,10 @@ class DatabaseHelper private constructor(context: Context) :
             Log.d("DatabaseHelper", "Update DB to v3")
             db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_NOTE TEXT DEFAULT ''")
         }
+        if (oldVersion < 4) {
+            Log.d("DatabaseHelper", "Update DB to v4")
+            db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_IS_ARCHIVED INT DEFAULT 0")
+        }
 //        onCreate(db)
     }
 
@@ -72,6 +78,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_IS_COMPLETED, false)
             put(COLUMN_COMPLETE_TIME, "")
             put(COLUMN_NOTE, note)
+            put(COLUMN_IS_ARCHIVED, false)
         }
         return db.insert(TABLE_NAME, null, values)
     }
@@ -91,7 +98,13 @@ class DatabaseHelper private constructor(context: Context) :
                 val isCompleted = getInt(getColumnIndexOrThrow(COLUMN_IS_COMPLETED))
                 val completeTime = getString(getColumnIndexOrThrow(COLUMN_COMPLETE_TIME))
                 val note = getString(getColumnIndexOrThrow(COLUMN_NOTE))
-                ddlList.add(DDLItem(id, name, startTime, endTime, isCompleted.toBoolean(), completeTime, note))
+                val isArchived = getInt(getColumnIndexOrThrow(COLUMN_IS_ARCHIVED))
+                ddlList.add(
+                    DDLItem(
+                        id, name, startTime, endTime, isCompleted.toBoolean(),
+                        completeTime, note, isArchived.toBoolean()
+                    )
+                )
             }
             close()
         }
@@ -107,6 +120,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_IS_COMPLETED, item.isCompleted.toInt())
             put(COLUMN_COMPLETE_TIME, item.completeTime)
             put(COLUMN_NOTE, item.note)
+            put(COLUMN_IS_ARCHIVED, item.isArchived.toInt())
         }
         db.update(TABLE_NAME, values, "$COLUMN_ID = ?", arrayOf(item.id.toString()))
     }

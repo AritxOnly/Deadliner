@@ -77,8 +77,9 @@ class ArchiveActivity : AppCompatActivity() {
                     val itemList = databaseHelper.getAllDDLs()
                     val filteredList = itemList.filterNot { item ->
                         if (!item.isCompleted) return@filterNot true
-
-                        GlobalUtils.filterArchived(item)
+                        item.isArchived = (!GlobalUtils.filterArchived(item)) || item.isArchived
+                        databaseHelper.updateDDL(item)
+                        !item.isArchived
                     }
 
                     for (item in filteredList) {

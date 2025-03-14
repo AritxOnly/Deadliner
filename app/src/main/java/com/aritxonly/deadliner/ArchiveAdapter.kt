@@ -17,7 +17,7 @@ class ArchiveAdapter(
     private val context: Context
 ) : RecyclerView.Adapter<ArchiveAdapter.ViewHolder>() {
 
-    private var filteredItemList: List<DDLItem> = filterItems(itemList) // ✅ 初始化时就筛选
+    private var filteredItemList: List<DDLItem> = filterItems(itemList, context) // ✅ 初始化时就筛选
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val archiveTitleText: TextView = itemView.findViewById(R.id.archiveTitleText)
@@ -48,7 +48,7 @@ class ArchiveAdapter(
                     databaseHelper.deleteDDL(item.id)
 
                     // 重新获取数据 & 过滤
-                    updateData(databaseHelper.getAllDDLs())
+                    updateData(databaseHelper.getAllDDLs(), context)
                 }
                 .setNegativeButton("取消", null)
                 .show()
@@ -58,17 +58,20 @@ class ArchiveAdapter(
     override fun getItemCount(): Int = filteredItemList.size
 
     // 过滤列表，仅保留符合条件的项目
-    private fun filterItems(itemList: List<DDLItem>): List<DDLItem> {
+    private fun filterItems(itemList: List<DDLItem>, context: Context): List<DDLItem> {
+        val databaseHelper = DatabaseHelper.getInstance(context)
+
         return itemList.filterNot { item ->
             if (!item.isCompleted) return@filterNot true
-
-            GlobalUtils.filterArchived(item)
+            item.isArchived = (!GlobalUtils.filterArchived(item)) || item.isArchived
+            databaseHelper.updateDDL(item)
+            !item.isArchived
         }
     }
 
     // 更新数据并重新筛选
-    fun updateData(newItemList: List<DDLItem>) {
-        filteredItemList = filterItems(newItemList)
+    fun updateData(newItemList: List<DDLItem>, context: Context) {
+        filteredItemList = filterItems(newItemList, context)
         notifyDataSetChanged()
     }
 }

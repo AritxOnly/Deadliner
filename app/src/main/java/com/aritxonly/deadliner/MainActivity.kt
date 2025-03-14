@@ -135,7 +135,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         // 设置 RecyclerView
         adapter = CustomAdapter(itemList, this)
-        adapter.updateData(itemList)
+        adapter.updateData(itemList, this)
         adapter.setSwipeListener(this)
         // 设置单击监听器
         adapter.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
@@ -153,7 +153,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 val options = arrayOf(
                     resources.getString(R.string.alert_edit_modify),
                     resources.getString(R.string.alert_edit_delete),
-                    finishedString
+                    finishedString,
+                    resources.getString(R.string.alert_edit_archive)
                 )
 
                 // 显示竖排按钮的 MaterialAlertDialog
@@ -165,7 +166,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 // 修改操作
                                 val editDialog = EditDDLFragment(clickedItem) { updatedDDL ->
                                     databaseHelper.updateDDL(updatedDDL)
-                                    adapter.updateData(databaseHelper.getAllDDLs())
+                                    adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
                                 }
                                 editDialog.show(supportFragmentManager, "EditDDLFragment")
                                 pauseRefresh = false
@@ -183,11 +184,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                     .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
                                         val item = adapter.itemList[position]
                                         databaseHelper.deleteDDL(item.id)
-                                        adapter.updateData(databaseHelper.getAllDDLs())
+                                        adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
                                         Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                                         pauseRefresh = false
                                     }
                                     .show()
+                                decideShowEmptyNotice()
                             }
                             2 -> {
                                 // 标记为完成操作
@@ -200,7 +202,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                     ""
                                 }
                                 databaseHelper.updateDDL(item)
-                                adapter.updateData(databaseHelper.getAllDDLs())
+                                adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
                                 if (item.isCompleted) {
                                     Toast.makeText(
                                         this@MainActivity,
@@ -213,6 +215,20 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                         R.string.toast_definished,
                                         Toast.LENGTH_SHORT
                                     ).show()
+                                }
+                            }
+                            3 -> {
+                                val item = adapter.itemList[position]
+                                if (item.isCompleted) {
+                                    item.isArchived = true
+                                    databaseHelper.updateDDL(item)
+                                    adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        R.string.toast_archived,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    decideShowEmptyNotice()
                                 }
                             }
                         }
@@ -331,7 +347,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         addDDLLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
                 // 更新数据
-                adapter.updateData(databaseHelper.getAllDDLs())
+                adapter.updateData(databaseHelper.getAllDDLs(), this)
             }
         }
         // 添加新事件按钮
@@ -393,7 +409,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             val newData = withContext(Dispatchers.IO) {
                 databaseHelper.getAllDDLs()
             }
-            adapter.updateData(newData)
+            adapter.updateData(newData, this@MainActivity)
             swipeRefreshLayout.isRefreshing = false // 停止刷新动画
             decideShowEmptyNotice()
         }
@@ -560,7 +576,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         if (requestCode == REQUEST_CODE_ADD_DDL && resultCode == RESULT_OK) {
             // 刷新数据
-            adapter.updateData(databaseHelper.getAllDDLs())
+            adapter.updateData(databaseHelper.getAllDDLs(), this)
         }
 
         decideShowEmptyNotice()
@@ -575,7 +591,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             ""
         }
         databaseHelper.updateDDL(item)
-        adapter.updateData(databaseHelper.getAllDDLs())
+        adapter.updateData(databaseHelper.getAllDDLs(), this)
         if (item.isCompleted) {
             if (isFireworksAnimEnable) { konfettiViewMain.start(PartyPresets.festive()) }
             Toast.makeText(this, R.string.toast_finished, Toast.LENGTH_SHORT).show()
@@ -596,7 +612,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
                 val item = adapter.itemList[position]
                 databaseHelper.deleteDDL(item.id)
-                adapter.updateData(databaseHelper.getAllDDLs())
+                adapter.updateData(databaseHelper.getAllDDLs(), this)
                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                 decideShowEmptyNotice()
                 pauseRefresh = false
@@ -687,7 +703,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
         updateNotification(GlobalUtils.deadlineNotification)
         isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
-        adapter.updateData(databaseHelper.getAllDDLs())
+        adapter.updateData(databaseHelper.getAllDDLs(), this)
         decideShowEmptyNotice()
     }
 

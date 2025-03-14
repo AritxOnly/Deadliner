@@ -151,13 +151,17 @@ class CustomAdapter(
     }
 
     // 更新数据的方法，用于动态刷新 RecyclerView
-    fun updateData(newList: List<DDLItem>) {
+    fun updateData(newList: List<DDLItem>, context: Context) {
+        val databaseHelper = DatabaseHelper.getInstance(context)
         val filteredList = newList.filter { item ->
             Log.d("updateData", "item ${item.id}, " +
                     "name ${item.name}, " +
-                    "completeTime ${item.completeTime}")
+                    "completeTime ${item.completeTime}," +
+                    "isArchived ${item.isArchived}")
             if (item.completeTime.isNotEmpty()) {
-                GlobalUtils.filterArchived(item)
+                item.isArchived = (!GlobalUtils.filterArchived(item)) || item.isArchived
+                databaseHelper.updateDDL(item)
+                !item.isArchived
             } else {
                 true // 如果 completeTime 为空，保留该项目
             }

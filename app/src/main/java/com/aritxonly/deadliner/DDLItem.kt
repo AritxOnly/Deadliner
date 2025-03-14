@@ -9,5 +9,6 @@ data class DDLItem(
     val endTime: String,
     var isCompleted: Boolean = false,
     var completeTime: String = "",
-    val note: String
+    val note: String,
+    var isArchived: Boolean = false
 )
