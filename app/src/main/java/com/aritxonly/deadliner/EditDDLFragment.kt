@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.*
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.compose.material3.DatePickerDialog
@@ -29,6 +30,7 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
     private lateinit var endTimeCard: View
     private lateinit var startTimeContent: TextView
     private lateinit var endTimeContent: TextView
+    private lateinit var ddlNoteEditText: EditText
     private lateinit var saveButton: MaterialButton
     private lateinit var backButton: ImageButton
 
@@ -63,12 +65,14 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
         endTimeCard = view.findViewById(R.id.endTimeCard)
         startTimeContent = view.findViewById(R.id.startTimeContent)
         endTimeContent = view.findViewById(R.id.endTimeContent)
+        ddlNoteEditText = view.findViewById(R.id.ddlNoteEditText)
         saveButton = view.findViewById(R.id.saveButton)
         backButton = view.findViewById(R.id.backButton)
 
         ddlNameEditText.setText(ddlItem.name)
         startTimeContent.text = formatLocalDateTime(startTime)
         endTimeContent.text = formatLocalDateTime(endTime)
+        ddlNoteEditText.setText(ddlItem.note)
 
         // 设置沉浸式状态栏和导航栏
         val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
@@ -95,7 +99,8 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
             val updatedDDL = ddlItem.copy(
                 name = ddlNameEditText.text.toString(),
                 startTime = startTime.toString(),
-                endTime = endTime.toString()
+                endTime = endTime.toString(),
+                note = ddlNoteEditText.text.toString()
             )
             onUpdate(updatedDDL)
             dismiss()

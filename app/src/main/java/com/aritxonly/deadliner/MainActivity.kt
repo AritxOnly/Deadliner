@@ -59,6 +59,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
+import javax.microedition.khronos.opengles.GL
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -72,7 +73,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var addDDLLauncher: ActivityResultLauncher<Intent>
     private lateinit var titleBar: TextView
     private lateinit var excitementText: TextView
-    private lateinit var sharedPreferences: SharedPreferences
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private lateinit var konfettiViewMain: KonfettiView
     private lateinit var finishNotice: LinearLayout
@@ -114,8 +114,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val mainPage: ConstraintLayout = findViewById(R.id.main)
         mainPage.setBackgroundColor(colorSurface)
 
-        GlobalUtils.readConfigInSettings(this)
-
         databaseHelper = DatabaseHelper.getInstance(applicationContext)
 
         finishNotice = findViewById(R.id.finishNotice)
@@ -137,7 +135,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         // 设置 RecyclerView
         adapter = CustomAdapter(itemList, this)
-        adapter.updateData(itemList)
+        adapter.updateData(itemList, this)
         adapter.setSwipeListener(this)
         // 设置单击监听器
         adapter.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
@@ -155,7 +153,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 val options = arrayOf(
                     resources.getString(R.string.alert_edit_modify),
                     resources.getString(R.string.alert_edit_delete),
-                    finishedString
+                    finishedString,
+                    resources.getString(R.string.alert_edit_archive)
                 )
 
                 // 显示竖排按钮的 MaterialAlertDialog
@@ -167,7 +166,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 // 修改操作
                                 val editDialog = EditDDLFragment(clickedItem) { updatedDDL ->
                                     databaseHelper.updateDDL(updatedDDL)
-                                    adapter.updateData(databaseHelper.getAllDDLs())
+                                    adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
                                 }
                                 editDialog.show(supportFragmentManager, "EditDDLFragment")
                                 pauseRefresh = false
@@ -185,11 +184,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                     .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
                                         val item = adapter.itemList[position]
                                         databaseHelper.deleteDDL(item.id)
-                                        adapter.updateData(databaseHelper.getAllDDLs())
+                                        adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
                                         Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                                         pauseRefresh = false
                                     }
                                     .show()
+                                decideShowEmptyNotice()
                             }
                             2 -> {
                                 // 标记为完成操作
@@ -202,7 +202,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                     ""
                                 }
                                 databaseHelper.updateDDL(item)
-                                adapter.updateData(databaseHelper.getAllDDLs())
+                                adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
                                 if (item.isCompleted) {
                                     Toast.makeText(
                                         this@MainActivity,
@@ -215,6 +215,20 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                         R.string.toast_definished,
                                         Toast.LENGTH_SHORT
                                     ).show()
+                                }
+                            }
+                            3 -> {
+                                val item = adapter.itemList[position]
+                                if (item.isCompleted) {
+                                    item.isArchived = true
+                                    databaseHelper.updateDDL(item)
+                                    adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        R.string.toast_archived,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    decideShowEmptyNotice()
                                 }
                             }
                         }
@@ -333,7 +347,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         addDDLLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
                 // 更新数据
-                adapter.updateData(databaseHelper.getAllDDLs())
+                adapter.updateData(databaseHelper.getAllDDLs(), this)
             }
         }
         // 添加新事件按钮
@@ -363,18 +377,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         titleBar = findViewById(R.id.titleBar)
         excitementText = findViewById(R.id.excitementText)
 
-        sharedPreferences = getSharedPreferences("app_settings", MODE_PRIVATE)
-
         // 获取变量
-        isFireworksAnimEnable = sharedPreferences.getBoolean("fireworks_anim", true)
+        isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
 
         // 检查鼓励语句开关状态
-        val isMotivationalQuotesEnabled = sharedPreferences.getBoolean("motivational_quotes", true)
-        updateTitleAndExcitementText(isMotivationalQuotesEnabled)
+        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
 
         // 设置通知定时任务
-        val isNotificationDeadlineEnabled = sharedPreferences.getBoolean("deadline_notification", false)
-        updateNotification(isNotificationDeadlineEnabled)
+        updateNotification(GlobalUtils.deadlineNotification)
 
         checkForUpdates()
     }
@@ -399,7 +409,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             val newData = withContext(Dispatchers.IO) {
                 databaseHelper.getAllDDLs()
             }
-            adapter.updateData(newData)
+            adapter.updateData(newData, this@MainActivity)
             swipeRefreshLayout.isRefreshing = false // 停止刷新动画
             decideShowEmptyNotice()
         }
@@ -566,7 +576,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         if (requestCode == REQUEST_CODE_ADD_DDL && resultCode == RESULT_OK) {
             // 刷新数据
-            adapter.updateData(databaseHelper.getAllDDLs())
+            adapter.updateData(databaseHelper.getAllDDLs(), this)
         }
 
         decideShowEmptyNotice()
@@ -581,7 +591,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             ""
         }
         databaseHelper.updateDDL(item)
-        adapter.updateData(databaseHelper.getAllDDLs())
+        adapter.updateData(databaseHelper.getAllDDLs(), this)
         if (item.isCompleted) {
             if (isFireworksAnimEnable) { konfettiViewMain.start(PartyPresets.festive()) }
             Toast.makeText(this, R.string.toast_finished, Toast.LENGTH_SHORT).show()
@@ -602,7 +612,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
                 val item = adapter.itemList[position]
                 databaseHelper.deleteDDL(item.id)
-                adapter.updateData(databaseHelper.getAllDDLs())
+                adapter.updateData(databaseHelper.getAllDDLs(), this)
                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                 decideShowEmptyNotice()
                 pauseRefresh = false
@@ -622,8 +632,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     * 震动效果📳
     */
     fun triggerVibration(context: Context, duration: Long = 100) {
-        val isVibrationOn = sharedPreferences.getBoolean("vibration", true)
-        if (!isVibrationOn) {
+        if (!GlobalUtils.vibration) {
             return
         }
 
@@ -691,12 +700,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     override fun onResume() {
         super.onResume()
-        val isMotivationalQuotesEnabled = sharedPreferences.getBoolean("motivational_quotes", true)
-        updateTitleAndExcitementText(isMotivationalQuotesEnabled)
-        val isNotificationDeadlineEnabled = sharedPreferences.getBoolean("deadline_notification", false)
-        updateNotification(isNotificationDeadlineEnabled)
-        isFireworksAnimEnable = sharedPreferences.getBoolean("fireworks_anim", true)
-        adapter.updateData(databaseHelper.getAllDDLs())
+        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+        updateNotification(GlobalUtils.deadlineNotification)
+        isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
+        adapter.updateData(databaseHelper.getAllDDLs(), this)
         decideShowEmptyNotice()
     }
 

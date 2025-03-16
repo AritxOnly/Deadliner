@@ -7,8 +7,9 @@
     <string name="save">保存</string>
     <string name="alert_delete_title">删除Deadline</string>
     <string name="alert_delete_message">你确定要删除这个Deadline吗？</string>
-    <string name="cancel">取消</string>
+    🗃️
     <string name="accept">确定</string>
+    <string name="cancel">取消</string>
     <string name="toast_deletion">已删除1项Deadline❌</string>
     <string name="toast_finished">恭喜完成Deadline！🎉</string>
     <string name="alert_edit_title">操作Deadline</string>
@@ -16,7 +17,9 @@
     <string name="alert_edit_delete">删除</string>
     <string name="alert_edit_finished">完成</string>
     <string name="alert_edit_definish">撤销完成</string>
+    <string name="alert_edit_archive">归档</string>
     <string name="toast_definished">撤销完成Deadline...😭</string>
+    <string name="toast_archived">Deadline已归档！🗃️</string>
 
     <string name="settings_general">通用</string>
     <string name="settings_notification">通知</string>
@@ -84,6 +87,7 @@
     <string name="unselected">请指定时间</string>
     <string name="end_time">结束时间</string>
     <string name="start_time">开始时间</string>
+    <string name="add_ddl_note">备注</string>
 
     <string name="clear_all">全部清除</string>
 </resources>
