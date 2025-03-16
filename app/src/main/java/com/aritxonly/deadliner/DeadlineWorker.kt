@@ -23,7 +23,7 @@ class DeadlineWorker(context: Context, params: WorkerParameters) : CoroutineWork
         val now = LocalDateTime.now()
 
         for (ddl in allDDLs) {
-            val endTime = parseDateTime(ddl.endTime)
+            val endTime = GlobalUtils.parseDateTime(ddl.endTime)
             val remainingMinutes = Duration.between(now, endTime).toMinutes()
 
             if (remainingMinutes in 0..60 && !ddl.isCompleted) {
@@ -31,23 +31,5 @@ class DeadlineWorker(context: Context, params: WorkerParameters) : CoroutineWork
                 sendDeadlineNotification(context, ddl.name)
             }
         }
-    }
-
-    fun parseDateTime(dateTimeString: String): LocalDateTime {
-        val formatters = listOf(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
-        )
-
-        for (formatter in formatters) {
-            try {
-                return LocalDateTime.parse(dateTimeString, formatter)
-            } catch (e: Exception) {
-                // 尝试下一个格式
-            }
-        }
-        throw IllegalArgumentException("Invalid date format: $dateTimeString")
     }
 }

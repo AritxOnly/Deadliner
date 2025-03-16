@@ -17,7 +17,7 @@ class ArchiveAdapter(
     private val context: Context
 ) : RecyclerView.Adapter<ArchiveAdapter.ViewHolder>() {
 
-    private var filteredItemList: List<DDLItem> = filterItems(itemList) // ✅ 初始化时就筛选
+    private var filteredItemList: List<DDLItem> = filterItems(itemList, context) // ✅ 初始化时就筛选
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val archiveTitleText: TextView = itemView.findViewById(R.id.archiveTitleText)
@@ -32,7 +32,7 @@ class ArchiveAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = filteredItemList[position]
-        val endTime = parseDateTime(item.endTime)
+        val endTime = GlobalUtils.parseDateTime(item.endTime)
 
         holder.archiveTitleText.text = item.name
 
@@ -48,7 +48,7 @@ class ArchiveAdapter(
                     databaseHelper.deleteDDL(item.id)
 
                     // 重新获取数据 & 过滤
-                    updateData(databaseHelper.getAllDDLs())
+                    updateData(databaseHelper.getAllDDLs(), context)
                 }
                 .setNegativeButton("取消", null)
                 .show()
@@ -57,43 +57,21 @@ class ArchiveAdapter(
 
     override fun getItemCount(): Int = filteredItemList.size
 
-    // 解析日期时间
-    private fun parseDateTime(dateTimeString: String): LocalDateTime {
-        val formatters = listOf(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
-        )
-
-        for (formatter in formatters) {
-            try {
-                return LocalDateTime.parse(dateTimeString, formatter)
-            } catch (e: Exception) {
-                // 忽略错误，尝试下一个格式
-            }
-        }
-        throw IllegalArgumentException("Invalid date format: $dateTimeString")
-    }
-
     // 过滤列表，仅保留符合条件的项目
-    private fun filterItems(itemList: List<DDLItem>): List<DDLItem> {
+    private fun filterItems(itemList: List<DDLItem>, context: Context): List<DDLItem> {
+        val databaseHelper = DatabaseHelper.getInstance(context)
+
         return itemList.filterNot { item ->
             if (!item.isCompleted) return@filterNot true
-
-            try {
-                val completeTime = parseDateTime(item.completeTime)
-                val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
-                daysSinceCompletion <= GlobalUtils.autoArchiveTime
-            } catch (e: Exception) {
-                true
-            }
+            item.isArchived = (!GlobalUtils.filterArchived(item)) || item.isArchived
+            databaseHelper.updateDDL(item)
+            !item.isArchived
         }
     }
 
     // 更新数据并重新筛选
-    fun updateData(newItemList: List<DDLItem>) {
-        filteredItemList = filterItems(newItemList)
+    fun updateData(newItemList: List<DDLItem>, context: Context) {
+        filteredItemList = filterItems(newItemList, context)
         notifyDataSetChanged()
     }
 }

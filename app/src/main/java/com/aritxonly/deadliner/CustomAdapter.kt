@@ -29,6 +29,7 @@ class CustomAdapter(
         val remainingTimeText: TextView = itemView.findViewById(R.id.remainingTimeText)
         val progressBar: LinearProgressIndicator = itemView.findViewById(R.id.progressBar)
         val constraintLayout: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
+        val noteText: TextView = itemView.findViewById(R.id.noteText)
     }
 
     interface SwipeListener {
@@ -64,37 +65,17 @@ class CustomAdapter(
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_layout, parent, false)
         return ViewHolder(view)
     }
-    
-    // 尝试解析时间字符串的函数
-    fun parseDateTime(dateTimeString: String): LocalDateTime {
-        val formatters = listOf(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
-        )
-
-        for (formatter in formatters) {
-            try {
-                return LocalDateTime.parse(dateTimeString, formatter)
-            } catch (e: Exception) {
-                // 尝试下一个格式
-            }
-        }
-        throw IllegalArgumentException("Invalid date format: $dateTimeString")
-    }
 
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val sharedPreferences = context.getSharedPreferences("app_settings", MODE_PRIVATE)
-        val direction = sharedPreferences.getBoolean("main_progress_dir", false)
+        val direction = GlobalUtils.progressDir
 
         val item = itemList[position]
         val currentTime = LocalDateTime.now()
 
         // 将字符串时间转换为 LocalDateTime
-        val startTime = parseDateTime(item.startTime)
-        val endTime = parseDateTime(item.endTime)
+        val startTime = GlobalUtils.parseDateTime(item.startTime)
+        val endTime = GlobalUtils.parseDateTime(item.endTime)
 
         // 计算剩余时间
         val remainingDuration = Duration.between(currentTime, endTime)
@@ -105,6 +86,7 @@ class CustomAdapter(
 
         // 设置标题
         holder.titleText.text = item.name
+        holder.noteText.text = item.note
 
         // 设置剩余时间显示
         holder.remainingTimeText.text = if (remainingMinutes >= 0) {
@@ -169,28 +151,24 @@ class CustomAdapter(
     }
 
     // 更新数据的方法，用于动态刷新 RecyclerView
-    fun updateData(newList: List<DDLItem>) {
+    fun updateData(newList: List<DDLItem>, context: Context) {
+        val databaseHelper = DatabaseHelper.getInstance(context)
         val filteredList = newList.filter { item ->
             Log.d("updateData", "item ${item.id}, " +
                     "name ${item.name}, " +
-                    "completeTime ${item.completeTime}")
+                    "completeTime ${item.completeTime}," +
+                    "isArchived ${item.isArchived}")
             if (item.completeTime.isNotEmpty()) {
-                try {
-                    val completeTime = parseDateTime(item.completeTime)
-                    val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
-                    Log.d("updateData", "remains $daysSinceCompletion")
-                    daysSinceCompletion <= GlobalUtils.autoArchiveTime
-                } catch (e: Exception) {
-                    Log.e("updateData", "Error parse")
-                    true // 如果解析失败，默认保留
-                }
+                item.isArchived = (!GlobalUtils.filterArchived(item)) || item.isArchived
+                databaseHelper.updateDDL(item)
+                !item.isArchived
             } else {
                 true // 如果 completeTime 为空，保留该项目
             }
         }.sortedWith(
             compareBy<DDLItem> { it.isCompleted }
                 .thenBy {
-                    val endTime = parseDateTime(it.endTime)
+                    val endTime = GlobalUtils.parseDateTime(it.endTime)
                     val remainingMinutes = Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
                     remainingMinutes
                 }

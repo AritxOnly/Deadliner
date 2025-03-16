@@ -63,7 +63,7 @@
                 android:id="@+id/startTimeTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Start Time"
+                android:text="@string/start_time"
                 android:textSize="14sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -73,7 +73,7 @@
                 android:id="@+id/startTimeContent"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Not Selected"
+                android:text="@string/unselected"
                 android:textSize="16sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/startTimeTitle"
@@ -104,7 +104,7 @@
                 android:id="@+id/endTimeTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="End Time"
+                android:text="@string/end_time"
                 android:textSize="14sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -114,7 +114,7 @@
                 android:id="@+id/endTimeContent"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Not Selected"
+                android:text="@string/unselected"
                 android:textSize="16sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/endTimeTitle"
@@ -122,6 +122,27 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/ddlNoteLayout"
+        android:layout_width="0dp"
+        android:layout_height="128dp"
+        android:layout_marginTop="16dp"
+        android:hint="@string/add_ddl_note"
+        android:inputType="text"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusTopStart="12dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/endTimeCard">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/ddlNoteEditText"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="top|start"
+            android:inputType="text" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- 保存按钮 -->
     <com.google.android.material.button.MaterialButton

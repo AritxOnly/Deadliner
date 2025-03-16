@@ -35,6 +35,7 @@ class AddDDLActivity : AppCompatActivity() {
     private lateinit var ddlNameEditText: EditText
     private lateinit var startTimeCard: MaterialCardView
     private lateinit var endTimeCard: MaterialCardView
+    private lateinit var ddlNoteEditText: EditText
     private lateinit var saveButton: Button
     private lateinit var backButton: ImageButton
 
@@ -60,6 +61,7 @@ class AddDDLActivity : AppCompatActivity() {
         ddlNameEditText = findViewById(R.id.ddlNameEditText)
         startTimeCard = findViewById(R.id.startTimeCard) // MaterialCardView
         endTimeCard = findViewById(R.id.endTimeCard) // MaterialCardView
+        ddlNoteEditText = findViewById(R.id.ddlNoteEditText)
         saveButton = findViewById(R.id.saveButton)
         backButton = findViewById(R.id.backButton)
 
@@ -89,9 +91,10 @@ class AddDDLActivity : AppCompatActivity() {
         // 保存按钮点击事件
         saveButton.setOnClickListener {
             val ddlName = ddlNameEditText.text.toString()
+            val ddlNote = ddlNoteEditText.text.toString()
             if (ddlName.isNotBlank() && startTime != null && endTime != null) {
                 // 保存到数据库
-                databaseHelper.insertDDL(ddlName, startTime.toString(), endTime.toString())
+                databaseHelper.insertDDL(ddlName, startTime.toString(), endTime.toString(), ddlNote)
                 setResult(RESULT_OK)
                 finishAfterTransition() // 返回 MainActivity
             }

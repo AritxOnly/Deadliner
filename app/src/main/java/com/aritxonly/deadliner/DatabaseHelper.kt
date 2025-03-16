@@ -23,7 +23,7 @@ class DatabaseHelper private constructor(context: Context) :
         }
 
         private const val DATABASE_NAME = "deadliner.db"
-        private const val DATABASE_VERSION = 2
+        private const val DATABASE_VERSION = 4
         private const val TABLE_NAME = "ddl_items"
         private const val COLUMN_ID = "id"
         private const val COLUMN_NAME = "name"
@@ -31,6 +31,8 @@ class DatabaseHelper private constructor(context: Context) :
         private const val COLUMN_END_TIME = "end_time"
         private const val COLUMN_IS_COMPLETED = "is_completed"
         private const val COLUMN_COMPLETE_TIME = "complete_time"
+        private const val COLUMN_NOTE = "note"
+        private const val COLUMN_IS_ARCHIVED = "is_archived"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -41,7 +43,9 @@ class DatabaseHelper private constructor(context: Context) :
                 $COLUMN_START_TIME TEXT NOT NULL,
                 $COLUMN_END_TIME TEXT NOT NULL,
                 $COLUMN_IS_COMPLETED INTEGER,
-                $COLUMN_COMPLETE_TIME TEXT NOT NULL
+                $COLUMN_COMPLETE_TIME TEXT NOT NULL,
+                $COLUMN_NOTE TEXT NOT NULL,
+                $COLUMN_IS_ARCHIVED INTEGER
             )
         """.trimIndent()
         db.execSQL(createTableQuery)
@@ -53,11 +57,19 @@ class DatabaseHelper private constructor(context: Context) :
             Log.d("DatabaseHelper", "Am I here?")
             db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_COMPLETE_TIME TEXT DEFAULT ''")
         }
+        if (oldVersion < 3) {
+            Log.d("DatabaseHelper", "Update DB to v3")
+            db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_NOTE TEXT DEFAULT ''")
+        }
+        if (oldVersion < 4) {
+            Log.d("DatabaseHelper", "Update DB to v4")
+            db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_IS_ARCHIVED INT DEFAULT 0")
+        }
 //        onCreate(db)
     }
 
     // 插入 DDL 数据
-    fun insertDDL(name: String, startTime: String, endTime: String): Long {
+    fun insertDDL(name: String, startTime: String, endTime: String, note: String = ""): Long {
         val db = writableDatabase
         val values = ContentValues().apply {
             put(COLUMN_NAME, name)
@@ -65,6 +77,8 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_END_TIME, endTime)
             put(COLUMN_IS_COMPLETED, false)
             put(COLUMN_COMPLETE_TIME, "")
+            put(COLUMN_NOTE, note)
+            put(COLUMN_IS_ARCHIVED, false)
         }
         return db.insert(TABLE_NAME, null, values)
     }
@@ -83,7 +97,14 @@ class DatabaseHelper private constructor(context: Context) :
                 val endTime = getString(getColumnIndexOrThrow(COLUMN_END_TIME))
                 val isCompleted = getInt(getColumnIndexOrThrow(COLUMN_IS_COMPLETED))
                 val completeTime = getString(getColumnIndexOrThrow(COLUMN_COMPLETE_TIME))
-                ddlList.add(DDLItem(id, name, startTime, endTime, isCompleted.toBoolean(), completeTime))
+                val note = getString(getColumnIndexOrThrow(COLUMN_NOTE))
+                val isArchived = getInt(getColumnIndexOrThrow(COLUMN_IS_ARCHIVED))
+                ddlList.add(
+                    DDLItem(
+                        id, name, startTime, endTime, isCompleted.toBoolean(),
+                        completeTime, note, isArchived.toBoolean()
+                    )
+                )
             }
             close()
         }
@@ -98,6 +119,8 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_END_TIME, item.endTime)
             put(COLUMN_IS_COMPLETED, item.isCompleted.toInt())
             put(COLUMN_COMPLETE_TIME, item.completeTime)
+            put(COLUMN_NOTE, item.note)
+            put(COLUMN_IS_ARCHIVED, item.isArchived.toInt())
         }
         db.update(TABLE_NAME, values, "$COLUMN_ID = ?", arrayOf(item.id.toString()))
     }

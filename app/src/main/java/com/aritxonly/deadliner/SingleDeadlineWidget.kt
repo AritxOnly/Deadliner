@@ -38,25 +38,6 @@ class SingleDeadlineWidget : AppWidgetProvider() {
                          appWidgetId: Int) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
-
-        // 尝试解析时间字符串的函数
-        fun parseDateTime(dateTimeString: String): LocalDateTime {
-            val formatters = listOf(
-                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
-            )
-
-            for (formatter in formatters) {
-                try {
-                    return LocalDateTime.parse(dateTimeString, formatter)
-                } catch (e: Exception) {
-                    // 尝试下一个格式
-                }
-            }
-            throw IllegalArgumentException("Invalid date format: $dateTimeString")
-        }
     }
 }
 
@@ -99,8 +80,8 @@ internal fun updateAppWidget(
 
     val now = LocalDateTime.now()
     val parsedDDLs = allDDLs.map { ddl ->
-        val startTime = SingleDeadlineWidget.parseDateTime(ddl.startTime)
-        val endTime = SingleDeadlineWidget.parseDateTime(ddl.endTime)
+        val startTime = GlobalUtils.parseDateTime(ddl.startTime)
+        val endTime = GlobalUtils.parseDateTime(ddl.endTime)
         val remainingMillis = ChronoUnit.MILLIS.between(now, endTime)
         val isCompleted = ddl.isCompleted
         ParsedDDL(ddl, startTime, endTime, remainingMillis, isCompleted)
