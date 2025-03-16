@@ -164,7 +164,12 @@ internal fun updateAppWidget(
             "逾期" // 如果已过期或剩余时间为负数，则显示0.0h
         } else {
             val days: Double = remainingMillis.toDouble() / (3600000 * 24)
-            "%.1f".format(days) + "天" + " $progress%"
+            if (days < 1.0f) {
+                val hours: Double = remainingMillis.toDouble() / 3600000
+                "%.1f".format(hours) + "小时" + "$progress%"
+            } else {
+                "%.1f".format(days) + "天" + " $progress%"
+            }
         }
 
         showCount++
