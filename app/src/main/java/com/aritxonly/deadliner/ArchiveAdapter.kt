@@ -23,6 +23,7 @@ class ArchiveAdapter(
         val archiveTitleText: TextView = itemView.findViewById(R.id.archiveTitleText)
         val endingTimeText: TextView = itemView.findViewById(R.id.endingTimeText)
         val archiveDeleteButton: MaterialButton = itemView.findViewById(R.id.archiveDeleteButton)
+        val archiveNoteText: TextView = itemView.findViewById(R.id.archiveNoteText)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -35,9 +36,17 @@ class ArchiveAdapter(
         val endTime = GlobalUtils.parseDateTime(item.endTime)
 
         holder.archiveTitleText.text = item.name
+        holder.archiveNoteText.text = item.note
+
+        val displayFullContent = holder.archiveNoteText.text.isEmpty()
 
         val formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm")
-        holder.endingTimeText.text = endTime.format(formatter)
+        val formatterAlt = DateTimeFormatter.ofPattern("MM月dd日 HH:mm")
+        holder.endingTimeText.text = if (displayFullContent) {
+            endTime.format(formatter)
+        } else {
+            endTime.format(formatterAlt)
+        }
 
         val databaseHelper = DatabaseHelper.getInstance(context)
 

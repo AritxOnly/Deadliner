@@ -30,6 +30,7 @@ class CustomAdapter(
         val progressBar: LinearProgressIndicator = itemView.findViewById(R.id.progressBar)
         val constraintLayout: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
         val noteText: TextView = itemView.findViewById(R.id.noteText)
+        val remainingTimeTextAlt: TextView = itemView.findViewById(R.id.remainingTimeTextAlt)
     }
 
     interface SwipeListener {
@@ -88,11 +89,26 @@ class CustomAdapter(
         holder.titleText.text = item.name
         holder.noteText.text = item.note
 
-        // 设置剩余时间显示
-        holder.remainingTimeText.text = if (remainingMinutes >= 0) {
-            "${remainingMinutes / 60}小时${remainingMinutes % 60}分钟 到 DDL"
+        val displayFullContent: Boolean
+        val remainingTimeTextView: TextView = if (holder.noteText.text.isNotEmpty()) {
+            displayFullContent = false
+            holder.remainingTimeText.visibility = View.GONE
+            holder.remainingTimeTextAlt.visibility = View.VISIBLE
+            holder.remainingTimeTextAlt
         } else {
-            "DDL逾期！！！"
+            displayFullContent = true
+            holder.remainingTimeTextAlt.visibility = View.GONE
+            holder.remainingTimeText.visibility = View.VISIBLE
+            holder.remainingTimeText
+        }
+
+        // 设置剩余时间显示
+        remainingTimeTextView.text = if (remainingMinutes >= 0) {
+            if (displayFullContent) "${remainingMinutes / 60}小时${remainingMinutes % 60}分钟 到 DDL"
+            else "${remainingMinutes / 60}h${remainingMinutes % 60}m"
+        } else {
+            if (displayFullContent) "DDL逾期!!!"
+            else "已逾期"
         }
 
         // 计算并设置进度条进度，确保至少为 1

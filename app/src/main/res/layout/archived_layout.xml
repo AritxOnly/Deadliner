@@ -17,12 +17,16 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:layout_marginTop="12dp"
+        android:layout_marginEnd="36dp"
         android:text="DDL Sample"
         android:textColor="?attr/colorOnSurface"
         android:textSize="24sp"
         android:textStyle="bold"
+        android:ellipsize="end"
+        android:maxLines="1"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/archiveDeleteButton" />
 
     <TextView
         android:id="@+id/endingTimeText"
@@ -38,6 +42,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/archiveTitleText" />
 
+    <TextView
+        android:id="@+id/archiveNoteText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="12dp"
+        android:layout_marginEnd="12dp"
+        android:text="Note"
+        android:textColor="?attr/colorSecondary"
+        android:ellipsize="end"
+        android:maxLines="1"
+        app:layout_constraintStart_toEndOf="@id/endingTimeText"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/archiveTitleText"
+        app:layout_constraintEnd_toStartOf="@id/archiveDeleteButton" />
+    
     <com.google.android.material.button.MaterialButton
         android:id="@+id/archiveDeleteButton"
         android:layout_width="48dp"

@@ -147,7 +147,7 @@ internal fun updateAppWidget(
             val days: Double = remainingMillis.toDouble() / (3600000 * 24)
             if (days < 1.0f) {
                 val hours: Double = remainingMillis.toDouble() / 3600000
-                "%.1f".format(hours) + "小时" + "$progress%"
+                "%.1f".format(hours) + "小时" + " $progress%"
             } else {
                 "%.1f".format(days) + "天" + " $progress%"
             }
