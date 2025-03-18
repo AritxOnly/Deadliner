@@ -24,13 +24,53 @@ class CustomAdapter(
     private val context: Context
 ) : RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    var isMultiSelectMode = false
+    val selectedPositions = mutableSetOf<Int>()
+    var multiSelectListener: MultiSelectListener? = null
+
+    interface MultiSelectListener {
+        fun onSelectionChanged(selectedCount: Int)
+    }
+
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val titleText: TextView = itemView.findViewById(R.id.titleText)
         val remainingTimeText: TextView = itemView.findViewById(R.id.remainingTimeText)
         val progressBar: LinearProgressIndicator = itemView.findViewById(R.id.progressBar)
         val constraintLayout: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
         val noteText: TextView = itemView.findViewById(R.id.noteText)
         val remainingTimeTextAlt: TextView = itemView.findViewById(R.id.remainingTimeTextAlt)
+
+        init {
+            // 设置长按事件进入多选模式
+            itemView.setOnLongClickListener {
+                if (!isMultiSelectMode) {
+                    isMultiSelectMode = true
+                }
+                toggleSelection(adapterPosition)
+                multiSelectListener?.onSelectionChanged(selectedPositions.size)
+                true
+            }
+
+            // 普通点击：在多选模式下切换选中状态，否则调用原有点击逻辑
+            itemView.setOnClickListener {
+                if (isMultiSelectMode) {
+                    toggleSelection(adapterPosition)
+                    multiSelectListener?.onSelectionChanged(selectedPositions.size)
+                } else {
+                    // 正常的单击事件逻辑
+                    itemClickListener?.onItemClick(adapterPosition)
+                }
+            }
+        }
+    }
+
+    private fun toggleSelection(position: Int) {
+        if (selectedPositions.contains(position)) {
+            selectedPositions.remove(position)
+        } else {
+            selectedPositions.add(position)
+        }
+        notifyItemChanged(position)
     }
 
     interface SwipeListener {
@@ -126,10 +166,10 @@ class CustomAdapter(
             true
         )
 
-        // 绑定单击事件
-        holder.itemView.setOnClickListener {
-            itemClickListener?.onItemClick(position)
-        }
+//        // 绑定单击事件
+//        holder.itemView.setOnClickListener {
+//            itemClickListener?.onItemClick(position)
+//        }
 
         // 使用 getThemeColor 获取主题颜色
         val progressColor = getThemeColor(android.R.attr.colorPrimary)
@@ -152,6 +192,12 @@ class CustomAdapter(
             holder.constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
             holder.progressBar.setProgressCompat(100, true)
             holder.remainingTimeText.text = "DDL已完成🎉"
+            holder.remainingTimeTextAlt.text = "已完成"
+        }
+
+        /* v2.0 added: 只要被多选则更改颜色 */
+        if (selectedPositions.contains(position)) {
+            holder.constraintLayout.setBackgroundResource(R.drawable.item_background_selected)
         }
     }
 

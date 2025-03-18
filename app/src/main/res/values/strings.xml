@@ -10,7 +10,7 @@
     🗃️
     <string name="accept">确定</string>
     <string name="cancel">取消</string>
-    <string name="toast_deletion">已删除1项Deadline❌</string>
+    <string name="toast_deletion">已删除Deadline❌</string>
     <string name="toast_finished">恭喜完成Deadline！🎉</string>
     <string name="alert_edit_title">操作Deadline</string>
     <string name="alert_edit_modify">编辑</string>

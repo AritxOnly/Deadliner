@@ -3,23 +3,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/search"
-        android:icon="@drawable/ic_search"
-        android:title="搜索"
+        android:id="@+id/delete"
+        android:icon="@drawable/ic_delete"
+        android:title="删除"
         android:iconTint="?attr/colorControlNormal"
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/archive"
-        android:icon="@drawable/ic_archive"
+        android:id="@+id/done"
+        android:icon="@drawable/ic_done"
+        android:title="完成"
+        android:iconTint="?attr/colorControlNormal"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/archiving"
+        android:icon="@drawable/ic_archiving"
         android:title="归档"
-        android:iconTint="?attr/colorControlNormal"
-        app:showAsAction="ifRoom" />
-
-    <item
-        android:id="@+id/filter"
-        android:icon="@drawable/ic_filter"
-        android:title="过滤"
         android:iconTint="?attr/colorControlNormal"
         app:showAsAction="ifRoom" />
 

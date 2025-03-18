@@ -90,6 +90,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
      */
     /* v2.0 added */
     private lateinit var bottomAppBar: BottomAppBar
+    private lateinit var bottomUtilityBar: BottomAppBar
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
@@ -250,6 +251,19 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
         })
 
+        adapter.multiSelectListener = object : CustomAdapter.MultiSelectListener {
+            override fun onSelectionChanged(selectedCount: Int) {
+                bottomAppBar.performHide()
+                bottomUtilityBar.performShow()
+                // 当选中项为空时可以退出多选模式
+                if (selectedCount == 0) {
+                    adapter.isMultiSelectMode = false
+                    bottomAppBar.performShow()
+                    bottomUtilityBar.performHide()
+                }
+            }
+        }
+
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
@@ -389,6 +403,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         /* v2.0 added */
         bottomAppBar = findViewById(R.id.bottomAppBar)
+        bottomUtilityBar = findViewById(R.id.bottomUtilityBar)
+
         bottomAppBar.setOnClickListener {
 
         }
@@ -412,6 +428,92 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     true
                 }
 
+                else -> false
+            }
+        }
+
+        bottomUtilityBar.setOnClickListener {
+            // 修改操作
+            if (adapter.selectedPositions.isNotEmpty()) {
+                // 获取第一个选中的位置
+                val firstPosition = adapter.selectedPositions.first()
+                val clickedItem = adapter.itemList[firstPosition]
+                val editDialog = EditDDLFragment(clickedItem) { updatedDDL ->
+                    databaseHelper.updateDDL(updatedDDL)
+                    adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                    // 清除多选状态
+                    adapter.selectedPositions.clear()
+                    adapter.isMultiSelectMode = false
+                }
+                editDialog.show(supportFragmentManager, "EditDDLFragment")
+            } else {
+                Toast.makeText(this@MainActivity, "请先选择要修改的项目", Toast.LENGTH_SHORT).show()
+            }
+            pauseRefresh = false
+        }
+        bottomUtilityBar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.delete -> {
+                    if (adapter.selectedPositions.isNotEmpty()) {
+                        triggerVibration(this@MainActivity, 200)
+                        MaterialAlertDialogBuilder(this@MainActivity)
+                            .setTitle(R.string.alert_delete_title)
+                            .setMessage(R.string.alert_delete_message)
+                            .setNeutralButton(resources.getString(R.string.cancel)) { dialog, _ ->
+                                // 取消删除，刷新界面
+                                adapter.notifyDataSetChanged()
+                            }
+                            .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
+                                // 根据选中项进行删除，先复制列表防止修改集合时出错
+                                val positionsToDelete = adapter.selectedPositions.toList().sortedDescending()
+                                for (position in positionsToDelete) {
+                                    val item = adapter.itemList[position]
+                                    databaseHelper.deleteDDL(item.id)
+                                }
+                                adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                                Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
+                                // 清除多选状态
+                                adapter.selectedPositions.clear()
+                                adapter.isMultiSelectMode = false
+                                adapter.updateData(databaseHelper.getAllDDLs(), this)
+                                bottomUtilityBar.performHide()
+                                bottomAppBar.performShow()
+                            }
+                            .show()
+                        true
+                    } else {
+                        Toast.makeText(this@MainActivity, "请先选择要删除的项目", Toast.LENGTH_SHORT).show()
+                        false
+                    }
+                }
+                R.id.done -> {
+                    if (adapter.selectedPositions.isNotEmpty()) {
+                        triggerVibration(this@MainActivity, 100)
+                        val positionsToUpdate = adapter.selectedPositions.toList()
+                        for (position in positionsToUpdate) {
+                            val item = adapter.itemList[position]
+                            item.isCompleted = true
+                            item.completeTime = LocalDateTime.now().toString()
+                            databaseHelper.updateDDL(item)
+                        }
+                        adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                        Toast.makeText(this@MainActivity, R.string.toast_finished, Toast.LENGTH_SHORT).show()
+                        // 清除多选状态
+                        adapter.selectedPositions.clear()
+                        adapter.isMultiSelectMode = false
+                        adapter.updateData(databaseHelper.getAllDDLs(), this)
+                        bottomUtilityBar.performHide()
+                        bottomAppBar.performShow()
+                        true
+                    } else {
+                        Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
+                        false
+                    }
+                }
+                R.id.archiving -> {
+                    // TODO:
+                    true
+                }
                 else -> false
             }
         }

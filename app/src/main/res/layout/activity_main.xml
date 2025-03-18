@@ -94,8 +94,17 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        android:background="?attr/colorSurfaceContainer">
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.bottomappbar.BottomAppBar
+            android:id="@+id/bottomUtilityBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            app:backgroundTint="?attr/colorSurfaceContainer"
+            app:navigationIconTint="?attr/colorControlNormal"
+            app:navigationIcon="@drawable/ic_edit"
+            app:menu="@menu/bottom_utility_bar" />
 
         <com.google.android.material.bottomappbar.BottomAppBar
             android:id="@+id/bottomAppBar"
@@ -104,8 +113,8 @@
             android:layout_gravity="bottom"
             app:navigationIcon="@drawable/ic_menu"
             app:navigationIconTint="?attr/colorControlNormal"
-            style="@style/Widget.Material3.BottomAppBar"
-            app:menu="@menu/bottom_app_bar"/>
+            app:menu="@menu/bottom_app_bar"
+            app:backgroundTint="?attr/colorSurfaceContainer"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/addEvent"
