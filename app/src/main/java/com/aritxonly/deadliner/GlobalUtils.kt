@@ -4,9 +4,17 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.Date
 
 object GlobalUtils {
     private const val PREF_NAME = "app_settings"
@@ -106,5 +114,57 @@ object GlobalUtils {
         } catch (e: Exception) {
             return true // 如果解析失败，默认保留
         }
+    }
+
+    /**
+     * 显示日期和时间选择器
+     */
+    fun showDateTimePicker(fragmentManager: FragmentManager, onDateTimeSelected: (LocalDateTime) -> Unit ) {
+        val calendar = Calendar.getInstance()
+
+        // 创建日期选择器
+        val datePicker = MaterialDatePicker.Builder.datePicker()
+            .setSelection(MaterialDatePicker.todayInUtcMilliseconds())  // 设置默认日期
+            .build()
+
+        datePicker.addOnPositiveButtonClickListener { selectedDate ->
+            // 获取选择的日期（毫秒）
+            val selectedDateTime = LocalDateTime.ofInstant(
+                Date(selectedDate).toInstant(), ZoneId.systemDefault())
+
+            // 显示时间选择器
+            showTimePicker(fragmentManager, selectedDateTime, onDateTimeSelected)
+        }
+
+        // 显示日期选择器
+        datePicker.show(fragmentManager, datePicker.toString())
+    }
+
+    /**
+     * 显示时间选择器
+     */
+    private fun showTimePicker(fragmentManager: FragmentManager, selectedDateTime: LocalDateTime, onDateTimeSelected: (LocalDateTime) -> Unit ) {
+        val currentTime = LocalDateTime.now()
+
+        val timePicker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_24H)
+            .setHour(currentTime.hour) // 设置当前时间的小时
+            .setMinute(currentTime.minute) // 设置当前时间的分钟
+            .build()
+
+        timePicker.addOnPositiveButtonClickListener {
+            // 获取选择的时间
+            val hourOfDay = timePicker.hour
+            val minute = timePicker.minute
+
+            // 创建最终的 LocalDateTime
+            val finalDateTime = selectedDateTime.withHour(hourOfDay).withMinute(minute)
+
+            // 回调选中的日期时间
+            onDateTimeSelected(finalDateTime)
+        }
+
+        // 显示时间选择器
+        timePicker.show(fragmentManager, timePicker.toString())
     }
 }
