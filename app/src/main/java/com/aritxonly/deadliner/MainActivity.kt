@@ -6,9 +6,11 @@ import android.app.ActivityOptions
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.*
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
@@ -31,6 +33,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -44,9 +47,12 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.work.*
 import androidx.work.PeriodicWorkRequestBuilder
+import com.google.android.material.bottomappbar.BottomAppBar
 import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.shape.MaterialShapeDrawable
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.*
 import nl.dionsegijn.konfetti.xml.KonfettiView
@@ -55,6 +61,7 @@ import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.internal.toHexString
 import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
@@ -67,7 +74,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var addEventButton: FloatingActionButton
     private lateinit var settingsButton: ImageButton
-    private lateinit var archivedButton: ImageButton
     private val itemList = mutableListOf<DDLItem>()
     private lateinit var adapter: CustomAdapter
     private lateinit var addDDLLauncher: ActivityResultLauncher<Intent>
@@ -76,6 +82,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private lateinit var konfettiViewMain: KonfettiView
     private lateinit var finishNotice: LinearLayout
+
+    /**
+     * Note in v2.0 build:
+     *  archivedButton is now decrypted
+     *  all the button is now implemented in bottomAppBar
+     */
+    /* v2.0 added */
+    private lateinit var bottomAppBar: BottomAppBar
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
@@ -108,9 +122,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         // 获取主题中的 colorSurface 值
         val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
+        val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
 
         // 设置状态栏和导航栏颜色
-        setSystemBarColors(colorSurface, isLightColor(colorSurface))
+        setSystemBarColors(colorSurface, isLightColor(colorSurface), colorContainer)
         val mainPage: ConstraintLayout = findViewById(R.id.main)
         mainPage.setBackgroundColor(colorSurface)
 
@@ -121,7 +136,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         recyclerView = findViewById(R.id.recyclerView)
         addEventButton = findViewById(R.id.addEvent)
         settingsButton = findViewById(R.id.settingsButton)
-        archivedButton = findViewById(R.id.archivedButton)
 
         decideShowEmptyNotice()
 
@@ -131,7 +145,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         adapter.setSwipeListener(this)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
-
 
         // 设置 RecyclerView
         adapter = CustomAdapter(itemList, this)
@@ -362,18 +375,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             startActivity(intent)
         }
 
-        archivedButton.setOnClickListener {
-            Log.d("MainActivity", "Archive triggered")
-            val intent = Intent(this, ArchiveActivity::class.java)
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                val options = ActivityOptions.makeSceneTransitionAnimation(this).toBundle()
-                startActivity(intent, options)
-            } else {
-                startActivity(intent)
-            }
-        }
-
         titleBar = findViewById(R.id.titleBar)
         excitementText = findViewById(R.id.excitementText)
 
@@ -385,6 +386,35 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         // 设置通知定时任务
         updateNotification(GlobalUtils.deadlineNotification)
+
+        /* v2.0 added */
+        bottomAppBar = findViewById(R.id.bottomAppBar)
+        bottomAppBar.setOnClickListener {
+
+        }
+        bottomAppBar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.search -> {
+                    true
+                }
+                R.id.archive -> {
+                    val intent = Intent(this, ArchiveActivity::class.java)
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        val options = ActivityOptions.makeSceneTransitionAnimation(this).toBundle()
+                        startActivity(intent, options)
+                    } else {
+                        startActivity(intent)
+                    }
+                    true
+                }
+                R.id.filter -> {
+                    true
+                }
+
+                else -> false
+            }
+        }
 
         checkForUpdates()
     }
@@ -650,11 +680,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     /**
      * 设置状态栏和导航栏颜色及图标颜色
      */
-    private fun setSystemBarColors(color: Int, lightIcons: Boolean) {
+    private fun setSystemBarColors(color: Int, lightIcons: Boolean, colorNavigationBar: Int) {
         window.apply {
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             statusBarColor = color
-            navigationBarColor = color
+            navigationBarColor = colorNavigationBar
 
             // 设置状态栏图标颜色
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -685,7 +715,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private fun getThemeColor(attributeId: Int): Int {
         val typedValue = TypedValue()
         theme.resolveAttribute(attributeId, typedValue, true)
+        Log.d("ThemeColor", "getColor $attributeId: ${typedValue.data.toHexString()}")
         return typedValue.data
+    }
+
+    private fun getMaterialThemeColor(attributeId: Int): Int {
+        return MaterialColors.getColor(ContextWrapper(this), attributeId, Color.WHITE)
     }
 
     /**
