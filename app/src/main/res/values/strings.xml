@@ -92,5 +92,7 @@
     <string name="clear_all">全部清除</string>
 
     <string name="debug_textView">1111111111111111111111111111111111111111111111111</string>
+    <string name="title_activity_deadline_detail_fragment">DeadlineDetailFragment</string>
+    <string name="title_activity_deadline_detail">DeadlineDetailActivity</string>
 
 </resources>

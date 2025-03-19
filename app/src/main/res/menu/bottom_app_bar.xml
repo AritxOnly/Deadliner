@@ -3,16 +3,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/search"
-        android:icon="@drawable/ic_search"
-        android:title="搜索"
+        android:id="@+id/archive"
+        android:icon="@drawable/ic_archive"
+        android:title="归档"
         android:iconTint="?attr/colorControlNormal"
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/archive"
-        android:icon="@drawable/ic_archive"
-        android:title="归档"
+        android:id="@+id/chart"
+        android:icon="@drawable/ic_chart"
+        android:title="概览"
         android:iconTint="?attr/colorControlNormal"
         app:showAsAction="ifRoom" />
 

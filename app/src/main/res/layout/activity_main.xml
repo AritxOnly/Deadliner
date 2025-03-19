@@ -94,7 +94,8 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        android:background="?attr/colorSurfaceContainer">
 
         <com.google.android.material.bottomappbar.BottomAppBar
             android:id="@+id/bottomUtilityBar"
@@ -103,15 +104,16 @@
             android:layout_gravity="bottom"
             app:backgroundTint="?attr/colorSurfaceContainer"
             app:navigationIconTint="?attr/colorControlNormal"
-            app:navigationIcon="@drawable/ic_edit"
-            app:menu="@menu/bottom_utility_bar" />
+            app:navigationIcon="@drawable/ic_uback"
+            app:menu="@menu/bottom_utility_bar"/>
 
         <com.google.android.material.bottomappbar.BottomAppBar
             android:id="@+id/bottomAppBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            app:navigationIcon="@drawable/ic_menu"
+            app:navigationIcon="@drawable/ic_search"
+            app:navigationContentDescription="搜索"
             app:navigationIconTint="?attr/colorControlNormal"
             app:menu="@menu/bottom_app_bar"
             app:backgroundTint="?attr/colorSurfaceContainer"/>
