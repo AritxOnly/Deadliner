@@ -17,7 +17,9 @@ import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.text.Editable
 import android.text.Spanned
+import android.text.TextWatcher
 import android.util.Log
 import android.util.TypedValue
 import android.view.GestureDetector
@@ -29,6 +31,7 @@ import android.view.View.OnTouchListener
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.inputmethod.EditorInfo
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -41,6 +44,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.doOnLayout
+import androidx.core.view.postDelayed
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -52,7 +57,10 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.search.SearchView
 import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.*
 import nl.dionsegijn.konfetti.xml.KonfettiView
@@ -91,6 +99,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     /* v2.0 added */
     private lateinit var bottomAppBar: BottomAppBar
     private lateinit var bottomUtilityBar: BottomAppBar
+
+    private lateinit var searchInputLayout: TextInputLayout
+    private lateinit var searchEditText: TextInputEditText
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
@@ -216,6 +227,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                if (adapter.isMultiSelectMode) {
+                    adapter.notifyItemChanged(viewHolder.adapterPosition)
+                    return
+                }
                 when (direction) {
                     ItemTouchHelper.LEFT -> {
                         triggerVibration(this@MainActivity, 200)
@@ -237,6 +252,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 actionState: Int,
                 isCurrentlyActive: Boolean
             ) {
+                if (adapter.isMultiSelectMode) {
+                    return
+                }
                 val itemView = viewHolder.itemView
                 val itemHeight = itemView.bottom - itemView.top
 
@@ -333,8 +351,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         bottomAppBar = findViewById(R.id.bottomAppBar)
         bottomUtilityBar = findViewById(R.id.bottomUtilityBar)
 
-        bottomAppBar.setOnClickListener {
+        bottomUtilityBar.postDelayed( {
+            bottomUtilityBar.performHide()
+        }, 100)  // bottomUtilityBar隐藏
 
+        bottomAppBar.setOnClickListener {
+            // 搜索
         }
         bottomAppBar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
@@ -388,12 +410,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 }
                                 adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
                                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
-                                // 清除多选状态
-                                adapter.selectedPositions.clear()
-                                adapter.isMultiSelectMode = false
-                                adapter.updateData(databaseHelper.getAllDDLs(), this)
-                                bottomUtilityBar.performHide()
-                                bottomAppBar.performShow()
+
+                                switchAppBarStatus(true)
+                                updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                             }
                             .show()
                         true
@@ -415,11 +434,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
                         Toast.makeText(this@MainActivity, R.string.toast_finished, Toast.LENGTH_SHORT).show()
                         // 清除多选状态
-                        adapter.selectedPositions.clear()
-                        adapter.isMultiSelectMode = false
-                        adapter.updateData(databaseHelper.getAllDDLs(), this)
-                        bottomUtilityBar.performHide()
-                        bottomAppBar.performShow()
+
+                        switchAppBarStatus(true)
+                        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                         true
                     } else {
                         Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
@@ -756,9 +773,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
         updateNotification(GlobalUtils.deadlineNotification)
         isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
-        adapter.isMultiSelectMode = false
-        adapter.selectedPositions.clear()
-        adapter.updateData(databaseHelper.getAllDDLs(), this)
+        switchAppBarStatus(true)
         decideShowEmptyNotice()
     }
 
@@ -800,6 +815,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 pauseRefresh = false
             }
         } else {
+            adapter.selectedPositions.clear()
             adapter.isMultiSelectMode = false
             adapter.updateData(databaseHelper.getAllDDLs(), this)
             bottomAppBar.performShow()

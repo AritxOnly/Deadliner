@@ -156,6 +156,7 @@ object GlobalUtils {
             .setTimeFormat(TimeFormat.CLOCK_24H)
             .setHour(currentTime.hour) // 设置当前时间的小时
             .setMinute(currentTime.minute) // 设置当前时间的分钟
+            .setInputMode(MaterialTimePicker.INPUT_MODE_CLOCK)  // 设置默认为dial模式
             .build()
 
         timePicker.addOnPositiveButtonClickListener {

@@ -95,4 +95,6 @@
     <string name="title_activity_deadline_detail_fragment">DeadlineDetailFragment</string>
     <string name="title_activity_deadline_detail">DeadlineDetailActivity</string>
 
+    <string name="search_hint">搜索Deadline</string>
+
 </resources>
