@@ -1,17 +1,13 @@
 package com.aritxonly.deadliner
 
 import ApkDownloaderInstaller
-import android.annotation.SuppressLint
 import android.app.ActivityOptions
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.content.SharedPreferences
 import android.graphics.*
-import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -22,34 +18,29 @@ import android.text.Spanned
 import android.text.TextWatcher
 import android.util.Log
 import android.util.TypedValue
-import android.view.GestureDetector
-import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
-import android.view.View.OnTouchListener
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
-import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.addCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
-import androidx.core.view.doOnLayout
-import androidx.core.view.postDelayed
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.transition.AutoTransition
+import androidx.transition.TransitionManager
 import androidx.work.*
 import androidx.work.PeriodicWorkRequestBuilder
 import com.google.android.material.bottomappbar.BottomAppBar
@@ -57,8 +48,6 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.search.SearchView
-import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.noties.markwon.Markwon
@@ -74,7 +63,6 @@ import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
-import javax.microedition.khronos.opengles.GL
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -99,15 +87,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     /* v2.0 added */
     private lateinit var bottomAppBar: BottomAppBar
     private lateinit var bottomUtilityBar: BottomAppBar
+    private lateinit var bottomBarContainer: CoordinatorLayout
 
     private lateinit var searchInputLayout: TextInputLayout
     private lateinit var searchEditText: TextInputEditText
+    private lateinit var searchOverlay: ConstraintLayout
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
-
-    var isBottomReached = false
-    val triggerThreshold = 100f.dp // 触发跳转的阈值（100dp）
 
     // 定义权限请求启动器
     private val requestPermissionLauncher = registerForActivityResult(
@@ -350,14 +337,43 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         /* v2.0 added */
         bottomAppBar = findViewById(R.id.bottomAppBar)
         bottomUtilityBar = findViewById(R.id.bottomUtilityBar)
+        bottomBarContainer = findViewById(R.id.bottomBarContainer)
 
-        bottomUtilityBar.postDelayed( {
+        bottomAppBar.postOnAnimation {
+            // 初始显示 bottomAppBar，隐藏 bottomUtilityBar
+            bottomAppBar.performShow()
             bottomUtilityBar.performHide()
-        }, 100)  // bottomUtilityBar隐藏
-
-        bottomAppBar.setOnClickListener {
-            // 搜索
         }
+
+        // 初始化新搜索控件（覆盖层）
+        searchOverlay = findViewById(R.id.searchOverlay)
+        searchInputLayout = findViewById(R.id.searchInputLayout)
+        searchEditText = findViewById(R.id.searchEditText)
+        bottomAppBar = findViewById(R.id.bottomAppBar)
+
+        // 底部 AppBar 的搜索图标点击事件：显示搜索覆盖层
+        bottomAppBar.setNavigationOnClickListener {
+            showSearchOverlay()
+        }
+
+        searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val query = s.toString().trim()
+                val filteredList = databaseHelper.getAllDDLs().filter { ddlItem ->
+                    ddlItem.name.contains(query, ignoreCase = true)
+                }
+                adapter.updateData(filteredList, this@MainActivity)
+            }
+        })
+
+        // 返回图标点击事件：隐藏搜索覆盖层
+        searchInputLayout.setStartIconOnClickListener {
+            searchEditText.text?.clear()
+            hideSearchOverlay()
+        }
+
         bottomAppBar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.chart -> {
@@ -448,6 +464,19 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     true
                 }
                 else -> false
+            }
+        }
+
+        onBackPressedDispatcher.addCallback {
+            if (searchOverlay.visibility == View.VISIBLE) {
+                hideSearchOverlay()
+            }
+            else if (adapter.isMultiSelectMode) {
+                switchAppBarStatus(true)
+                updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+            }
+            else {
+                return@addCallback
             }
         }
 
@@ -831,6 +860,29 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
         }
         currentAppBarIsPrimary = isPrimary
+    }
+
+    /**
+     * 显示搜索覆盖层并打开软键盘
+     */
+    private fun showSearchOverlay() {
+        TransitionManager.beginDelayedTransition(searchOverlay, AutoTransition())
+        searchOverlay.visibility = View.VISIBLE
+        searchEditText.requestFocus()
+        // 打开软键盘
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    /**
+     * 隐藏搜索覆盖层并关闭软键盘
+     */
+    private fun hideSearchOverlay() {
+        TransitionManager.beginDelayedTransition(searchOverlay, AutoTransition())
+        searchOverlay.visibility = View.GONE
+        // 隐藏软键盘
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(searchEditText.windowToken, 0)
     }
 }
 

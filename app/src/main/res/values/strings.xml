@@ -96,5 +96,7 @@
     <string name="title_activity_deadline_detail">DeadlineDetailActivity</string>
 
     <string name="search_hint">搜索Deadline</string>
+    <string name="back">返回</string>
+    <string name="add_edit_deadline">添加/编辑Deadline</string>
 
 </resources>

@@ -83,13 +83,12 @@
         android:layout_height="16dp"
         android:layout_gravity="bottom"
         android:background="@drawable/bottom_gradient"
-        app:layout_constraintBottom_toTopOf="@id/fabBottonContainer"
+        app:layout_constraintBottom_toTopOf="@id/bottomBarContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-
     <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:id="@+id/fabBottonContainer"
+        android:id="@+id/bottomBarContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -105,6 +104,7 @@
             app:backgroundTint="?attr/colorSurfaceContainer"
             app:navigationIconTint="?attr/colorControlNormal"
             app:navigationIcon="@drawable/ic_uback"
+            app:hideOnScroll="true"
             app:menu="@menu/bottom_utility_bar"/>
 
         <com.google.android.material.bottomappbar.BottomAppBar
@@ -122,13 +122,57 @@
             android:id="@+id/addEvent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:contentDescription="Add Event"
+            android:contentDescription="@string/add_edit_deadline"
             android:fadingEdge="none"
             android:src="@drawable/ic_add"
             app:backgroundTint="?attr/colorTertiaryContainer"
             app:layout_anchor="@id/bottomAppBar" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <!-- 搜索框 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/searchOverlay"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:background="?attr/colorSurface"
+        android:visibility="gone"
+        android:animateLayoutChanges="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/searchInputLayout"
+            style="@style/Widget.Material3.TextInputLayout.FilledBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:elevation="8dp"
+            app:boxBackgroundColor="?attr/colorSurfaceContainerHighest"
+            app:boxStrokeWidth="0dp"
+            app:boxStrokeWidthFocused="0dp"
+            app:boxCornerRadiusTopStart="@dimen/search_bar_radius"
+            app:boxCornerRadiusTopEnd="@dimen/search_bar_radius"
+            app:boxCornerRadiusBottomStart="@dimen/search_bar_radius"
+            app:boxCornerRadiusBottomEnd="@dimen/search_bar_radius"
+            app:startIconDrawable="@drawable/ic_back"
+            app:startIconContentDescription="@string/back"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/searchEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/search_hint"
+                android:maxLines="1"
+                android:imeOptions="actionSearch" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <nl.dionsegijn.konfetti.xml.KonfettiView
         android:id="@+id/konfettiViewMain"
