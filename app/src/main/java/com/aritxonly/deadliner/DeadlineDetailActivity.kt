@@ -85,8 +85,8 @@ class DeadlineDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val deadline = intent.getParcelableExtra<DDLItem>(EXTRA_DEADLINE)
-            ?: throw IllegalArgumentException("Missing Deadline parameter")
+        val initialDeadline = intent.getParcelableExtra<DDLItem>(EXTRA_DEADLINE)
+        ?: throw IllegalArgumentException("Missing Deadline parameter")
 
         val appColorScheme = intent.getParcelableExtra<AppColorScheme>("EXTRA_APP_COLOR_SCHEME")
             ?: throw IllegalArgumentException("Missing AppColorScheme")
@@ -97,11 +97,13 @@ class DeadlineDetailActivity : AppCompatActivity() {
 
         val databaseHelper = DatabaseHelper.getInstance(applicationContext)
 
+        val latestDeadline = databaseHelper.getDDLById(initialDeadline.id) ?: initialDeadline
+
         setContent {
             CustomDeadlinerTheme(
                 appColorScheme = appColorScheme
             ) {
-                var currentDeadline by remember { mutableStateOf(deadline) }
+                var currentDeadline by remember { mutableStateOf(latestDeadline) }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     DeadlineDetailScreen(
@@ -115,7 +117,11 @@ class DeadlineDetailActivity : AppCompatActivity() {
                             }
                             editDialog.show(supportFragmentManager, "EditDDLFragment")
                         },
-                        onToggleStar = {}
+                        onToggleStar = { isStared ->
+                            currentDeadline.isStared = isStared
+                            databaseHelper.updateDDL(currentDeadline)
+                            currentDeadline = databaseHelper.getDDLById(currentDeadline.id) ?: currentDeadline
+                        }
                     )
                 }
             }
@@ -169,9 +175,12 @@ fun DeadlineDetailScreen(
     deadline: DDLItem,
     onClose: () -> Unit,
     onEdit: () -> Unit,
-    onToggleStar: () -> Unit
+    onToggleStar: (Boolean) -> Unit
 ) {
     var waterLevel by remember { mutableStateOf(0f) }
+    var isStared by remember { mutableStateOf(deadline.isStared) }
+
+    Log.d("DetailPage", "DeadlineDetailScreen: $isStared")
 
     Scaffold(
         modifier = Modifier.background(Color(colorScheme.surface)),
@@ -195,11 +204,21 @@ fun DeadlineDetailScreen(
                             tint = Color(colorScheme.onSurface)
                         )
                     }
-                    IconButton(onClick = onToggleStar) {
+                    IconButton(onClick = {
+                        isStared = !isStared
+                        onToggleStar(isStared)
+                    }) {
+                        val iconStar = painterResource(
+                            if (isStared) R.drawable.ic_star_filled
+                            else R.drawable.ic_star
+                        )
+                        val tintColor = if (isStared)
+                            Color("ffffe819".hexToInt())
+                        else Color(colorScheme.onSurface)
                         Icon(
-                            painterResource(id = R.drawable.ic_star),
+                            iconStar,
                             contentDescription = "星标",
-                            tint = Color(colorScheme.onSurface)
+                            tint = tintColor
                         )
                     }
                 }

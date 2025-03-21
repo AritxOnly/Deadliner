@@ -62,6 +62,7 @@ import okhttp3.internal.toHexString
 import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
+import java.util.Dictionary
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
@@ -86,7 +87,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
      */
     /* v2.0 added */
     private lateinit var bottomAppBar: BottomAppBar
-    private lateinit var bottomUtilityBar: BottomAppBar
     private lateinit var bottomBarContainer: CoordinatorLayout
 
     private lateinit var searchInputLayout: TextInputLayout
@@ -106,7 +106,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             Toast.makeText(this, "通知权限被拒绝，请在设置中手动开启", Toast.LENGTH_SHORT).show()
         }
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 跟随主题色
@@ -336,14 +335,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         /* v2.0 added */
         bottomAppBar = findViewById(R.id.bottomAppBar)
-        bottomUtilityBar = findViewById(R.id.bottomUtilityBar)
         bottomBarContainer = findViewById(R.id.bottomBarContainer)
-
-        bottomAppBar.postOnAnimation {
-            // 初始显示 bottomAppBar，隐藏 bottomUtilityBar
-            bottomAppBar.performShow()
-            bottomUtilityBar.performHide()
-        }
 
         // 初始化新搜索控件（覆盖层）
         searchOverlay = findViewById(R.id.searchOverlay)
@@ -359,11 +351,40 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
             override fun afterTextChanged(s: Editable?) {
-                val query = s.toString().trim()
+                val filter = SearchFilter.parse(s.toString())
+
+                // 获取所有DDLItem，并根据条件过滤：
+                // 1. note或name中必须包含纯文本查询（不区分大小写）
+                // 2. 如果提供了时间过滤条件，则要求对应的开始时间或完成时间符合条件
                 val filteredList = databaseHelper.getAllDDLs().filter { ddlItem ->
-                    ddlItem.name.contains(query, ignoreCase = true)
+                    val matchesText = ddlItem.name.contains(filter.query, ignoreCase = true) ||
+                            ddlItem.note.contains(filter.query, ignoreCase = true)
+                    if (!matchesText) return@filter false
+
+                    // 尝试解析时间，解析失败时认为该条件不满足
+                    val startTime = try { GlobalUtils.parseDateTime(ddlItem.startTime) } catch (e: Exception) { null }
+                    val completeTime = try { GlobalUtils.parseDateTime(ddlItem.completeTime) } catch (e: Exception) { null }
+
+                    var timeMatch = true
+
+                    filter.year?.let { year ->
+                        timeMatch = timeMatch && ((startTime?.year == year) || (completeTime?.year == year))
+                    }
+                    filter.month?.let { month ->
+                        timeMatch = timeMatch && ((startTime?.monthValue == month) || (completeTime?.monthValue == month))
+                    }
+                    filter.day?.let { day ->
+                        timeMatch = timeMatch && ((startTime?.dayOfMonth == day) || (completeTime?.dayOfMonth == day))
+                    }
+                    filter.hour?.let { hour ->
+                        timeMatch = timeMatch && ((startTime?.hour == hour) || (completeTime?.hour == hour))
+                    }
+
+                    matchesText && timeMatch
                 }
+
                 adapter.updateData(filteredList, this@MainActivity)
             }
         })
@@ -393,20 +414,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 R.id.filter -> {
                     true
                 }
-
-                else -> false
-            }
-        }
-
-        bottomUtilityBar.setOnClickListener {
-            // 撤销多选
-            adapter.isMultiSelectMode = false
-            adapter.selectedPositions.clear()
-            adapter.updateData(databaseHelper.getAllDDLs(), this)
-            switchAppBarStatus(true)
-        }
-        bottomUtilityBar.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
                 R.id.delete -> {
                     if (adapter.selectedPositions.isNotEmpty()) {
                         triggerVibration(this@MainActivity, 200)
@@ -463,12 +470,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     // TODO:
                     true
                 }
+
                 else -> false
             }
         }
 
         onBackPressedDispatcher.addCallback {
             if (searchOverlay.visibility == View.VISIBLE) {
+                searchEditText.text?.clear()
                 hideSearchOverlay()
             }
             else if (adapter.isMultiSelectMode) {
@@ -803,11 +812,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         updateNotification(GlobalUtils.deadlineNotification)
         isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
         switchAppBarStatus(true)
+        adapter.updateData(databaseHelper.getAllDDLs(), this)
         decideShowEmptyNotice()
     }
 
     companion object {
         private const val REQUEST_CODE_ADD_DDL = 1
+        const val ANIMATION_DURATION = 160L
     }
 
     /* New to v2.0 */
@@ -817,13 +828,20 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         if (currentAppBarIsPrimary == isPrimary) return
 
         if (!isPrimary) {
-            bottomUtilityBar.performShow()
             bottomAppBar.performHide()
+
+            bottomAppBar.postDelayed({
+                bottomAppBar.replaceMenu(R.menu.bottom_utility_bar)
+                switchAppBarMenuStatus(false)
+                bottomAppBar.performShow()
+            }, ANIMATION_DURATION)
+
             addEventButton.animate().alpha(0f).setDuration(150).withEndAction {
                 // 切换图标
                 addEventButton.setImageResource(R.drawable.ic_edit)
                 addEventButton.animate().alpha(1f).setDuration(150).start()
             }.start()
+
             addEventButton.setOnClickListener {
                 // 修改操作
                 if (adapter.selectedPositions.isNotEmpty()) {
@@ -844,11 +862,18 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 pauseRefresh = false
             }
         } else {
+            bottomAppBar.performHide()
+
+            bottomAppBar.postDelayed({
+                bottomAppBar.replaceMenu(R.menu.bottom_app_bar)
+                switchAppBarMenuStatus(true)
+                bottomAppBar.performShow()
+            }, ANIMATION_DURATION)
+
             adapter.selectedPositions.clear()
             adapter.isMultiSelectMode = false
             adapter.updateData(databaseHelper.getAllDDLs(), this)
-            bottomAppBar.performShow()
-            bottomUtilityBar.performHide()
+
             addEventButton.animate().alpha(0f).setDuration(150).withEndAction {
                 // 切换图标
                 addEventButton.setImageResource(R.drawable.ic_add)
@@ -860,6 +885,24 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
         }
         currentAppBarIsPrimary = isPrimary
+    }
+
+    private fun switchAppBarMenuStatus(isPrimary: Boolean) {
+        if (!isPrimary) {
+            bottomAppBar.setNavigationIcon(R.drawable.ic_back)
+            bottomAppBar.setNavigationOnClickListener {
+                // 撤销多选
+                adapter.isMultiSelectMode = false
+                adapter.selectedPositions.clear()
+                adapter.updateData(databaseHelper.getAllDDLs(), this)
+                switchAppBarStatus(true)
+            }
+        } else {
+            bottomAppBar.setNavigationIcon(R.drawable.ic_search)
+            bottomAppBar.setNavigationOnClickListener {
+                showSearchOverlay()
+            }
+        }
     }
 
     /**

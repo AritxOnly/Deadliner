@@ -8,6 +8,7 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity.MODE_PRIVATE
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -39,6 +40,7 @@ class CustomAdapter(
         val constraintLayout: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
         val noteText: TextView = itemView.findViewById(R.id.noteText)
         val remainingTimeTextAlt: TextView = itemView.findViewById(R.id.remainingTimeTextAlt)
+        val starIcon: ImageView = itemView.findViewById(R.id.starIcon)
 
         init {
             // 设置长按事件进入多选模式
@@ -166,11 +168,6 @@ class CustomAdapter(
             true
         )
 
-//        // 绑定单击事件
-//        holder.itemView.setOnClickListener {
-//            itemClickListener?.onItemClick(position)
-//        }
-
         // 使用 getThemeColor 获取主题颜色
         val progressColor = getThemeColor(android.R.attr.colorPrimary)
         val progressNearbyColor = getThemeColor(android.R.attr.colorError)
@@ -198,6 +195,12 @@ class CustomAdapter(
         /* v2.0 added: 只要被多选则更改颜色 */
         if (selectedPositions.contains(position)) {
             holder.constraintLayout.setBackgroundResource(R.drawable.item_background_selected)
+        }
+
+        if (item.isStared) {
+            holder.starIcon.visibility = View.VISIBLE
+        } else {
+            holder.starIcon.visibility = View.GONE
         }
     }
 
@@ -229,6 +232,7 @@ class CustomAdapter(
             }
         }.sortedWith(
             compareBy<DDLItem> { it.isCompleted }
+                .thenBy { !it.isStared }
                 .thenBy {
                     val endTime = GlobalUtils.parseDateTime(it.endTime)
                     val remainingMinutes = Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()

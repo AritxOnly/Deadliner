@@ -12,5 +12,6 @@ data class DDLItem(
     var isCompleted: Boolean = false,
     var completeTime: String = "",
     val note: String,
-    var isArchived: Boolean = false
+    var isArchived: Boolean = false,
+    var isStared: Boolean = false
 ) : Parcelable

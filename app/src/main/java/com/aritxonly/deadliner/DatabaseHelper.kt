@@ -23,7 +23,7 @@ class DatabaseHelper private constructor(context: Context) :
         }
 
         private const val DATABASE_NAME = "deadliner.db"
-        private const val DATABASE_VERSION = 4
+        private const val DATABASE_VERSION = 5
         private const val TABLE_NAME = "ddl_items"
         private const val COLUMN_ID = "id"
         private const val COLUMN_NAME = "name"
@@ -33,6 +33,7 @@ class DatabaseHelper private constructor(context: Context) :
         private const val COLUMN_COMPLETE_TIME = "complete_time"
         private const val COLUMN_NOTE = "note"
         private const val COLUMN_IS_ARCHIVED = "is_archived"
+        private const val COLUMN_IS_STARED = "is_stared"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -46,6 +47,7 @@ class DatabaseHelper private constructor(context: Context) :
                 $COLUMN_COMPLETE_TIME TEXT NOT NULL,
                 $COLUMN_NOTE TEXT NOT NULL,
                 $COLUMN_IS_ARCHIVED INTEGER
+                $COLUMN_IS_STARED INTEGER
             )
         """.trimIndent()
         db.execSQL(createTableQuery)
@@ -65,7 +67,10 @@ class DatabaseHelper private constructor(context: Context) :
             Log.d("DatabaseHelper", "Update DB to v4")
             db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_IS_ARCHIVED INT DEFAULT 0")
         }
-//        onCreate(db)
+        if (oldVersion < 5) {
+            Log.d("DatabaseHelper", "Update DB to v5")
+            db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_IS_STARED INT DEFAULT 0")
+        }
     }
 
     // 插入 DDL 数据
@@ -79,6 +84,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_COMPLETE_TIME, "")
             put(COLUMN_NOTE, note)
             put(COLUMN_IS_ARCHIVED, false)
+            put(COLUMN_IS_STARED, false)
         }
         return db.insert(TABLE_NAME, null, values)
     }
@@ -99,16 +105,27 @@ class DatabaseHelper private constructor(context: Context) :
                 val completeTime = getString(getColumnIndexOrThrow(COLUMN_COMPLETE_TIME))
                 val note = getString(getColumnIndexOrThrow(COLUMN_NOTE))
                 val isArchived = getInt(getColumnIndexOrThrow(COLUMN_IS_ARCHIVED))
+                val isStared = getInt(getColumnIndexOrThrow(COLUMN_IS_STARED))
                 ddlList.add(
                     DDLItem(
                         id, name, startTime, endTime, isCompleted.toBoolean(),
-                        completeTime, note, isArchived.toBoolean()
+                        completeTime, note, isArchived.toBoolean(), isStared.toBoolean()
                     )
                 )
             }
             close()
         }
         return ddlList
+    }
+
+    fun getDDLById(id: Long): DDLItem? {
+        val ddlItems = getAllDDLs()
+        for (item in ddlItems) {
+            if (item.id == id) {
+                return item
+            }
+        }
+        return null
     }
 
     fun updateDDL(item: DDLItem) {
@@ -121,6 +138,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_COMPLETE_TIME, item.completeTime)
             put(COLUMN_NOTE, item.note)
             put(COLUMN_IS_ARCHIVED, item.isArchived.toInt())
+            put(COLUMN_IS_STARED, item.isStared.toInt())
         }
         db.update(TABLE_NAME, values, "$COLUMN_ID = ?", arrayOf(item.id.toString()))
     }
