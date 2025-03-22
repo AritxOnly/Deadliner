@@ -19,6 +19,7 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.microedition.khronos.opengles.GL
 
 class CustomAdapter(
     public var itemList: List<DDLItem>,
@@ -234,9 +235,30 @@ class CustomAdapter(
             compareBy<DDLItem> { it.isCompleted }
                 .thenBy { !it.isStared }
                 .thenBy {
-                    val endTime = GlobalUtils.parseDateTime(it.endTime)
-                    val remainingMinutes = Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
-                    remainingMinutes
+                    when (GlobalUtils.filterSelection) {
+                        1 -> {  // 按名称
+                            it.name
+                        }
+                        2 -> {  // 按开始时间
+                            GlobalUtils.parseDateTime(it.startTime)
+                        }
+                        3 -> {  // 按百分比
+                            val startTime = GlobalUtils.parseDateTime(it.startTime)
+                            val endTime = GlobalUtils.parseDateTime(it.endTime)
+                            val remainingMinutes =
+                                Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
+                            val fullTime =
+                                Duration.between(startTime, endTime).toMinutes().toInt()
+                            val progress = remainingMinutes.toFloat() / fullTime.toFloat()
+                            progress
+                        }
+                        else -> {
+                            val endTime = GlobalUtils.parseDateTime(it.endTime)
+                            val remainingMinutes =
+                                Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
+                            remainingMinutes
+                        }
+                    }
                 }
         )
 

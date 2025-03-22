@@ -99,4 +99,11 @@
     <string name="back">返回</string>
     <string name="add_edit_deadline">添加/编辑Deadline</string>
 
+    <string name="filter_dialog_title">排序方式</string>
+    <string name="filter_dialog_default">剩余时间(默认)</string>
+    <string name="filter_dialog_name">名称</string>
+    <string name="filter_dialog_start_time">开始时间</string>
+    <string name="filter_dialog_end_time">结束时间</string>
+    <string name="filter_dialog_elapse_time">项目进度</string>
+
 </resources>

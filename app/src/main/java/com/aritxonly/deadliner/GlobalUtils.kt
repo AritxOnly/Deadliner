@@ -86,6 +86,20 @@ object GlobalUtils {
             sharedPreferences.edit().putBoolean("first_run", value).apply()
         }
 
+    // v2.0 - filter功能
+    /**
+     * 映射表
+     * 0 - 默认（按剩余时间）
+     * 1 - 按名称
+     * 2 - 按开始时间
+     * 3 - 按百分比(进度)
+     */
+    var filterSelection: Int
+        get() = sharedPreferences.getInt("filter_selection", 0)
+        set(value) {
+            sharedPreferences.edit().putInt("filter_selection", value).apply()
+        }
+
     private fun loadSettings() {
         Log.d("GlobalUtils", "Settings loaded from SharedPreferences")
     }
@@ -174,4 +188,9 @@ object GlobalUtils {
         // 显示时间选择器
         timePicker.show(fragmentManager, timePicker.toString())
     }
+
+    /**
+     * v2.0新增
+     * 过滤功能相关API
+     */
 }

@@ -32,6 +32,7 @@ import androidx.activity.addCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.res.stringResource
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
@@ -412,6 +413,30 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     true
                 }
                 R.id.filter -> {
+                    val options = arrayOf(
+                        resources.getString(R.string.filter_dialog_default),
+                        resources.getString(R.string.filter_dialog_name),
+                        resources.getString(R.string.filter_dialog_start_time),
+                        resources.getString(R.string.filter_dialog_elapse_time)
+                    )
+                    var selectedItem = GlobalUtils.filterSelection
+
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle(R.string.filter_dialog_title)
+                        .setSingleChoiceItems(options, selectedItem) { dialog, which ->
+                            // 保存选中的项索引
+                            selectedItem = which
+                        }
+                        .setPositiveButton(R.string.accept) { dialog, which ->
+                            if (selectedItem != -1) {
+                                GlobalUtils.filterSelection = selectedItem
+                                adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                            } else {
+                                Toast.makeText(this, "未选择任何项", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .setNegativeButton(R.string.cancel, null)
+                        .show()
                     true
                 }
                 R.id.delete -> {
@@ -438,6 +463,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                             }
                             .show()
+
+                        decideShowEmptyNotice()
                         true
                     } else {
                         Toast.makeText(this@MainActivity, "请先选择要删除的项目", Toast.LENGTH_SHORT).show()
@@ -456,6 +483,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         }
                         adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
                         Toast.makeText(this@MainActivity, R.string.toast_finished, Toast.LENGTH_SHORT).show()
+
+                        decideShowEmptyNotice()
                         // 清除多选状态
 
                         switchAppBarStatus(true)
@@ -467,8 +496,33 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     }
                 }
                 R.id.archiving -> {
-                    // TODO:
-                    true
+                    if (adapter.selectedPositions.isNotEmpty()) {
+                        val positionsToUpdate = adapter.selectedPositions.toList()
+                        var count = 0
+                        for (position in positionsToUpdate) {
+                            val item = adapter.itemList[position]
+                            if (item.isCompleted) {
+                                item.isArchived = true
+                                databaseHelper.updateDDL(item)
+                                count++
+                            }
+                        }
+                        adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                        Toast.makeText(
+                            this@MainActivity,
+                            "$count 项" + resources.getString(R.string.toast_archived),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        decideShowEmptyNotice()
+                        // 清除多选状态
+
+                        switchAppBarStatus(true)
+                        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                        true
+                    } else {
+                        Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
+                        false
+                    }
                 }
 
                 else -> false
@@ -896,6 +950,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 adapter.selectedPositions.clear()
                 adapter.updateData(databaseHelper.getAllDDLs(), this)
                 switchAppBarStatus(true)
+                updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
             }
         } else {
             bottomAppBar.setNavigationIcon(R.drawable.ic_search)
