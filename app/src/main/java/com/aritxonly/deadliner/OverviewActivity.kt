@@ -49,6 +49,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -271,7 +272,7 @@ fun OverviewScreen(
                     ) {
                         Text(
                             text = "活动任务状态统计",
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                             color = Color(colorScheme.onSurface)
                         )
@@ -293,7 +294,7 @@ fun OverviewScreen(
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = value.toString(),
-                                        style = MaterialTheme.typography.headlineSmall,
+                                        style = MaterialTheme.typography.titleLarge,
                                         color = hashColor(key = key),
                                         fontWeight = FontWeight.Bold
                                     )
@@ -327,7 +328,7 @@ fun OverviewScreen(
                         .background(Color(colorScheme.surfaceContainer))) {
                         Text(
                             text = "任务完成时间段统计",
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                             color = Color(colorScheme.onSurface)
                         )
@@ -359,7 +360,7 @@ fun OverviewScreen(
                     ) {
                         Text(
                             text = "任务状态统计",
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                             color = Color(colorScheme.onSurface)
                         )
@@ -417,7 +418,8 @@ fun BarChartCompletionTimeStats(
                 .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = timeBucket, modifier = Modifier.width(48.dp), color = textColor)
+                Text(text = timeBucket, color = textColor)
+                Spacer(modifier = Modifier.width(16.dp))
                 Canvas(modifier = Modifier
                     .height(20.dp)
                     .weight(1f)) {
@@ -428,9 +430,8 @@ fun BarChartCompletionTimeStats(
                         cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    modifier = Modifier.width(24.dp),
                     text = count.toString(), color = textColor,
                     textAlign = TextAlign.Right
                 )

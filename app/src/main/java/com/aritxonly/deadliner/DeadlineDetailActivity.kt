@@ -26,9 +26,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -268,14 +270,14 @@ fun WaterCupAnimation(deadline: DDLItem,
     onWaterLevelChange(animatedWaterLevel)
 
     // 用于波浪动画，创建一个无限循环的动画变量，用于控制波浪水平位移（相位）
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "")
     val wavePhase by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 2 * PI.toFloat(),
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 2000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
-        )
+        ), label = ""
     )
 
     val color = Color(colorScheme.primary)
@@ -349,7 +351,7 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
     val currentBackground = lerp(containerColor, waterColor, waterLevel.coerceIn(0f, 1f))
 
     val textColor = if (isSystemInDarkTheme()) {
-        if (currentBackground.luminance() > 0.3f) {
+        if (currentBackground.luminance() > 0.7f) {
             Color(colorScheme.onPrimary)
         } else {
             Color(colorScheme.onSurface)
@@ -367,11 +369,14 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(text = deadline.name, style = MaterialTheme.typography.titleMedium, color = textColor)
+        Text(text = deadline.name, style = MaterialTheme.typography.headlineLarge, color = textColor)
+        Spacer(modifier = Modifier.height(16.dp))
         Text(text = "开始时间：${startTime.format(dateFormatter)}", style = MaterialTheme.typography.bodyMedium, color = textColor)
         Text(text = "结束时间：${endTime.format(dateFormatter)}", style = MaterialTheme.typography.bodyMedium, color = textColor)
         Text(text = "剩余时间：$remainingTimeText", style = MaterialTheme.typography.bodyMedium, color = textColor)
+        Spacer(modifier = Modifier.height(8.dp))
         Text(text = deadline.note, style = MaterialTheme.typography.bodyMedium, color = textColor)
+        Spacer(modifier = Modifier.height(40.dp))
     }
 }
 
