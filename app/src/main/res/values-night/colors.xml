@@ -11,4 +11,9 @@
     <color name="onSurface">#000000</color>
 
     <color name="progress_bg">#55DDDDDD</color> <!-- 适合暗色模式的颜色 -->
+
+    <color name="chart_red">#FFF77E66</color>
+    <color name="chart_green">#FFBFD1C4</color>
+    <color name="chart_orange">#FFFED59E</color>
+    <color name="chart_blue">#FFB3CAD8</color>
 </resources>

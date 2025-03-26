@@ -56,7 +56,7 @@
     <string name="add_widget">添加小组件</string>
     <string name="app_widget_description">主屏幕倒计时小组件</string>
     <string name="app_version">
-        <![CDATA[<strong>Dealiner</strong> v1.2.0.105<br>]]>
+        <![CDATA[<strong>Deadliner</strong> v1.2.0.105<br>]]>
         <![CDATA[By Author <strong>Aritx Zhou</strong>]]>
     </string>
 
@@ -105,5 +105,6 @@
     <string name="filter_dialog_start_time">开始时间</string>
     <string name="filter_dialog_end_time">结束时间</string>
     <string name="filter_dialog_elapse_time">项目进度</string>
+    <string name="title_activity_overview">OverviewActivity</string>
 
 </resources>

@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -57,6 +58,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.pm.ShortcutInfoCompat.Surface
 import androidx.fragment.app.FragmentActivity
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.google.android.material.color.DynamicColors
@@ -69,6 +71,7 @@ import kotlin.math.sin
 
 private lateinit var colorScheme: AppColorScheme
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 class DeadlineDetailActivity : AppCompatActivity() {
 
     companion object {
@@ -381,7 +384,9 @@ fun CustomDeadlinerTheme(
         primary = Color(appColorScheme.primary),
         onPrimary = Color(appColorScheme.onPrimary),
         primaryContainer = Color(appColorScheme.primaryContainer),
-        surface = Color(appColorScheme.surface)
+        surface = Color(appColorScheme.surface),
+        onSurface = Color(appColorScheme.onSurface),
+        surfaceContainer = Color(appColorScheme.surfaceContainer)
     )
     MaterialTheme(
         colorScheme = customColors,

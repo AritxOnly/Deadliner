@@ -20,11 +20,15 @@
         android:theme="@style/Theme.Deadliner"
         tools:targetApi="31">
         <activity
+            android:name=".OverviewActivity"
+            android:exported="false"
+            android:label="@string/title_activity_overview"
+            android:theme="@style/Theme.Deadliner" />
+        <activity
             android:name=".DeadlineDetailActivity"
             android:exported="false"
             android:label="@string/title_activity_deadline_detail"
             android:theme="@style/Theme.Deadliner" />
-
         <activity
             android:name=".ArchiveActivity"
             android:exported="false" />

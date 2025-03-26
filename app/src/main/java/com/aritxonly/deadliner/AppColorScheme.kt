@@ -9,5 +9,6 @@ data class AppColorScheme(
     val onPrimary: Int,
     val primaryContainer: Int,
     val surface: Int,
-    val onSurface: Int
+    val onSurface: Int,
+    val surfaceContainer: Int
 ) : Parcelable

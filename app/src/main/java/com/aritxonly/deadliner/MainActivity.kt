@@ -168,7 +168,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
                     primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
                     surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
-                    onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface)
+                    onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
+                    surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
                 )
 
                 val intent = DeadlineDetailActivity.newIntent(this@MainActivity, clickedItem).apply {
@@ -399,6 +400,19 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         bottomAppBar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.chart -> {
+                    val myColorScheme = AppColorScheme(
+                        primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
+                        onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                        primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
+                        surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
+                        onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
+                        surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainerLow)
+                    )
+                    Log.d("MainActivity", "surface=${myColorScheme.surface.toHexString()}")
+
+                    val intent = OverviewActivity.newIntent(this, myColorScheme)
+
+                    startActivity(intent)
                     true
                 }
                 R.id.archive -> {

@@ -16,5 +16,10 @@
 
     <color name="stared_yellow">#ffffe819</color>
 
+    <color name="chart_red">#FFF77E66</color>
+    <color name="chart_green">#FF82ABA3</color>
+    <color name="chart_orange">#FFFEC37D</color>
+    <color name="chart_blue">#FF97A5C0</color>
+
     <color name="progress_bg">#552C2C2C</color> <!-- 适合亮色模式的颜色 -->
 </resources>
