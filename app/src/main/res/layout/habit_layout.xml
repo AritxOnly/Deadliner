@@ -41,7 +41,6 @@
         app:layout_constraintEnd_toStartOf="@id/starIcon"
         app:layout_constraintTop_toTopOf="@id/titleText" />
 
-    <!-- 星标图标（保留原有功能） -->
     <ImageView
         android:id="@+id/starIcon"
         android:layout_width="wrap_content"

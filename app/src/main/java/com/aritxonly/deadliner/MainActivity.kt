@@ -149,13 +149,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         // 设置 RecyclerView
         val itemList = databaseHelper.getAllDDLs()
-        adapter = CustomAdapter(itemList, this)
+        adapter = CustomAdapter(itemList, this, viewModel)
         adapter.setSwipeListener(this)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
         // 设置 RecyclerView
-        adapter = CustomAdapter(itemList, this)
+        adapter = CustomAdapter(itemList, this, viewModel)
         viewModel.ddlList.observe(this) { items ->
             adapter.itemList = items
             adapter.notifyDataSetChanged()

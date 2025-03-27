@@ -16,7 +16,7 @@ class MainViewModel(
     val ddlList: LiveData<List<DDLItem>> = _ddlList
 
     // 当前筛选的 DeadlineType
-    private var currentType: DeadlineType = DeadlineType.TASK
+    var currentType: DeadlineType = DeadlineType.TASK
 
     private fun filterDataByList(ddlList: List<DDLItem>): List<DDLItem> {
         val filteredList = ddlList.filter { item ->
