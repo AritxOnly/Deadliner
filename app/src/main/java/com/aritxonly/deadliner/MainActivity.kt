@@ -32,7 +32,6 @@ import androidx.activity.addCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.ui.res.stringResource
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
@@ -49,6 +48,7 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.noties.markwon.Markwon
@@ -63,7 +63,6 @@ import okhttp3.internal.toHexString
 import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
-import java.util.Dictionary
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
@@ -96,6 +95,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
+
+    private var currentType = DeadlineType.TASK
 
     // 定义权限请求启动器
     private val requestPermissionLauncher = registerForActivityResult(
@@ -557,6 +558,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
         }
 
+        setupTabs()
+
         checkForUpdates()
     }
 
@@ -995,6 +998,25 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 隐藏软键盘
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(searchEditText.windowToken, 0)
+    }
+
+    private fun setupTabs() {
+        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
+        tabLayout.addTab(tabLayout.newTab().setText("任务"))
+        tabLayout.addTab(tabLayout.newTab().setText("习惯"))
+
+        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                currentType = when (tab?.position) {
+                    0 -> DeadlineType.TASK
+                    1 -> DeadlineType.HABIT
+                    else -> DeadlineType.TASK
+                }
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
     }
 }
 

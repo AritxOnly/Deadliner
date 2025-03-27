@@ -13,5 +13,7 @@ data class DDLItem(
     var completeTime: String = "",
     val note: String,
     var isArchived: Boolean = false,
-    var isStared: Boolean = false
+    var isStared: Boolean = false,
+    var type: DeadlineType = DeadlineType.TASK,
+    var habitCount: Int = 0
 ) : Parcelable

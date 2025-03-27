@@ -50,6 +50,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/titleBar" />
 
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/excitementText"
+        app:tabIndicatorColor="?attr/colorPrimary"
+        app:tabMode="fixed"
+        app:tabTextColor="?attr/colorOnSurface"
+        app:tabSelectedTextColor="?attr/colorPrimary"/>
+
     <!-- RecyclerView -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
@@ -57,13 +70,13 @@
         android:layout_height="0dp"
         android:layout_marginStart="8dp"
         android:layout_marginLeft="12dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="0dp"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/excitementText">
+        app:layout_constraintTop_toBottomOf="@id/tabLayout">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerView"

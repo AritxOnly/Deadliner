@@ -45,6 +45,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -182,7 +183,7 @@ fun DeadlineDetailScreen(
     onEdit: () -> Unit,
     onToggleStar: (Boolean) -> Unit
 ) {
-    var waterLevel by remember { mutableStateOf(0f) }
+    var waterLevel by remember { mutableFloatStateOf(0f) }
     var isStared by remember { mutableStateOf(deadline.isStared) }
 
     Log.d("DetailPage", "DeadlineDetailScreen: $isStared")
