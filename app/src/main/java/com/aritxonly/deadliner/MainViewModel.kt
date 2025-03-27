@@ -1,11 +1,11 @@
 package com.aritxonly.deadliner
 
+import android.util.Log
 import androidx.lifecycle.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class MainViewModel(
     private val dbHelper: DatabaseHelper
@@ -18,35 +18,98 @@ class MainViewModel(
     // 当前筛选的 DeadlineType
     private var currentType: DeadlineType = DeadlineType.TASK
 
+    private fun filterDataByList(ddlList: List<DDLItem>): List<DDLItem> {
+        val filteredList = ddlList.filter { item ->
+            Log.d("updateData", "item ${item.id}, " +
+                    "name ${item.name}, " +
+                    "completeTime ${item.completeTime}," +
+                    "isArchived ${item.isArchived}")
+            if (item.completeTime.isNotEmpty()) {
+                item.isArchived = (!GlobalUtils.filterArchived(item)) || item.isArchived
+                dbHelper.updateDDL(item)
+                !item.isArchived
+            } else {
+                true // 如果 completeTime 为空，保留该项目
+            }
+        }.sortedWith(
+            compareBy<DDLItem> { it.isCompleted }
+                .thenBy { !it.isStared }
+                .thenBy {
+                    when (GlobalUtils.filterSelection) {
+                        1 -> {  // 按名称
+                            it.name
+                        }
+                        2 -> {  // 按开始时间
+                            GlobalUtils.parseDateTime(it.startTime)
+                        }
+                        3 -> {  // 按百分比
+                            val startTime = GlobalUtils.parseDateTime(it.startTime)
+                            val endTime = GlobalUtils.parseDateTime(it.endTime)
+                            val remainingMinutes =
+                                Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
+                            val fullTime =
+                                Duration.between(startTime, endTime).toMinutes().toInt()
+                            val progress = remainingMinutes.toFloat() / fullTime.toFloat()
+                            progress
+                        }
+                        else -> {
+                            val endTime = GlobalUtils.parseDateTime(it.endTime)
+                            val remainingMinutes =
+                                Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
+                            remainingMinutes
+                        }
+                    }
+                }
+        )
+        return filteredList
+    }
+
     /**
      * 加载数据：调用 DatabaseHelper 根据 type 获取数据，
      * 再过滤（比如归档）、排序后更新 LiveData。
      * 如果 showArchived 为 false，则过滤掉已归档数据。
      */
-    fun loadData(type: DeadlineType, showArchived: Boolean = false) {
+    fun loadData(type: DeadlineType) {
         currentType = type
         viewModelScope.launch(Dispatchers.IO) {
-            // 根据类型获取数据（此 API 已经支持 type 筛选）
-            val rawData = dbHelper.getDDLsByType(type)
-            // 过滤归档数据（保留原有异常处理逻辑）
-            val filteredData = if (showArchived) rawData else filterArchived(rawData)
-            // 根据结束时间排序
-            val sortedData = sortItems(filteredData)
-            _ddlList.postValue(sortedData)
+            _ddlList.postValue(filterDataByList(dbHelper.getDDLsByType(type)))
         }
     }
 
-    /**
-     * 根据结束时间排序
-     */
-    fun sortItems(items: List<DDLItem>) = items.sortedBy { it.endTime }
+    // 获取所有DDLItem，并根据条件过滤：
+    // 1. note或name中必须包含纯文本查询（不区分大小写）
+    // 2. 如果提供了时间过滤条件，则要求对应的开始时间或完成时间符合条件
+    fun filterData(filter: SearchFilter, type: DeadlineType) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val filteredList = filterDataByList(dbHelper.getDDLsByType(type)).filter { ddlItem ->
+                // 文本匹配：检查 name 和 note 是否包含查询关键字
+                val matchesText = ddlItem.name.contains(filter.query, ignoreCase = true) ||
+                        ddlItem.note.contains(filter.query, ignoreCase = true)
+                if (!matchesText) return@filter false
 
-    /**
-     * 过滤归档数据：如果 item 的完成时间距离当前时间超过 autoArchiveDays，则认为需要归档
-     */
-    private fun filterArchived(items: List<DDLItem>): List<DDLItem> {
-        return items.filter { item ->
-            GlobalUtils.filterArchived(item)
+                // 尝试解析时间，解析失败时认为该条件不满足
+                val startTime = try { GlobalUtils.parseDateTime(ddlItem.startTime) } catch (e: Exception) { null }
+                val completeTime = try { GlobalUtils.parseDateTime(ddlItem.completeTime) } catch (e: Exception) { null }
+
+                var timeMatch = true
+
+                filter.year?.let { year ->
+                    timeMatch = timeMatch && ((startTime?.year == year) || (completeTime?.year == year))
+                }
+                filter.month?.let { month ->
+                    timeMatch = timeMatch && ((startTime?.monthValue == month) || (completeTime?.monthValue == month))
+                }
+                filter.day?.let { day ->
+                    timeMatch = timeMatch && ((startTime?.dayOfMonth == day) || (completeTime?.dayOfMonth == day))
+                }
+                filter.hour?.let { hour ->
+                    timeMatch = timeMatch && ((startTime?.hour == hour) || (completeTime?.hour == hour))
+                }
+
+                matchesText && timeMatch
+            }
+
+            _ddlList.postValue(filteredList)
         }
     }
 

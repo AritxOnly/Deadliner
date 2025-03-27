@@ -31,6 +31,7 @@ import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -98,6 +99,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private var currentType = DeadlineType.TASK
 
+    private val viewModel by viewModels<MainViewModel> {
+        ViewModelFactory(
+            context = this
+        )
+    }
+
     // 定义权限请求启动器
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -149,7 +156,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         // 设置 RecyclerView
         adapter = CustomAdapter(itemList, this)
-        adapter.updateData(itemList, this)
+        viewModel.ddlList.observe(this) { items ->
+            adapter.itemList = items
+            adapter.notifyDataSetChanged()
+        }
         adapter.setSwipeListener(this)
         // 设置单击监听器
         adapter.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
@@ -220,6 +230,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     adapter.notifyItemChanged(viewHolder.adapterPosition)
                     return
                 }
+
+                if (currentType == DeadlineType.HABIT) {
+                    return
+                }
+
                 when (direction) {
                     ItemTouchHelper.LEFT -> {
                         triggerVibration(this@MainActivity, 200)
@@ -241,7 +256,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 actionState: Int,
                 isCurrentlyActive: Boolean
             ) {
-                if (adapter.isMultiSelectMode) {
+                if (adapter.isMultiSelectMode || currentType == DeadlineType.HABIT) {
                     return
                 }
                 val itemView = viewHolder.itemView
@@ -309,7 +324,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         addDDLLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
                 // 更新数据
-                adapter.updateData(databaseHelper.getAllDDLs(), this)
+                viewModel.loadData(currentType)
+//                adapter.updateData(databaseHelper.getAllDDLs(), this)
             }
         }
         // 添加新事件按钮
@@ -358,43 +374,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             override fun afterTextChanged(s: Editable?) {
                 val filter = SearchFilter.parse(s.toString())
 
-                // 获取所有DDLItem，并根据条件过滤：
-                // 1. note或name中必须包含纯文本查询（不区分大小写）
-                // 2. 如果提供了时间过滤条件，则要求对应的开始时间或完成时间符合条件
-                val filteredList = databaseHelper.getAllDDLs().filter { ddlItem ->
-                    val matchesText = ddlItem.name.contains(filter.query, ignoreCase = true) ||
-                            ddlItem.note.contains(filter.query, ignoreCase = true)
-                    if (!matchesText) return@filter false
-
-                    // 尝试解析时间，解析失败时认为该条件不满足
-                    val startTime = try { GlobalUtils.parseDateTime(ddlItem.startTime) } catch (e: Exception) { null }
-                    val completeTime = try { GlobalUtils.parseDateTime(ddlItem.completeTime) } catch (e: Exception) { null }
-
-                    var timeMatch = true
-
-                    filter.year?.let { year ->
-                        timeMatch = timeMatch && ((startTime?.year == year) || (completeTime?.year == year))
-                    }
-                    filter.month?.let { month ->
-                        timeMatch = timeMatch && ((startTime?.monthValue == month) || (completeTime?.monthValue == month))
-                    }
-                    filter.day?.let { day ->
-                        timeMatch = timeMatch && ((startTime?.dayOfMonth == day) || (completeTime?.dayOfMonth == day))
-                    }
-                    filter.hour?.let { hour ->
-                        timeMatch = timeMatch && ((startTime?.hour == hour) || (completeTime?.hour == hour))
-                    }
-
-                    matchesText && timeMatch
-                }
-
-                adapter.updateData(filteredList, this@MainActivity)
+                viewModel.filterData(filter, currentType)
             }
         })
 
         // 返回图标点击事件：隐藏搜索覆盖层
         searchInputLayout.setStartIconOnClickListener {
             searchEditText.text?.clear()
+            viewModel.loadData(currentType)
             hideSearchOverlay()
         }
 
@@ -445,7 +432,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         .setPositiveButton(R.string.accept) { dialog, which ->
                             if (selectedItem != -1) {
                                 GlobalUtils.filterSelection = selectedItem
-                                adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                                viewModel.loadData(currentType)
                             } else {
                                 Toast.makeText(this, "未选择任何项", Toast.LENGTH_SHORT).show()
                             }
@@ -471,7 +458,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                     val item = adapter.itemList[position]
                                     databaseHelper.deleteDDL(item.id)
                                 }
-                                adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                                viewModel.loadData(currentType)
                                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
 
                                 switchAppBarStatus(true)
@@ -496,7 +483,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                             item.completeTime = LocalDateTime.now().toString()
                             databaseHelper.updateDDL(item)
                         }
-                        adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                        viewModel.loadData(currentType)
                         Toast.makeText(this@MainActivity, R.string.toast_finished, Toast.LENGTH_SHORT).show()
 
                         decideShowEmptyNotice()
@@ -522,7 +509,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 count++
                             }
                         }
-                        adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                        viewModel.loadData(currentType)
                         Toast.makeText(
                             this@MainActivity,
                             "$count 项" + resources.getString(R.string.toast_archived),
@@ -547,6 +534,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         onBackPressedDispatcher.addCallback {
             if (searchOverlay.visibility == View.VISIBLE) {
                 searchEditText.text?.clear()
+                viewModel.loadData(currentType)
                 hideSearchOverlay()
             }
             else if (adapter.isMultiSelectMode) {
@@ -578,15 +566,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     private fun refreshData() {
-        // 在后台线程获取数据，并在主线程更新 UI
-        CoroutineScope(Dispatchers.Main).launch {
-            val newData = withContext(Dispatchers.IO) {
-                databaseHelper.getAllDDLs()
-            }
-            adapter.updateData(newData, this@MainActivity)
-            swipeRefreshLayout.isRefreshing = false // 停止刷新动画
-            decideShowEmptyNotice()
-        }
+        viewModel.loadData(currentType)
+        swipeRefreshLayout.isRefreshing = false
+        decideShowEmptyNotice()
     }
 
     private fun updateTitleAndExcitementText(isEnabled: Boolean) {
@@ -750,7 +732,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         if (requestCode == REQUEST_CODE_ADD_DDL && resultCode == RESULT_OK) {
             // 刷新数据
-            adapter.updateData(databaseHelper.getAllDDLs(), this)
+            viewModel.loadData(currentType)
         }
 
         decideShowEmptyNotice()
@@ -765,7 +747,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             ""
         }
         databaseHelper.updateDDL(item)
-        adapter.updateData(databaseHelper.getAllDDLs(), this)
+        viewModel.loadData(currentType)
         if (item.isCompleted) {
             if (isFireworksAnimEnable) { konfettiViewMain.start(PartyPresets.festive()) }
             Toast.makeText(this, R.string.toast_finished, Toast.LENGTH_SHORT).show()
@@ -786,7 +768,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
                 val item = adapter.itemList[position]
                 databaseHelper.deleteDDL(item.id)
-                adapter.updateData(databaseHelper.getAllDDLs(), this)
+                viewModel.loadData(currentType)
                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                 decideShowEmptyNotice()
                 pauseRefresh = false
@@ -883,7 +865,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         updateNotification(GlobalUtils.deadlineNotification)
         isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
         switchAppBarStatus(true)
-        adapter.updateData(databaseHelper.getAllDDLs(), this)
+        viewModel.loadData(currentType)
         decideShowEmptyNotice()
     }
 
@@ -921,7 +903,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     val clickedItem = adapter.itemList[firstPosition]
                     val editDialog = EditDDLFragment(clickedItem) { updatedDDL ->
                         databaseHelper.updateDDL(updatedDDL)
-                        adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
+                        viewModel.loadData(currentType)
                         // 清除多选状态
                         adapter.selectedPositions.clear()
                         adapter.isMultiSelectMode = false
@@ -943,7 +925,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
             adapter.selectedPositions.clear()
             adapter.isMultiSelectMode = false
-            adapter.updateData(databaseHelper.getAllDDLs(), this)
+            viewModel.loadData(currentType)
 
             addEventButton.animate().alpha(0f).setDuration(150).withEndAction {
                 // 切换图标
@@ -965,7 +947,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 // 撤销多选
                 adapter.isMultiSelectMode = false
                 adapter.selectedPositions.clear()
-                adapter.updateData(databaseHelper.getAllDDLs(), this)
+                viewModel.loadData(currentType)
                 switchAppBarStatus(true)
                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
             }
@@ -1012,8 +994,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     1 -> DeadlineType.HABIT
                     else -> DeadlineType.TASK
                 }
+                viewModel.loadData(currentType)
             }
-
+            // 其他方法保持不变
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })

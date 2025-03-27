@@ -217,7 +217,7 @@ class CustomAdapter(
     }
 
     // 更新数据的方法，用于动态刷新 RecyclerView
-    fun updateData(newList: List<DDLItem>, context: Context) {
+    /*fun updateData(newList: List<DDLItem>, context: Context) {
         val databaseHelper = DatabaseHelper.getInstance(context)
         val filteredList = newList.filter { item ->
             Log.d("updateData", "item ${item.id}, " +
@@ -265,4 +265,5 @@ class CustomAdapter(
         itemList = filteredList
         notifyDataSetChanged()
     }
+    */
 }
