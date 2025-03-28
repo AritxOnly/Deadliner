@@ -73,6 +73,8 @@ class AddDDLActivity : AppCompatActivity() {
         // 设置状态栏和导航栏颜色
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
+        selectedPage = intent.getIntExtra("EXTRA_CURRENT_TYPE", 0)
+
         databaseHelper = DatabaseHelper.getInstance(applicationContext)
         ddlNameEditText = findViewById(R.id.ddlNameEditText)
         startTimeCard = findViewById(R.id.startTimeCard) // MaterialCardView
@@ -164,6 +166,9 @@ class AddDDLActivity : AppCompatActivity() {
             finishAfterTransition()
         }
 
+        typeTabLayout.getTabAt(selectedPage)?.select()
+        initTab()
+
         typeTabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 selectedPage = tab?.position!!
@@ -189,6 +194,26 @@ class AddDDLActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+    }
+
+    fun initTab() {
+        when (selectedPage) {
+            0 -> {
+                ddlNoteLayout.visibility = View.VISIBLE
+                ddlNoteEditText.visibility = View.VISIBLE
+                freqTypeToggleGroup.visibility = View.GONE
+                freqTypeHint.visibility = View.GONE
+                freqEditLayout.visibility = View.GONE
+            }
+            1 -> {
+                ddlNoteLayout.visibility = View.GONE
+                ddlNoteEditText.visibility = View.GONE
+                freqTypeToggleGroup.visibility = View.VISIBLE
+                freqTypeHint.visibility = View.VISIBLE
+                freqEditLayout.visibility = View.VISIBLE
+            }
+            else -> {}
+        }
     }
 
     fun formatLocalDateTime(dateTime: LocalDateTime): String {

@@ -322,12 +322,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             if (result.resultCode == RESULT_OK) {
                 // 更新数据
                 viewModel.loadData(currentType)
-//                adapter.updateData(databaseHelper.getAllDDLs(), this)
             }
         }
         // 添加新事件按钮
         addEventButton.setOnClickListener {
-            val intent = Intent(this, AddDDLActivity::class.java)
+            val intent = Intent(this, AddDDLActivity::class.java).apply {
+                putExtra("EXTRA_CURRENT_TYPE", if (currentType == DeadlineType.TASK) 0 else 1)
+            }
             addDDLLauncher.launch(intent)
         }
 
@@ -932,7 +933,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 addEventButton.animate().alpha(1f).setDuration(150).start()
             }.start()
             addEventButton.setOnClickListener {
-                val intent = Intent(this, AddDDLActivity::class.java)
+                val intent = Intent(this, AddDDLActivity::class.java).apply {
+                    putExtra("EXTRA_CURRENT_TYPE", if (currentType == DeadlineType.TASK) 0 else 1)
+                }
                 addDDLLauncher.launch(intent)
             }
         }
