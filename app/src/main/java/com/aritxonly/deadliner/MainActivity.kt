@@ -11,6 +11,8 @@ import android.graphics.*
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.text.Editable
@@ -93,6 +95,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var searchInputLayout: TextInputLayout
     private lateinit var searchEditText: TextInputEditText
     private lateinit var searchOverlay: ConstraintLayout
+    private lateinit var dataOverlay: View
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
@@ -539,6 +542,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 return@addCallback
             }
         }
+
+        dataOverlay = findViewById(R.id.dataOverlay)
 
         setupTabs()
 
@@ -988,13 +993,32 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     1 -> DeadlineType.HABIT
                     else -> DeadlineType.TASK
                 }
+                showOverlay()
 
+                adapter.updateType(currentType)
                 viewModel.loadData(currentType)
+
+                Handler(Looper.getMainLooper()).postDelayed({
+                    // 数据刷新完成后执行动画隐藏覆盖层
+                    hideOverlay()
+                    // 结束下拉刷新状态（如果使用 SwipeRefreshLayout）
+                    swipeRefreshLayout.isRefreshing = false
+                }, 300)
             }
             // 其他方法保持不变
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+    }
+
+    private fun showOverlay() {
+        dataOverlay.alpha = 1f
+    }
+
+    private fun hideOverlay() {
+        dataOverlay.animate()
+            .alpha(0f)
+            .setDuration(300)
     }
 }
 

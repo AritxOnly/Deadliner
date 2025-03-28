@@ -9,6 +9,69 @@
     tools:context=".MainActivity"
     tools:ignore="MissingClass">
 
+    <!-- RecyclerView -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="12dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tabLayout">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="80dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:listitem="@layout/item_layout" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <LinearLayout
+        android:id="@+id/finishNotice"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="完成图标"
+            android:src="@drawable/ic_ccheck"
+            app:tint="?attr/colorOnSurface" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/finish_notice"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/dataOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:visibility="visible"
+        android:alpha="0"
+        app:layout_constraintTop_toBottomOf="@id/tabLayout"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- 标题栏 -->
 
     <ImageButton
@@ -62,32 +125,6 @@
         app:tabMode="fixed"
         app:tabTextColor="?attr/colorOnSurface"
         app:tabSelectedTextColor="?attr/colorPrimary"/>
-
-    <!-- RecyclerView -->
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipeRefreshLayout"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginLeft="12dp"
-        android:layout_marginTop="0dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginRight="12dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tabLayout">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingBottom="80dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            tools:listitem="@layout/item_layout" />
-
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- 虚化遮罩 -->
     <View
@@ -180,31 +217,6 @@
         android:id="@+id/konfettiViewMain"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-
-    <LinearLayout
-        android:id="@+id/finishNotice"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="16dp">
-
-        <ImageView
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginBottom="16dp"
-            android:contentDescription="完成图标"
-            android:src="@drawable/ic_ccheck"
-            app:tint="?attr/colorOnSurface" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/finish_notice"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="16sp" />
-
-    </LinearLayout>
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
