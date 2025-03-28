@@ -109,6 +109,8 @@ object GlobalUtils {
     }
 
     fun parseDateTime(dateTimeString: String): LocalDateTime {
+        if (dateTimeString == "null") return LocalDateTime.now()
+
         val formatters = listOf(
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),

@@ -148,17 +148,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         decideShowEmptyNotice()
 
         // 设置 RecyclerView
-        val itemList = databaseHelper.getAllDDLs()
-        adapter = CustomAdapter(itemList, this, viewModel)
-        adapter.setSwipeListener(this)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
-
-        // 设置 RecyclerView
         adapter = CustomAdapter(itemList, this, viewModel)
         viewModel.ddlList.observe(this) { items ->
             adapter.itemList = items
             adapter.notifyDataSetChanged()
+            decideShowEmptyNotice()
         }
         adapter.setSwipeListener(this)
         // 设置单击监听器
@@ -777,7 +771,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     private fun decideShowEmptyNotice() {
-        finishNotice.visibility = if (databaseHelper.getAllDDLs().isEmpty()) {
+        finishNotice.visibility = if (viewModel.isEmpty() == true) {
             View.VISIBLE
         } else {
             View.GONE
@@ -994,6 +988,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     1 -> DeadlineType.HABIT
                     else -> DeadlineType.TASK
                 }
+
                 viewModel.loadData(currentType)
             }
             // 其他方法保持不变

@@ -18,6 +18,8 @@ class MainViewModel(
     // 当前筛选的 DeadlineType
     var currentType: DeadlineType = DeadlineType.TASK
 
+    fun isEmpty(): Boolean? = _ddlList.value?.isEmpty()
+
     private fun filterDataByList(ddlList: List<DDLItem>): List<DDLItem> {
         val filteredList = ddlList.filter { item ->
             Log.d("updateData", "item ${item.id}, " +

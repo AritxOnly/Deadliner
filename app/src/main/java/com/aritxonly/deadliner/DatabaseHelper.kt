@@ -99,6 +99,7 @@ class DatabaseHelper private constructor(context: Context) :
         note: String = "",
         type: DeadlineType = DeadlineType.TASK
     ): Long {
+        Log.d("Database", "Inserting $name, $startTime, $endTime, $note, $type")
         val db = writableDatabase
         val values = ContentValues().apply {
             put(COLUMN_NAME, name)

@@ -47,18 +47,7 @@ class CustomAdapter(
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val titleText: TextView = itemView.findViewById(R.id.titleText)
-        val remainingTimeText: TextView = itemView.findViewById(R.id.remainingTimeText)
-        val progressBar: LinearProgressIndicator = itemView.findViewById(R.id.progressBar)
-        val constraintLayout: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
-        val noteText: TextView = itemView.findViewById(R.id.noteText)
-        val remainingTimeTextAlt: TextView = itemView.findViewById(R.id.remainingTimeTextAlt)
         val starIcon: ImageView = itemView.findViewById(R.id.starIcon)
-        val streakText: TextView = itemView.findViewById(R.id.streakText)
-        val frequencyText: TextView = itemView.findViewById(R.id.frequencyText)
-        val dailyProgress: LinearLayout = itemView.findViewById(R.id.dailyProgress)
-        val checkButton: MaterialButton = itemView.findViewById(R.id.checkButton)
-        val monthProgress: LinearProgressIndicator = itemView.findViewById(R.id.monthProgress)
-        val progressLabel: TextView = itemView.findViewById(R.id.progressLabel)
 
         init {
             // 设置长按事件进入多选模式
@@ -122,14 +111,37 @@ class CustomAdapter(
         itemClickListener = listener
     }
 
-    // 根据 currentType 决定加载的布局资源
+    companion object {
+        const val VIEW_TYPE_TASK = 0
+        const val VIEW_TYPE_HABIT = 1
+    }
+
+    private var currentType: DeadlineType = DeadlineType.TASK
+
+    // 根据当前类型返回视图类型
+    override fun getItemViewType(position: Int): Int {
+        return when (currentType) {
+            DeadlineType.TASK -> VIEW_TYPE_TASK
+            DeadlineType.HABIT -> VIEW_TYPE_HABIT
+        }
+    }
+
+    // 根据视图类型创建对应ViewHolder
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val layoutRes = when (viewModel.currentType) {
-            DeadlineType.HABIT -> R.layout.habit_layout
+        val layoutRes = when (viewType) {
+            VIEW_TYPE_HABIT -> R.layout.habit_layout
             else -> R.layout.item_layout
         }
         val view = LayoutInflater.from(parent.context).inflate(layoutRes, parent, false)
         return ViewHolder(view)
+    }
+
+    // 更新类型的方法
+    fun updateType(newType: DeadlineType) {
+        if (currentType != newType) {
+            currentType = newType
+            notifyDataSetChanged() // 关键刷新操作
+        }
     }
 
     @SuppressLint("SetTextI18n")
@@ -142,6 +154,14 @@ class CustomAdapter(
 
     @SuppressLint("SetTextI18n")
     private fun habitBindViewHolder(holder: ViewHolder, position: Int) {
+        val streakText: TextView = holder.itemView.findViewById(R.id.streakText)
+        val frequencyText: TextView = holder.itemView.findViewById(R.id.frequencyText)
+        val dailyProgress: LinearLayout = holder.itemView.findViewById(R.id.dailyProgress)
+        val checkButton: MaterialButton = holder.itemView.findViewById(R.id.checkButton)
+        val monthProgress: LinearProgressIndicator = holder.itemView.findViewById(R.id.monthProgress)
+        val progressLabel: TextView = holder.itemView.findViewById(R.id.progressLabel)
+        val constraintLayout: ConstraintLayout = holder.itemView.findViewById(R.id.constraintLayout)
+
         val habitItem = itemList[position]
         val context = holder.itemView.context
         val today = LocalDate.now()
@@ -151,9 +171,9 @@ class CustomAdapter(
         val type = object : TypeToken<HabitMetaData>() {}.type
         val habitMeta: HabitMetaData = try {
             gson.fromJson(habitItem.note, type)
-                ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1)
+                ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
         } catch (e: Exception) {
-            HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1)
+            HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
         }
 
         // 从 HabitMetaData 中提取已打卡日期集合（转换为 LocalDate 对象）
@@ -162,23 +182,35 @@ class CustomAdapter(
         // 1. 绑定标题与连击天数（使用辅助函数计算当前连击）
         holder.titleText.text = habitItem.name
         val currentStreak = calculateCurrentStreak(completedDates)
-        holder.streakText.text = "${currentStreak}天连击"
+        streakText.text = "${currentStreak}天连击"
 
         // 2. 更新星标状态（根据 habitItem.isStared 字段）
         holder.starIcon.visibility = if (habitItem.isStared) View.VISIBLE else View.GONE
 
         // 3. 设置频率文本（利用 HabitMetaData 中的 frequencyType 和 frequency）
+        Log.d("Database", "${habitMeta.frequencyType}")
         val freqDesc = when (habitMeta.frequencyType) {
-            DeadlineFrequency.DAILY -> "每天${habitMeta.frequency}次"
-            DeadlineFrequency.WEEKLY -> "每周${habitMeta.frequency}次"
-            DeadlineFrequency.MONTHLY -> "每月${habitMeta.frequency}次"
-            DeadlineFrequency.TOTAL -> "共计${habitMeta.frequency}"
+            DeadlineFrequency.DAILY ->
+                "每天${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "/${habitMeta.total}次"
+            DeadlineFrequency.WEEKLY ->
+                "每周${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "/${habitMeta.total}次"
+            DeadlineFrequency.MONTHLY ->
+                "每月${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "/${habitMeta.total}次"
+            DeadlineFrequency.TOTAL -> {
+                if (habitMeta.total == 0) "持续坚持"
+                else "共计${habitMeta.total}次"
+            }
         }
-        val formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日")
-        holder.frequencyText.text = "$freqDesc · 结束于${GlobalUtils.parseDateTime(habitItem.endTime).format(formatter)}"
+
+        frequencyText.text = freqDesc + if (habitItem.endTime != "null") {
+            val now = LocalDateTime.now()
+            val endTime = GlobalUtils.parseDateTime(habitItem.endTime)
+            val duration = Duration.between(now, endTime)
+            " · 剩余${duration.toDays()}天"
+        } else ""
 
         // 4. 更新每日进度点（最近7天）
-        holder.dailyProgress.removeAllViews()
+        dailyProgress.removeAllViews()
         for (i in 0 until 7) {
             val date = today.minusDays((6 - i).toLong())
             val isCompleted = date in completedDates
@@ -191,7 +223,7 @@ class CustomAdapter(
                     if (isCompleted) R.drawable.ic_dot_filled else R.drawable.ic_dot_empty
                 )
             }
-            holder.dailyProgress.addView(dot)
+            dailyProgress.addView(dot)
         }
 
         // 5. 更新月度进度
@@ -204,11 +236,11 @@ class CustomAdapter(
             DeadlineFrequency.DAILY -> currentMonth.lengthOfMonth()
             DeadlineFrequency.WEEKLY -> habitMeta.frequency * 4
             DeadlineFrequency.MONTHLY -> habitMeta.frequency
-            DeadlineFrequency.TOTAL -> habitMeta.frequency
+            DeadlineFrequency.TOTAL -> habitMeta.total
         }
         val progress = (completedThisMonth.toFloat() / monthlyGoal * 100).coerceAtMost(100f)
-        holder.monthProgress.progress = progress.toInt()
-        holder.progressLabel.text = if (habitMeta.frequencyType == DeadlineFrequency.TOTAL) {
+        monthProgress.progress = progress.toInt()
+        progressLabel.text = if (habitMeta.frequencyType == DeadlineFrequency.TOTAL) {
             ""
         } else {
             "每月进度 $completedThisMonth/$monthlyGoal"
@@ -222,13 +254,20 @@ class CustomAdapter(
             DeadlineFrequency.TOTAL -> true
         }
         val alreadyChecked = today in completedDates
-        holder.checkButton.isEnabled = canCheckIn && !alreadyChecked
-        holder.checkButton.text = if (alreadyChecked) "已打卡" else "打卡"
-        holder.checkButton.icon = if (alreadyChecked) null
+        checkButton.isEnabled = canCheckIn && !alreadyChecked
+        checkButton.text = if (alreadyChecked) "已打卡" else "打卡"
+        checkButton.icon = if (alreadyChecked) null
         else ContextCompat.getDrawable(context, R.drawable.ic_check)
 
         // 7. 设置点击监听（传入 context 给 onCheckInClick）
-        holder.checkButton.setOnClickListener { onCheckInClick(context, habitItem) }
+        checkButton.setOnClickListener { onCheckInClick(context, habitItem) }
+
+        /* v2.0 added: 只要被多选则更改颜色 */
+        if (selectedPositions.contains(position)) {
+            constraintLayout.setBackgroundResource(R.drawable.item_background_selected)
+        } else {
+            constraintLayout.setBackgroundResource(R.drawable.item_background)
+        }
     }
 
     /**
@@ -271,6 +310,12 @@ class CustomAdapter(
     }
 
     private fun taskBindViewHolder(holder: ViewHolder, position: Int) {
+        val remainingTimeText: TextView = holder.itemView.findViewById(R.id.remainingTimeText)
+        val progressBar: LinearProgressIndicator = holder.itemView.findViewById(R.id.progressBar)
+        val constraintLayout: ConstraintLayout = holder.itemView.findViewById(R.id.constraintLayout)
+        val noteText: TextView = holder.itemView.findViewById(R.id.noteText)
+        val remainingTimeTextAlt: TextView = holder.itemView.findViewById(R.id.remainingTimeTextAlt)
+
         val direction = GlobalUtils.progressDir
 
         val item = itemList[position]
@@ -289,19 +334,19 @@ class CustomAdapter(
 
         // 设置标题
         holder.titleText.text = item.name
-        holder.noteText.text = item.note
+        noteText.text = item.note
 
         val displayFullContent: Boolean
-        val remainingTimeTextView: TextView = if (holder.noteText.text.isNotEmpty()) {
+        val remainingTimeTextView: TextView = if (noteText.text.isNotEmpty()) {
             displayFullContent = false
-            holder.remainingTimeText.visibility = View.GONE
-            holder.remainingTimeTextAlt.visibility = View.VISIBLE
-            holder.remainingTimeTextAlt
+            remainingTimeText.visibility = View.GONE
+            remainingTimeTextAlt.visibility = View.VISIBLE
+            remainingTimeTextAlt
         } else {
             displayFullContent = true
-            holder.remainingTimeTextAlt.visibility = View.GONE
-            holder.remainingTimeText.visibility = View.VISIBLE
-            holder.remainingTimeText
+            remainingTimeTextAlt.visibility = View.GONE
+            remainingTimeText.visibility = View.VISIBLE
+            remainingTimeText
         }
 
         // 设置剩余时间显示
@@ -319,7 +364,7 @@ class CustomAdapter(
         } else {
             100
         }
-        holder.progressBar.setProgressCompat(
+        progressBar.setProgressCompat(
             if (direction) {
                 100 - progress
             } else {
@@ -333,28 +378,28 @@ class CustomAdapter(
         val progressNearbyColor = getThemeColor(android.R.attr.colorError)
         val progressPassedColor = getThemeColor(android.R.attr.colorControlHighlight)
         if (remainingMinutes < 0) {
-            holder.progressBar.setIndicatorColor(progressPassedColor)
-            holder.constraintLayout.setBackgroundResource(R.drawable.item_background_passed)
+            progressBar.setIndicatorColor(progressPassedColor)
+            constraintLayout.setBackgroundResource(R.drawable.item_background_passed)
         } else if (remainingMinutes <= 720) {
-            holder.progressBar.setIndicatorColor(progressNearbyColor)
-            holder.constraintLayout.setBackgroundResource(R.drawable.item_background_nearby)
+            progressBar.setIndicatorColor(progressNearbyColor)
+            constraintLayout.setBackgroundResource(R.drawable.item_background_nearby)
         } else {
-            holder.progressBar.setIndicatorColor(progressColor)
-            holder.constraintLayout.setBackgroundResource(R.drawable.item_background)
+            progressBar.setIndicatorColor(progressColor)
+            constraintLayout.setBackgroundResource(R.drawable.item_background)
         }
 
         if (item.isCompleted) {
             val finishedColor = getThemeColor(android.R.attr.colorControlActivated)
-            holder.progressBar.setIndicatorColor(finishedColor)
-            holder.constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
-            holder.progressBar.setProgressCompat(100, true)
-            holder.remainingTimeText.text = "DDL已完成🎉"
-            holder.remainingTimeTextAlt.text = "已完成"
+            progressBar.setIndicatorColor(finishedColor)
+            constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
+            progressBar.setProgressCompat(100, true)
+            remainingTimeText.text = "DDL已完成🎉"
+            remainingTimeTextAlt.text = "已完成"
         }
 
         /* v2.0 added: 只要被多选则更改颜色 */
         if (selectedPositions.contains(position)) {
-            holder.constraintLayout.setBackgroundResource(R.drawable.item_background_selected)
+            constraintLayout.setBackgroundResource(R.drawable.item_background_selected)
         }
 
         if (item.isStared) {

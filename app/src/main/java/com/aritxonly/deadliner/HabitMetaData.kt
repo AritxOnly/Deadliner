@@ -7,7 +7,8 @@ import java.time.LocalDate
 data class HabitMetaData(
     val completedDates: Set<String>,
     val frequencyType: DeadlineFrequency,
-    val frequency: Int
+    val frequency: Int,
+    val total: Int
 )
 
 enum class DeadlineFrequency { DAILY, WEEKLY, MONTHLY, TOTAL }
@@ -17,12 +18,12 @@ fun updateNoteWithDate(habit: DDLItem, newDate: LocalDate): String {
     val type = object : TypeToken<HabitMetaData>() {}.type
     // 如果 note 为空或无效，返回默认值
     val currentData: HabitMetaData = if (habit.note.isBlank()) {
-        HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1)
+        HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
     } else {
         try {
-            gson.fromJson(habit.note, type) ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1)
+            gson.fromJson(habit.note, type) ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
         } catch (e: Exception) {
-            HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1)
+            HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
         }
     }
     // 添加新日期，并保留原有频率信息
@@ -36,9 +37,9 @@ fun getCompletedDates(habit: DDLItem): Set<LocalDate> {
     val gson = Gson()
     val type = object : TypeToken<HabitMetaData>() {}.type
     val currentData: HabitMetaData = try {
-        gson.fromJson(habit.note, type) ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1)
+        gson.fromJson(habit.note, type) ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
     } catch (e: Exception) {
-        HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1)
+        HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
     }
     // 转换日期字符串为 LocalDate，遇到异常的日期直接忽略
     return currentData.completedDates.mapNotNull { dateStr ->
@@ -48,4 +49,8 @@ fun getCompletedDates(habit: DDLItem): Set<LocalDate> {
             null
         }
     }.toSet()
+}
+
+fun HabitMetaData.toJson(): String {
+    return Gson().toJson(this)
 }
