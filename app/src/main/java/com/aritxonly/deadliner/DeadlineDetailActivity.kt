@@ -351,18 +351,12 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
     val containerColor = Color(colorScheme.primaryContainer)
     val currentBackground = lerp(containerColor, waterColor, waterLevel.coerceIn(0f, 1f))
 
-    val textColor = if (isSystemInDarkTheme()) {
-        if (currentBackground.luminance() > 0.33f) {
-            Color(colorScheme.onPrimary)
-        } else {
-            Color(colorScheme.onSurface)
-        }
-    } else {
-        if (currentBackground.luminance() > 0.33f) {
-            Color(colorScheme.onSurface)
-        } else {
-            Color(colorScheme.onPrimary)
-        }
+    val textColor = remember(currentBackground) {
+        selectOptimalTextColor(
+            backgroundColor = currentBackground,
+            lightColor = Color(colorScheme.onPrimary),
+            darkColor = Color(colorScheme.onSurface)
+        )
     }
 
     Column(
@@ -379,6 +373,38 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
         Text(text = deadline.note, style = MaterialTheme.typography.bodyMedium, color = textColor)
         Spacer(modifier = Modifier.height(40.dp))
     }
+}
+
+/**
+ * WCAG 2.1对比度优化算法
+ */
+fun selectOptimalTextColor(
+    backgroundColor: Color,
+    lightColor: Color,
+    darkColor: Color
+): Color {
+    // 计算背景亮度（标准化到0-1）
+    val bgLuminance = backgroundColor.luminance()
+
+    // 计算两种候选颜色的对比度
+    val lightContrast = calculateContrastRatio(bgLuminance, lightColor.luminance())
+    val darkContrast = calculateContrastRatio(bgLuminance, darkColor.luminance())
+
+    // 选择对比度更高的颜色（至少满足AA标准4.5:1）
+    return when {
+        lightContrast >= 4.5f && lightContrast > darkContrast -> lightColor
+        darkContrast >= 4.5f -> darkColor
+        else -> if (bgLuminance > 0.5f) darkColor else lightColor // 降级方案
+    }
+}
+
+/**
+ * 根据WCAG公式计算对比度比率
+ */
+fun calculateContrastRatio(backgroundLuminance: Float, textLuminance: Float): Float {
+    val l1 = maxOf(backgroundLuminance, textLuminance) + 0.05f
+    val l2 = minOf(backgroundLuminance, textLuminance) + 0.05f
+    return l1 / l2
 }
 
 @Composable
