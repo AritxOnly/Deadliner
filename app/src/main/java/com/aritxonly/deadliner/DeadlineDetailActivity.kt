@@ -352,13 +352,13 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
     val currentBackground = lerp(containerColor, waterColor, waterLevel.coerceIn(0f, 1f))
 
     val textColor = if (isSystemInDarkTheme()) {
-        if (currentBackground.luminance() > 0.7f) {
+        if (currentBackground.luminance() > 0.33f) {
             Color(colorScheme.onPrimary)
         } else {
             Color(colorScheme.onSurface)
         }
     } else {
-        if (currentBackground.luminance() > 0.3f) {
+        if (currentBackground.luminance() > 0.33f) {
             Color(colorScheme.onSurface)
         } else {
             Color(colorScheme.onPrimary)
