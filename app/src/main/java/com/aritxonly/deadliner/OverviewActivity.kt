@@ -4,19 +4,14 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.ColorRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,15 +26,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,7 +39,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,22 +49,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
-import okhttp3.internal.toHexString
 
 // 辅助函数：判断任务是否逾期
 // 假设 endTime 格式为 "yyyy-MM-dd HH:mm"
 fun isOverdue(item: DDLItem): Boolean {
     return try {
-        val end = GlobalUtils.parseDateTime(item.endTime)
+        val end = GlobalUtils.safeParseDateTime(item.endTime)
         val now = LocalDateTime.now()
         !item.isCompleted && now.isAfter(end)
     } catch (e: Exception) {
@@ -86,7 +71,7 @@ fun isOverdue(item: DDLItem): Boolean {
 // 辅助函数：根据完成时间提取时间段（00-06, 06-12, 12-18, 18-24）
 fun extractTimeBucket(completeTime: String): String {
     return try {
-        val time = GlobalUtils.parseDateTime(completeTime)
+        val time = GlobalUtils.safeParseDateTime(completeTime)
         val hour = time.hour
         when (hour) {
             in 0 until 6 -> "凌晨"

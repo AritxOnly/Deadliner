@@ -169,7 +169,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         val appVersionString = """
-            <strong>Dealiner</strong> ${packageManager.getPackageInfo(packageName, 0).versionName}<br>
+            <strong>Deadliner</strong> ${packageManager.getPackageInfo(packageName, 0).versionName}<br>
             By Author <strong>Aritx Zhou</strong>
         """.trimIndent()
         versionNumber.setText(Html.fromHtml(appVersionString))

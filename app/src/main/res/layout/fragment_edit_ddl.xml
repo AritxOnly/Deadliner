@@ -122,12 +122,12 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- 任务/备注 -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/ddlNoteLayout"
         android:layout_width="0dp"
         android:layout_height="128dp"
         android:layout_marginTop="16dp"
-        android:hint="@string/add_ddl_note"
         android:inputType="text"
         app:boxCornerRadiusBottomEnd="12dp"
         app:boxCornerRadiusBottomStart="12dp"
@@ -138,11 +138,120 @@
         app:layout_constraintTop_toBottomOf="@id/endTimeCard">
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/ddlNoteEditText"
+            android:hint="@string/add_ddl_note"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="top|start"
             android:inputType="text" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- 习惯：频率类型-频率-目标次数 -->
+    <TextView
+        android:id="@+id/freqTypeHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="@string/add_ddl_frequency_type"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/endTimeCard"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/freqTypeToggleGroup"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        app:singleSelection="true"
+        app:checkedButton="@id/btnTotal"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/freqTypeHint">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTotal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="不限"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDaily"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="每日"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnWeekly"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="每周"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnYearly"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="每月"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
+
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <LinearLayout
+        android:id="@+id/freqEditLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/freqTypeToggleGroup"
+        android:orientation="horizontal">
+
+        <!-- 第一个数字输入框 -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/freqTextInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            android:hint="@string/add_ddl_frequency">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/freqEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- 第二个数字输入框 -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/totalTextInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            android:hint="@string/add_ddl_total">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/totalEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </LinearLayout>
 
     <!-- 保存按钮 -->
     <com.google.android.material.button.MaterialButton

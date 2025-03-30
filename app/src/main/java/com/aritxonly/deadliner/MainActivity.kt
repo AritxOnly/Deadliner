@@ -51,6 +51,7 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -196,6 +197,15 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 } else {
                     updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                 }
+            }
+        }
+
+        adapter.onCheckInClickGlobalListener = object : CustomAdapter.OnCheckInClickGlobalListener {
+            override fun onCheckInClickGlobal(context: Context, habitItem: DDLItem, canPerformClick: Boolean) {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.snackbar_already_checkin),
+                    Toast.LENGTH_SHORT).show()
             }
         }
 

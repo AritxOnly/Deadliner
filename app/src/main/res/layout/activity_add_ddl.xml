@@ -187,9 +187,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:text="请设置习惯时间限制"
+        android:text="@string/add_ddl_frequency_type"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/endTimeCard"/>
+        app:layout_constraintTop_toBottomOf="@id/endTimeCard"
+        app:layout_constraintStart_toStartOf="parent"/>
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/freqTypeToggleGroup"
@@ -257,7 +258,7 @@
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusTopStart="12dp"
-            android:hint="频率">
+            android:hint="@string/add_ddl_frequency">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/freqEditText"
@@ -277,7 +278,7 @@
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusTopStart="12dp"
-            android:hint="总计">
+            android:hint="@string/add_ddl_total">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/totalEditText"

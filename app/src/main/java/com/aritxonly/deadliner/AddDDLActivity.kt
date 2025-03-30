@@ -120,7 +120,7 @@ class AddDDLActivity : AppCompatActivity() {
         saveButton.setOnClickListener {
             val ddlName = ddlNameEditText.text.toString()
             val ddlNote = ddlNoteEditText.text.toString()
-            val frequency = freqEditText.text.toString().ifBlank { "0" }.toInt()
+            val frequency = freqEditText.text.toString().ifBlank { "1" }.toInt()
             val total = totalEditText.text.toString().ifBlank { "0" }.toIntOrNull()
 
             val frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
@@ -196,7 +196,7 @@ class AddDDLActivity : AppCompatActivity() {
         })
     }
 
-    fun initTab() {
+    private fun initTab() {
         when (selectedPage) {
             0 -> {
                 ddlNoteLayout.visibility = View.VISIBLE

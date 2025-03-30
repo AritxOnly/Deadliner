@@ -2,19 +2,14 @@ package com.aritxonly.deadliner
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.graphics.Color
-import android.os.Build
 import android.util.Log
-import android.view.View
-import android.view.Window
-import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -108,8 +103,8 @@ object GlobalUtils {
         return dp * context.resources.displayMetrics.density
     }
 
-    fun parseDateTime(dateTimeString: String): LocalDateTime {
-        if (dateTimeString == "null") return LocalDateTime.now()
+    fun parseDateTime(dateTimeString: String): LocalDateTime? {
+        if (dateTimeString == "null") return null
 
         val formatters = listOf(
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
@@ -128,9 +123,13 @@ object GlobalUtils {
         throw IllegalArgumentException("Invalid date format: $dateTimeString")
     }
 
+    fun safeParseDateTime(dateTimeString: String): LocalDateTime {
+        return parseDateTime(dateTimeString)?: LocalDateTime.now()
+    }
+
     fun filterArchived(item: DDLItem): Boolean {
         try {
-            val completeTime = parseDateTime(item.completeTime)
+            val completeTime = safeParseDateTime(item.completeTime)
             val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
             return daysSinceCompletion <= autoArchiveTime
         } catch (e: Exception) {
@@ -195,4 +194,17 @@ object GlobalUtils {
      * v2.0新增
      * 过滤功能相关API
      */
+
+    fun parseHabitMetaData(note: String): HabitMetaData {
+        val gson = Gson()
+        val type = object : TypeToken<HabitMetaData>() {}.type
+        val habitMeta: HabitMetaData = try {
+            gson.fromJson(note, type)
+                ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
+        } catch (e: Exception) {
+            HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
+        }
+
+        return habitMeta
+    }
 }

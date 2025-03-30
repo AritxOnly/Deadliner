@@ -2,7 +2,6 @@ package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.drawable.GradientDrawable
 import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -11,22 +10,17 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity.MODE_PRIVATE
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import android.content.res.Resources
-import java.time.format.DateTimeFormatter
 
 val Int.dp: Int
     get() = (this * Resources.getSystem().displayMetrics.density).toInt()
@@ -40,6 +34,11 @@ class CustomAdapter(
     var isMultiSelectMode = false
     val selectedPositions = mutableSetOf<Int>()
     var multiSelectListener: MultiSelectListener? = null
+    var onCheckInClickGlobalListener: OnCheckInClickGlobalListener? = null
+
+    interface OnCheckInClickGlobalListener {
+        fun onCheckInClickGlobal(context: Context, habitItem: DDLItem, canPerformClick: Boolean)
+    }
 
     interface MultiSelectListener {
         fun onSelectionChanged(selectedCount: Int)
@@ -167,14 +166,7 @@ class CustomAdapter(
         val today = LocalDate.now()
 
         // 解析 note 字段获取 HabitMetaData
-        val gson = Gson()
-        val type = object : TypeToken<HabitMetaData>() {}.type
-        val habitMeta: HabitMetaData = try {
-            gson.fromJson(habitItem.note, type)
-                ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
-        } catch (e: Exception) {
-            HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
-        }
+        val habitMeta = GlobalUtils.parseHabitMetaData(habitItem.note)
 
         // 从 HabitMetaData 中提取已打卡日期集合（转换为 LocalDate 对象）
         val completedDates: Set<LocalDate> = habitMeta.completedDates.map { LocalDate.parse(it) }.toSet()
@@ -191,11 +183,11 @@ class CustomAdapter(
         Log.d("Database", "${habitMeta.frequencyType}")
         val freqDesc = when (habitMeta.frequencyType) {
             DeadlineFrequency.DAILY ->
-                "每天${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "/${habitMeta.total}次"
+                "每天${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}天"
             DeadlineFrequency.WEEKLY ->
-                "每周${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "/${habitMeta.total}次"
+                "每周${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}天"
             DeadlineFrequency.MONTHLY ->
-                "每月${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "/${habitMeta.total}次"
+                "每月${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}天"
             DeadlineFrequency.TOTAL -> {
                 if (habitMeta.total == 0) "持续坚持"
                 else "共计${habitMeta.total}次"
@@ -204,7 +196,7 @@ class CustomAdapter(
 
         frequencyText.text = freqDesc + if (habitItem.endTime != "null") {
             val now = LocalDateTime.now()
-            val endTime = GlobalUtils.parseDateTime(habitItem.endTime)
+            val endTime = GlobalUtils.safeParseDateTime(habitItem.endTime)
             val duration = Duration.between(now, endTime)
             " · 剩余${duration.toDays()}天"
         } else ""
@@ -228,41 +220,57 @@ class CustomAdapter(
 
         // 5. 更新月度进度
         val currentMonth = YearMonth.now()
-        val completedThisMonth = if (habitMeta.frequencyType == DeadlineFrequency.TOTAL)
-            habitItem.habitCount
-        else
-            completedDates.count { YearMonth.from(it) == currentMonth }
-        val monthlyGoal = when (habitMeta.frequencyType) {
-            DeadlineFrequency.DAILY -> currentMonth.lengthOfMonth()
-            DeadlineFrequency.WEEKLY -> habitMeta.frequency * 4
-            DeadlineFrequency.MONTHLY -> habitMeta.frequency
-            DeadlineFrequency.TOTAL -> habitMeta.total
-        }
-        val progress = (completedThisMonth.toFloat() / monthlyGoal * 100).coerceAtMost(100f)
-        monthProgress.progress = progress.toInt()
-        progressLabel.text = if (habitMeta.frequencyType == DeadlineFrequency.TOTAL) {
-            ""
+
+        val progress: Float
+        if (habitMeta.total == 0) {
+            // 若未制定总次数，则以月进度计
+            val completedThisMonth = if (habitMeta.frequencyType == DeadlineFrequency.TOTAL)
+                habitItem.habitCount
+            else
+                completedDates.count { YearMonth.from(it) == currentMonth }
+            val monthlyGoal = when (habitMeta.frequencyType) {
+                DeadlineFrequency.DAILY -> currentMonth.lengthOfMonth()
+                DeadlineFrequency.WEEKLY -> habitMeta.frequency * 4
+                DeadlineFrequency.MONTHLY -> habitMeta.frequency
+                DeadlineFrequency.TOTAL -> habitMeta.total
+            }
+            progress = (completedThisMonth.toFloat() / monthlyGoal * 100).coerceAtMost(100f)
         } else {
-            "每月进度 $completedThisMonth/$monthlyGoal"
+            progress = (completedDates.size.toFloat() / habitMeta.total.toFloat() * 100).coerceAtMost(100f)
+        }
+
+        monthProgress.progress = progress.toInt()
+
+        progressLabel.text = when (habitMeta.frequencyType) {
+            DeadlineFrequency.TOTAL -> ""
+            DeadlineFrequency.DAILY -> "每日进度 ${habitItem.habitCount}/${habitMeta.frequency}"
+            DeadlineFrequency.WEEKLY -> "每周进度 ${habitItem.habitCount}/${habitMeta.frequency}"
+            DeadlineFrequency.MONTHLY -> "每月进度 ${habitItem.habitCount}/${habitMeta.frequency}"
         }
 
         // 6. 设置打卡按钮状态
-        val canCheckIn = when (habitMeta.frequencyType) {
-            DeadlineFrequency.DAILY -> true
-            DeadlineFrequency.WEEKLY -> today.dayOfWeek == DayOfWeek.MONDAY
-            DeadlineFrequency.MONTHLY -> today.dayOfMonth == 1
-            DeadlineFrequency.TOTAL -> true
-        }
-        val alreadyChecked = today in completedDates
-        checkButton.isEnabled = canCheckIn && !alreadyChecked
-        checkButton.text = if (alreadyChecked) "已打卡" else "打卡"
+        val canCheckIn = (habitMeta.total != 0 && if (habitMeta.frequencyType == DeadlineFrequency.TOTAL) {
+            (habitItem.habitCount < habitMeta.total)
+        } else {
+            (habitItem.habitCount < habitMeta.frequency) && (completedDates.size < habitMeta.total)
+        }) || (habitMeta.total == 0)
+
+        Log.d("Check", "habitItem: ${habitItem.name} | type: ${habitMeta.frequencyType} | count: ${habitItem.habitCount} | canPerformClick: $canCheckIn")
+        val alreadyChecked = if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
+            habitItem.habitCount >= habitMeta.frequency
+        } else today in completedDates
+        val canPerformClick = canCheckIn && !alreadyChecked
+        checkButton.text = if (alreadyChecked) "今日已打卡" else "打卡"
         checkButton.icon = if (alreadyChecked) null
         else ContextCompat.getDrawable(context, R.drawable.ic_check)
 
         // 7. 设置点击监听（传入 context 给 onCheckInClick）
-        checkButton.setOnClickListener { onCheckInClick(context, habitItem) }
+        checkButton.setOnClickListener { onCheckInClick(context, habitItem, canPerformClick) }
 
-        /* v2.0 added: 只要被多选则更改颜色 */
+        if (completedDates.size >= habitMeta.total) {
+            constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
+        }
+
         if (selectedPositions.contains(position)) {
             constraintLayout.setBackgroundResource(R.drawable.item_background_selected)
         } else {
@@ -274,10 +282,13 @@ class CustomAdapter(
      * 打卡操作：检查当天是否已打卡，若未打卡则更新 note 字段、habitCount，
      * 并调用数据库更新和刷新数据
      */
-    private fun onCheckInClick(context: Context, habitItem: DDLItem) {
+    private fun onCheckInClick(context: Context, habitItem: DDLItem, canPerformClick: Boolean) {
+        if (!canPerformClick) {
+            onCheckInClickGlobalListener?.onCheckInClickGlobal(context, habitItem, false)
+            return
+        }
+
         val today = LocalDate.now()
-        // 如果今天已打卡，则不做处理
-        if (today in getCompletedDates(habitItem)) return
 
         // 更新 note 字段，将今天的日期加入已打卡记录中
         val updatedNote = updateNoteWithDate(habitItem, today)
@@ -291,8 +302,14 @@ class CustomAdapter(
         val databaseHelper = DatabaseHelper.getInstance(context)
         databaseHelper.updateDDL(updatedHabit)
 
-        // 触发 ViewModel 刷新数据（假设 viewModel 已经在 Adapter 或 Activity 中持有）
         viewModel.loadData(viewModel.currentType)
+    }
+
+    /**
+     * 辅助函数：自动清零
+     */
+    private fun refreshCount() {
+
     }
 
     /**
@@ -322,8 +339,8 @@ class CustomAdapter(
         val currentTime = LocalDateTime.now()
 
         // 将字符串时间转换为 LocalDateTime
-        val startTime = GlobalUtils.parseDateTime(item.startTime)
-        val endTime = GlobalUtils.parseDateTime(item.endTime)
+        val startTime = GlobalUtils.safeParseDateTime(item.startTime)
+        val endTime = GlobalUtils.safeParseDateTime(item.endTime)
 
         // 计算剩余时间
         val remainingDuration = Duration.between(currentTime, endTime)

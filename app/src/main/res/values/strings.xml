@@ -107,4 +107,10 @@
     <string name="filter_dialog_elapse_time">项目进度</string>
     <string name="title_activity_overview">OverviewActivity</string>
 
+    <string name="snackbar_already_checkin">今天已经打卡过了哦～明天再来吧！☺️</string>
+
+    <string name="add_ddl_frequency_type">请设置习惯时间限制</string>
+    <string name="add_ddl_frequency">打卡频率</string>
+    <string name="add_ddl_total">持续天数</string>
+
 </resources>

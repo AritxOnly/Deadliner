@@ -9,7 +9,6 @@ import android.util.Log
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -22,7 +21,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,16 +54,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.pm.ShortcutInfoCompat.Surface
-import androidx.fragment.app.FragmentActivity
-import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
-import com.google.android.material.color.DynamicColors
-import okhttp3.internal.toHexString
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -257,8 +248,8 @@ fun WaterCupAnimation(deadline: DDLItem,
                       onWaterLevelChange: (Float) -> Unit,
                       modifier: Modifier = Modifier) {
     // 模拟剩余时间对应的水位，取值 [0f, 1f]
-    val startTime = GlobalUtils.parseDateTime(deadline.startTime)
-    val endTime = GlobalUtils.parseDateTime(deadline.endTime)
+    val startTime = GlobalUtils.safeParseDateTime(deadline.startTime)
+    val endTime = GlobalUtils.safeParseDateTime(deadline.endTime)
     val now = LocalDateTime.now()
     val totalDuration = Duration.between(startTime, endTime)
     val remainingDuration = Duration.between(now, endTime)
@@ -335,8 +326,8 @@ fun formatDuration(duration: Duration): String {
 @Composable
 fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
     // 将字符串时间解析为 LocalDateTime
-    val startTime = GlobalUtils.parseDateTime(deadline.startTime)
-    val endTime = GlobalUtils.parseDateTime(deadline.endTime)
+    val startTime = GlobalUtils.safeParseDateTime(deadline.startTime)
+    val endTime = GlobalUtils.safeParseDateTime(deadline.endTime)
     val now = LocalDateTime.now()
     // 计算剩余时间
     val remainingDuration = Duration.between(now, endTime)

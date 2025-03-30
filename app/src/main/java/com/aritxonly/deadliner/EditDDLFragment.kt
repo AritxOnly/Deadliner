@@ -1,26 +1,20 @@
 package com.aritxonly.deadliner
 
-import android.annotation.SuppressLint
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings.Global
 import android.util.TypedValue
 import android.view.*
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.compose.material3.DatePickerDialog
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.timepicker.MaterialTimePicker
-import com.google.android.material.timepicker.TimeFormat
+import com.google.android.material.textfield.TextInputLayout
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -31,12 +25,21 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
     private lateinit var endTimeCard: View
     private lateinit var startTimeContent: TextView
     private lateinit var endTimeContent: TextView
+    private lateinit var ddlNoteLayout: TextInputLayout
     private lateinit var ddlNoteEditText: EditText
     private lateinit var saveButton: MaterialButton
     private lateinit var backButton: ImageButton
 
-    private var startTime: LocalDateTime = LocalDateTime.parse(ddlItem.startTime)
-    private var endTime: LocalDateTime = LocalDateTime.parse(ddlItem.endTime)
+    private var startTime: LocalDateTime = GlobalUtils.safeParseDateTime(ddlItem.startTime)
+    private var endTime: LocalDateTime? = GlobalUtils.parseDateTime(ddlItem.startTime)
+
+    private lateinit var freqEditLayout: LinearLayout
+    private lateinit var freqTypeToggleGroup: MaterialButtonToggleGroup
+    private lateinit var freqTextInput: TextInputLayout
+    private lateinit var freqEditText: EditText
+    private lateinit var totalTextInput: TextInputLayout
+    private lateinit var totalEditText: EditText
+    private lateinit var freqTypeHint: TextView
 
     override fun onStart() {
         super.onStart()
@@ -66,14 +69,53 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
         endTimeCard = view.findViewById(R.id.endTimeCard)
         startTimeContent = view.findViewById(R.id.startTimeContent)
         endTimeContent = view.findViewById(R.id.endTimeContent)
+        ddlNoteLayout = view.findViewById(R.id.ddlNoteLayout)
         ddlNoteEditText = view.findViewById(R.id.ddlNoteEditText)
         saveButton = view.findViewById(R.id.saveButton)
         backButton = view.findViewById(R.id.backButton)
 
+        freqEditLayout = view.findViewById(R.id.freqEditLayout)
+        freqTypeToggleGroup = view.findViewById(R.id.freqTypeToggleGroup)
+        freqTextInput = view.findViewById(R.id.freqTextInput)
+        freqEditText = view.findViewById(R.id.freqEditText)
+        totalTextInput = view.findViewById(R.id.totalTextInput)
+        totalEditText = view.findViewById(R.id.totalEditText)
+        freqTypeHint = view.findViewById(R.id.freqTypeHint)
+
         ddlNameEditText.setText(ddlItem.name)
         startTimeContent.text = formatLocalDateTime(startTime)
-        endTimeContent.text = formatLocalDateTime(endTime)
-        ddlNoteEditText.setText(ddlItem.note)
+        if (endTime != null) endTimeContent.text = formatLocalDateTime(endTime!!)
+
+        when (ddlItem.type) {
+            DeadlineType.TASK -> {
+                ddlNoteLayout.visibility = View.VISIBLE
+                ddlNoteEditText.visibility = View.VISIBLE
+                freqTypeToggleGroup.visibility = View.GONE
+                freqTypeHint.visibility = View.GONE
+                freqEditLayout.visibility = View.GONE
+
+                ddlNoteEditText.setText(ddlItem.note)
+            }
+            DeadlineType.HABIT -> {
+                ddlNoteLayout.visibility = View.GONE
+                ddlNoteEditText.visibility = View.GONE
+                freqTypeToggleGroup.visibility = View.VISIBLE
+                freqTypeHint.visibility = View.VISIBLE
+                freqEditLayout.visibility = View.VISIBLE
+
+                val habitMeta = GlobalUtils.parseHabitMetaData(ddlItem.note)
+                freqTypeToggleGroup.check(
+                    when (habitMeta.frequencyType) {
+                        DeadlineFrequency.TOTAL -> R.id.btnTotal
+                        DeadlineFrequency.DAILY -> R.id.btnDaily
+                        DeadlineFrequency.WEEKLY -> R.id.btnWeekly
+                        DeadlineFrequency.MONTHLY -> R.id.btnYearly
+                    }
+                )
+                freqEditText.setText(habitMeta.frequency.toString())
+                totalEditText.setText(habitMeta.total.toString())
+            }
+        }
 
         // 设置沉浸式状态栏和导航栏
         val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
@@ -91,19 +133,50 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
         endTimeCard.setOnClickListener {
             GlobalUtils.showDateTimePicker(parentFragmentManager) { selectedTime ->
                 endTime = selectedTime
-                endTimeContent.text = formatLocalDateTime(endTime)
+                endTimeContent.text = formatLocalDateTime(endTime!!)
             }
         }
 
         // 保存按钮点击事件
         saveButton.setOnClickListener {
-            val updatedDDL = ddlItem.copy(
-                name = ddlNameEditText.text.toString(),
-                startTime = startTime.toString(),
-                endTime = endTime.toString(),
-                note = ddlNoteEditText.text.toString()
-            )
-            onUpdate(updatedDDL)
+            when (ddlItem.type) {
+                DeadlineType.TASK -> {
+                    val updatedDDL = ddlItem.copy(
+                        name = ddlNameEditText.text.toString(),
+                        startTime = startTime.toString(),
+                        endTime = endTime.toString(),
+                        note = ddlNoteEditText.text.toString(),
+                        type = DeadlineType.TASK
+                    )
+                    onUpdate(updatedDDL)
+                }
+                DeadlineType.HABIT -> {
+                    val frequency = freqEditText.text.toString().ifBlank { "1" }.toInt()
+                    val total = totalEditText.text.toString().ifBlank { "0" }.toIntOrNull()
+
+                    val frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
+                        R.id.btnTotal -> DeadlineFrequency.TOTAL
+                        R.id.btnDaily -> DeadlineFrequency.DAILY
+                        R.id.btnWeekly -> DeadlineFrequency.WEEKLY
+                        R.id.btnYearly -> DeadlineFrequency.MONTHLY
+                        else -> DeadlineFrequency.TOTAL
+                    }
+
+                    val updatedDDL = ddlItem.copy(
+                        name = ddlNameEditText.text.toString(),
+                        startTime = startTime.toString(),
+                        endTime = endTime.toString(),
+                        note = HabitMetaData(
+                            completedDates = setOf(),
+                            frequencyType = frequencyType,
+                            frequency = frequency,
+                            total = total?:0
+                        ).toJson(),
+                        type = DeadlineType.HABIT
+                    )
+                    onUpdate(updatedDDL)
+                }
+            }
             dismiss()
         }
 

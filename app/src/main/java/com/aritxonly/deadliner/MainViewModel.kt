@@ -42,11 +42,11 @@ class MainViewModel(
                             it.name
                         }
                         2 -> {  // 按开始时间
-                            GlobalUtils.parseDateTime(it.startTime)
+                            GlobalUtils.safeParseDateTime(it.startTime)
                         }
                         3 -> {  // 按百分比
-                            val startTime = GlobalUtils.parseDateTime(it.startTime)
-                            val endTime = GlobalUtils.parseDateTime(it.endTime)
+                            val startTime = GlobalUtils.safeParseDateTime(it.startTime)
+                            val endTime = GlobalUtils.safeParseDateTime(it.endTime)
                             val remainingMinutes =
                                 Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
                             val fullTime =
@@ -55,7 +55,7 @@ class MainViewModel(
                             progress
                         }
                         else -> {
-                            val endTime = GlobalUtils.parseDateTime(it.endTime)
+                            val endTime = GlobalUtils.safeParseDateTime(it.endTime)
                             val remainingMinutes =
                                 Duration.between(LocalDateTime.now(), endTime).toMinutes().toInt()
                             remainingMinutes
@@ -90,8 +90,8 @@ class MainViewModel(
                 if (!matchesText) return@filter false
 
                 // 尝试解析时间，解析失败时认为该条件不满足
-                val startTime = try { GlobalUtils.parseDateTime(ddlItem.startTime) } catch (e: Exception) { null }
-                val completeTime = try { GlobalUtils.parseDateTime(ddlItem.completeTime) } catch (e: Exception) { null }
+                val startTime = try { GlobalUtils.safeParseDateTime(ddlItem.startTime) } catch (e: Exception) { null }
+                val completeTime = try { GlobalUtils.safeParseDateTime(ddlItem.completeTime) } catch (e: Exception) { null }
 
                 var timeMatch = true
 
