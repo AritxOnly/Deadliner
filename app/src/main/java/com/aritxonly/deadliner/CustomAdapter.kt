@@ -15,7 +15,6 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
-import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -35,10 +34,11 @@ class CustomAdapter(
     var isMultiSelectMode = false
     val selectedPositions = mutableSetOf<Int>()
     var multiSelectListener: MultiSelectListener? = null
-    var onCheckInClickGlobalListener: OnCheckInClickGlobalListener? = null
+    var onCheckInGlobalListener: OnCheckInGlobalListener? = null
 
-    interface OnCheckInClickGlobalListener {
-        fun onCheckInClickGlobal(context: Context, habitItem: DDLItem, canPerformClick: Boolean)
+    interface OnCheckInGlobalListener {
+        fun onCheckInFailedGlobal(context: Context, habitItem: DDLItem)
+        fun onCheckInSuccessGlobal(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData)
     }
 
     interface MultiSelectListener {
@@ -269,7 +269,7 @@ class CustomAdapter(
         else ContextCompat.getDrawable(context, R.drawable.ic_check)
 
         // 7. 设置点击监听（传入 context 给 onCheckInClick）
-        checkButton.setOnClickListener { onCheckInClick(context, habitItem, canPerformClick) }
+        checkButton.setOnClickListener { onCheckInClick(context, habitItem, habitMeta, canPerformClick) }
 
         if (completedDates.size >= habitMeta.total) {
             constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
@@ -286,9 +286,9 @@ class CustomAdapter(
      * 打卡操作：检查当天是否已打卡，若未打卡则更新 note 字段、habitCount，
      * 并调用数据库更新和刷新数据
      */
-    private fun onCheckInClick(context: Context, habitItem: DDLItem, canPerformClick: Boolean) {
+    private fun onCheckInClick(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData, canPerformClick: Boolean) {
         if (!canPerformClick) {
-            onCheckInClickGlobalListener?.onCheckInClickGlobal(context, habitItem, false)
+            onCheckInGlobalListener?.onCheckInFailedGlobal(context, habitItem)
             return
         }
 
@@ -301,6 +301,8 @@ class CustomAdapter(
             note = updatedNote,
             habitCount = habitItem.habitCount + 1
         )
+
+        onCheckInGlobalListener?.onCheckInSuccessGlobal(context, updatedHabit, habitMeta)
 
         // 更新数据库记录
         val databaseHelper = DatabaseHelper.getInstance(context)

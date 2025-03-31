@@ -51,12 +51,10 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.noties.markwon.Markwon
-import kotlinx.coroutines.*
 import nl.dionsegijn.konfetti.xml.KonfettiView
 import okhttp3.Call
 import okhttp3.Callback
@@ -200,12 +198,28 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
         }
 
-        adapter.onCheckInClickGlobalListener = object : CustomAdapter.OnCheckInClickGlobalListener {
-            override fun onCheckInClickGlobal(context: Context, habitItem: DDLItem, canPerformClick: Boolean) {
+        adapter.onCheckInGlobalListener = object : CustomAdapter.OnCheckInGlobalListener {
+            override fun onCheckInFailedGlobal(context: Context, habitItem: DDLItem) {
                 Toast.makeText(
                     this@MainActivity,
                     getString(R.string.snackbar_already_checkin),
                     Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onCheckInSuccessGlobal(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData) {
+                triggerVibration(this@MainActivity, 100)
+
+                val count = habitItem.habitCount
+                val frequency = habitMeta.frequency
+
+                if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
+                    Log.d("Count", count.toString())
+                    if (count >= frequency) {
+                        if (GlobalUtils.fireworksOnFinish) { konfettiViewMain.start(PartyPresets.festive()) }
+                    }
+                } else {
+                    if (GlobalUtils.fireworksOnFinish) { konfettiViewMain.start(PartyPresets.festive()) }
+                }
             }
         }
 
@@ -877,6 +891,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         switchAppBarStatus(true)
         viewModel.loadData(currentType)
         decideShowEmptyNotice()
+
+        if (searchOverlay.visibility == View.VISIBLE) {
+            val s = searchEditText.text
+            val filter = SearchFilter.parse(s.toString())
+
+            viewModel.filterData(filter, currentType)
+        }
     }
 
     companion object {
@@ -1010,6 +1031,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                 adapter.updateType(currentType)
                 viewModel.loadData(currentType)
+
+                if (searchOverlay.visibility == View.VISIBLE) {
+                    val s = searchEditText.text
+                    val filter = SearchFilter.parse(s.toString())
+
+                    viewModel.filterData(filter, currentType)
+                }
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     // 数据刷新完成后执行动画隐藏覆盖层
