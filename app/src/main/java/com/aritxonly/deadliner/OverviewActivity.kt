@@ -216,6 +216,7 @@ fun OverviewScreen(
     onClose: () -> Unit
 ) {
     Scaffold(
+        containerColor = Color(colorScheme.surface),
         modifier = Modifier.background(Color(colorScheme.surface)),
         topBar = {
             TopAppBar(
@@ -286,13 +287,6 @@ fun OverviewScreen(
                                 }
                             }
                         }
-//                        Spacer(modifier = Modifier.height(16.dp))
-//                        Box(
-//                            modifier = Modifier.fillMaxWidth(),
-//                            contentAlignment = Alignment.Center
-//                        ) {
-//                            PieChartView(statistics = activeStats)
-//                        }
                     }
                 }
             }

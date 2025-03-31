@@ -102,7 +102,10 @@ class DeadlineDetailActivity : AppCompatActivity() {
             ) {
                 var currentDeadline by remember { mutableStateOf(latestDeadline) }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize()
+                        .background(color = Color(colorScheme.surface))
+                ) { innerPadding ->
                     DeadlineDetailScreen(
                         deadline = currentDeadline,
                         onClose = { finish() },

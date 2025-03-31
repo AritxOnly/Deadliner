@@ -21,6 +21,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import android.content.res.Resources
+import java.time.temporal.ChronoUnit
 
 val Int.dp: Int
     get() = (this * Resources.getSystem().displayMetrics.density).toInt()
@@ -171,6 +172,9 @@ class CustomAdapter(
         // 从 HabitMetaData 中提取已打卡日期集合（转换为 LocalDate 对象）
         val completedDates: Set<LocalDate> = habitMeta.completedDates.map { LocalDate.parse(it) }.toSet()
 
+        // 0. 判断是否需要清零
+        refreshCount(context, habitItem, habitMeta)
+
         // 1. 绑定标题与连击天数（使用辅助函数计算当前连击）
         holder.titleText.text = habitItem.name
         val currentStreak = calculateCurrentStreak(completedDates)
@@ -194,9 +198,9 @@ class CustomAdapter(
             }
         }
 
-        frequencyText.text = freqDesc + if (habitItem.endTime != "null") {
+        val endTime = GlobalUtils.safeParseDateTime(habitItem.endTime)
+        frequencyText.text = freqDesc + if (endTime != GlobalUtils.timeNull) {
             val now = LocalDateTime.now()
-            val endTime = GlobalUtils.safeParseDateTime(habitItem.endTime)
             val duration = Duration.between(now, endTime)
             " · 剩余${duration.toDays()}天"
         } else ""
@@ -232,7 +236,7 @@ class CustomAdapter(
                 DeadlineFrequency.DAILY -> currentMonth.lengthOfMonth()
                 DeadlineFrequency.WEEKLY -> habitMeta.frequency * 4
                 DeadlineFrequency.MONTHLY -> habitMeta.frequency
-                DeadlineFrequency.TOTAL -> habitMeta.total
+                DeadlineFrequency.TOTAL -> currentMonth.lengthOfMonth()
             }
             progress = (completedThisMonth.toFloat() / monthlyGoal * 100).coerceAtMost(100f)
         } else {
@@ -308,8 +312,32 @@ class CustomAdapter(
     /**
      * 辅助函数：自动清零
      */
-    private fun refreshCount() {
+    private fun refreshCount(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData) {
+        val month = YearMonth.now()
+        val presetDuration = when (habitMeta.frequencyType) {
+            DeadlineFrequency.DAILY -> 1    // 1天清空一次
+            DeadlineFrequency.WEEKLY -> 7
+            DeadlineFrequency.MONTHLY -> month.lengthOfMonth()
+            DeadlineFrequency.TOTAL -> return
+        }
 
+        val duration = ChronoUnit.DAYS.between(LocalDate.parse(habitMeta.refreshDate), LocalDate.now())
+        if (duration >= presetDuration) {
+            // refresh
+            val updatedNote = habitMeta.copy(
+                refreshDate = LocalDate.now().toString()
+            ).toJson()
+
+            val updatedHabit = habitItem.copy(
+                note = updatedNote,
+                habitCount = 0
+            )
+
+            val databaseHelper = DatabaseHelper.getInstance(context)
+            databaseHelper.updateDDL(updatedHabit)
+
+            viewModel.loadData(viewModel.currentType)
+        }
     }
 
     /**

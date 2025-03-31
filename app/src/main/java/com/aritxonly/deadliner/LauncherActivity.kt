@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.color.DynamicColors
+import java.time.LocalDateTime
 
 class LauncherActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -14,6 +15,7 @@ class LauncherActivity : AppCompatActivity() {
         GlobalUtils.init(this)
 
         if (GlobalUtils.firstRun) {
+            GlobalUtils.timeNull = LocalDateTime.now()
             startActivity(Intent(this, IntroActivity::class.java))
         } else {
             startActivity(Intent(this, MainActivity::class.java))

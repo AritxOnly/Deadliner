@@ -10,7 +10,9 @@ import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.time.Clock
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -95,6 +97,13 @@ object GlobalUtils {
             sharedPreferences.edit().putInt("filter_selection", value).apply()
         }
 
+    // null pointer对应的safe解析时间：第一次启动时间
+    var timeNull: LocalDateTime
+        get() = parseDateTime(sharedPreferences.getString("time_null", LocalDateTime.now().toString())?:LocalDateTime.now().toString())!!
+        set(value) {
+            sharedPreferences.edit().putString("time_null", value.toString()).apply()
+        }
+
     private fun loadSettings() {
         Log.d("GlobalUtils", "Settings loaded from SharedPreferences")
     }
@@ -124,7 +133,7 @@ object GlobalUtils {
     }
 
     fun safeParseDateTime(dateTimeString: String): LocalDateTime {
-        return parseDateTime(dateTimeString)?: LocalDateTime.now()
+        return parseDateTime(dateTimeString)?: timeNull
     }
 
     fun filterArchived(item: DDLItem): Boolean {
@@ -200,9 +209,9 @@ object GlobalUtils {
         val type = object : TypeToken<HabitMetaData>() {}.type
         val habitMeta: HabitMetaData = try {
             gson.fromJson(note, type)
-                ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
+                ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0, LocalDate.now().toString())
         } catch (e: Exception) {
-            HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0)
+            HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0, LocalDate.now().toString())
         }
 
         return habitMeta

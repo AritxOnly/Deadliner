@@ -2,6 +2,7 @@ package com.aritxonly.deadliner
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
 import android.view.*
 import android.widget.EditText
@@ -14,9 +15,11 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import javax.microedition.khronos.opengles.GL
 
 class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLItem) -> Unit) : DialogFragment() {
 
@@ -31,7 +34,7 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
     private lateinit var backButton: ImageButton
 
     private var startTime: LocalDateTime = GlobalUtils.safeParseDateTime(ddlItem.startTime)
-    private var endTime: LocalDateTime? = GlobalUtils.parseDateTime(ddlItem.startTime)
+    private var endTime: LocalDateTime? = GlobalUtils.parseDateTime(ddlItem.endTime)
 
     private lateinit var freqEditLayout: LinearLayout
     private lateinit var freqTypeToggleGroup: MaterialButtonToggleGroup
@@ -84,7 +87,8 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
 
         ddlNameEditText.setText(ddlItem.name)
         startTimeContent.text = formatLocalDateTime(startTime)
-        if (endTime != null) endTimeContent.text = formatLocalDateTime(endTime!!)
+//        Log.d("endTime", "endTime: $endTime | realValue: ${ddlItem.endTime} | parseReturnValue: ${GlobalUtils.parseDateTime(ddlItem.endTime)} | safeParse: ${GlobalUtils.safeParseDateTime(ddlItem.endTime)}")
+        if (endTime != null && endTime != GlobalUtils.timeNull) endTimeContent.text = formatLocalDateTime(endTime!!)
 
         when (ddlItem.type) {
             DeadlineType.TASK -> {
@@ -170,7 +174,8 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
                             completedDates = setOf(),
                             frequencyType = frequencyType,
                             frequency = frequency,
-                            total = total?:0
+                            total = total?:0,
+                            refreshDate = LocalDate.now().toString()
                         ).toJson(),
                         type = DeadlineType.HABIT
                     )

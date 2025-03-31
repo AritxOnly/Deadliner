@@ -27,6 +27,7 @@ import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import java.sql.Time
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -152,10 +153,12 @@ class AddDDLActivity : AppCompatActivity() {
                             completedDates = setOf(),
                             frequencyType = frequencyType,
                             frequency = frequency,
-                            total = total?:0
+                            total = total?:0,
+                            refreshDate = LocalDate.now().toString()
                         ).toJson(),
                         type = DeadlineType.HABIT
                     )
+                    Log.d("endTime", endTime.toString())
                     setResult(RESULT_OK)
                     finishAfterTransition() // 返回 MainActivity
                 }
