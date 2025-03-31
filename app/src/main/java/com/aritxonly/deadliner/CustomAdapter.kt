@@ -202,7 +202,9 @@ class CustomAdapter(
         frequencyText.text = freqDesc + if (endTime != GlobalUtils.timeNull) {
             val now = LocalDateTime.now()
             val duration = Duration.between(now, endTime)
-            " · 剩余${duration.toDays()}天"
+            val days = duration.toDays()
+            if (days < 0) " · 已逾期"
+            else " · 剩余${days}天"
         } else ""
 
         // 4. 更新每日进度点（最近7天）
@@ -259,7 +261,7 @@ class CustomAdapter(
             (habitItem.habitCount < habitMeta.frequency) && (completedDates.size < habitMeta.total)
         }) || (habitMeta.total == 0)
 
-        Log.d("Check", "habitItem: ${habitItem.name} | type: ${habitMeta.frequencyType} | count: ${habitItem.habitCount} | canPerformClick: $canCheckIn")
+        Log.d("Check", "habitItem: ${habitItem.name} | type: ${habitMeta.frequencyType} | count: ${habitItem.habitCount} | size: ${completedDates.size} | total: ${habitMeta.total} | canPerformClick: $canCheckIn")
         val alreadyChecked = if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
             habitItem.habitCount >= habitMeta.frequency
         } else today in completedDates
@@ -271,13 +273,39 @@ class CustomAdapter(
         // 7. 设置点击监听（传入 context 给 onCheckInClick）
         checkButton.setOnClickListener { onCheckInClick(context, habitItem, habitMeta, canPerformClick) }
 
-        if (completedDates.size >= habitMeta.total) {
-            constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
-        }
-
         if (selectedPositions.contains(position)) {
             constraintLayout.setBackgroundResource(R.drawable.item_background_selected)
         } else {
+            if (habitMeta.total != 0 && completedDates.size >= habitMeta.total) {
+                constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
+
+                streakText.text = "已完成"
+
+                // 设置为isCompleted
+                if (!habitItem.isCompleted) {
+                    val updatedHabit = habitItem.copy(
+                        isCompleted = true,
+                        completeTime = LocalDateTime.now().toString()
+                    )
+
+                    val databaseHelper = DatabaseHelper.getInstance(context)
+                    databaseHelper.updateDDL(updatedHabit)
+
+                    viewModel.loadData(viewModel.currentType)
+                }
+                return
+            }
+
+            val now = LocalDateTime.now()
+            val endTime = GlobalUtils.safeParseDateTime(habitItem.endTime)
+
+            if (endTime != GlobalUtils.timeNull && now.isAfter(endTime)) {
+                constraintLayout.setBackgroundResource(R.drawable.item_background_passed)
+                streakText.text = ""
+
+                return
+            }
+
             constraintLayout.setBackgroundResource(R.drawable.item_background)
         }
     }

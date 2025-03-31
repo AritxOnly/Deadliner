@@ -47,6 +47,7 @@ import androidx.transition.TransitionManager
 import androidx.work.*
 import androidx.work.PeriodicWorkRequestBuilder
 import com.google.android.material.bottomappbar.BottomAppBar
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -168,6 +169,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
              */
             override fun onItemClick(position: Int) {
                 val clickedItem = adapter.itemList[position]
+                if (clickedItem.type == DeadlineType.HABIT) return
+
                 pauseRefresh = true
 
                 val myColorScheme = AppColorScheme(
@@ -497,23 +500,47 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 }
                 R.id.done -> {
                     if (adapter.selectedPositions.isNotEmpty()) {
-                        triggerVibration(this@MainActivity, 100)
-                        val positionsToUpdate = adapter.selectedPositions.toList()
-                        for (position in positionsToUpdate) {
-                            val item = adapter.itemList[position]
-                            item.isCompleted = true
-                            item.completeTime = LocalDateTime.now().toString()
-                            databaseHelper.updateDDL(item)
+                        if (currentType == DeadlineType.HABIT) {
+                            triggerVibration(this@MainActivity, 100)
+                            val positionsToUpdate = adapter.selectedPositions.toList()
+                            for (position in positionsToUpdate) {
+                                val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
+                                viewHolder?.let {
+                                    // 获取按钮并执行点击操作
+                                    val button = it.itemView.findViewById<MaterialButton>(R.id.checkButton)
+                                    button.performClick()
+                                }
+                            }
+
+                            decideShowEmptyNotice()
+                            // 清除多选状态
+
+                            switchAppBarStatus(true)
+                            updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                            true
+                        } else {
+                            triggerVibration(this@MainActivity, 100)
+                            val positionsToUpdate = adapter.selectedPositions.toList()
+                            for (position in positionsToUpdate) {
+                                val item = adapter.itemList[position]
+                                item.isCompleted = true
+                                item.completeTime = LocalDateTime.now().toString()
+                                databaseHelper.updateDDL(item)
+                            }
+                            viewModel.loadData(currentType)
+                            Toast.makeText(
+                                this@MainActivity,
+                                R.string.toast_finished,
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            decideShowEmptyNotice()
+                            // 清除多选状态
+
+                            switchAppBarStatus(true)
+                            updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                            true
                         }
-                        viewModel.loadData(currentType)
-                        Toast.makeText(this@MainActivity, R.string.toast_finished, Toast.LENGTH_SHORT).show()
-
-                        decideShowEmptyNotice()
-                        // 清除多选状态
-
-                        switchAppBarStatus(true)
-                        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
-                        true
                     } else {
                         Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
                         false
