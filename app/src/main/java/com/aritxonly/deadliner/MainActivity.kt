@@ -472,7 +472,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         MaterialAlertDialogBuilder(this@MainActivity)
                             .setTitle(R.string.alert_delete_title)
                             .setMessage(R.string.alert_delete_message)
-                            .setNeutralButton(resources.getString(R.string.cancel)) { dialog, _ ->
+                            .setNegativeButton(resources.getString(R.string.cancel)) { dialog, _ ->
                                 // 取消删除，刷新界面
                                 adapter.notifyDataSetChanged()
                             }
@@ -488,6 +488,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                                 switchAppBarStatus(true)
                                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                            }
+                            .setOnCancelListener {
+                                adapter.notifyDataSetChanged()
                             }
                             .show()
 
@@ -812,7 +815,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.alert_delete_title)
             .setMessage(R.string.alert_delete_message)
-            .setNeutralButton(resources.getString(R.string.cancel)) { dialog, _ ->
+            .setNegativeButton(resources.getString(R.string.cancel)) { dialog, _ ->
                 adapter.notifyItemChanged(position) // 取消删除，刷新该项
                 pauseRefresh = false
             }
@@ -822,6 +825,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 viewModel.loadData(currentType)
                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                 decideShowEmptyNotice()
+                pauseRefresh = false
+            }
+            .setOnCancelListener {
+                adapter.notifyItemChanged(position) // 取消删除，刷新该项
                 pauseRefresh = false
             }
             .show()

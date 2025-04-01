@@ -23,7 +23,12 @@ class DatabaseHelper private constructor(context: Context) :
             }
         }
 
-        private const val DATABASE_NAME = "deadliner.db"
+        fun closeInstance() {
+            instance?.close()
+            instance = null
+        }
+
+        const val DATABASE_NAME = "deadliner.db"
         private const val DATABASE_VERSION = 6
         private const val TABLE_NAME = "ddl_items"
         private const val COLUMN_ID = "id"

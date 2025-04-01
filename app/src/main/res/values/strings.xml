@@ -24,6 +24,7 @@
     <string name="settings_general">通用</string>
     <string name="settings_notification">通知</string>
     <string name="settings_archive">归档</string>
+    <string name="settings_backup">备份</string>
     <string name="settings_highlight">关于</string>
     <string name="settings_vibration">启用震动反馈</string>
     <string name="settings_progress_dir_main">主界面正向进度条</string>
@@ -112,5 +113,7 @@
     <string name="add_ddl_frequency_type">请设置习惯时间限制</string>
     <string name="add_ddl_frequency">打卡频率</string>
     <string name="add_ddl_total">持续天数</string>
+    <string name="settings_import">导入</string>
+    <string name="settings_export">导出</string>
 
 </resources>
