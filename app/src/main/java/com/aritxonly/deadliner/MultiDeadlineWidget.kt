@@ -14,7 +14,7 @@ import androidx.core.content.ContextCompat
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-class SingleDeadlineWidget : AppWidgetProvider() {
+class MultiDeadlineWidget : AppWidgetProvider() {
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -50,7 +50,7 @@ internal fun updateAppWidget(
     appWidgetManager: AppWidgetManager,
     appWidgetId: Int
 ) {
-    val views = RemoteViews(context.packageName, R.layout.single_deadline_widget)
+    val views = RemoteViews(context.packageName, R.layout.multi_deadline_widget)
     val sharedPreferences = context.getSharedPreferences("app_settings", MODE_PRIVATE)
     val direction = sharedPreferences.getBoolean("widget_progress_dir", false)
 
@@ -66,7 +66,7 @@ internal fun updateAppWidget(
     appWidgetManager.updateAppWidget(appWidgetId, views)
 
     val dbHelper = DatabaseHelper.getInstance(context)
-    val allDDLs = dbHelper.getAllDDLs()
+    val allDDLs = dbHelper.getDDLsByType(DeadlineType.TASK)
 
     val color = getThemeColor(context, android.R.attr.textColorPrimary)
     views.setInt(R.id.widgetFinishIcon, "setColorFilter", color)

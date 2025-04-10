@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/delete"
+        android:icon="@drawable/ic_delete"
+        android:title="删除"
+        android:iconTint="?attr/colorControlNormal"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/done"
+        android:icon="@drawable/ic_done"
+        android:title="完成"
+        android:iconTint="?attr/colorControlNormal"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/star"
+        android:icon="@drawable/ic_star"
+        android:title="星标"
+        android:iconTint="?attr/colorControlNormal"
+        app:showAsAction="ifRoom" />
+
+</menu>

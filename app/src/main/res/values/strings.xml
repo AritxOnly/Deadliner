@@ -20,6 +20,7 @@
     <string name="alert_edit_archive">归档</string>
     <string name="toast_definished">撤销完成Deadline...😭</string>
     <string name="toast_archived">Deadline已归档！🗃️</string>
+    <string name="toast_stared">已修改星标状态</string>
 
     <string name="settings_general">通用</string>
     <string name="settings_notification">通知</string>
@@ -66,22 +67,29 @@
     <string name="go_next">下一步</string>
 
     <!--下面是开始页面的内容-->
-    <string name="main_description">欢迎来到Deadliner💕</string>
-    <string name="main_description_content">专注高效任务管理，帮你轻松掌控每个截止日期</string>
+    <string name="main_description">欢迎来到Deadliner v2 💕</string>
+    <string name="main_description_content">全新升级，高效管理任务，轻松掌控截止日期。</string>
 
     <string name="widget_description">🗓 桌面小组件</string>
-    <string name="widget_description_content">随时查看任务进度，管理更加便捷</string>
+    <string name="widget_description_content">随时查看任务进度，便捷管理。</string>
 
-    <string name="swipe_to_finish">✅ 右滑完成任务</string>
-    <string name="swipe_to_finish_content">右滑即可完成任务，直观操作让效率更高</string>
+    <string name="task_management">✅ 任务管理</string>
+    <string name="task_management_content">右滑完成任务，左滑删除，底部应用栏支持筛选、归档和搜索。</string>
 
-    <string name="swipe_to_delete">🗑 左滑删除任务</string>
-    <string name="swipe_to_delete_content">左滑快速删除任务，轻松保持任务列表整洁</string>
+    <string name="deadline_features">📅 截止任务优化</string>
+    <string name="deadline_features_content">点击详情，长按多选、置顶任务，灵活管理。</string>
 
-    <string name="material_you">🖌 Material Design</string>
-    <string name="material_you_content">遵循Material Design设计，支持动态取色</string>
+    <string name="habit_tracking">⏰ 打卡任务</string>
+    <string name="habit_tracking_content">支持多次打卡，显示进度与奖励效果。</string>
 
-    <string name="welcome">欢迎使用！👏</string>
+    <string name="overview_activity">📊 概览页面</string>
+    <string name="overview_activity_content">任务进度以饼图和条形图可视化。</string>
+
+    <string name="detail_activity">🖌 全新详情页</string>
+    <string name="detail_activity_content">全新详情页，截图与朋友分享。</string>
+
+    <string name="welcome">与君一见，\n时光在心。\n欢迎使用！👏</string>
+    <string name="welcome_version">全新Deadliner v2.0，诚邀您体验</string>
 
     <string name="finish_notice">没有剩余的工作了</string>
     <string name="add_ddl_tile_label">添加新任务</string>

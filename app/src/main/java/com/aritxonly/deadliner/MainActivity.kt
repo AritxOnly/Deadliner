@@ -578,7 +578,33 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         false
                     }
                 }
+                R.id.star -> {
+                    if (adapter.selectedPositions.isNotEmpty()) {
+                        val positionsToUpdate = adapter.selectedPositions.toList()
+                        var count = 0
+                        for (position in positionsToUpdate) {
+                            val item = adapter.itemList[position]
+                            item.isStared = !item.isStared
+                            databaseHelper.updateDDL(item)
+                            count++
+                        }
+                        viewModel.loadData(currentType)
+                        Toast.makeText(
+                            this@MainActivity,
+                            resources.getString(R.string.toast_stared),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        decideShowEmptyNotice()
+                        // 清除多选状态
 
+                        switchAppBarStatus(true)
+                        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                        true
+                    } else {
+                        Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
+                        false
+                    }
+                }
                 else -> false
             }
         }
@@ -613,9 +639,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private fun updateWidget() {
         val appWidgetManager = AppWidgetManager.getInstance(this)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, SingleDeadlineWidget::class.java))
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, MultiDeadlineWidget::class.java))
         for (appWidgetId in appWidgetIds) {
-            SingleDeadlineWidget.updateWidget(this, appWidgetManager, appWidgetId)
+            MultiDeadlineWidget.updateWidget(this, appWidgetManager, appWidgetId)
         }
     }
 
@@ -949,7 +975,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             bottomAppBar.performHide()
 
             bottomAppBar.postDelayed({
-                bottomAppBar.replaceMenu(R.menu.bottom_utility_bar)
+                bottomAppBar.replaceMenu(
+                    if (currentType == DeadlineType.TASK) R.menu.bottom_utility_bar
+                    else R.menu.bottom_utility_bar_alt
+                )
                 switchAppBarMenuStatus(false)
                 bottomAppBar.performShow()
             }, ANIMATION_DURATION)
@@ -1033,6 +1062,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         TransitionManager.beginDelayedTransition(searchOverlay, AutoTransition())
         searchOverlay.visibility = View.VISIBLE
         searchEditText.requestFocus()
+
+        bottomBarContainer.visibility = View.GONE
+        addEventButton.hide()
+        bottomAppBar.performHide()
         // 打开软键盘
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT)
@@ -1044,6 +1077,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private fun hideSearchOverlay() {
         TransitionManager.beginDelayedTransition(searchOverlay, AutoTransition())
         searchOverlay.visibility = View.GONE
+
+        addEventButton.show()
+        bottomAppBar.performShow()
+        bottomBarContainer.visibility = View.VISIBLE
         // 隐藏软键盘
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(searchEditText.windowToken, 0)
@@ -1062,6 +1099,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     else -> DeadlineType.TASK
                 }
                 showOverlay()
+
+                adapter.selectedPositions.clear()
+                adapter.isMultiSelectMode = false
+                updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                switchAppBarStatus(true)
 
                 adapter.updateType(currentType)
                 viewModel.loadData(currentType)

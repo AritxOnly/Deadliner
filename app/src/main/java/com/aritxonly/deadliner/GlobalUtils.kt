@@ -78,9 +78,9 @@ object GlobalUtils {
         }
 
     var firstRun: Boolean
-        get() = sharedPreferences.getBoolean("first_run_v2", true)
+        get() = sharedPreferences.getBoolean("first_run_v2_", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("first_run_v2", value).apply()
+            sharedPreferences.edit().putBoolean("first_run_v2_", value).apply()
         }
 
     // v2.0 - filter功能

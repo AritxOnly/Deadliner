@@ -1,6 +1,8 @@
 package com.aritxonly.deadliner
 
+import ApkDownloaderInstaller
 import android.app.ActivityOptions
+import android.app.DownloadManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -24,6 +26,7 @@ import nl.dionsegijn.konfetti.core.Position
 import nl.dionsegijn.konfetti.core.emitter.Emitter
 import nl.dionsegijn.konfetti.core.models.Size
 import nl.dionsegijn.konfetti.xml.KonfettiView
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 class IntroActivity : AppCompatActivity() {

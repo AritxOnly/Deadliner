@@ -356,7 +356,8 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
     Column(
         modifier = Modifier
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = deadline.name, style = MaterialTheme.typography.headlineLarge, color = textColor)
         Spacer(modifier = Modifier.height(16.dp))
@@ -365,7 +366,7 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
         Text(text = "剩余时间：$remainingTimeText", style = MaterialTheme.typography.bodyMedium, color = textColor)
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = deadline.note, style = MaterialTheme.typography.bodyMedium, color = textColor)
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(20.dp))
     }
 }
 

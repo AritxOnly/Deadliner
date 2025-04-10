@@ -291,11 +291,6 @@ class SettingsActivity : AppCompatActivity() {
     private fun handleImportResult(resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
             data?.data?.let { uri ->
-                val fileName = uri.lastPathSegment?.substringAfterLast('/')
-                if (!fileName?.endsWith(".db", ignoreCase = true)!!) {
-                    showToast("请选择.db格式的数据库文件")
-                    return
-                }
                 MaterialAlertDialogBuilder(this)
                     .setTitle("确认导入")
                     .setMessage("将覆盖当前所有数据，请确认操作！")
