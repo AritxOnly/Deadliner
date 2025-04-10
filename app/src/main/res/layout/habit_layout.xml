@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/constraintLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp"
+    android:layout_margin="8dp"
+    android:background="@drawable/item_background">
+
+    <!-- 标题和打卡次数 -->
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:text="每日阅读"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:ellipsize="end"
+        android:maxLines="1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/streakText" />
+
+    <!-- 连续打卡天数 -->
+    <TextView
+        android:id="@+id/streakText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:text="7天连击"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/titleText"
+        app:layout_constraintEnd_toStartOf="@id/starIcon"
+        app:layout_constraintTop_toTopOf="@id/titleText" />
+
+    <ImageView
+        android:id="@+id/starIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:contentDescription="星标"
+        android:src="@drawable/ic_star_filled"
+        app:tint="?attr/colorPrimary"
+        app:layout_constraintBottom_toBottomOf="@id/titleText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/titleText" />
+
+    <!-- 习惯周期 -->
+    <TextView
+        android:id="@+id/frequencyText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="4dp"
+        android:text="每天一次 · 持续30天"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/titleText"
+        app:layout_constraintEnd_toStartOf="@id/checkButton" />
+
+    <!-- 打卡进度指示 -->
+    <LinearLayout
+        android:id="@+id/dailyProgress"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="12dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/frequencyText">
+
+        <!-- 动态生成每日状态点 -->
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginEnd="4dp"
+            app:srcCompat="@drawable/ic_dot_filled"
+            app:tint="?attr/colorPrimary" />
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginEnd="4dp"
+            app:srcCompat="@drawable/ic_dot_empty"
+            app:tint="?attr/colorOnSurfaceVariant" />
+
+        <!-- 更多日期点... -->
+    </LinearLayout>
+
+    <!-- 打卡按钮 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/checkButton"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_marginEnd="12dp"
+        android:insetBottom="0dp"
+        android:insetTop="0dp"
+        android:backgroundTint="?attr/colorPrimaryContainer"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        android:text="打卡"
+        android:textSize="13sp"
+        app:iconGravity="textStart"
+        app:cornerRadius="18dp"
+        app:icon="@drawable/ic_finish"
+        app:iconTint="?attr/colorOnPrimaryContainer"
+        app:iconPadding="4dp"
+        app:layout_constraintBottom_toBottomOf="@id/frequencyText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/frequencyText" />
+
+    <!-- 月度进度 -->
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/monthProgress"
+        android:layout_width="0dp"
+        android:layout_height="8dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="12dp"
+        android:progress="70"
+        app:trackThickness="8dp"
+        app:trackCornerRadius="6dp"
+        app:indicatorColor="?attr/colorTertiary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dailyProgress"
+        app:indicatorTrackGapSize="2dp"
+        app:trackStopIndicatorSize="0dp" />
+
+    <!-- 进度标签 -->
+    <TextView
+        android:id="@+id/progressLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="本月进度 7/10"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="@id/monthProgress"
+        app:layout_constraintTop_toBottomOf="@id/monthProgress"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

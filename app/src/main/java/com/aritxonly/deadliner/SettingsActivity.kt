@@ -1,6 +1,9 @@
 package com.aritxonly.deadliner
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
+import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -25,9 +28,14 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.slider.Slider
 import com.google.android.material.snackbar.Snackbar
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -45,7 +53,15 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var aboutCard: MaterialCardView
     private lateinit var toggleGroupArchiveTime: MaterialButtonToggleGroup
 
+    private lateinit var buttonImport: MaterialButton
+    private lateinit var buttonExport: MaterialButton
+
     private var resetTimes = 0
+
+    companion object {
+        private const val EXPORT_REQUEST_CODE = 1001
+        private const val IMPORT_REQUEST_CODE = 1002
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,6 +89,9 @@ class SettingsActivity : AppCompatActivity() {
         versionNumber = findViewById(R.id.versionNumber)
         aboutCard = findViewById(R.id.aboutCard)
         toggleGroupArchiveTime = findViewById(R.id.toggleGroupArchiveTime)
+
+        buttonImport = findViewById(R.id.buttonImport)
+        buttonExport = findViewById(R.id.buttonExport)
 
         switchVibration.isChecked = GlobalUtils.vibration
         switchProgressDir.isChecked = GlobalUtils.progressDir
@@ -131,7 +150,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         aboutCard.setOnClickListener {
-            if (GlobalUtils.firstRun) {
+            if (GlobalUtils.showIntroPage) {
                 Snackbar.make(
                     aboutCard,
                     "你已经设置了下次打开显示欢迎页面",
@@ -154,7 +173,7 @@ class SettingsActivity : AppCompatActivity() {
                         "下次打开Deadliner将显示欢迎页面",
                         Snackbar.LENGTH_SHORT
                     ).show()
-                    GlobalUtils.firstRun = true
+                    GlobalUtils.showIntroPage = true
                     resetTimes = 0
                 }
             }
@@ -169,7 +188,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         val appVersionString = """
-            <strong>Dealiner</strong> ${packageManager.getPackageInfo(packageName, 0).versionName}<br>
+            <strong>Deadliner</strong> ${packageManager.getPackageInfo(packageName, 0).versionName}<br>
             By Author <strong>Aritx Zhou</strong>
         """.trimIndent()
         versionNumber.setText(Html.fromHtml(appVersionString))
@@ -177,6 +196,23 @@ class SettingsActivity : AppCompatActivity() {
         val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
         toolbar.setNavigationOnClickListener {
             finishAfterTransition() // 返回上一个界面
+        }
+
+        buttonImport.setOnClickListener {
+            openBackup()
+        }
+
+        buttonExport.setOnClickListener {
+            createBackup()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        when (requestCode) {
+            EXPORT_REQUEST_CODE -> handleExportResult(resultCode, data)
+            IMPORT_REQUEST_CODE -> handleImportResult(resultCode, data)
         }
     }
 
@@ -196,6 +232,117 @@ class SettingsActivity : AppCompatActivity() {
             R.id.button7Day -> return 7
             else -> throw Exception("DeHash button Error")
         }
+    }
+
+    // 导出数据库
+    @SuppressLint("SimpleDateFormat")
+    private fun createBackup() {
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/x-sqlite3"
+            putExtra(Intent.EXTRA_TITLE, "deadliner_backup_${SimpleDateFormat("yyyyMMdd_HHmmss").format(
+                Date()
+            )}.db")
+        }
+
+        startActivityForResult(intent, EXPORT_REQUEST_CODE)
+    }
+
+    // 导入数据库
+    private fun openBackup() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+                "application/x-sqlite3",
+                "application/vnd.sqlite3",
+                "application/octet-stream",
+                "application/sqlite3",
+                "application/x-sql"
+            ))
+            // 可选：限制文件扩展名
+            putExtra(Intent.EXTRA_TITLE, "*.db")
+        }
+
+        // 兼容旧版本
+        val chooser = Intent.createChooser(intent, "选择数据库备份文件")
+        startActivityForResult(chooser, IMPORT_REQUEST_CODE)
+    }
+
+    private fun handleExportResult(resultCode: Int, data: Intent?) {
+        if (resultCode == Activity.RESULT_OK) {
+            data?.data?.let { uri ->
+                try {
+                    val dbFile = getDatabasePath(DatabaseHelper.DATABASE_NAME)
+                    contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        FileInputStream(dbFile).use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                    showToast("✅ 导出成功")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    showToast("❌ 导出失败: ${e.localizedMessage}")
+                }
+            }
+        }
+    }
+
+    private fun handleImportResult(resultCode: Int, data: Intent?) {
+        if (resultCode == Activity.RESULT_OK) {
+            data?.data?.let { uri ->
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("确认导入")
+                    .setMessage("将覆盖当前所有数据，请确认操作！")
+                    .setPositiveButton("确定") { _, _ ->
+                        performImport(uri)
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
+        }
+    }
+
+    private fun performImport(uri: Uri) {
+        try {
+            // 关闭当前数据库连接
+            DatabaseHelper.closeInstance()
+
+            // 替换数据库文件
+            val dbFile = getDatabasePath(DatabaseHelper.DATABASE_NAME)
+            contentResolver.openInputStream(uri)?.use { inputStream ->
+                FileOutputStream(dbFile).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+
+            // 重新初始化数据库
+            DatabaseHelper.getInstance(this)
+
+            // 提示需要重启应用
+            MaterialAlertDialogBuilder(this)
+                .setMessage("导入成功，需要重启应用生效")
+                .setPositiveButton("立即重启") { _, _ ->
+                    restartApp()
+                }
+                .setNegativeButton("稍后", null)
+                .show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            showToast("❌ 导入失败: ${e.localizedMessage}")
+        }
+    }
+
+    private fun restartApp() {
+        val intent = packageManager.getLaunchIntentForPackage(packageName)
+        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finishAffinity()
+        Runtime.getRuntime().exit(0)
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     /**

@@ -4,12 +4,15 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.time.Clock
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -75,9 +78,36 @@ object GlobalUtils {
         }
 
     var firstRun: Boolean
-        get() = sharedPreferences.getBoolean("first_run", true)
+        get() = sharedPreferences.getBoolean("first_run_v2", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("first_run", value).apply()
+            sharedPreferences.edit().putBoolean("first_run_v2", value).apply()
+        }
+
+    var showIntroPage: Boolean
+        get() = sharedPreferences.getBoolean("show_intro_page", true)
+        set(value) {
+            sharedPreferences.edit().putBoolean("show_intro_page", value).apply()
+        }
+
+    // v2.0 - filter功能
+    /**
+     * 映射表
+     * 0 - 默认（按剩余时间）
+     * 1 - 按名称
+     * 2 - 按开始时间
+     * 3 - 按百分比(进度)
+     */
+    var filterSelection: Int
+        get() = sharedPreferences.getInt("filter_selection", 0)
+        set(value) {
+            sharedPreferences.edit().putInt("filter_selection", value).apply()
+        }
+
+    // null pointer对应的safe解析时间：第一次启动时间
+    var timeNull: LocalDateTime
+        get() = parseDateTime(sharedPreferences.getString("time_null", LocalDateTime.now().toString())?:LocalDateTime.now().toString())!!
+        set(value) {
+            sharedPreferences.edit().putString("time_null", value.toString()).apply()
         }
 
     private fun loadSettings() {
@@ -88,7 +118,9 @@ object GlobalUtils {
         return dp * context.resources.displayMetrics.density
     }
 
-    fun parseDateTime(dateTimeString: String): LocalDateTime {
+    fun parseDateTime(dateTimeString: String): LocalDateTime? {
+        if (dateTimeString == "null") return null
+
         val formatters = listOf(
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
@@ -106,9 +138,13 @@ object GlobalUtils {
         throw IllegalArgumentException("Invalid date format: $dateTimeString")
     }
 
+    fun safeParseDateTime(dateTimeString: String): LocalDateTime {
+        return parseDateTime(dateTimeString)?: timeNull
+    }
+
     fun filterArchived(item: DDLItem): Boolean {
         try {
-            val completeTime = parseDateTime(item.completeTime)
+            val completeTime = safeParseDateTime(item.completeTime)
             val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
             return daysSinceCompletion <= autoArchiveTime
         } catch (e: Exception) {
@@ -150,6 +186,7 @@ object GlobalUtils {
             .setTimeFormat(TimeFormat.CLOCK_24H)
             .setHour(currentTime.hour) // 设置当前时间的小时
             .setMinute(currentTime.minute) // 设置当前时间的分钟
+            .setInputMode(MaterialTimePicker.INPUT_MODE_CLOCK)  // 设置默认为dial模式
             .build()
 
         timePicker.addOnPositiveButtonClickListener {
@@ -166,5 +203,23 @@ object GlobalUtils {
 
         // 显示时间选择器
         timePicker.show(fragmentManager, timePicker.toString())
+    }
+
+    /**
+     * v2.0新增
+     * 过滤功能相关API
+     */
+
+    fun parseHabitMetaData(note: String): HabitMetaData {
+        val gson = Gson()
+        val type = object : TypeToken<HabitMetaData>() {}.type
+        val habitMeta: HabitMetaData = try {
+            gson.fromJson(note, type)
+                ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0, LocalDate.now().toString())
+        } catch (e: Exception) {
+            HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0, LocalDate.now().toString())
+        }
+
+        return habitMeta
     }
 }

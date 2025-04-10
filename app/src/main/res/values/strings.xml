@@ -10,7 +10,7 @@
     🗃️
     <string name="accept">确定</string>
     <string name="cancel">取消</string>
-    <string name="toast_deletion">已删除1项Deadline❌</string>
+    <string name="toast_deletion">已删除Deadline❌</string>
     <string name="toast_finished">恭喜完成Deadline！🎉</string>
     <string name="alert_edit_title">操作Deadline</string>
     <string name="alert_edit_modify">编辑</string>
@@ -20,10 +20,12 @@
     <string name="alert_edit_archive">归档</string>
     <string name="toast_definished">撤销完成Deadline...😭</string>
     <string name="toast_archived">Deadline已归档！🗃️</string>
+    <string name="toast_stared">已修改星标状态</string>
 
     <string name="settings_general">通用</string>
     <string name="settings_notification">通知</string>
     <string name="settings_archive">归档</string>
+    <string name="settings_backup">备份</string>
     <string name="settings_highlight">关于</string>
     <string name="settings_vibration">启用震动反馈</string>
     <string name="settings_progress_dir_main">主界面正向进度条</string>
@@ -56,31 +58,38 @@
     <string name="add_widget">添加小组件</string>
     <string name="app_widget_description">主屏幕倒计时小组件</string>
     <string name="app_version">
-        <![CDATA[<strong>Dealiner</strong> v1.2.0.105<br>]]>
+        <![CDATA[<strong>Deadliner</strong> v1.2.0.105<br>]]>
         <![CDATA[By Author <strong>Aritx Zhou</strong>]]>
     </string>
 
     <string name="unfinished_settings">实验功能，尚未测试完成</string>
 
-    <string name="go_next">下一步</string>
+    <string name="go_next">继续</string>
 
     <!--下面是开始页面的内容-->
-    <string name="main_description">欢迎来到Deadliner💕</string>
-    <string name="main_description_content">专注高效任务管理，帮你轻松掌控每个截止日期</string>
+    <string name="main_description">欢迎来到Deadliner v2 💕</string>
+    <string name="main_description_content">全新升级，高效管理任务，轻松掌控截止日期。</string>
 
     <string name="widget_description">🗓 桌面小组件</string>
-    <string name="widget_description_content">随时查看任务进度，管理更加便捷</string>
+    <string name="widget_description_content">随时查看任务进度，便捷管理。</string>
 
-    <string name="swipe_to_finish">✅ 右滑完成任务</string>
-    <string name="swipe_to_finish_content">右滑即可完成任务，直观操作让效率更高</string>
+    <string name="task_management">✅ 任务管理</string>
+    <string name="task_management_content">右滑完成任务，左滑删除，底部应用栏支持筛选、归档和搜索。</string>
 
-    <string name="swipe_to_delete">🗑 左滑删除任务</string>
-    <string name="swipe_to_delete_content">左滑快速删除任务，轻松保持任务列表整洁</string>
+    <string name="deadline_features">📅 截止任务优化</string>
+    <string name="deadline_features_content">点击详情，长按多选、置顶任务，灵活管理。</string>
 
-    <string name="material_you">🖌 Material Design</string>
-    <string name="material_you_content">遵循Material Design设计，支持动态取色</string>
+    <string name="habit_tracking">⏰ 打卡任务</string>
+    <string name="habit_tracking_content">支持多次打卡，显示进度与奖励效果。</string>
 
-    <string name="welcome">欢迎使用！👏</string>
+    <string name="overview_activity">📊 概览页面</string>
+    <string name="overview_activity_content">任务进度以饼图和条形图可视化。</string>
+
+    <string name="detail_activity">🖌 全新详情页</string>
+    <string name="detail_activity_content">全新详情页，截图与朋友分享。</string>
+
+    <string name="welcome">与君一见，\n时光在心。\n欢迎使用！👏</string>
+    <string name="welcome_version">全新Deadliner v2.0，诚邀您体验</string>
 
     <string name="finish_notice">没有剩余的工作了</string>
     <string name="add_ddl_tile_label">添加新任务</string>
@@ -92,5 +101,27 @@
     <string name="clear_all">全部清除</string>
 
     <string name="debug_textView">1111111111111111111111111111111111111111111111111</string>
+    <string name="title_activity_deadline_detail_fragment">DeadlineDetailFragment</string>
+    <string name="title_activity_deadline_detail">DeadlineDetailActivity</string>
+
+    <string name="search_hint">搜索Deadline</string>
+    <string name="back">返回</string>
+    <string name="add_edit_deadline">添加/编辑Deadline</string>
+
+    <string name="filter_dialog_title">排序方式</string>
+    <string name="filter_dialog_default">剩余时间(默认)</string>
+    <string name="filter_dialog_name">名称</string>
+    <string name="filter_dialog_start_time">开始时间</string>
+    <string name="filter_dialog_end_time">结束时间</string>
+    <string name="filter_dialog_elapse_time">项目进度</string>
+    <string name="title_activity_overview">OverviewActivity</string>
+
+    <string name="snackbar_already_checkin">今天已经打卡过了哦～明天再来吧！☺️</string>
+
+    <string name="add_ddl_frequency_type">请设置习惯时间限制</string>
+    <string name="add_ddl_frequency">打卡频率</string>
+    <string name="add_ddl_total">持续天数</string>
+    <string name="settings_import">导入</string>
+    <string name="settings_export">导出</string>
 
 </resources>

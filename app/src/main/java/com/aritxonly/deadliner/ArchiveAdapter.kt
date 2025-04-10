@@ -8,8 +8,6 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import java.time.Duration
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class ArchiveAdapter(
@@ -33,7 +31,7 @@ class ArchiveAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = filteredItemList[position]
-        val endTime = GlobalUtils.parseDateTime(item.endTime)
+        val endTime = GlobalUtils.safeParseDateTime(item.endTime)
 
         holder.archiveTitleText.text = item.name
         holder.archiveNoteText.text = item.note

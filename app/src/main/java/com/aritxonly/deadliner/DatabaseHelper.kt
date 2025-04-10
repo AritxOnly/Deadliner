@@ -2,6 +2,7 @@ package com.aritxonly.deadliner
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.util.Log
@@ -22,8 +23,13 @@ class DatabaseHelper private constructor(context: Context) :
             }
         }
 
-        private const val DATABASE_NAME = "deadliner.db"
-        private const val DATABASE_VERSION = 4
+        fun closeInstance() {
+            instance?.close()
+            instance = null
+        }
+
+        const val DATABASE_NAME = "deadliner.db"
+        private const val DATABASE_VERSION = 6
         private const val TABLE_NAME = "ddl_items"
         private const val COLUMN_ID = "id"
         private const val COLUMN_NAME = "name"
@@ -33,6 +39,9 @@ class DatabaseHelper private constructor(context: Context) :
         private const val COLUMN_COMPLETE_TIME = "complete_time"
         private const val COLUMN_NOTE = "note"
         private const val COLUMN_IS_ARCHIVED = "is_archived"
+        private const val COLUMN_IS_STARED = "is_stared"
+        private const val COLUMN_TYPE = "type"
+        private const val COLUMN_HABIT_COUNT = "habit_count"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -45,7 +54,10 @@ class DatabaseHelper private constructor(context: Context) :
                 $COLUMN_IS_COMPLETED INTEGER,
                 $COLUMN_COMPLETE_TIME TEXT NOT NULL,
                 $COLUMN_NOTE TEXT NOT NULL,
-                $COLUMN_IS_ARCHIVED INTEGER
+                $COLUMN_IS_ARCHIVED INTEGER,
+                $COLUMN_IS_STARED INTEGER,
+                $COLUMN_TYPE TEXT NOT NULL,
+                $COLUMN_HABIT_COUNT INTEGER
             )
         """.trimIndent()
         db.execSQL(createTableQuery)
@@ -65,11 +77,34 @@ class DatabaseHelper private constructor(context: Context) :
             Log.d("DatabaseHelper", "Update DB to v4")
             db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_IS_ARCHIVED INT DEFAULT 0")
         }
-//        onCreate(db)
+        if (oldVersion < 5) {
+            Log.d("DatabaseHelper", "Update DB to v5")
+            db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_IS_STARED INT DEFAULT 0")
+        }
+        if (oldVersion < 6) {
+            Log.d("DatabaseHelper", "Update DB to v6")
+            db.beginTransaction()
+            try {
+                db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_TYPE TEXT DEFAULT 'task'")
+                db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_HABIT_COUNT INT DEFAULT 0")
+                db.setTransactionSuccessful()
+            } catch (e: Exception) {
+                Log.e("DatabaseHelper", e.toString())
+            } finally {
+                db.endTransaction()
+            }
+        }
     }
 
     // 插入 DDL 数据
-    fun insertDDL(name: String, startTime: String, endTime: String, note: String = ""): Long {
+    fun insertDDL(
+        name: String,
+        startTime: String,
+        endTime: String,
+        note: String = "",
+        type: DeadlineType = DeadlineType.TASK
+    ): Long {
+        Log.d("Database", "Inserting $name, $startTime, $endTime, $note, $type")
         val db = writableDatabase
         val values = ContentValues().apply {
             put(COLUMN_NAME, name)
@@ -79,6 +114,9 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_COMPLETE_TIME, "")
             put(COLUMN_NOTE, note)
             put(COLUMN_IS_ARCHIVED, false)
+            put(COLUMN_IS_STARED, false)
+            put(COLUMN_TYPE, type.toString())
+            put(COLUMN_HABIT_COUNT, 0)
         }
         return db.insert(TABLE_NAME, null, values)
     }
@@ -86,29 +124,61 @@ class DatabaseHelper private constructor(context: Context) :
     // 获取所有 DDL 数据
     fun getAllDDLs(): List<DDLItem> {
         val db = readableDatabase
-        val ddlList = mutableListOf<DDLItem>()
         val cursor = db.query(TABLE_NAME, null, null, null, null, null, null)
 
+        return parseCursor(cursor)
+    }
+
+    fun getDDLsByType(type: DeadlineType): List<DDLItem> {
+        val db = readableDatabase
+        val selection = "$COLUMN_TYPE = ?"
+        val selectionArgs = arrayOf(type.toString().lowercase()) // 确保小写匹配
+
+        val cursor = db.query(
+            TABLE_NAME,
+            null,
+            selection,
+            selectionArgs,
+            null,
+            null,
+            "$COLUMN_IS_COMPLETED ASC, $COLUMN_END_TIME ASC" // 默认排序规则
+        )
+
+        return parseCursor(cursor)
+    }
+
+    private fun parseCursor(cursor: Cursor): List<DDLItem> {
+        val result = mutableListOf<DDLItem>()
         with(cursor) {
             while (moveToNext()) {
-                val id = getLong(getColumnIndexOrThrow(COLUMN_ID))
-                val name = getString(getColumnIndexOrThrow(COLUMN_NAME))
-                val startTime = getString(getColumnIndexOrThrow(COLUMN_START_TIME))
-                val endTime = getString(getColumnIndexOrThrow(COLUMN_END_TIME))
-                val isCompleted = getInt(getColumnIndexOrThrow(COLUMN_IS_COMPLETED))
-                val completeTime = getString(getColumnIndexOrThrow(COLUMN_COMPLETE_TIME))
-                val note = getString(getColumnIndexOrThrow(COLUMN_NOTE))
-                val isArchived = getInt(getColumnIndexOrThrow(COLUMN_IS_ARCHIVED))
-                ddlList.add(
+                result.add(
                     DDLItem(
-                        id, name, startTime, endTime, isCompleted.toBoolean(),
-                        completeTime, note, isArchived.toBoolean()
+                        id = getLong(getColumnIndexOrThrow(COLUMN_ID)),
+                        name = getString(getColumnIndexOrThrow(COLUMN_NAME)),
+                        startTime = getString(getColumnIndexOrThrow(COLUMN_START_TIME)),
+                        endTime = getString(getColumnIndexOrThrow(COLUMN_END_TIME)),
+                        isCompleted = getInt(getColumnIndexOrThrow(COLUMN_IS_COMPLETED)).toBoolean(),
+                        completeTime = getString(getColumnIndexOrThrow(COLUMN_COMPLETE_TIME)),
+                        note = getString(getColumnIndexOrThrow(COLUMN_NOTE)),
+                        isArchived = getInt(getColumnIndexOrThrow(COLUMN_IS_ARCHIVED)).toBoolean(),
+                        isStared = getInt(getColumnIndexOrThrow(COLUMN_IS_STARED)).toBoolean(),
+                        type = DeadlineType.fromString(getString(getColumnIndexOrThrow(COLUMN_TYPE))),
+                        habitCount = getInt(getColumnIndexOrThrow(COLUMN_HABIT_COUNT))
                     )
                 )
             }
             close()
         }
-        return ddlList
+        return result
+    }
+
+    fun getDDLById(id: Long): DDLItem? {
+        val db = readableDatabase
+        val selection = "$COLUMN_ID = ?"
+        val selectionArgs = arrayOf(id.toString())
+
+        val cursor = db.query(TABLE_NAME, null, selection, selectionArgs, null, null, null)
+        return parseCursor(cursor).firstOrNull()
     }
 
     fun updateDDL(item: DDLItem) {
@@ -121,6 +191,9 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_COMPLETE_TIME, item.completeTime)
             put(COLUMN_NOTE, item.note)
             put(COLUMN_IS_ARCHIVED, item.isArchived.toInt())
+            put(COLUMN_IS_STARED, item.isStared.toInt())
+            put(COLUMN_TYPE, item.type.toString())
+            put(COLUMN_HABIT_COUNT, item.habitCount)
         }
         db.update(TABLE_NAME, values, "$COLUMN_ID = ?", arrayOf(item.id.toString()))
     }

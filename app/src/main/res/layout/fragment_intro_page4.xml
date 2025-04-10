@@ -1,6 +1,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/pageView"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <!-- 图片：高度为屏幕的 50%，根据亮暗模式切换资源 -->
@@ -9,9 +10,9 @@
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
-        android:contentDescription="@string/swipe_to_delete"
+        android:contentDescription="@string/habit_tracking"
         android:scaleType="centerInside"
-        android:src="@drawable/swipetodelete"
+        android:src="@drawable/pixel5_habit"
         app:layout_constraintBottom_toTopOf="@+id/mainDescription"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHeight_percent="0.5"
@@ -24,7 +25,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
-        android:text="@string/swipe_to_delete"
+        android:text="@string/habit_tracking"
         android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/imageView"
@@ -38,7 +39,8 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="100dp"
         android:layout_marginHorizontal="16dp"
-        android:text="@string/swipe_to_delete_content"
+        android:textAlignment="center"
+        android:text="@string/habit_tracking_content"
         app:layout_constraintTop_toBottomOf="@id/mainDescription"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"

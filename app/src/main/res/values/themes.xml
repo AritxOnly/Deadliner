@@ -3,6 +3,10 @@
     <style name="Theme.Deadliner" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- enable window content transitions -->
         <item name="android:windowActivityTransitions">true</item>
+        <item name="colorPrimary">?attr/colorPrimary</item>
+        <item name="colorOnPrimary">?attr/colorOnPrimary</item>
+        <item name="colorPrimaryContainer">?attr/colorPrimaryContainer</item>
+        <item name="colorSurface">?attr/colorSurface</item>
     </style>
 
     <item name="colorBorder" type="color">#50000000</item>

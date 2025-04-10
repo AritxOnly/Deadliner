@@ -1,9 +1,11 @@
 package com.aritxonly.deadliner
 
+import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 
 class IntroFragment3 : Fragment() {
@@ -12,7 +14,8 @@ class IntroFragment3 : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // 加载 Fragment1 的布局
-        return inflater.inflate(R.layout.fragment_intro_page3, container, false)
+        val view = inflater.inflate(R.layout.fragment_intro_page3, container, false)
+
+        return view
     }
 }

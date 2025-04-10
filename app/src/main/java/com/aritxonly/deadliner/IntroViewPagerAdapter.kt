@@ -6,11 +6,13 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 class IntroViewPagerAdapter(activity: IntroActivity) : FragmentStateAdapter(activity) {
 
     private val fragments = listOf(
+        IntroFragment0(),
         IntroFragment1(),
         IntroFragment2(),
         IntroFragment3(),
         IntroFragment4(),
         IntroFragment5(),
+        IntroFragment6(),
         IntroFragmentWelcome()
     )
 

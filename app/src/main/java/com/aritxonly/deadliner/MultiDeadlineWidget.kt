@@ -1,27 +1,20 @@
 package com.aritxonly.deadliner
 
-import android.annotation.SuppressLint
 import android.app.PendingIntent
-import android.app.UiModeManager
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.graphics.Color
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
-import android.widget.ProgressBar
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
-import java.time.Duration
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import kotlin.math.max
 
-class SingleDeadlineWidget : AppWidgetProvider() {
+class MultiDeadlineWidget : AppWidgetProvider() {
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -57,7 +50,7 @@ internal fun updateAppWidget(
     appWidgetManager: AppWidgetManager,
     appWidgetId: Int
 ) {
-    val views = RemoteViews(context.packageName, R.layout.single_deadline_widget)
+    val views = RemoteViews(context.packageName, R.layout.multi_deadline_widget)
     val sharedPreferences = context.getSharedPreferences("app_settings", MODE_PRIVATE)
     val direction = sharedPreferences.getBoolean("widget_progress_dir", false)
 
@@ -73,15 +66,15 @@ internal fun updateAppWidget(
     appWidgetManager.updateAppWidget(appWidgetId, views)
 
     val dbHelper = DatabaseHelper.getInstance(context)
-    val allDDLs = dbHelper.getAllDDLs()
+    val allDDLs = dbHelper.getDDLsByType(DeadlineType.TASK)
 
     val color = getThemeColor(context, android.R.attr.textColorPrimary)
     views.setInt(R.id.widgetFinishIcon, "setColorFilter", color)
 
     val now = LocalDateTime.now()
     val parsedDDLs = allDDLs.map { ddl ->
-        val startTime = GlobalUtils.parseDateTime(ddl.startTime)
-        val endTime = GlobalUtils.parseDateTime(ddl.endTime)
+        val startTime = GlobalUtils.safeParseDateTime(ddl.startTime)
+        val endTime = GlobalUtils.safeParseDateTime(ddl.endTime)
         val remainingMillis = ChronoUnit.MILLIS.between(now, endTime)
         val isCompleted = ddl.isCompleted
         ParsedDDL(ddl, startTime, endTime, remainingMillis, isCompleted)

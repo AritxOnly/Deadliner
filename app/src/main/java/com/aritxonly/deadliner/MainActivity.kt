@@ -1,65 +1,72 @@
 package com.aritxonly.deadliner
 
 import ApkDownloaderInstaller
-import android.annotation.SuppressLint
 import android.app.ActivityOptions
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
-import android.content.SharedPreferences
 import android.graphics.*
-import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.text.Editable
 import android.text.Spanned
+import android.text.TextWatcher
 import android.util.Log
 import android.util.TypedValue
-import android.view.GestureDetector
-import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
-import android.view.View.OnTouchListener
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.transition.AutoTransition
+import androidx.transition.TransitionManager
 import androidx.work.*
 import androidx.work.PeriodicWorkRequestBuilder
+import com.google.android.material.bottomappbar.BottomAppBar
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import io.noties.markwon.Markwon
-import kotlinx.coroutines.*
 import nl.dionsegijn.konfetti.xml.KonfettiView
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.internal.toHexString
 import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
-import javax.microedition.khronos.opengles.GL
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -67,7 +74,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var addEventButton: FloatingActionButton
     private lateinit var settingsButton: ImageButton
-    private lateinit var archivedButton: ImageButton
     private val itemList = mutableListOf<DDLItem>()
     private lateinit var adapter: CustomAdapter
     private lateinit var addDDLLauncher: ActivityResultLauncher<Intent>
@@ -77,11 +83,30 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var konfettiViewMain: KonfettiView
     private lateinit var finishNotice: LinearLayout
 
+    /**
+     * Note in v2.0 build:
+     *  archivedButton is now decrypted
+     *  all the button is now implemented in bottomAppBar
+     */
+    /* v2.0 added */
+    private lateinit var bottomAppBar: BottomAppBar
+    private lateinit var bottomBarContainer: CoordinatorLayout
+
+    private lateinit var searchInputLayout: TextInputLayout
+    private lateinit var searchEditText: TextInputEditText
+    private lateinit var searchOverlay: ConstraintLayout
+    private lateinit var dataOverlay: View
+
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
 
-    var isBottomReached = false
-    val triggerThreshold = 100f.dp // 触发跳转的阈值（100dp）
+    private var currentType = DeadlineType.TASK
+
+    private val viewModel by viewModels<MainViewModel> {
+        ViewModelFactory(
+            context = this
+        )
+    }
 
     // 定义权限请求启动器
     private val requestPermissionLauncher = registerForActivityResult(
@@ -93,7 +118,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             Toast.makeText(this, "通知权限被拒绝，请在设置中手动开启", Toast.LENGTH_SHORT).show()
         }
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 跟随主题色
@@ -108,9 +132,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         // 获取主题中的 colorSurface 值
         val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
+        val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
 
+        Log.d("MainActivity", "colorSurface ${colorSurface.toHexString()}")
         // 设置状态栏和导航栏颜色
-        setSystemBarColors(colorSurface, isLightColor(colorSurface))
+        setSystemBarColors(colorSurface, isLightColor(colorSurface), colorContainer)
         val mainPage: ConstraintLayout = findViewById(R.id.main)
         mainPage.setBackgroundColor(colorSurface)
 
@@ -121,121 +147,84 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         recyclerView = findViewById(R.id.recyclerView)
         addEventButton = findViewById(R.id.addEvent)
         settingsButton = findViewById(R.id.settingsButton)
-        archivedButton = findViewById(R.id.archivedButton)
 
         decideShowEmptyNotice()
 
         // 设置 RecyclerView
-        val itemList = databaseHelper.getAllDDLs()
-        adapter = CustomAdapter(itemList, this)
-        adapter.setSwipeListener(this)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
-
-
-        // 设置 RecyclerView
-        adapter = CustomAdapter(itemList, this)
-        adapter.updateData(itemList, this)
+        adapter = CustomAdapter(itemList, this, viewModel)
+        viewModel.ddlList.observe(this) { items ->
+            adapter.itemList = items
+            adapter.notifyDataSetChanged()
+            decideShowEmptyNotice()
+        }
         adapter.setSwipeListener(this)
         // 设置单击监听器
         adapter.setOnItemClickListener(object : CustomAdapter.OnItemClickListener {
+            /**
+             * v2.0 update note:
+             * 这里是一个我解决不了的问题：Compose页面 (DeadlineDetailActivity) 无法应用动态取色。
+             * 因此我只能退而求其次，将我需要用到的颜色封装到一个数据类中，并在Compose Activity中调用数据类
+             * 获取MainActivity的颜色
+             * Dirty but 唯一的做法
+             */
             override fun onItemClick(position: Int) {
                 val clickedItem = adapter.itemList[position]
+                if (clickedItem.type == DeadlineType.HABIT) return
+
                 pauseRefresh = true
 
-                val finishedString = if (clickedItem.isCompleted) {
-                    resources.getString(R.string.alert_edit_definish)
-                } else {
-                    resources.getString(R.string.alert_edit_finished)
-                }
-
-                // 选项数组
-                val options = arrayOf(
-                    resources.getString(R.string.alert_edit_modify),
-                    resources.getString(R.string.alert_edit_delete),
-                    finishedString,
-                    resources.getString(R.string.alert_edit_archive)
+                val myColorScheme = AppColorScheme(
+                    primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
+                    onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                    primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
+                    surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
+                    onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
+                    surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
                 )
 
-                // 显示竖排按钮的 MaterialAlertDialog
-                MaterialAlertDialogBuilder(this@MainActivity)
-                    .setTitle(R.string.alert_edit_title)
-                    .setItems(options) { dialog, which ->
-                        when (which) {
-                            0 -> {
-                                // 修改操作
-                                val editDialog = EditDDLFragment(clickedItem) { updatedDDL ->
-                                    databaseHelper.updateDDL(updatedDDL)
-                                    adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
-                                }
-                                editDialog.show(supportFragmentManager, "EditDDLFragment")
-                                pauseRefresh = false
-                            }
-                            1 -> {
-                                // 删除操作
-                                triggerVibration(this@MainActivity, 200)
-                                MaterialAlertDialogBuilder(this@MainActivity)
-                                    .setTitle(R.string.alert_delete_title)
-                                    .setMessage(R.string.alert_delete_message)
-                                    .setNeutralButton(resources.getString(R.string.cancel)) { dialog, _ ->
-                                        adapter.notifyItemChanged(position) // 取消删除，刷新该项
-                                        pauseRefresh = false
-                                    }
-                                    .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
-                                        val item = adapter.itemList[position]
-                                        databaseHelper.deleteDDL(item.id)
-                                        adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
-                                        Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
-                                        pauseRefresh = false
-                                    }
-                                    .show()
-                                decideShowEmptyNotice()
-                            }
-                            2 -> {
-                                // 标记为完成操作
-                                triggerVibration(this@MainActivity, 100)
-                                val item = adapter.itemList[position]
-                                item.isCompleted = !item.isCompleted
-                                item.completeTime = if (item.isCompleted) {
-                                    LocalDateTime.now().toString()
-                                } else {
-                                    ""
-                                }
-                                databaseHelper.updateDDL(item)
-                                adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
-                                if (item.isCompleted) {
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        R.string.toast_finished,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                } else {
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        R.string.toast_definished,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-                            3 -> {
-                                val item = adapter.itemList[position]
-                                if (item.isCompleted) {
-                                    item.isArchived = true
-                                    databaseHelper.updateDDL(item)
-                                    adapter.updateData(databaseHelper.getAllDDLs(), this@MainActivity)
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        R.string.toast_archived,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    decideShowEmptyNotice()
-                                }
-                            }
-                        }
-                    }
-                    .show()
+                val intent = DeadlineDetailActivity.newIntent(this@MainActivity, clickedItem).apply {
+                    putExtra("EXTRA_APP_COLOR_SCHEME", myColorScheme)
+                }
+                startActivity(intent)
+                pauseRefresh = false
             }
         })
+
+        adapter.multiSelectListener = object : CustomAdapter.MultiSelectListener {
+            override fun onSelectionChanged(selectedCount: Int) {
+                switchAppBarStatus(selectedCount == 0)
+                if (selectedCount != 0) {
+                    excitementText.text = "已选中 $selectedCount 项 Deadline"
+                } else {
+                    updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                }
+            }
+        }
+
+        adapter.onCheckInGlobalListener = object : CustomAdapter.OnCheckInGlobalListener {
+            override fun onCheckInFailedGlobal(context: Context, habitItem: DDLItem) {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.snackbar_already_checkin),
+                    Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onCheckInSuccessGlobal(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData) {
+                triggerVibration(this@MainActivity, 100)
+
+                val count = habitItem.habitCount
+                val frequency = habitMeta.frequency
+
+                if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
+                    Log.d("Count", count.toString())
+                    if (count >= frequency) {
+                        if (GlobalUtils.fireworksOnFinish) { konfettiViewMain.start(PartyPresets.festive()) }
+                    }
+                } else {
+                    if (GlobalUtils.fireworksOnFinish) { konfettiViewMain.start(PartyPresets.festive()) }
+                }
+            }
+        }
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
@@ -261,6 +250,15 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                if (adapter.isMultiSelectMode) {
+                    adapter.notifyItemChanged(viewHolder.adapterPosition)
+                    return
+                }
+
+                if (currentType == DeadlineType.HABIT) {
+                    return
+                }
+
                 when (direction) {
                     ItemTouchHelper.LEFT -> {
                         triggerVibration(this@MainActivity, 200)
@@ -282,6 +280,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 actionState: Int,
                 isCurrentlyActive: Boolean
             ) {
+                if (adapter.isMultiSelectMode || currentType == DeadlineType.HABIT) {
+                    return
+                }
                 val itemView = viewHolder.itemView
                 val itemHeight = itemView.bottom - itemView.top
 
@@ -347,12 +348,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         addDDLLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
                 // 更新数据
-                adapter.updateData(databaseHelper.getAllDDLs(), this)
+                viewModel.loadData(currentType)
             }
         }
         // 添加新事件按钮
         addEventButton.setOnClickListener {
-            val intent = Intent(this, AddDDLActivity::class.java)
+            val intent = Intent(this, AddDDLActivity::class.java).apply {
+                putExtra("EXTRA_CURRENT_TYPE", if (currentType == DeadlineType.TASK) 0 else 1)
+            }
             addDDLLauncher.launch(intent)
         }
 
@@ -360,18 +363,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 //            Log.d("MainActivity", "Settings triggered")
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
-        }
-
-        archivedButton.setOnClickListener {
-            Log.d("MainActivity", "Archive triggered")
-            val intent = Intent(this, ArchiveActivity::class.java)
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                val options = ActivityOptions.makeSceneTransitionAnimation(this).toBundle()
-                startActivity(intent, options)
-            } else {
-                startActivity(intent)
-            }
         }
 
         titleBar = findViewById(R.id.titleBar)
@@ -386,6 +377,257 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 设置通知定时任务
         updateNotification(GlobalUtils.deadlineNotification)
 
+        /* v2.0 added */
+        bottomAppBar = findViewById(R.id.bottomAppBar)
+        bottomBarContainer = findViewById(R.id.bottomBarContainer)
+
+        // 初始化新搜索控件（覆盖层）
+        searchOverlay = findViewById(R.id.searchOverlay)
+        searchInputLayout = findViewById(R.id.searchInputLayout)
+        searchEditText = findViewById(R.id.searchEditText)
+        bottomAppBar = findViewById(R.id.bottomAppBar)
+
+        // 底部 AppBar 的搜索图标点击事件：显示搜索覆盖层
+        bottomAppBar.setNavigationOnClickListener {
+            showSearchOverlay()
+        }
+
+        searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                val filter = SearchFilter.parse(s.toString())
+
+                viewModel.filterData(filter, currentType)
+            }
+        })
+
+        // 返回图标点击事件：隐藏搜索覆盖层
+        searchInputLayout.setStartIconOnClickListener {
+            searchEditText.text?.clear()
+            viewModel.loadData(currentType)
+            hideSearchOverlay()
+        }
+
+        bottomAppBar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.chart -> {
+                    val myColorScheme = AppColorScheme(
+                        primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
+                        onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                        primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
+                        surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
+                        onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
+                        surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainerLow)
+                    )
+                    Log.d("MainActivity", "surface=${myColorScheme.surface.toHexString()}")
+
+                    val intent = OverviewActivity.newIntent(this, myColorScheme)
+
+                    startActivity(intent)
+                    true
+                }
+                R.id.archive -> {
+                    val intent = Intent(this, ArchiveActivity::class.java)
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        val options = ActivityOptions.makeSceneTransitionAnimation(this).toBundle()
+                        startActivity(intent, options)
+                    } else {
+                        startActivity(intent)
+                    }
+                    true
+                }
+                R.id.filter -> {
+                    val options = arrayOf(
+                        resources.getString(R.string.filter_dialog_default),
+                        resources.getString(R.string.filter_dialog_name),
+                        resources.getString(R.string.filter_dialog_start_time),
+                        resources.getString(R.string.filter_dialog_elapse_time)
+                    )
+                    var selectedItem = GlobalUtils.filterSelection
+
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle(R.string.filter_dialog_title)
+                        .setSingleChoiceItems(options, selectedItem) { dialog, which ->
+                            // 保存选中的项索引
+                            selectedItem = which
+                        }
+                        .setPositiveButton(R.string.accept) { dialog, which ->
+                            if (selectedItem != -1) {
+                                GlobalUtils.filterSelection = selectedItem
+                                viewModel.loadData(currentType)
+                            } else {
+                                Toast.makeText(this, "未选择任何项", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .setNegativeButton(R.string.cancel, null)
+                        .show()
+                    true
+                }
+                R.id.delete -> {
+                    if (adapter.selectedPositions.isNotEmpty()) {
+                        triggerVibration(this@MainActivity, 200)
+                        MaterialAlertDialogBuilder(this@MainActivity)
+                            .setTitle(R.string.alert_delete_title)
+                            .setMessage(R.string.alert_delete_message)
+                            .setNegativeButton(resources.getString(R.string.cancel)) { dialog, _ ->
+                                // 取消删除，刷新界面
+                                adapter.notifyDataSetChanged()
+                            }
+                            .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
+                                // 根据选中项进行删除，先复制列表防止修改集合时出错
+                                val positionsToDelete = adapter.selectedPositions.toList().sortedDescending()
+                                for (position in positionsToDelete) {
+                                    val item = adapter.itemList[position]
+                                    databaseHelper.deleteDDL(item.id)
+                                }
+                                viewModel.loadData(currentType)
+                                Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
+
+                                switchAppBarStatus(true)
+                                updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                            }
+                            .setOnCancelListener {
+                                adapter.notifyDataSetChanged()
+                            }
+                            .show()
+
+                        decideShowEmptyNotice()
+                        true
+                    } else {
+                        Toast.makeText(this@MainActivity, "请先选择要删除的项目", Toast.LENGTH_SHORT).show()
+                        false
+                    }
+                }
+                R.id.done -> {
+                    if (adapter.selectedPositions.isNotEmpty()) {
+                        if (currentType == DeadlineType.HABIT) {
+                            triggerVibration(this@MainActivity, 100)
+                            val positionsToUpdate = adapter.selectedPositions.toList()
+                            for (position in positionsToUpdate) {
+                                val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
+                                viewHolder?.let {
+                                    // 获取按钮并执行点击操作
+                                    val button = it.itemView.findViewById<MaterialButton>(R.id.checkButton)
+                                    button.performClick()
+                                }
+                            }
+
+                            decideShowEmptyNotice()
+                            // 清除多选状态
+
+                            switchAppBarStatus(true)
+                            updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                            true
+                        } else {
+                            triggerVibration(this@MainActivity, 100)
+                            val positionsToUpdate = adapter.selectedPositions.toList()
+                            for (position in positionsToUpdate) {
+                                val item = adapter.itemList[position]
+                                item.isCompleted = true
+                                item.completeTime = LocalDateTime.now().toString()
+                                databaseHelper.updateDDL(item)
+                            }
+                            viewModel.loadData(currentType)
+                            Toast.makeText(
+                                this@MainActivity,
+                                R.string.toast_finished,
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            decideShowEmptyNotice()
+                            // 清除多选状态
+
+                            switchAppBarStatus(true)
+                            updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                            true
+                        }
+                    } else {
+                        Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
+                        false
+                    }
+                }
+                R.id.archiving -> {
+                    if (adapter.selectedPositions.isNotEmpty()) {
+                        val positionsToUpdate = adapter.selectedPositions.toList()
+                        var count = 0
+                        for (position in positionsToUpdate) {
+                            val item = adapter.itemList[position]
+                            if (item.isCompleted) {
+                                item.isArchived = true
+                                databaseHelper.updateDDL(item)
+                                count++
+                            }
+                        }
+                        viewModel.loadData(currentType)
+                        Toast.makeText(
+                            this@MainActivity,
+                            "$count 项" + resources.getString(R.string.toast_archived),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        decideShowEmptyNotice()
+                        // 清除多选状态
+
+                        switchAppBarStatus(true)
+                        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                        true
+                    } else {
+                        Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
+                        false
+                    }
+                }
+                R.id.star -> {
+                    if (adapter.selectedPositions.isNotEmpty()) {
+                        val positionsToUpdate = adapter.selectedPositions.toList()
+                        var count = 0
+                        for (position in positionsToUpdate) {
+                            val item = adapter.itemList[position]
+                            item.isStared = !item.isStared
+                            databaseHelper.updateDDL(item)
+                            count++
+                        }
+                        viewModel.loadData(currentType)
+                        Toast.makeText(
+                            this@MainActivity,
+                            resources.getString(R.string.toast_stared),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        decideShowEmptyNotice()
+                        // 清除多选状态
+
+                        switchAppBarStatus(true)
+                        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                        true
+                    } else {
+                        Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
+                        false
+                    }
+                }
+                else -> false
+            }
+        }
+
+        onBackPressedDispatcher.addCallback {
+            if (searchOverlay.visibility == View.VISIBLE) {
+                searchEditText.text?.clear()
+                viewModel.loadData(currentType)
+                hideSearchOverlay()
+            }
+            else if (adapter.isMultiSelectMode) {
+                switchAppBarStatus(true)
+                updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+            }
+            else {
+                return@addCallback
+            }
+        }
+
+        dataOverlay = findViewById(R.id.dataOverlay)
+
+        setupTabs()
+
         checkForUpdates()
     }
 
@@ -397,22 +639,16 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private fun updateWidget() {
         val appWidgetManager = AppWidgetManager.getInstance(this)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, SingleDeadlineWidget::class.java))
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, MultiDeadlineWidget::class.java))
         for (appWidgetId in appWidgetIds) {
-            SingleDeadlineWidget.updateWidget(this, appWidgetManager, appWidgetId)
+            MultiDeadlineWidget.updateWidget(this, appWidgetManager, appWidgetId)
         }
     }
 
     private fun refreshData() {
-        // 在后台线程获取数据，并在主线程更新 UI
-        CoroutineScope(Dispatchers.Main).launch {
-            val newData = withContext(Dispatchers.IO) {
-                databaseHelper.getAllDDLs()
-            }
-            adapter.updateData(newData, this@MainActivity)
-            swipeRefreshLayout.isRefreshing = false // 停止刷新动画
-            decideShowEmptyNotice()
-        }
+        viewModel.loadData(currentType)
+        swipeRefreshLayout.isRefreshing = false
+        decideShowEmptyNotice()
     }
 
     private fun updateTitleAndExcitementText(isEnabled: Boolean) {
@@ -576,7 +812,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         if (requestCode == REQUEST_CODE_ADD_DDL && resultCode == RESULT_OK) {
             // 刷新数据
-            adapter.updateData(databaseHelper.getAllDDLs(), this)
+            viewModel.loadData(currentType)
         }
 
         decideShowEmptyNotice()
@@ -591,7 +827,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             ""
         }
         databaseHelper.updateDDL(item)
-        adapter.updateData(databaseHelper.getAllDDLs(), this)
+        viewModel.loadData(currentType)
         if (item.isCompleted) {
             if (isFireworksAnimEnable) { konfettiViewMain.start(PartyPresets.festive()) }
             Toast.makeText(this, R.string.toast_finished, Toast.LENGTH_SHORT).show()
@@ -605,23 +841,27 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.alert_delete_title)
             .setMessage(R.string.alert_delete_message)
-            .setNeutralButton(resources.getString(R.string.cancel)) { dialog, _ ->
+            .setNegativeButton(resources.getString(R.string.cancel)) { dialog, _ ->
                 adapter.notifyItemChanged(position) // 取消删除，刷新该项
                 pauseRefresh = false
             }
             .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
                 val item = adapter.itemList[position]
                 databaseHelper.deleteDDL(item.id)
-                adapter.updateData(databaseHelper.getAllDDLs(), this)
+                viewModel.loadData(currentType)
                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                 decideShowEmptyNotice()
+                pauseRefresh = false
+            }
+            .setOnCancelListener {
+                adapter.notifyItemChanged(position) // 取消删除，刷新该项
                 pauseRefresh = false
             }
             .show()
     }
 
     private fun decideShowEmptyNotice() {
-        finishNotice.visibility = if (databaseHelper.getAllDDLs().isEmpty()) {
+        finishNotice.visibility = if (viewModel.isEmpty() == true) {
             View.VISIBLE
         } else {
             View.GONE
@@ -650,11 +890,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     /**
      * 设置状态栏和导航栏颜色及图标颜色
      */
-    private fun setSystemBarColors(color: Int, lightIcons: Boolean) {
+    private fun setSystemBarColors(color: Int, lightIcons: Boolean, colorNavigationBar: Int) {
         window.apply {
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             statusBarColor = color
-            navigationBarColor = color
+            navigationBarColor = colorNavigationBar
 
             // 设置状态栏图标颜色
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -685,7 +925,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private fun getThemeColor(attributeId: Int): Int {
         val typedValue = TypedValue()
         theme.resolveAttribute(attributeId, typedValue, true)
+        Log.d("ThemeColor", "getColor $attributeId: ${typedValue.data.toHexString()}")
         return typedValue.data
+    }
+
+    private fun getMaterialThemeColor(attributeId: Int): Int {
+        return MaterialColors.getColor(ContextWrapper(this), attributeId, Color.WHITE)
     }
 
     /**
@@ -703,12 +948,194 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
         updateNotification(GlobalUtils.deadlineNotification)
         isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
-        adapter.updateData(databaseHelper.getAllDDLs(), this)
+        switchAppBarStatus(true)
+        viewModel.loadData(currentType)
         decideShowEmptyNotice()
+
+        if (searchOverlay.visibility == View.VISIBLE) {
+            val s = searchEditText.text
+            val filter = SearchFilter.parse(s.toString())
+
+            viewModel.filterData(filter, currentType)
+        }
     }
 
     companion object {
         private const val REQUEST_CODE_ADD_DDL = 1
+        const val ANIMATION_DURATION = 160L
+    }
+
+    /* New to v2.0 */
+    private var currentAppBarIsPrimary: Boolean? = null
+
+    private fun switchAppBarStatus(isPrimary: Boolean) {
+        if (currentAppBarIsPrimary == isPrimary) return
+
+        if (!isPrimary) {
+            bottomAppBar.performHide()
+
+            bottomAppBar.postDelayed({
+                bottomAppBar.replaceMenu(
+                    if (currentType == DeadlineType.TASK) R.menu.bottom_utility_bar
+                    else R.menu.bottom_utility_bar_alt
+                )
+                switchAppBarMenuStatus(false)
+                bottomAppBar.performShow()
+            }, ANIMATION_DURATION)
+
+            addEventButton.animate().alpha(0f).setDuration(150).withEndAction {
+                // 切换图标
+                addEventButton.setImageResource(R.drawable.ic_edit)
+                addEventButton.animate().alpha(1f).setDuration(150).start()
+            }.start()
+
+            addEventButton.setOnClickListener {
+                // 修改操作
+                if (adapter.selectedPositions.isNotEmpty()) {
+                    // 获取第一个选中的位置
+                    val firstPosition = adapter.selectedPositions.first()
+                    val clickedItem = adapter.itemList[firstPosition]
+                    val editDialog = EditDDLFragment(clickedItem) { updatedDDL ->
+                        databaseHelper.updateDDL(updatedDDL)
+                        viewModel.loadData(currentType)
+                        // 清除多选状态
+                        adapter.selectedPositions.clear()
+                        adapter.isMultiSelectMode = false
+                    }
+                    editDialog.show(supportFragmentManager, "EditDDLFragment")
+                } else {
+                    Toast.makeText(this@MainActivity, "请先选择要修改的项目", Toast.LENGTH_SHORT).show()
+                }
+                pauseRefresh = false
+            }
+        } else {
+            bottomAppBar.performHide()
+
+            bottomAppBar.postDelayed({
+                bottomAppBar.replaceMenu(R.menu.bottom_app_bar)
+                switchAppBarMenuStatus(true)
+                bottomAppBar.performShow()
+            }, ANIMATION_DURATION)
+
+            adapter.selectedPositions.clear()
+            adapter.isMultiSelectMode = false
+            viewModel.loadData(currentType)
+
+            addEventButton.animate().alpha(0f).setDuration(150).withEndAction {
+                // 切换图标
+                addEventButton.setImageResource(R.drawable.ic_add)
+                addEventButton.animate().alpha(1f).setDuration(150).start()
+            }.start()
+            addEventButton.setOnClickListener {
+                val intent = Intent(this, AddDDLActivity::class.java).apply {
+                    putExtra("EXTRA_CURRENT_TYPE", if (currentType == DeadlineType.TASK) 0 else 1)
+                }
+                addDDLLauncher.launch(intent)
+            }
+        }
+        currentAppBarIsPrimary = isPrimary
+    }
+
+    private fun switchAppBarMenuStatus(isPrimary: Boolean) {
+        if (!isPrimary) {
+            bottomAppBar.setNavigationIcon(R.drawable.ic_back)
+            bottomAppBar.setNavigationOnClickListener {
+                // 撤销多选
+                adapter.isMultiSelectMode = false
+                adapter.selectedPositions.clear()
+                viewModel.loadData(currentType)
+                switchAppBarStatus(true)
+                updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+            }
+        } else {
+            bottomAppBar.setNavigationIcon(R.drawable.ic_search)
+            bottomAppBar.setNavigationOnClickListener {
+                showSearchOverlay()
+            }
+        }
+    }
+
+    /**
+     * 显示搜索覆盖层并打开软键盘
+     */
+    private fun showSearchOverlay() {
+        TransitionManager.beginDelayedTransition(searchOverlay, AutoTransition())
+        searchOverlay.visibility = View.VISIBLE
+        searchEditText.requestFocus()
+
+        bottomBarContainer.visibility = View.GONE
+        addEventButton.hide()
+        bottomAppBar.performHide()
+        // 打开软键盘
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    /**
+     * 隐藏搜索覆盖层并关闭软键盘
+     */
+    private fun hideSearchOverlay() {
+        TransitionManager.beginDelayedTransition(searchOverlay, AutoTransition())
+        searchOverlay.visibility = View.GONE
+
+        addEventButton.show()
+        bottomAppBar.performShow()
+        bottomBarContainer.visibility = View.VISIBLE
+        // 隐藏软键盘
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(searchEditText.windowToken, 0)
+    }
+
+    private fun setupTabs() {
+        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
+        tabLayout.addTab(tabLayout.newTab().setText("任务"))
+        tabLayout.addTab(tabLayout.newTab().setText("习惯"))
+
+        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                currentType = when (tab?.position) {
+                    0 -> DeadlineType.TASK
+                    1 -> DeadlineType.HABIT
+                    else -> DeadlineType.TASK
+                }
+                showOverlay()
+
+                adapter.selectedPositions.clear()
+                adapter.isMultiSelectMode = false
+                updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+                switchAppBarStatus(true)
+
+                adapter.updateType(currentType)
+                viewModel.loadData(currentType)
+
+                if (searchOverlay.visibility == View.VISIBLE) {
+                    val s = searchEditText.text
+                    val filter = SearchFilter.parse(s.toString())
+
+                    viewModel.filterData(filter, currentType)
+                }
+
+                Handler(Looper.getMainLooper()).postDelayed({
+                    // 数据刷新完成后执行动画隐藏覆盖层
+                    hideOverlay()
+                    // 结束下拉刷新状态（如果使用 SwipeRefreshLayout）
+                    swipeRefreshLayout.isRefreshing = false
+                }, 300)
+            }
+            // 其他方法保持不变
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
+    }
+
+    private fun showOverlay() {
+        dataOverlay.alpha = 1f
+    }
+
+    private fun hideOverlay() {
+        dataOverlay.animate()
+            .alpha(0f)
+            .setDuration(300)
     }
 }
 

@@ -14,15 +14,20 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import java.sql.Time
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -38,9 +43,21 @@ class AddDDLActivity : AppCompatActivity() {
     private lateinit var ddlNoteEditText: EditText
     private lateinit var saveButton: Button
     private lateinit var backButton: ImageButton
+    private lateinit var ddlNoteLayout: TextInputLayout
 
     private var startTime: LocalDateTime? = null
     private var endTime: LocalDateTime? = null
+
+    private lateinit var freqEditLayout: LinearLayout
+    private lateinit var typeTabLayout: TabLayout
+    private lateinit var freqTypeToggleGroup: MaterialButtonToggleGroup
+    private lateinit var freqTextInput: TextInputLayout
+    private lateinit var freqEditText: EditText
+    private lateinit var totalTextInput: TextInputLayout
+    private lateinit var totalEditText: EditText
+    private lateinit var freqTypeHint: TextView
+
+    private var selectedPage = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d("AddDDLActivity", "available: ${DynamicColors.isDynamicColorAvailable()}")
@@ -57,6 +74,8 @@ class AddDDLActivity : AppCompatActivity() {
         // 设置状态栏和导航栏颜色
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
+        selectedPage = intent.getIntExtra("EXTRA_CURRENT_TYPE", 0)
+
         databaseHelper = DatabaseHelper.getInstance(applicationContext)
         ddlNameEditText = findViewById(R.id.ddlNameEditText)
         startTimeCard = findViewById(R.id.startTimeCard) // MaterialCardView
@@ -64,6 +83,16 @@ class AddDDLActivity : AppCompatActivity() {
         ddlNoteEditText = findViewById(R.id.ddlNoteEditText)
         saveButton = findViewById(R.id.saveButton)
         backButton = findViewById(R.id.backButton)
+        ddlNoteLayout = findViewById(R.id.ddlNoteLayout)
+
+        freqEditLayout = findViewById(R.id.freqEditLayout)
+        typeTabLayout = findViewById(R.id.typeTabLayout)
+        freqTypeToggleGroup = findViewById(R.id.freqTypeToggleGroup)
+        freqTextInput = findViewById(R.id.freqTextInput)
+        freqEditText = findViewById(R.id.freqEditText)
+        totalTextInput = findViewById(R.id.totalTextInput)
+        totalEditText = findViewById(R.id.totalEditText)
+        freqTypeHint = findViewById(R.id.freqTypeHint)
 
         val startTimeContent: TextView = findViewById(R.id.startTimeContent)
         val endTimeContent: TextView = findViewById(R.id.endTimeContent)
@@ -92,16 +121,101 @@ class AddDDLActivity : AppCompatActivity() {
         saveButton.setOnClickListener {
             val ddlName = ddlNameEditText.text.toString()
             val ddlNote = ddlNoteEditText.text.toString()
-            if (ddlName.isNotBlank() && startTime != null && endTime != null) {
-                // 保存到数据库
-                databaseHelper.insertDDL(ddlName, startTime.toString(), endTime.toString(), ddlNote)
-                setResult(RESULT_OK)
-                finishAfterTransition() // 返回 MainActivity
+            val frequency = freqEditText.text.toString().ifBlank { "1" }.toInt()
+            val total = totalEditText.text.toString().ifBlank { "0" }.toIntOrNull()
+
+            val frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
+                R.id.btnTotal -> DeadlineFrequency.TOTAL
+                R.id.btnDaily -> DeadlineFrequency.DAILY
+                R.id.btnWeekly -> DeadlineFrequency.WEEKLY
+                R.id.btnYearly -> DeadlineFrequency.MONTHLY
+                else -> DeadlineFrequency.TOTAL
+            }
+
+            if (ddlName.isNotBlank() && startTime != null) {
+                if (selectedPage != 1) {
+                    if (endTime == null) return@setOnClickListener
+                    // 保存到数据库
+                    databaseHelper.insertDDL(
+                        ddlName,
+                        startTime.toString(),
+                        endTime.toString(),
+                        ddlNote
+                    )
+                    setResult(RESULT_OK)
+                    finishAfterTransition() // 返回 MainActivity
+                } else {
+                    databaseHelper.insertDDL(
+                        ddlName,
+                        startTime.toString(),
+                        endTime.toString(),
+                        note = HabitMetaData(
+                            completedDates = setOf(),
+                            frequencyType = frequencyType,
+                            frequency = frequency,
+                            total = total?:0,
+                            refreshDate = LocalDate.now().toString()
+                        ).toJson(),
+                        type = DeadlineType.HABIT
+                    )
+                    Log.d("endTime", endTime.toString())
+                    setResult(RESULT_OK)
+                    finishAfterTransition() // 返回 MainActivity
+                }
             }
         }
 
         backButton.setOnClickListener {
             finishAfterTransition()
+        }
+
+        typeTabLayout.getTabAt(selectedPage)?.select()
+        initTab()
+
+        typeTabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                selectedPage = tab?.position!!
+                when (selectedPage) {
+                    0 -> {
+                        ddlNoteLayout.visibility = View.VISIBLE
+                        ddlNoteEditText.visibility = View.VISIBLE
+                        freqTypeToggleGroup.visibility = View.GONE
+                        freqTypeHint.visibility = View.GONE
+                        freqEditLayout.visibility = View.GONE
+                    }
+                    1 -> {
+                        ddlNoteLayout.visibility = View.GONE
+                        ddlNoteEditText.visibility = View.GONE
+                        freqTypeToggleGroup.visibility = View.VISIBLE
+                        freqTypeHint.visibility = View.VISIBLE
+                        freqEditLayout.visibility = View.VISIBLE
+                    }
+                    else -> {}
+                }
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
+    }
+
+    private fun initTab() {
+        when (selectedPage) {
+            0 -> {
+                ddlNoteLayout.visibility = View.VISIBLE
+                ddlNoteEditText.visibility = View.VISIBLE
+                freqTypeToggleGroup.visibility = View.GONE
+                freqTypeHint.visibility = View.GONE
+                freqEditLayout.visibility = View.GONE
+            }
+            1 -> {
+                ddlNoteLayout.visibility = View.GONE
+                ddlNoteEditText.visibility = View.GONE
+                freqTypeToggleGroup.visibility = View.VISIBLE
+                freqTypeHint.visibility = View.VISIBLE
+                freqEditLayout.visibility = View.VISIBLE
+            }
+            else -> {}
         }
     }
 

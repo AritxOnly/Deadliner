@@ -6,7 +6,6 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import java.time.Duration
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class DeadlineWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
@@ -23,7 +22,7 @@ class DeadlineWorker(context: Context, params: WorkerParameters) : CoroutineWork
         val now = LocalDateTime.now()
 
         for (ddl in allDDLs) {
-            val endTime = GlobalUtils.parseDateTime(ddl.endTime)
+            val endTime = GlobalUtils.safeParseDateTime(ddl.endTime)
             val remainingMinutes = Duration.between(now, endTime).toMinutes()
 
             if (remainingMinutes in 0..60 && !ddl.isCompleted) {

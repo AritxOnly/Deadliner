@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import com.aritxonly.deadliner.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import java.io.File
 
 class ApkDownloaderInstaller(private val context: AppCompatActivity) {
@@ -22,7 +23,7 @@ class ApkDownloaderInstaller(private val context: AppCompatActivity) {
     private val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
     private var progressDialog: androidx.appcompat.app.AlertDialog? = null
-    private lateinit var progressBar: ProgressBar
+    private lateinit var progressBar: LinearProgressIndicator
     private lateinit var progressText: TextView
     private var isDownloading = true
     private var downloaded = false

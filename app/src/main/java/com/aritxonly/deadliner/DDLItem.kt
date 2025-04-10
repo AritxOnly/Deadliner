@@ -1,7 +1,9 @@
 package com.aritxonly.deadliner
 
-import java.time.LocalDateTime
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class DDLItem(
     val id: Long = -1,
     val name: String,
@@ -10,5 +12,8 @@ data class DDLItem(
     var isCompleted: Boolean = false,
     var completeTime: String = "",
     val note: String,
-    var isArchived: Boolean = false
-)
+    var isArchived: Boolean = false,
+    var isStared: Boolean = false,
+    var type: DeadlineType = DeadlineType.TASK,
+    var habitCount: Int = 0
+) : Parcelable
