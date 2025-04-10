@@ -3,6 +3,7 @@ package com.aritxonly.deadliner
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.os.Bundle
+import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -54,9 +55,12 @@ class IntroFragmentWelcome : Fragment() {
         textAnimator.start()
 
         // 设置按钮点击事件，使用 FragmentResult 传递事件
-        circularButton.setOnClickListener {
-            setFragmentResult("buttonClick", Bundle()) // 通知 Activity 按钮被点击
-        }
+        Handler().postDelayed({
+            circularButton.setOnClickListener {
+                setFragmentResult("buttonClick", Bundle()) // 通知 Activity 按钮被点击
+            }
+        }, 2000)
+
 
         return view
     }

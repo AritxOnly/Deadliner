@@ -21,4 +21,10 @@
         <!-- Activity关闭时退出的动画 -->
         <item name="android:activityCloseExitAnimation">@anim/no_anim</item>
     </style>
+
+    <style name="IntroTab" parent="Widget.Material3.TabLayout">
+        <item name="dividerColor">@android:color/transparent</item>
+        <item name="showDividers">middle</item>
+        <item name="dividerThickness">0dp</item>
+    </style>
 </resources>

@@ -105,6 +105,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:trackColor="?attr/colorBackgroundFloating" />
+        app:trackColor="?attr/colorBackgroundFloating"
+        app:indicatorTrackGapSize="2dp"
+        app:trackStopIndicatorSize="0dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -78,9 +78,15 @@ object GlobalUtils {
         }
 
     var firstRun: Boolean
-        get() = sharedPreferences.getBoolean("first_run_v2_", true)
+        get() = sharedPreferences.getBoolean("first_run_v2", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("first_run_v2_", value).apply()
+            sharedPreferences.edit().putBoolean("first_run_v2", value).apply()
+        }
+
+    var showIntroPage: Boolean
+        get() = sharedPreferences.getBoolean("show_intro_page", true)
+        set(value) {
+            sharedPreferences.edit().putBoolean("show_intro_page", value).apply()
         }
 
     // v2.0 - filter功能

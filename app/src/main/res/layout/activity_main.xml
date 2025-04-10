@@ -124,7 +124,7 @@
         app:tabIndicatorColor="?attr/colorPrimary"
         app:tabMode="fixed"
         app:tabTextColor="?attr/colorOnSurface"
-        app:tabSelectedTextColor="?attr/colorPrimary"/>
+        app:tabSelectedTextColor="?attr/colorPrimary" />
 
     <!-- 虚化遮罩 -->
     <View

@@ -150,7 +150,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         aboutCard.setOnClickListener {
-            if (GlobalUtils.firstRun) {
+            if (GlobalUtils.showIntroPage) {
                 Snackbar.make(
                     aboutCard,
                     "你已经设置了下次打开显示欢迎页面",
@@ -173,7 +173,7 @@ class SettingsActivity : AppCompatActivity() {
                         "下次打开Deadliner将显示欢迎页面",
                         Snackbar.LENGTH_SHORT
                     ).show()
-                    GlobalUtils.firstRun = true
+                    GlobalUtils.showIntroPage = true
                     resetTimes = 0
                 }
             }

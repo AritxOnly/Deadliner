@@ -64,7 +64,7 @@
 
     <string name="unfinished_settings">实验功能，尚未测试完成</string>
 
-    <string name="go_next">下一步</string>
+    <string name="go_next">继续</string>
 
     <!--下面是开始页面的内容-->
     <string name="main_description">欢迎来到Deadliner v2 💕</string>

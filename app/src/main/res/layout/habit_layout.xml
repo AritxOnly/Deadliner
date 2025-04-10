@@ -136,7 +136,9 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/dailyProgress" />
+        app:layout_constraintTop_toBottomOf="@id/dailyProgress"
+        app:indicatorTrackGapSize="2dp"
+        app:trackStopIndicatorSize="0dp" />
 
     <!-- 进度标签 -->
     <TextView

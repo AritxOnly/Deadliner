@@ -14,8 +14,8 @@ class LauncherActivity : AppCompatActivity() {
 
         GlobalUtils.init(this)
 
-        if (GlobalUtils.firstRun) {
-            GlobalUtils.timeNull = LocalDateTime.now()
+        if (GlobalUtils.showIntroPage) {
+            if (GlobalUtils.firstRun) GlobalUtils.timeNull = LocalDateTime.now()
             startActivity(Intent(this, IntroActivity::class.java))
         } else {
             startActivity(Intent(this, MainActivity::class.java))
