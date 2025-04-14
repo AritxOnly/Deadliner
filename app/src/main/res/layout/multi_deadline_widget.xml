@@ -37,6 +37,16 @@
             android:paddingHorizontal="8dp"
             android:paddingVertical="8dp">
 
+            <ImageView
+                android:id="@+id/star_icon_1"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:contentDescription="星标"
+                android:visibility="gone"
+                android:src="@drawable/ic_star_filled"
+                app:tint="?android:attr/textColorPrimaryInverse"
+                android:layout_gravity="center_vertical"/>
+
             <TextView
                 android:id="@+id/item_title_1"
                 android:layout_width="0dp"
@@ -85,6 +95,16 @@
             android:paddingHorizontal="8dp"
             android:paddingVertical="8dp">
 
+            <ImageView
+                android:id="@+id/star_icon_2"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:contentDescription="星标"
+                android:visibility="gone"
+                android:src="@drawable/ic_star_filled"
+                app:tint="?android:attr/textColorPrimaryInverse"
+                android:layout_gravity="center_vertical"/>
+
             <TextView
                 android:id="@+id/item_title_2"
                 android:layout_width="0dp"
@@ -131,6 +151,16 @@
             android:paddingHorizontal="8dp"
             android:paddingVertical="8dp">
 
+            <ImageView
+                android:id="@+id/star_icon_3"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:contentDescription="星标"
+                android:visibility="gone"
+                android:src="@drawable/ic_star_filled"
+                app:tint="?android:attr/textColorPrimaryInverse"
+                android:layout_gravity="center_vertical"/>
+
             <TextView
                 android:id="@+id/item_title_3"
                 android:layout_width="0dp"
@@ -167,7 +197,8 @@
             android:src="@drawable/ic_ccheck"
             android:contentDescription="完成图标"
             android:layout_marginBottom="16dp"
-            android:id="@+id/widgetFinishIcon" />
+            android:id="@+id/widgetFinishIcon"
+            app:tint="?android:attr/textColorPrimary" />
 
         <TextView
             android:layout_width="wrap_content"

@@ -77,11 +77,13 @@ internal fun updateAppWidget(
         val endTime = GlobalUtils.safeParseDateTime(ddl.endTime)
         val remainingMillis = ChronoUnit.MILLIS.between(now, endTime)
         val isCompleted = ddl.isCompleted
-        ParsedDDL(ddl, startTime, endTime, remainingMillis, isCompleted)
+        val isStared = ddl.isStared
+        ParsedDDL(ddl, startTime, endTime, remainingMillis, isCompleted, isStared)
     }
 
     // 按剩余时间排序
     val sortedDDLs = parsedDDLs.sortedWith(compareBy<ParsedDDL> { it.isCompleted }
+        .thenBy { !it.isStared }
         .thenBy {
             it.remainingMillis
         })
@@ -100,6 +102,11 @@ internal fun updateAppWidget(
         R.id.item_progress_text_2,
         R.id.item_progress_text_3
     )
+    val starIconIds = listOf(
+        R.id.star_icon_1,
+        R.id.star_icon_2,
+        R.id.star_icon_3
+    )
 
     // 隐藏所有Item
     itemContainers.forEach { (containerId, _, _) ->
@@ -112,10 +119,20 @@ internal fun updateAppWidget(
     for ((index, parsed) in showList.withIndex()) {
         val (containerId, titleId, progressId) = itemContainers[index]
         val progressTextId = progressTextIds[index]
+        val starIconId = starIconIds[index]
 
         if (parsed.isCompleted) {
             continue    // 设置已完成的不显示
         }
+
+        views.setViewVisibility(
+            starIconId,
+            if (parsed.isStared) View.VISIBLE else View.GONE
+        )
+
+        val colorStar = getThemeColor(context, android.R.attr.textColorPrimaryInverse)
+        views.setInt(starIconId, "setColorFilter", colorStar)
+
 
         views.setViewVisibility(containerId, View.VISIBLE)
         views.setTextViewText(titleId, parsed.ddl.name)
@@ -164,7 +181,8 @@ data class ParsedDDL(
     val startTime: LocalDateTime,
     val endTime: LocalDateTime,
     val remainingMillis: Long,
-    val isCompleted: Boolean
+    val isCompleted: Boolean,
+    val isStared: Boolean
 )
 
 private fun calculateProgress(start: LocalDateTime, end: LocalDateTime): Int {
