@@ -224,28 +224,25 @@ class CustomAdapter(
             dailyProgress.addView(dot)
         }
 
-        // 5. 更新月度进度
-        val currentMonth = YearMonth.now()
+        // 5. 更新进度条
+        val now = LocalDateTime.now()
 
         val progress: Float
-        if (habitMeta.total == 0) {
-            // 若未制定总次数，则以月进度计
-            val completedThisMonth = if (habitMeta.frequencyType == DeadlineFrequency.TOTAL)
-                habitItem.habitCount
-            else
-                completedDates.count { YearMonth.from(it) == currentMonth }
-            val monthlyGoal = when (habitMeta.frequencyType) {
-                DeadlineFrequency.DAILY -> currentMonth.lengthOfMonth()
-                DeadlineFrequency.WEEKLY -> habitMeta.frequency * 4
-                DeadlineFrequency.MONTHLY -> habitMeta.frequency
-                DeadlineFrequency.TOTAL -> currentMonth.lengthOfMonth()
-            }
-            progress = (completedThisMonth.toFloat() / monthlyGoal * 100).coerceAtMost(100f)
+
+        if (endTime == GlobalUtils.timeNull) {
+            // 若为空，不显示
+            progress = 1f
+            monthProgress.setIndicatorColor(getThemeColor(com.google.android.material.R.attr.colorControlHighlight))
         } else {
-            progress = (completedDates.size.toFloat() / habitMeta.total.toFloat() * 100).coerceAtMost(100f)
+            val startTime = GlobalUtils.safeParseDateTime(habitItem.startTime)
+
+            val duration = Duration.between(now, endTime)
+            val totalDuration = Duration.between(startTime, endTime)
+
+            progress = duration.toMinutes().toFloat() / totalDuration.toMinutes().toFloat()
         }
 
-        monthProgress.progress = progress.toInt()
+        monthProgress.progress = (progress * 100).toInt()
 
         progressLabel.text = when (habitMeta.frequencyType) {
             DeadlineFrequency.TOTAL -> ""
@@ -261,7 +258,6 @@ class CustomAdapter(
             (habitItem.habitCount < habitMeta.frequency) && (completedDates.size < habitMeta.total)
         }) || (habitMeta.total == 0)
 
-        Log.d("Check", "habitItem: ${habitItem.name} | type: ${habitMeta.frequencyType} | count: ${habitItem.habitCount} | size: ${completedDates.size} | total: ${habitMeta.total} | canPerformClick: $canCheckIn")
         val alreadyChecked = if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
             habitItem.habitCount >= habitMeta.frequency
         } else today in completedDates

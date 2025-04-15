@@ -84,6 +84,13 @@ fun extractTimeBucket(completeTime: String): String {
     }
 }
 
+val timeBucketOrder = mapOf(
+    "凌晨" to 0,
+    "上午" to 1,
+    "下午" to 2,
+    "晚上" to 3
+)
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 class OverviewActivity : ComponentActivity() {
 
@@ -127,7 +134,7 @@ class OverviewActivity : ComponentActivity() {
                 val completionTimeStats = historyCompleted.groupBy { extractTimeBucket(it.completeTime) }
                     .mapValues { it.value.size }
                     .toList()
-                    .sortedBy { it.first }
+                    .sortedBy { timeBucketOrder[it.first] ?: Int.MAX_VALUE }
 
                 Scaffold(modifier = Modifier
                     .fillMaxSize()
@@ -248,7 +255,6 @@ fun OverviewScreen(
                         .padding(16.dp)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
-//                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -300,7 +306,6 @@ fun OverviewScreen(
                         .padding(16.dp)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
-//                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(modifier = Modifier
                         .padding(16.dp)
@@ -330,7 +335,6 @@ fun OverviewScreen(
                         .padding(16.dp)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
-//                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(
                         modifier = Modifier

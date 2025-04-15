@@ -1,12 +1,17 @@
 package com.aritxonly.deadliner
 
 import ApkDownloaderInstaller
+import android.animation.AnimatorInflater
+import android.animation.AnimatorSet
+import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.app.ActivityOptions
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.content.res.Resources
 import android.graphics.*
 import android.net.Uri
 import android.os.Build
@@ -20,13 +25,19 @@ import android.text.Spanned
 import android.text.TextWatcher
 import android.util.Log
 import android.util.TypedValue
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -38,6 +49,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -52,10 +66,13 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.noties.markwon.Markwon
+import kotlinx.coroutines.launch
 import nl.dionsegijn.konfetti.xml.KonfettiView
 import okhttp3.Call
 import okhttp3.Callback
@@ -67,6 +84,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -96,9 +114,21 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var searchEditText: TextInputEditText
     private lateinit var searchOverlay: ConstraintLayout
     private lateinit var dataOverlay: View
+    private lateinit var refreshIndicator: CircularProgressIndicator
+    private lateinit var bottomBlur: View
+    private lateinit var bottomBarBackground: View
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val autoRefreshRunnable = object : Runnable {
+        override fun run() {
+            viewModel.loadData(currentType, silent = true)
+            handler.postDelayed(this, 30000)
+        }
+    }
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
+    private var isBottomBarVisible = true
 
     private var currentType = DeadlineType.TASK
 
@@ -624,17 +654,78 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
         }
 
+        // 滑动隐藏bottomAppBar
+        bottomBlur = findViewById(R.id.bottomBlur)
+        bottomBarBackground = findViewById(R.id.bottomBarBackground)
+
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            private var scrolledDistance = 0
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                scrolledDistance += dy
+
+                if (scrolledDistance > 20 && isBottomBarVisible) {
+                    hideBottomBar()
+                    isBottomBarVisible = false
+                    scrolledDistance = 0
+                } else if (scrolledDistance < -20 && !isBottomBarVisible) {
+                    showBottomBar()
+                    isBottomBarVisible = true
+                    scrolledDistance = 0
+                }
+            }
+        })
+
         dataOverlay = findViewById(R.id.dataOverlay)
+        refreshIndicator = findViewById(R.id.refreshIndicator)
+
+        swipeRefreshLayout.setColorSchemeColors(
+            getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
+            getMaterialThemeColor(com.google.android.material.R.attr.colorSecondary),
+            getMaterialThemeColor(com.google.android.material.R.attr.colorTertiary)
+        )
+        swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
+            getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
+        )
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.refreshState.collect { state ->
+                    when (state) {
+                        is MainViewModel.RefreshState.Loading -> {
+                            if (!state.silent) {
+                                swipeRefreshLayout.isRefreshing = true
+                            }
+                        }
+                        is MainViewModel.RefreshState.Success -> {
+                            swipeRefreshLayout.isRefreshing = false
+                            decideShowEmptyNotice()
+                            hideOverlay()
+                        }
+                        else -> {}
+                    }
+                }
+            }
+        }
+
+        handler.postDelayed(autoRefreshRunnable, 30000)
 
         setupTabs()
 
         checkForUpdates()
     }
 
+    override fun onDestroy() {
+        handler.removeCallbacks(autoRefreshRunnable)
+        super.onDestroy()
+    }
+
     override fun onStop() {
-        super.onStop()
         // 触发小组件更新
         updateWidget()
+        super.onStop()
     }
 
     private fun updateWidget() {
@@ -647,8 +738,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private fun refreshData() {
         viewModel.loadData(currentType)
-        swipeRefreshLayout.isRefreshing = false
-        decideShowEmptyNotice()
     }
 
     private fun updateTitleAndExcitementText(isEnabled: Boolean) {
@@ -918,6 +1007,86 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     /**
+     * 带渐变动画的系统栏颜色设置
+     * @param duration 动画时长（默认300ms）
+     * @param interpolator 插值器（默认加速减速）
+     */
+    private fun setSystemBarColorsWithAnimation(
+        targetStatusColor: Int,
+        targetNavColor: Int,
+        lightIcons: Boolean,
+        duration: Long = 300
+    ) {
+        val window = this.window ?: return
+
+        val interpolator = AccelerateDecelerateInterpolator()
+
+        // 设置图标颜色（动画期间保持不变）
+        setSystemBarIcons(lightIcons)
+
+        // 状态栏颜色动画
+        val statusAnimator = ValueAnimator.ofArgb(window.statusBarColor, targetStatusColor).apply {
+            addUpdateListener { animator ->
+                window.statusBarColor = animator.animatedValue as Int
+            }
+        }
+
+        // 导航栏颜色动画
+        val navAnimator = ValueAnimator.ofArgb(window.navigationBarColor, targetNavColor).apply {
+            addUpdateListener { animator ->
+                window.navigationBarColor = animator.animatedValue as Int
+            }
+        }
+
+        // 创建动画集合
+        AnimatorSet().apply {
+            this.duration = duration
+            this.interpolator = interpolator
+            playTogether(statusAnimator, navAnimator)
+            start()
+        }
+    }
+
+    private fun setSystemBarIcons(lightIcons: Boolean) {
+        val window = this.window ?: return
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.insetsController?.let {
+                // 状态栏图标
+                it.setSystemBarsAppearance(
+                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                )
+                // 导航栏图标
+                it.setSystemBarsAppearance(
+                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
+                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                )
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = if (lightIcons) {
+                // 兼容旧版状态栏图标
+                window.decorView.systemUiVisibility or
+                        View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+            } else {
+                window.decorView.systemUiVisibility and
+                        View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+            }.let { visibility ->
+                // 兼容旧版导航栏图标（API 26+）
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    visibility or if (lightIcons)
+                        View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                    else
+                        visibility and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
+                } else {
+                    visibility
+                }
+            }
+        }
+    }
+
+    /**
      * 获取主题颜色
      * @param attributeId 主题属性 ID
      * @return 颜色值
@@ -1064,8 +1233,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         searchEditText.requestFocus()
 
         bottomBarContainer.visibility = View.GONE
-        addEventButton.hide()
-        bottomAppBar.performHide()
+        hideBottomBar()
         // 打开软键盘
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT)
@@ -1078,14 +1246,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         TransitionManager.beginDelayedTransition(searchOverlay, AutoTransition())
         searchOverlay.visibility = View.GONE
 
-        addEventButton.show()
-        bottomAppBar.performShow()
+        showBottomBar()
         bottomBarContainer.visibility = View.VISIBLE
         // 隐藏软键盘
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(searchEditText.windowToken, 0)
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun setupTabs() {
         val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
         tabLayout.addTab(tabLayout.newTab().setText("任务"))
@@ -1115,11 +1283,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     viewModel.filterData(filter, currentType)
                 }
 
-                Handler(Looper.getMainLooper()).postDelayed({
-                    // 数据刷新完成后执行动画隐藏覆盖层
+                handler.postDelayed({
+                    showBottomBar()
                     hideOverlay()
-                    // 结束下拉刷新状态（如果使用 SwipeRefreshLayout）
-                    swipeRefreshLayout.isRefreshing = false
                 }, 300)
             }
             // 其他方法保持不变
@@ -1130,20 +1296,82 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private fun showOverlay() {
         dataOverlay.alpha = 1f
+        handler.postDelayed({
+            refreshIndicator.alpha = 1f
+        }, 100)
     }
 
     private fun hideOverlay() {
+        refreshIndicator.alpha = 0f
         dataOverlay.animate()
             .alpha(0f)
-            .setDuration(300)
+            .setDuration(500)
     }
-}
 
-fun View.safePerformClick() {
-    performClick()
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        if (!isAccessibilityFocused) {
-            sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_CLICKED)
-        }
+
+    private fun hideBottomBar() {
+        if (!isBottomBarVisible) return
+        isBottomBarVisible = false
+
+        // 动画1：隐藏 BottomAppBar
+        bottomAppBar.animate()
+            .translationY(bottomAppBar.height.toFloat())
+            .setDuration(300)
+            .setInterpolator(AccelerateInterpolator())
+            .start()
+
+        // 动画2：渐隐背景层
+        bottomBarBackground.animate()
+            .alpha(0f)
+            .setDuration(300)
+            .start()
+
+        bottomBlur.animate()
+            .alpha(0f)
+            .setDuration(200)
+            .start()
+
+        handler.postDelayed({
+            val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
+            val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
+            setSystemBarColorsWithAnimation(
+                colorSurface,
+                colorSurface,
+                isLightColor(colorSurface)
+            )
+        }, 200)
+    }
+
+    private fun showBottomBar() {
+        if (isBottomBarVisible) return
+        isBottomBarVisible = true
+
+        // 动画1：显示 BottomAppBar
+        bottomAppBar.animate()
+            .translationY(0f)
+            .setDuration(300)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
+
+        // 动画2：恢复背景层
+        bottomBarBackground.animate()
+            .alpha(1f)
+            .setDuration(300)
+            .start()
+
+        bottomBlur.animate()
+            .alpha(1f)
+            .setDuration(200)
+            .start()
+
+        handler.postDelayed({
+            val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
+            val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
+            setSystemBarColorsWithAnimation(
+                colorSurface,
+                colorContainer,
+                isLightColor(colorContainer)
+            )
+        }, 0)
     }
 }

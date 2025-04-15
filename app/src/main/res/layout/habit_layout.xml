@@ -130,6 +130,7 @@
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="12dp"
         android:progress="70"
+        android:max="100"
         app:trackThickness="8dp"
         app:trackCornerRadius="6dp"
         app:indicatorColor="?attr/colorTertiary"

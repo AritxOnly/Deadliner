@@ -3,6 +3,8 @@ package com.aritxonly.deadliner
 import android.util.Log
 import androidx.lifecycle.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
@@ -10,6 +12,8 @@ import java.time.LocalDateTime
 class MainViewModel(
     private val dbHelper: DatabaseHelper
 ) : ViewModel() {
+    private val _refreshState = MutableStateFlow<RefreshState>(RefreshState.Idle)
+    val refreshState: StateFlow<RefreshState> = _refreshState
 
     // 用于存储经过筛选、排序后的数据
     private val _ddlList = MutableLiveData<List<DDLItem>>()
@@ -71,10 +75,14 @@ class MainViewModel(
      * 再过滤（比如归档）、排序后更新 LiveData。
      * 如果 showArchived 为 false，则过滤掉已归档数据。
      */
-    fun loadData(type: DeadlineType) {
+    fun loadData(type: DeadlineType, silent: Boolean = false) {
+        if (_refreshState.value is RefreshState.Loading) return
+
         currentType = type
+        _refreshState.value = RefreshState.Loading(silent)
         viewModelScope.launch(Dispatchers.IO) {
             _ddlList.postValue(filterDataByList(dbHelper.getDDLsByType(type)))
+            _refreshState.value = RefreshState.Success
         }
     }
 
@@ -123,5 +131,11 @@ class MainViewModel(
                 loadData(currentType)
             }
         }
+    }
+
+    sealed class RefreshState {
+        object Idle : RefreshState()
+        data class Loading(val silent: Boolean) : RefreshState()
+        object Success : RefreshState()
     }
 }
