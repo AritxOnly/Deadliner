@@ -46,6 +46,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -66,6 +69,7 @@ import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.noties.markwon.Markwon
+import kotlinx.coroutines.launch
 import nl.dionsegijn.konfetti.xml.KonfettiView
 import okhttp3.Call
 import okhttp3.Callback
@@ -110,6 +114,14 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var refreshIndicator: CircularProgressIndicator
     private lateinit var bottomBlur: View
     private lateinit var bottomBarBackground: View
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val autoRefreshRunnable = object : Runnable {
+        override fun run() {
+            viewModel.loadData(currentType, silent = true)
+            handler.postDelayed(this, 60000)
+        }
+    }
 
     private var isFireworksAnimEnable = true
     private var pauseRefresh: Boolean = false
@@ -674,7 +686,26 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
             getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
         )
-        swipeRefreshLayout.setSize(SwipeRefreshLayout.LARGE)
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.refreshState.collect { state ->
+                    when (state) {
+                        is MainViewModel.RefreshState.Loading -> {
+                            if (!state.silent) {
+                                swipeRefreshLayout.isRefreshing = true
+                            }
+                        }
+                        is MainViewModel.RefreshState.Success -> {
+                            swipeRefreshLayout.isRefreshing = false
+                            decideShowEmptyNotice()
+                            hideOverlay()
+                        }
+                        else -> {}
+                    }
+                }
+            }
+        }
 
         setupTabs()
 
@@ -698,8 +729,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private fun refreshData() {
         viewModel.loadData(currentType)
-        swipeRefreshLayout.isRefreshing = false
-        decideShowEmptyNotice()
     }
 
     private fun updateTitleAndExcitementText(isEnabled: Boolean) {
@@ -1245,12 +1274,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     viewModel.filterData(filter, currentType)
                 }
 
-                Handler(Looper.getMainLooper()).postDelayed({
+                handler.postDelayed({
                     showBottomBar()
-                    // 数据刷新完成后执行动画隐藏覆盖层
                     hideOverlay()
-                    // 结束下拉刷新状态（如果使用 SwipeRefreshLayout）
-                    swipeRefreshLayout.isRefreshing = false
                 }, 300)
             }
             // 其他方法保持不变
@@ -1261,7 +1287,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private fun showOverlay() {
         dataOverlay.alpha = 1f
-        Handler().postDelayed({
+        handler.postDelayed({
             refreshIndicator.alpha = 1f
         }, 100)
     }
@@ -1296,7 +1322,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             .setDuration(200)
             .start()
 
-        Handler().postDelayed({
+        handler.postDelayed({
             val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
             val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
             setSystemBarColorsWithAnimation(
@@ -1329,7 +1355,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             .setDuration(200)
             .start()
 
-        Handler().postDelayed({
+        handler.postDelayed({
             val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
             val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
             setSystemBarColorsWithAnimation(
