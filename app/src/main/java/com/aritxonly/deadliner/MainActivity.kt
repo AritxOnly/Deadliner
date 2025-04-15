@@ -1,6 +1,7 @@
 package com.aritxonly.deadliner
 
 import ApkDownloaderInstaller
+import android.animation.AnimatorInflater
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
@@ -10,6 +11,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.content.res.Resources
 import android.graphics.*
 import android.net.Uri
 import android.os.Build
@@ -35,6 +37,7 @@ import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -119,7 +122,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private val autoRefreshRunnable = object : Runnable {
         override fun run() {
             viewModel.loadData(currentType, silent = true)
-            handler.postDelayed(this, 60000)
+            handler.postDelayed(this, 30000)
         }
     }
 
@@ -707,16 +710,22 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
         }
 
+        handler.postDelayed(autoRefreshRunnable, 30000)
+
         setupTabs()
 
         checkForUpdates()
     }
 
+    override fun onDestroy() {
+        handler.removeCallbacks(autoRefreshRunnable)
+        super.onDestroy()
+    }
 
     override fun onStop() {
-        super.onStop()
         // 触发小组件更新
         updateWidget()
+        super.onStop()
     }
 
     private fun updateWidget() {
