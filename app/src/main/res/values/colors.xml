@@ -24,4 +24,10 @@
     <color name="progress_bg">#552C2C2C</color> <!-- 适合亮色模式的颜色 -->
 
     <color name="transparent">#00000000</color>
+
+    <array name="material3_swipe_refresh_colors">
+        <item>?attr/colorPrimary</item>
+        <item>?attr/colorSecondary</item>
+        <item>?attr/colorTertiary</item>
+    </array>
 </resources>

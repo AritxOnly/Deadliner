@@ -666,6 +666,16 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         dataOverlay = findViewById(R.id.dataOverlay)
         refreshIndicator = findViewById(R.id.refreshIndicator)
 
+        swipeRefreshLayout.setColorSchemeColors(
+            getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
+            getMaterialThemeColor(com.google.android.material.R.attr.colorSecondary),
+            getMaterialThemeColor(com.google.android.material.R.attr.colorTertiary)
+        )
+        swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
+            getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
+        )
+        swipeRefreshLayout.setSize(SwipeRefreshLayout.LARGE)
+
         setupTabs()
 
         checkForUpdates()
