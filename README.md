@@ -23,7 +23,7 @@ Deadliner，一款为我的女友打造的截止日期与习惯管理应用。
 
 ## 截图
 
-<img src="./assets/pixel5_home.png" alt="概览" style="zoom:18%;" /><img src="./assets/pixel5_habit.png" style="zoom:18%;" /><img src="./assets/pixel5_widget.png" style="zoom:18%;" /><img src="./assets/pixel5_detail.png" style="zoom:18%;" /><img src="./assets/pixel5_archive.png" style="zoom:18%;" /><img src="./assets/pixel5_multiselect.png" style="zoom:18%;" /><img src="./assets/pixel5_overview.png" style="zoom:18%;" /><img src="./assets/pixel5_search.png" style="zoom:18%;" />
+<img src="./assets/pixel5_home.png" alt="概览" style="width:33%;" /><img src="./assets/pixel5_habit.png" style="width:33%;" /><img src="./assets/pixel5_widget.png" style="width:33%;" /><img src="./assets/pixel5_detail.png" style="width:33%;" /><img src="./assets/pixel5_archive.png" style="width:33%;" /><img src="./assets/pixel5_multiselect.png" style="width:33%;" /><img src="./assets/pixel5_overview.png" style="width:33%;" /><img src="./assets/pixel5_search.png" style="width:33%;" />
 
 ## 技术栈
 
