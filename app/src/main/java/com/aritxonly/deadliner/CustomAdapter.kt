@@ -431,11 +431,20 @@ class CustomAdapter(
 
         remainingTimeTextView.text = if (remainingMinutes >= 0) {
             if (displayFullContent) {
-                if (GlobalUtils.detailDisplayMode) "剩余 ${days}天${hours}小时${minutesPart}分钟"
-                else "剩余 %.1f天".format(compactDays)
+                if (GlobalUtils.detailDisplayMode)
+                    "剩余 " +
+                    (if (days != 0) "${days}天" else "") +
+                    (if (hours != 0) "${hours}小时" else "") +
+                    "${minutesPart}分钟"
+                else
+                    "剩余 %.1f天".format(compactDays)
             } else {
-                if (GlobalUtils.detailDisplayMode) "${days}d ${hours}h ${minutesPart}m"
-                else "%.1f".format(compactDays)
+                if (GlobalUtils.detailDisplayMode)
+                    (if (days != 0) "${days}d " else "") +
+                    (if (hours != 0) "${hours}h " else "") +
+                    "${minutesPart}m"
+                else
+                    "%.1fd".format(compactDays)
             }
         } else {
             if (displayFullContent) "DDL逾期!!!"
