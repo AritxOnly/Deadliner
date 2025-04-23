@@ -53,6 +53,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var aboutCard: MaterialCardView
     private lateinit var toggleGroupArchiveTime: MaterialButtonToggleGroup
 
+    private lateinit var switchDetailDisplayMode: MaterialSwitch
+
     private lateinit var buttonImport: MaterialButton
     private lateinit var buttonExport: MaterialButton
 
@@ -83,6 +85,7 @@ class SettingsActivity : AppCompatActivity() {
         switchDailyStatsNotification = findViewById(R.id.switchDailyStatsNotification)
         switchMotivationalQuotes = findViewById(R.id.switchMotivationalQuotes)
         switchFireworksOnFinish = findViewById(R.id.switchFireworksOnFinish)
+        switchDetailDisplayMode = findViewById(R.id.switchDetailDisplayMode)
         buttonAuthorPage = findViewById(R.id.buttonAuthorPage)
         buttonHomePage = findViewById(R.id.buttonHomePage)
         buttonIssues = findViewById(R.id.buttonIssues)
@@ -100,6 +103,7 @@ class SettingsActivity : AppCompatActivity() {
         switchDailyStatsNotification.isChecked = GlobalUtils.dailyStatsNotification
         switchMotivationalQuotes.isChecked = GlobalUtils.motivationalQuotes
         switchFireworksOnFinish.isChecked = GlobalUtils.fireworksOnFinish
+        switchDetailDisplayMode.isChecked = GlobalUtils.detailDisplayMode
 
         // 监听开关状态变化并保存设置
         switchVibration.setOnCheckedChangeListener { _, isChecked ->
@@ -128,6 +132,10 @@ class SettingsActivity : AppCompatActivity() {
 
         switchFireworksOnFinish.setOnCheckedChangeListener { _, isChecked ->
             GlobalUtils.fireworksOnFinish = isChecked
+        }
+
+        switchDetailDisplayMode.setOnCheckedChangeListener { _, isChecked ->
+            GlobalUtils.detailDisplayMode = isChecked
         }
 
         // 设置超链接按钮点击事件

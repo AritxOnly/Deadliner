@@ -245,7 +245,9 @@ class CustomAdapter(
         monthProgress.progress = (progress * 100).toInt()
 
         progressLabel.text = when (habitMeta.frequencyType) {
-            DeadlineFrequency.TOTAL -> ""
+            DeadlineFrequency.TOTAL -> if (habitMeta.total != 0)
+                "总进度 ${habitItem.habitCount}/${habitMeta.total}"
+            else ""
             DeadlineFrequency.DAILY -> "每日进度 ${habitItem.habitCount}/${habitMeta.frequency}"
             DeadlineFrequency.WEEKLY -> "每周进度 ${habitItem.habitCount}/${habitMeta.frequency}"
             DeadlineFrequency.MONTHLY -> "每月进度 ${habitItem.habitCount}/${habitMeta.frequency}"
@@ -420,10 +422,21 @@ class CustomAdapter(
             remainingTimeText
         }
 
-        // 设置剩余时间显示
+        // 计算天、小时、分钟
+        val days = remainingMinutes / (24 * 60)
+        val hours = (remainingMinutes % (24 * 60)) / 60
+        val minutesPart = remainingMinutes % 60
+
+        val compactDays = remainingMinutes.toFloat() / (24 * 60).toFloat()
+
         remainingTimeTextView.text = if (remainingMinutes >= 0) {
-            if (displayFullContent) "${remainingMinutes / 60}小时${remainingMinutes % 60}分钟 到 DDL"
-            else "${remainingMinutes / 60}h${remainingMinutes % 60}m"
+            if (displayFullContent) {
+                if (GlobalUtils.detailDisplayMode) "剩余 ${days}天${hours}小时${minutesPart}分钟"
+                else "剩余 %.1f天".format(compactDays)
+            } else {
+                if (GlobalUtils.detailDisplayMode) "${days}d ${hours}h ${minutesPart}m"
+                else "%.1f".format(compactDays)
+            }
         } else {
             if (displayFullContent) "DDL逾期!!!"
             else "已逾期"

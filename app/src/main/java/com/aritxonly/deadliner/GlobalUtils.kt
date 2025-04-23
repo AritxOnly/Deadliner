@@ -89,6 +89,12 @@ object GlobalUtils {
             sharedPreferences.edit().putBoolean("show_intro_page", value).apply()
         }
 
+    var detailDisplayMode: Boolean
+        get() = sharedPreferences.getBoolean("detail_display_mode", true)
+        set(value) {
+            sharedPreferences.edit().putBoolean("detail_display_mode", value).apply()
+        }
+
     // v2.0 - filter功能
     /**
      * 映射表

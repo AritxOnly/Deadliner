@@ -31,6 +31,7 @@
     <string name="settings_progress_dir_main">主界面正向进度条</string>
     <string name="settings_progress_widget">小组件正向进度条</string>
     <string name="settings_fireworks">完成时显示动画效果</string>
+    <string name="settings_detail_display">剩余时间详细显示</string>
     <string name="settings_nearby_notification">Deadline临近通知</string>
     <string name="settings_everyday_notification">每日Deadline统计通知</string>
     <string name="settings_excitement">主菜单鼓励语句</string>

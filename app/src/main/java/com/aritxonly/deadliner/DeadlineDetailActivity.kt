@@ -39,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -186,7 +187,14 @@ fun DeadlineDetailScreen(
         modifier = Modifier.background(Color(colorScheme.surface)),
         topBar = {
             TopAppBar(
-                title = { Text(text = deadline.name, color = Color(colorScheme.onSurface)) },
+                title = {
+                    Text(
+                        text = deadline.name,
+                        color = Color(colorScheme.onSurface),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
                         Icon(
@@ -355,6 +363,7 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
 
     Column(
         modifier = Modifier
+            .fillMaxWidth(0.8f)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally

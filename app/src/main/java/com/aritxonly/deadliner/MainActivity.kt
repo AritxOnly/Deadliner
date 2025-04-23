@@ -68,6 +68,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -81,7 +82,9 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.internal.toHexString
 import org.json.JSONObject
+import org.json.JSONArray
 import java.io.IOException
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
@@ -117,6 +120,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var refreshIndicator: CircularProgressIndicator
     private lateinit var bottomBlur: View
     private lateinit var bottomBarBackground: View
+
+    private lateinit var viewHolderWithAppBar: View
+    private lateinit var viewHolderWithNoAppBar: View
 
     private val handler = Handler(Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
@@ -177,6 +183,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         recyclerView = findViewById(R.id.recyclerView)
         addEventButton = findViewById(R.id.addEvent)
         settingsButton = findViewById(R.id.settingsButton)
+
+        viewHolderWithAppBar = findViewById(R.id.viewHolderWithAppBar)
+        viewHolderWithNoAppBar = findViewById(R.id.viewHolderWithNoAppBar)
 
         decideShowEmptyNotice()
 
@@ -253,6 +262,32 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 } else {
                     if (GlobalUtils.fireworksOnFinish) { konfettiViewMain.start(PartyPresets.festive()) }
                 }
+
+                val snackBarParent = if (isBottomBarVisible)
+                        viewHolderWithAppBar
+                    else viewHolderWithNoAppBar
+
+                Snackbar.make(snackBarParent, "打卡成功 🎉", Snackbar.LENGTH_LONG)
+                    .setAction("撤销") {
+                        val todayStr = LocalDate.now().toString()
+                        // 解析 note JSON
+                        val json = JSONObject(habitItem.note ?: "{}")
+                        val datesArray = json.optJSONArray("completedDates") ?: JSONArray()
+                        // 从末尾遍历并移除今日日期
+                        for (i in datesArray.length() - 1 downTo 0) {
+                            if (datesArray.optString(i) == todayStr) {
+                                datesArray.remove(i)
+                            }
+                        }
+                        json.put("completedDates", datesArray)
+                        val revertedNoteJson = json.toString()
+                        val revertedHabit = habitItem.copy(
+                            note = revertedNoteJson,
+                            habitCount = habitItem.habitCount - 1
+                        )
+                        databaseHelper.updateDDL(revertedHabit)
+                        viewModel.loadData(currentType)
+                    }.show()
             }
         }
 
@@ -711,6 +746,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         }
 
         handler.postDelayed(autoRefreshRunnable, 30000)
+
+        titleBar.setOnClickListener {
+            recyclerView.smoothScrollToPosition(0)
+        }
+        excitementText.setOnClickListener {
+            recyclerView.smoothScrollToPosition(0)
+        }
 
         setupTabs()
 
