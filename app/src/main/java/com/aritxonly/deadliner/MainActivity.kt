@@ -11,6 +11,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.graphics.*
 import android.net.Uri
@@ -18,8 +19,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.Settings
 import android.text.Editable
 import android.text.Spanned
 import android.text.TextWatcher
@@ -48,6 +51,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -60,6 +64,8 @@ import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
 import androidx.work.*
 import androidx.work.PeriodicWorkRequestBuilder
+import com.aritxonly.deadliner.notification.KeepAliveService
+import com.aritxonly.deadliner.notification.NotificationUtil
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.badge.BadgeUtils
 import com.google.android.material.bottomappbar.BottomAppBar
@@ -75,6 +81,7 @@ import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.noties.markwon.Markwon
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import nl.dionsegijn.konfetti.xml.KonfettiView
 import okhttp3.Call
@@ -88,8 +95,7 @@ import org.json.JSONArray
 import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.concurrent.TimeUnit
-import kotlin.math.abs
+import android.Manifest
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -442,9 +448,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 检查鼓励语句开关状态
         updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
 
-        // 设置通知定时任务
-        updateNotification(GlobalUtils.deadlineNotification)
-
         /* v2.0 added */
         bottomAppBar = findViewById(R.id.bottomAppBar)
         bottomBarContainer = findViewById(R.id.bottomBarContainer)
@@ -779,6 +782,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         setupTabs()
 
         checkForUpdates()
+
+        // 初始化通知系统并检查关键权限
+        initializeNotificationSystem()
+        checkCriticalPermissions()
+        // 恢复所有未完成DDL的闹钟
+        restoreAllAlarms()
     }
 
     override fun onDestroy() {
@@ -817,39 +826,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         } else {
             titleBar.textSize = 32f // 设置为默认大小
             excitementText.visibility = TextView.GONE
-        }
-    }
-
-    private fun updateNotification(isEnabled: Boolean) {
-        if (!isEnabled) {
-            Log.d("Notification", "Here")
-            // 如果开关关闭，取消定时任务
-            WorkManager.getInstance(this).cancelUniqueWork("DeadlineCheckWork")
-            return
-        }
-
-        // 检查是否已有相同的任务在队列中
-        WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData("DeadlineCheckWork").observe(this) { workInfos ->
-            val isWorkScheduled = workInfos.any { workInfo ->
-                workInfo.state == WorkInfo.State.ENQUEUED || workInfo.state == WorkInfo.State.RUNNING
-            }
-
-            // 如果任务未调度，则启动新的任务
-            if (!isWorkScheduled) {
-                val workRequest = PeriodicWorkRequestBuilder<DeadlineWorker>(1, TimeUnit.HOURS)
-                    .setConstraints(
-                        Constraints.Builder()
-                            .setRequiresBatteryNotLow(true)
-                            .build()
-                    )
-                    .build()
-
-                WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                    "DeadlineCheckWork",
-                    ExistingPeriodicWorkPolicy.KEEP,
-                    workRequest
-                )
-            }
         }
     }
 
@@ -1179,7 +1155,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     override fun onResume() {
         super.onResume()
         updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
-        updateNotification(GlobalUtils.deadlineNotification)
         isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
         switchAppBarStatus(true)
         viewModel.loadData(currentType)
@@ -1196,6 +1171,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     companion object {
         private const val REQUEST_CODE_ADD_DDL = 1
         const val ANIMATION_DURATION = 160L
+        private const val REQUEST_CODE_NOTIFICATION_PERMISSION = 0x2001
     }
 
     /* New to v2.0 */
@@ -1493,5 +1469,137 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 duration = 100
             )
         }, 0)
+    }
+
+    private fun initializeNotificationSystem() {
+        NotificationUtil.createNotificationChannels(this)
+
+        startService(Intent(this, KeepAliveService::class.java))
+    }
+
+    /**************************************
+     * 权限管理系统
+     **************************************/
+    private fun checkCriticalPermissions() {
+        // Android 13+ 通知权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!hasNotificationPermission()) {
+                requestNotificationPermission()
+            }
+        }
+
+        // 电池优化白名单
+        if (!isIgnoringBatteryOptimizations()) {
+            showBatteryOptimizationDialog()
+        }
+    }
+
+    private fun hasNotificationPermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return false
+        }
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return
+        }
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+            REQUEST_CODE_NOTIFICATION_PERMISSION
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            REQUEST_CODE_NOTIFICATION_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    Log.d("Error", "error")
+                }
+            }
+        }
+    }
+
+    /**************************************
+     * 数据恢复系统
+     **************************************/
+    private fun restoreAllAlarms() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val allDDLs = databaseHelper.getAllDDLs()
+            allDDLs.filter { !it.isCompleted }.forEach { ddl ->
+                DeadlineAlarmScheduler.scheduleExactAlarm(this@MainActivity, ddl)
+            }
+        }
+    }
+
+    /**************************************
+     * 用户引导系统
+     **************************************/
+    private fun showPermissionGuidance() {
+        MaterialAlertDialogBuilder(this).apply {
+            setTitle("权限说明")
+            setMessage("为保证Deadliner在后台正常运行，需要以下权限：\n\n1. 通知权限\n2. 电池优化例外\n3. 自启动权限")
+            setPositiveButton("立即设置") { _, _ ->
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:$packageName")
+                })
+            }
+            setNegativeButton("稍后再说", null)
+        }.show()
+    }
+
+    private fun showBatteryOptimizationDialog() {
+        MaterialAlertDialogBuilder(this).apply {
+            setTitle("电池优化设置")
+            setMessage("请将Deadliner设为「不受电池优化限制」")
+            setPositiveButton("去设置") { _, _ ->
+                startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:$packageName")
+                })
+            }
+            setCancelable(false)
+        }.show()
+    }
+
+    private fun showXiaomiAutoStartDialog() {
+        MaterialAlertDialogBuilder(this).apply {
+            setTitle("自启动权限")
+            setMessage("请在小米设置中允许Deadliner自启动")
+            setPositiveButton("去设置") { _, _ ->
+                try {
+                    startActivity(Intent("miui.intent.action.OP_AUTO_START").apply {
+                        addCategory(Intent.CATEGORY_DEFAULT)
+                    })
+                } catch (e: Exception) {
+                    openAppSettings()
+                }
+            }
+        }.show()
+    }
+
+    /**************************************
+     * 工具方法
+     **************************************/
+    private fun isIgnoringBatteryOptimizations(): Boolean {
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            pm.isIgnoringBatteryOptimizations(packageName)
+        } else true
+    }
+
+    private fun openAppSettings() {
+        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.parse("package:$packageName")
+        })
     }
 }
