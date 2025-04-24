@@ -60,6 +60,8 @@ import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
 import androidx.work.*
 import androidx.work.PeriodicWorkRequestBuilder
+import com.google.android.material.badge.BadgeDrawable
+import com.google.android.material.badge.BadgeUtils
 import com.google.android.material.bottomappbar.BottomAppBar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.DynamicColors
@@ -287,7 +289,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         )
                         databaseHelper.updateDDL(revertedHabit)
                         viewModel.loadData(currentType)
-                    }.show()
+                    }.setAnchorView(bottomAppBar).show()
             }
         }
 
@@ -1334,6 +1336,44 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+
+        // **1.** 先更新一次（防止初始时没有 Badge）
+        updateTabBadges(mapOf(
+            DeadlineType.TASK to viewModel.dueSoonCount(DeadlineType.TASK),
+            DeadlineType.HABIT to viewModel.dueSoonCount(DeadlineType.HABIT)
+        ))
+
+        // **2.** 订阅 ViewModel 中即将到期数量的 LiveData／Flow
+        viewModel.dueSoonCounts.observe(this) { counts ->
+            // counts: Map<DeadlineType, Int>
+            updateTabBadges(counts)
+        }
+    }
+
+    /**
+     * @param counts 一个类型到“即将到期 DDL 数量”的映射
+     */
+    private fun updateTabBadges(counts: Map<DeadlineType, Int>) {
+        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
+
+        // TASK 对应 position 0，HABIT 对应 position 1
+        counts.forEach { (type, num) ->
+            val index = when (type) {
+                DeadlineType.TASK  -> 0
+                DeadlineType.HABIT -> 1
+            }
+            tabLayout.getTabAt(index)?.let { tab ->
+                if (num > 0) {
+                    val badge = tab.orCreateBadge.apply {
+                        number = num
+                        badgeGravity = BadgeDrawable.TOP_END
+                    }
+//                    BadgeUtils.attachBadgeDrawable(badge, )
+                } else {
+                    tab.removeBadge()
+                }
+            }
+        }
     }
 
     private fun showOverlay() {

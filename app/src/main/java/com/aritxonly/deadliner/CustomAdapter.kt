@@ -440,8 +440,8 @@ class CustomAdapter(
                     "剩余 %.1f天".format(compactDays)
             } else {
                 if (GlobalUtils.detailDisplayMode)
-                    (if (days != 0) "${days}d " else "") +
-                    (if (hours != 0) "${hours}h " else "") +
+                    (if (days != 0) "${days}d" else "") +
+                    (if (hours != 0) "${hours}h" else "") +
                     "${minutesPart}m"
                 else
                     "%.1fd".format(compactDays)
