@@ -95,6 +95,18 @@ object GlobalUtils {
             sharedPreferences.edit().putBoolean("detail_display_mode", value).apply()
         }
 
+    var nearbyTasksBadge: Boolean
+        get() = sharedPreferences.getBoolean("nearby_tasks_badge", true)
+        set(value) {
+            sharedPreferences.edit().putBoolean("nearby_tasks_badge", value).apply()
+        }
+
+    var nearbyDetailedBadge: Boolean
+        get() = sharedPreferences.getBoolean("nearby_detailed_badge", false)
+        set(value) {
+            sharedPreferences.edit().putBoolean("nearby_detailed_badge", value).apply()
+        }
+
     // v2.0 - filter功能
     /**
      * 映射表

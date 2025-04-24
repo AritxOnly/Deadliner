@@ -233,6 +233,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         adapter.multiSelectListener = object : CustomAdapter.MultiSelectListener {
             override fun onSelectionChanged(selectedCount: Int) {
+                showBottomBar()
                 switchAppBarStatus(selectedCount == 0)
                 if (selectedCount != 0) {
                     excitementText.text = "已选中 $selectedCount 项 Deadline"
@@ -696,21 +697,40 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         bottomBarBackground = findViewById(R.id.bottomBarBackground)
 
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            private var scrolledDistance = 0
+            private var accumulatedDy = 0
+            private var lastDirection = 0 // 0: 初始, 1: 向下, -1: 向上
+            private val scrollThreshold = 20 // 触发阈值
 
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
 
-                scrolledDistance += dy
+                if (dy == 0) return
 
-                if (scrolledDistance > 20 && isBottomBarVisible) {
-                    hideBottomBar()
-                    isBottomBarVisible = false
-                    scrolledDistance = 0
-                } else if (scrolledDistance < -20 && !isBottomBarVisible) {
-                    showBottomBar()
-                    isBottomBarVisible = true
-                    scrolledDistance = 0
+                val currentDirection = if (dy > 0) 1 else -1
+
+                // 方向变化时重置累计距离
+                if (currentDirection != lastDirection) {
+                    accumulatedDy = 0
+                    lastDirection = currentDirection
+                }
+
+                // 累计滚动距离（取绝对值）
+                accumulatedDy += Math.abs(dy)
+
+                // 达到阈值时执行操作
+                if (accumulatedDy >= scrollThreshold) {
+                    if (currentDirection == 1) { // 向下滚动
+                        if (isBottomBarVisible && !adapter.isMultiSelectMode) {
+                            hideBottomBar()
+                            isBottomBarVisible = false
+                        }
+                    } else { // 向上滚动
+                        if (!isBottomBarVisible && !adapter.isMultiSelectMode) {
+                            showBottomBar()
+                            isBottomBarVisible = true
+                        }
+                    }
+                    accumulatedDy = 0 // 重置累计距离防止重复触发
                 }
             }
         })
@@ -1059,7 +1079,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         targetStatusColor: Int,
         targetNavColor: Int,
         lightIcons: Boolean,
-        duration: Long = 300
+        duration: Long = 200
     ) {
         val window = this.window ?: return
 
@@ -1356,6 +1376,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private fun updateTabBadges(counts: Map<DeadlineType, Int>) {
         val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
 
+        fun dp2px(dp: Int): Int =
+            (dp * resources.displayMetrics.density).toInt()
+
+
         // TASK 对应 position 0，HABIT 对应 position 1
         counts.forEach { (type, num) ->
             val index = when (type) {
@@ -1363,12 +1387,24 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 DeadlineType.HABIT -> 1
             }
             tabLayout.getTabAt(index)?.let { tab ->
-                if (num > 0) {
-                    val badge = tab.orCreateBadge.apply {
-                        number = num
+                if (num > 0 && GlobalUtils.nearbyTasksBadge) {
+                    tab.orCreateBadge.apply {
                         badgeGravity = BadgeDrawable.TOP_END
+
+                        if (GlobalUtils.nearbyDetailedBadge) {
+                            // 显示数字
+                            number = num
+                            horizontalOffset = dp2px(0)
+                            verticalOffset = dp2px(12)
+                            isVisible = true
+                        } else {
+                            // 清除数字，变成一个纯圆点
+                            clearNumber()
+                            horizontalOffset = dp2px(4)
+                            verticalOffset = dp2px(6)
+                            isVisible = true
+                        }
                     }
-//                    BadgeUtils.attachBadgeDrawable(badge, )
                 } else {
                     tab.removeBadge()
                 }
@@ -1405,12 +1441,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 动画2：渐隐背景层
         bottomBarBackground.animate()
             .alpha(0f)
-            .setDuration(300)
+            .setDuration(100)
             .start()
 
         bottomBlur.animate()
             .alpha(0f)
-            .setDuration(200)
+            .setDuration(100)
             .start()
 
         handler.postDelayed({
@@ -1419,7 +1455,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             setSystemBarColorsWithAnimation(
                 colorSurface,
                 colorSurface,
-                isLightColor(colorSurface)
+                isLightColor(colorSurface),
+                duration = 100
             )
         }, 200)
     }
@@ -1438,12 +1475,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 动画2：恢复背景层
         bottomBarBackground.animate()
             .alpha(1f)
-            .setDuration(300)
+            .setDuration(100)
             .start()
 
         bottomBlur.animate()
             .alpha(1f)
-            .setDuration(200)
+            .setDuration(100)
             .start()
 
         handler.postDelayed({
@@ -1452,7 +1489,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             setSystemBarColorsWithAnimation(
                 colorSurface,
                 colorContainer,
-                isLightColor(colorContainer)
+                isLightColor(colorContainer),
+                duration = 100
             )
         }, 0)
     }

@@ -54,6 +54,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var toggleGroupArchiveTime: MaterialButtonToggleGroup
 
     private lateinit var switchDetailDisplayMode: MaterialSwitch
+    private lateinit var switchNearbyTasksBadge: MaterialSwitch
 
     private lateinit var buttonImport: MaterialButton
     private lateinit var buttonExport: MaterialButton
@@ -86,6 +87,7 @@ class SettingsActivity : AppCompatActivity() {
         switchMotivationalQuotes = findViewById(R.id.switchMotivationalQuotes)
         switchFireworksOnFinish = findViewById(R.id.switchFireworksOnFinish)
         switchDetailDisplayMode = findViewById(R.id.switchDetailDisplayMode)
+        switchNearbyTasksBadge = findViewById(R.id.switchNearbyTasksBadge)
         buttonAuthorPage = findViewById(R.id.buttonAuthorPage)
         buttonHomePage = findViewById(R.id.buttonHomePage)
         buttonIssues = findViewById(R.id.buttonIssues)
@@ -104,6 +106,7 @@ class SettingsActivity : AppCompatActivity() {
         switchMotivationalQuotes.isChecked = GlobalUtils.motivationalQuotes
         switchFireworksOnFinish.isChecked = GlobalUtils.fireworksOnFinish
         switchDetailDisplayMode.isChecked = GlobalUtils.detailDisplayMode
+        switchNearbyTasksBadge.isChecked = GlobalUtils.nearbyTasksBadge
 
         // 监听开关状态变化并保存设置
         switchVibration.setOnCheckedChangeListener { _, isChecked ->
@@ -136,6 +139,32 @@ class SettingsActivity : AppCompatActivity() {
 
         switchDetailDisplayMode.setOnCheckedChangeListener { _, isChecked ->
             GlobalUtils.detailDisplayMode = isChecked
+        }
+
+        switchNearbyTasksBadge.setOnCheckedChangeListener { _, isChecked ->
+            GlobalUtils.nearbyTasksBadge = isChecked
+            if (isChecked) {
+                val options = arrayOf("数字角标", "圆点角标")
+                var selectedItem = 0
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.alert_select_badge_type)
+                    .setSingleChoiceItems(options, selectedItem) { dialog, which ->
+                        selectedItem = which
+                    }
+                    .setPositiveButton(R.string.accept) { dialog, which ->
+                        if (selectedItem != -1) {
+                            when (selectedItem) {
+                                0 -> GlobalUtils.nearbyDetailedBadge = true
+                                else -> GlobalUtils.nearbyDetailedBadge = false
+                            }
+                        }
+                    }
+                    .setNegativeButton(R.string.cancel) { dialog, which ->
+                        GlobalUtils.nearbyTasksBadge = false
+                        switchNearbyTasksBadge.isChecked = false
+                    }
+                    .show()
+            }
         }
 
         // 设置超链接按钮点击事件

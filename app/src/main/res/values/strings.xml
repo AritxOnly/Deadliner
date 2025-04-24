@@ -32,6 +32,7 @@
     <string name="settings_progress_widget">小组件正向进度条</string>
     <string name="settings_fireworks">完成时显示动画效果</string>
     <string name="settings_detail_display">剩余时间详细显示</string>
+    <string name="settings_tasks_badge">选项卡未完成任务角标</string>
     <string name="settings_nearby_notification">Deadline临近通知</string>
     <string name="settings_everyday_notification">每日Deadline统计通知</string>
     <string name="settings_excitement">主菜单鼓励语句</string>
@@ -124,5 +125,6 @@
     <string name="add_ddl_total">持续天数</string>
     <string name="settings_import">导入</string>
     <string name="settings_export">导出</string>
+    <string name="alert_select_badge_type">选择角标类型</string>
 
 </resources>
