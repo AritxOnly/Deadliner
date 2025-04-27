@@ -4,36 +4,34 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.aritxonly.deadliner.notification.KeepAliveService
+import android.util.Log
 import com.aritxonly.deadliner.notification.NotificationUtil.sendImmediateNotification
 import java.time.Duration
 import java.time.LocalDateTime
 
-// DeadlineAlarmReceiver.kt
 class DeadlineAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val ddlId = intent.getIntExtra("DDL_ID", -1)
+        if (intent.action?.startsWith("ACTION_DDL_ALARM_") == false) return
+
+        Log.d("AlarmDebug", "action: ${intent.action}")
+
+        android.util.Log.d("AlarmDebug", "Actually, I reached here")
+
+        val ddlIdStr = intent.action?.substringAfterLast("_")!!
+        val ddlId = ddlIdStr.toIntOrNull()
+        if (ddlId == null) {
+            android.util.Log.e("AlarmDebug", "无法解析 DDL_ID: $ddlIdStr")
+            return
+        }
+
+//        val ddlId = intent.getIntExtra("DDL_ID", -1)
         val ddl = DatabaseHelper.getInstance(context).getDDLById(ddlId.toLong()) ?: return
 
-        // 启动保活前台服务（提前10分钟）
-        if (shouldStartForegroundService(ddl)) {
-            val serviceIntent = Intent(context, KeepAliveService::class.java).apply {
-                putExtra("DDL_ID", ddlId)
-                putExtra("TRIGGER_TIME", ddl.endTime)
-            }
+        if (ddl.type == DeadlineType.HABIT && ddl.isCompleted) return
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent)
-            } else {
-                context.startService(serviceIntent)
-            }
-        } else {
-            sendImmediateNotification(context, ddl)
-        }
-    }
+        android.util.Log.d("AlarmDebug", "收到闹钟广播！DDL: $ddl")
 
-    private fun shouldStartForegroundService(ddl: DDLItem): Boolean {
-        val remaining = Duration.between(LocalDateTime.now(), GlobalUtils.safeParseDateTime(ddl.endTime))
-        return remaining.toMinutes() > 10 // 提前10分钟启动保活
+        // 直接发送通知（移除保活服务逻辑）
+        sendImmediateNotification(context, ddl)
     }
 }

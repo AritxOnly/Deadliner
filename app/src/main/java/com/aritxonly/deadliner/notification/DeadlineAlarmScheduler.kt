@@ -6,34 +6,47 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+import com.aritxonly.deadliner.notification.NotificationUtil
+import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.Date
+import kotlin.math.abs
 
 object DeadlineAlarmScheduler {
     fun scheduleExactAlarm(context: Context, ddl: DDLItem) {
-        val alarmManager = context.getSystemService(AlarmManager::class.java)
+//        val alarmManager = context.getSystemService(AlarmManager::class.java)
+        if (ddl.type == DeadlineType.HABIT && ddl.isCompleted) return
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        if (!alarmManager.canScheduleExactAlarms()) {
+            context.startActivity(Intent(ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+            return
+        }
+
         val intent = Intent(context, DeadlineAlarmReceiver::class.java).apply {
             putExtra("DDL_ID", ddl.id)
-            action = "ACTION_DDL_ALARM_${ddl.id}" // 唯一action
+            action = "ACTION_DDL_ALARM_${ddl.id}"
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            ddl.id.hashCode(), // 唯一requestCode
+            abs(ddl.id.hashCode()),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // 使用精确闹钟
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!alarmManager.canScheduleExactAlarms()) {
-                context.startActivity(Intent(ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
-                return
-            }
-        }
+        // 提前720分钟（12小时）触发
+        val triggerTime = GlobalUtils.safeParseDateTime(ddl.endTime)
+            .minusMinutes(720)
+            .atZone(ZoneId.systemDefault())
+            .toEpochSecond() * 1000
+
+        android.util.Log.d("AlarmDebug", "设置闹钟时间: ${Date(triggerTime)} | DDL结束时间: ${ddl.endTime}")
 
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
-            GlobalUtils.safeParseDateTime(ddl.endTime).toEpochSecond(ZoneOffset.UTC) * 1000,
+            triggerTime,
             pendingIntent
         )
     }

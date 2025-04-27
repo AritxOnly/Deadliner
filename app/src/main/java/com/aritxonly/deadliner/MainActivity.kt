@@ -64,7 +64,6 @@ import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
 import androidx.work.*
 import androidx.work.PeriodicWorkRequestBuilder
-import com.aritxonly.deadliner.notification.KeepAliveService
 import com.aritxonly.deadliner.notification.NotificationUtil
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.badge.BadgeUtils
@@ -785,6 +784,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         // 初始化通知系统并检查关键权限
         initializeNotificationSystem()
+        GlobalUtils.setAlarms(databaseHelper, this)
         checkCriticalPermissions()
         // 恢复所有未完成DDL的闹钟
         restoreAllAlarms()
@@ -1160,6 +1160,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         viewModel.loadData(currentType)
         decideShowEmptyNotice()
 
+        GlobalUtils.setAlarms(databaseHelper, this)
+
         if (searchOverlay.visibility == View.VISIBLE) {
             val s = searchEditText.text
             val filter = SearchFilter.parse(s.toString())
@@ -1473,8 +1475,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private fun initializeNotificationSystem() {
         NotificationUtil.createNotificationChannels(this)
-
-        startService(Intent(this, KeepAliveService::class.java))
     }
 
     /**************************************

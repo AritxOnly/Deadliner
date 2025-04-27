@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentManager
+import com.aritxonly.deadliner.notification.NotificationUtil
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -239,5 +240,24 @@ object GlobalUtils {
         }
 
         return habitMeta
+    }
+
+    fun setAlarms(databaseHelper: DatabaseHelper, context: Context) {
+        if (!deadlineNotification) {
+            return
+        }
+
+        Log.d("Notification", "SetAlarms")
+
+        val pendingTasks = databaseHelper.getDDLsByType(DeadlineType.TASK)
+            .filter {
+                val endTime = parseDateTime(it.endTime)
+                endTime != null && endTime.isAfter(LocalDateTime.now())
+            }
+
+        pendingTasks.forEach { ddlItem ->
+//            NotificationUtil.sendImmediateNotification(context, ddlItem)
+            DeadlineAlarmScheduler.scheduleExactAlarm(context, ddlItem)
+        }
     }
 }
