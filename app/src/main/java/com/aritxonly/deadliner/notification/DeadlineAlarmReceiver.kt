@@ -11,25 +11,21 @@ import java.time.LocalDateTime
 
 class DeadlineAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action?.startsWith("ACTION_DDL_ALARM_") == false) return
+//        if (intent.action?.startsWith("ACTION_DDL_ALARM_") == false) return
 
         Log.d("AlarmDebug", "action: ${intent.action}")
 
-        android.util.Log.d("AlarmDebug", "Actually, I reached here")
-
-        val ddlIdStr = intent.action?.substringAfterLast("_")!!
-        val ddlId = ddlIdStr.toIntOrNull()
-        if (ddlId == null) {
-            android.util.Log.e("AlarmDebug", "无法解析 DDL_ID: $ddlIdStr")
+        val ddlId = intent.getLongExtra("DDL_ID", -1)
+        if (ddlId == (-1).toLong()) {
+            Log.e("AlarmDebug", "传参不成功")
             return
         }
 
-//        val ddlId = intent.getIntExtra("DDL_ID", -1)
         val ddl = DatabaseHelper.getInstance(context).getDDLById(ddlId.toLong()) ?: return
 
         if (ddl.type == DeadlineType.HABIT && ddl.isCompleted) return
 
-        android.util.Log.d("AlarmDebug", "收到闹钟广播！DDL: $ddl")
+        Log.d("AlarmDebug", "收到闹钟广播！DDL: $ddl")
 
         // 直接发送通知（移除保活服务逻辑）
         sendImmediateNotification(context, ddl)

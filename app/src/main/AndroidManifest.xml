@@ -79,10 +79,10 @@
         </receiver>
 
         <receiver android:name=".DeadlineAlarmReceiver"
-            android:exported="false">
-<!--            <intent-filter>-->
-<!--                <action android:name="ACTION_DDL_ALARM"/>-->
-<!--            </intent-filter>-->
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.aritxonly.deadliner.ACTION_DDL_ALARM"/>
+            </intent-filter>
         </receiver>
 
         <provider
