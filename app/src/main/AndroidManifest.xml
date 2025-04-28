@@ -84,6 +84,12 @@
                 <action android:name="com.aritxonly.deadliner.ACTION_DDL_ALARM"/>
             </intent-filter>
         </receiver>
+        <receiver android:name=".DailyAlarmReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.aritxonly.deadliner.ACTION_DAILY_ALARM"/>
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

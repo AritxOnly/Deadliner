@@ -136,12 +136,19 @@ class AddDDLActivity : AppCompatActivity() {
                 if (selectedPage != 1) {
                     if (endTime == null) return@setOnClickListener
                     // 保存到数据库
-                    databaseHelper.insertDDL(
+                    val ddlId = databaseHelper.insertDDL(
                         ddlName,
                         startTime.toString(),
                         endTime.toString(),
                         ddlNote
                     )
+
+                    databaseHelper.getDDLById(ddlId)?.let { item ->
+                        Log.d("AlarmDebug", "Reached here")
+                        if (GlobalUtils.deadlineNotification)
+                            DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, item)
+                    }
+
                     setResult(RESULT_OK)
                     finishAfterTransition() // 返回 MainActivity
                 } else {

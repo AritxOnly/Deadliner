@@ -18,6 +18,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.aritxonly.deadliner.DDLItem
+import com.aritxonly.deadliner.DatabaseHelper
+import com.aritxonly.deadliner.DeadlineType
 import com.aritxonly.deadliner.GlobalUtils
 import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.R
@@ -26,6 +28,7 @@ import java.time.Duration
 import java.time.LocalDateTime
 
 const val CHANNEL_ID = "deadliner_alerts"
+const val CHANNEL_DAILY_ID = "deadliner_daily_alerts"
 const val XIAOMI_PERMISSION_REQUEST_CODE = 0x1001
 
 object NotificationUtil {
@@ -36,10 +39,10 @@ object NotificationUtil {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Deadline Alerts",
+                "Deadline临近通知",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Critical deadline notifications"
+                description = "用于在Deadline到来前推送通知提醒，需要在设置中打开通知推送功能"
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 500, 200, 500)
@@ -47,6 +50,17 @@ object NotificationUtil {
 
             context.getSystemService(NotificationManager::class.java)
                 .createNotificationChannel(channel)
+
+            val dailyChannel = NotificationChannel(
+                CHANNEL_DAILY_ID,
+                "Deadliner定时通知",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "每天定时向用户推送任务完成情况信息，需要在设置中打开通知推送功能"
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 500, 200, 500)
+            }
         }
 
         // ColorOS专用渠道
@@ -90,6 +104,67 @@ object NotificationUtil {
         NotificationManagerCompat.from(context).notify(ddl.id.hashCode(), notification)
     }
 
+    fun sendDailyNotification(context: Context) {
+        // 检查通知权限（Android 13+）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                return
+            }
+        }
+
+        // MIUI权限检查
+        if (isXiaomiDevice() && !checkXiaomiPopupPermission(context)) {
+            showXiaomiPermissionDialog(context)
+            return
+        }
+
+        val notification = buildDailyNotification(context)
+        NotificationManagerCompat.from(context).notify(114514, notification)
+    }
+
+    private fun buildDailyNotification(context: Context): Notification {
+        val dbHelper = DatabaseHelper.getInstance(context)
+        val allDdls: List<DDLItem> = dbHelper.getDDLsByType(DeadlineType.TASK)
+
+        val now = LocalDateTime.now()
+        var overdueCount = 0
+        var inProgressCount = 0
+        var dueTodayCount = 0
+
+        for (ddl in allDdls) {
+            if (ddl.isCompleted || ddl.isArchived) continue
+
+            val endTime = GlobalUtils.safeParseDateTime(ddl.endTime)
+
+            when {
+                endTime.isBefore(now) -> {
+                    // 截止时间已过
+                    overdueCount++
+                }
+                endTime.toLocalDate() == now.toLocalDate() -> {
+                    // 今天之内到期
+                    dueTodayCount++
+                }
+                else -> {
+                    // 还在进行中，且不在今天
+                    inProgressCount++
+                }
+            }
+        }
+
+        val title = "今日任务概览"
+        val summary = "逾期：$overdueCount，进行中：$inProgressCount，今日到期：$dueTodayCount"
+
+        return NotificationCompat.Builder(context, CHANNEL_DAILY_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(summary)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(summary))
+            .setOngoing(true)
+            .build()
+    }
+
     private fun buildNotification(context: Context, ddl: DDLItem): Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID).apply {
             setSmallIcon(R.mipmap.ic_launcher) // 确保资源存在
@@ -98,7 +173,7 @@ object NotificationUtil {
             priority = NotificationCompat.PRIORITY_MAX
             setCategory(NotificationCompat.CATEGORY_ALARM)
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            setAutoCancel(true)
+            setOngoing(true)
 
             // 点击打开应用
             val pendingIntent = PendingIntent.getActivity(

@@ -3,7 +3,6 @@ package com.aritxonly.deadliner
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import com.aritxonly.deadliner.notification.NotificationUtil.sendImmediateNotification
 import java.time.Duration
@@ -24,10 +23,17 @@ class DeadlineAlarmReceiver : BroadcastReceiver() {
         val ddl = DatabaseHelper.getInstance(context).getDDLById(ddlId.toLong()) ?: return
 
         if (ddl.type == DeadlineType.HABIT && ddl.isCompleted) return
+	
+        val endTime = GlobalUtils.parseDateTime(ddl.endTime)
+        val duration = Duration.between(LocalDateTime.now(), endTime)
+        if (duration.toMinutes() < 0) return
 
         Log.d("AlarmDebug", "收到闹钟广播！DDL: $ddl")
 
-        // 直接发送通知（移除保活服务逻辑）
         sendImmediateNotification(context, ddl)
+
+        DeadlineAlarmScheduler.cancelAlarm(context, ddl.id)
+
+        GlobalUtils.NotificationStatusManager.markAsNotified(ddl.id)
     }
 }

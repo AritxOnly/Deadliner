@@ -1,7 +1,6 @@
 package com.aritxonly.deadliner
 
 import ApkDownloaderInstaller
-import android.animation.AnimatorInflater
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
@@ -12,7 +11,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Resources
 import android.graphics.*
 import android.net.Uri
 import android.os.Build
@@ -28,19 +26,15 @@ import android.text.Spanned
 import android.text.TextWatcher
 import android.util.Log
 import android.util.TypedValue
-import android.view.GestureDetector
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
-import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -63,10 +57,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
 import androidx.work.*
-import androidx.work.PeriodicWorkRequestBuilder
 import com.aritxonly.deadliner.notification.NotificationUtil
 import com.google.android.material.badge.BadgeDrawable
-import com.google.android.material.badge.BadgeUtils
 import com.google.android.material.bottomappbar.BottomAppBar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.DynamicColors
@@ -74,7 +66,6 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
@@ -168,6 +159,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
+        DeadlineAlarmScheduler.cancelDailyAlarm(applicationContext)
 
 //        DynamicColors.applyToActivitiesIfAvailable(application)
 
@@ -552,6 +546,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 for (position in positionsToDelete) {
                                     val item = adapter.itemList[position]
                                     databaseHelper.deleteDDL(item.id)
+                                    DeadlineAlarmScheduler.cancelAlarm(applicationContext, item.id)
                                 }
                                 viewModel.loadData(currentType)
                                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
@@ -784,7 +779,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         // 初始化通知系统并检查关键权限
         initializeNotificationSystem()
-        GlobalUtils.setAlarms(databaseHelper, this)
+        GlobalUtils.setAlarms(databaseHelper, applicationContext)
+        DeadlineAlarmScheduler.scheduleDailyAlarm(applicationContext)
         checkCriticalPermissions()
         // 恢复所有未完成DDL的闹钟
         restoreAllAlarms()
@@ -977,6 +973,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
                 val item = adapter.itemList[position]
                 databaseHelper.deleteDDL(item.id)
+                DeadlineAlarmScheduler.cancelAlarm(applicationContext, item.id)
                 viewModel.loadData(currentType)
                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                 decideShowEmptyNotice()
@@ -1160,7 +1157,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         viewModel.loadData(currentType)
         decideShowEmptyNotice()
 
-        GlobalUtils.setAlarms(databaseHelper, this)
+//        GlobalUtils.setAlarms(databaseHelper, applicationContext)
 
         if (searchOverlay.visibility == View.VISIBLE) {
             val s = searchEditText.text
@@ -1537,7 +1534,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         lifecycleScope.launch(Dispatchers.IO) {
             val allDDLs = databaseHelper.getAllDDLs()
             allDDLs.filter { !it.isCompleted }.forEach { ddl ->
-                DeadlineAlarmScheduler.scheduleExactAlarm(this@MainActivity, ddl)
+                DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, ddl)
             }
         }
     }
