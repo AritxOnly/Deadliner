@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -104,7 +105,8 @@ class DeadlineDetailActivity : AppCompatActivity() {
                 var currentDeadline by remember { mutableStateOf(latestDeadline) }
 
                 Scaffold(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
                         .background(color = Color(colorScheme.surface))
                 ) { innerPadding ->
                     DeadlineDetailScreen(
@@ -374,7 +376,9 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
         Text(text = "结束时间：${endTime.format(dateFormatter)}", style = MaterialTheme.typography.bodyMedium, color = textColor)
         Text(text = "剩余时间：$remainingTimeText", style = MaterialTheme.typography.bodyMedium, color = textColor)
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = deadline.note, style = MaterialTheme.typography.bodyMedium, color = textColor)
+        SelectionContainer {
+            Text(text = deadline.note, style = MaterialTheme.typography.bodyMedium, color = textColor)
+        }
         Spacer(modifier = Modifier.height(20.dp))
     }
 }

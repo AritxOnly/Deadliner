@@ -3,26 +3,18 @@ package com.aritxonly.deadliner
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings.Global
 import android.text.Html
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.transition.Explode
-import androidx.transition.Slide
-import androidx.transition.Visibility
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -30,8 +22,9 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
-import com.google.android.material.slider.Slider
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -58,6 +51,13 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var buttonImport: MaterialButton
     private lateinit var buttonExport: MaterialButton
+
+    private lateinit var buttonCancelAll: MaterialButton
+    private lateinit var settingsAdvanced: TextView
+    private lateinit var settingsAdvancedCard: MaterialCardView
+
+    private lateinit var buttonShowIntroPage: MaterialButton
+    private lateinit var buttonCloudSyncServer: MaterialButton
 
     private var resetTimes = 0
 
@@ -98,6 +98,15 @@ class SettingsActivity : AppCompatActivity() {
         buttonImport = findViewById(R.id.buttonImport)
         buttonExport = findViewById(R.id.buttonExport)
 
+        buttonCancelAll = findViewById(R.id.buttonCancelAll)
+        settingsAdvanced = findViewById(R.id.settingsAdvanced)
+        settingsAdvancedCard = findViewById(R.id.settingsAdvancedCard)
+
+        buttonShowIntroPage = findViewById(R.id.buttonShowIntroPage)
+        buttonCloudSyncServer = findViewById(R.id.buttonCloudSyncServer)
+
+        decideToShowAdvancedMode()
+
         switchVibration.isChecked = GlobalUtils.vibration
         switchProgressDir.isChecked = GlobalUtils.progressDir
         switchProgressWidget.isChecked = GlobalUtils.progressWidget
@@ -123,10 +132,22 @@ class SettingsActivity : AppCompatActivity() {
 
         switchDeadlineNotification.setOnCheckedChangeListener { _, isChecked ->
             GlobalUtils.deadlineNotification = isChecked
+            if (!isChecked) {
+                DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
+                GlobalUtils.NotificationStatusManager.clearAllNotified()
+            } else {
+                Log.d("AlarmDebug", "Reached Here")
+                GlobalUtils.setAlarms(DatabaseHelper.getInstance(applicationContext), applicationContext)
+            }
         }
 
         switchDailyStatsNotification.setOnCheckedChangeListener { _, isChecked ->
             GlobalUtils.dailyStatsNotification = isChecked
+            if (isChecked) {
+                showDailyTimePicker()
+            } else {
+                DeadlineAlarmScheduler.cancelDailyAlarm(applicationContext)
+            }
         }
 
         switchMotivationalQuotes.setOnCheckedChangeListener { _, isChecked ->
@@ -195,23 +216,26 @@ class SettingsActivity : AppCompatActivity() {
                 ).show()
                 return@setOnClickListener
             }
+            val hint = if (GlobalUtils.developerMode) "关闭" else "打开"
             resetTimes++
             when (resetTimes) {
                 in 2..4 -> {
-                    Snackbar.make(
-                        aboutCard,
-                        "再点击${5 - resetTimes}次即可在下次打开时显示欢迎页面",
-                        Snackbar.LENGTH_SHORT
+                    Toast.makeText(
+                        this,
+                        "再点击${5 - resetTimes}次即可${hint}高级模式",
+                        Toast.LENGTH_SHORT
                     ).show()
                 }
                 5 -> {
-                    Snackbar.make(
-                        aboutCard,
-                        "下次打开Deadliner将显示欢迎页面",
-                        Snackbar.LENGTH_SHORT
+                    Toast.makeText(
+                        this,
+                        "高级模式已${hint}",
+                        Toast.LENGTH_SHORT
                     ).show()
-                    GlobalUtils.showIntroPage = true
+                    GlobalUtils.developerMode = !GlobalUtils.developerMode
                     resetTimes = 0
+
+                    decideToShowAdvancedMode()
                 }
             }
         }
@@ -228,7 +252,7 @@ class SettingsActivity : AppCompatActivity() {
             <strong>Deadliner</strong> ${packageManager.getPackageInfo(packageName, 0).versionName}<br>
             By Author <strong>Aritx Zhou</strong>
         """.trimIndent()
-        versionNumber.setText(Html.fromHtml(appVersionString))
+        versionNumber.text = Html.fromHtml(appVersionString)
 
         val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
         toolbar.setNavigationOnClickListener {
@@ -236,11 +260,28 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         buttonImport.setOnClickListener {
+            DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
+            GlobalUtils.NotificationStatusManager.clearAllNotified()
+            Toast.makeText(this, "已成功销毁所有闹钟时间", Toast.LENGTH_SHORT).show()
             openBackup()
         }
 
         buttonExport.setOnClickListener {
             createBackup()
+        }
+
+        buttonCancelAll.setOnClickListener {
+            DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
+            GlobalUtils.NotificationStatusManager.clearAllNotified()
+            Toast.makeText(this, "已成功销毁所有闹钟时间", Toast.LENGTH_SHORT).show()
+        }
+
+        buttonShowIntroPage.setOnClickListener {
+            GlobalUtils.showIntroPage = true
+        }
+
+        buttonCloudSyncServer.setOnClickListener {
+            MaterialAlertDialogBuilder(this).show()
         }
     }
 
@@ -250,6 +291,18 @@ class SettingsActivity : AppCompatActivity() {
         when (requestCode) {
             EXPORT_REQUEST_CODE -> handleExportResult(resultCode, data)
             IMPORT_REQUEST_CODE -> handleImportResult(resultCode, data)
+        }
+    }
+
+    private fun decideToShowAdvancedMode() {
+        if (GlobalUtils.developerMode) {
+            buttonCancelAll.visibility = View.VISIBLE
+            settingsAdvanced.visibility = View.VISIBLE
+            settingsAdvancedCard.visibility = View.VISIBLE
+        } else {
+            buttonCancelAll.visibility = View.GONE
+            settingsAdvanced.visibility = View.GONE
+            settingsAdvancedCard.visibility = View.GONE
         }
     }
 
@@ -380,6 +433,24 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+
+    private fun showDailyTimePicker() {
+        val currentHour = GlobalUtils.dailyNotificationHour
+        val picker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_24H)
+            .setHour(currentHour)
+            .setMinute(0)
+            .setTitleText("选择每日通知时间")
+            .build()
+
+        picker.addOnPositiveButtonClickListener {
+            val selectedHour = picker.hour
+            GlobalUtils.dailyNotificationHour = selectedHour
+            DeadlineAlarmScheduler.scheduleDailyAlarm(applicationContext)
+        }
+
+        picker.show(supportFragmentManager, "daily_time_picker")
     }
 
     /**

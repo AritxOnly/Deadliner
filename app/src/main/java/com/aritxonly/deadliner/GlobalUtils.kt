@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentManager
+import com.aritxonly.deadliner.notification.NotificationUtil
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -20,9 +21,18 @@ import java.util.Calendar
 import java.util.Date
 
 object GlobalUtils {
+
     private const val PREF_NAME = "app_settings"
 
     private lateinit var sharedPreferences: SharedPreferences
+
+    class NotificationBefore {
+        companion object {
+            const val ONE_DAY = 0b100
+            const val HALF_DAY = 0b10
+            const val TWO_HOURS = 0b1
+        }
+    }
 
     fun init(context: Context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, AppCompatActivity.MODE_PRIVATE)
@@ -57,6 +67,12 @@ object GlobalUtils {
         get() = sharedPreferences.getBoolean("daily_stats_notification", false)
         set(value) {
             sharedPreferences.edit().putBoolean("daily_stats_notification", value).apply()
+        }
+
+    var dailyNotificationHour: Int
+        get() = sharedPreferences.getInt("daily_notification_hour", 9)
+        set(value) {
+            sharedPreferences.edit().putInt("daily_notification_hour", value).apply()
         }
 
     var motivationalQuotes: Boolean
@@ -106,6 +122,40 @@ object GlobalUtils {
         set(value) {
             sharedPreferences.edit().putBoolean("nearby_detailed_badge", value).apply()
         }
+
+    var notificationBefore: Int
+        get() = sharedPreferences.getInt("notification_before", 0b111)
+        set(value) {
+            sharedPreferences.edit().putInt("notification_before", value).apply()
+        }
+
+    private var notifiedSet: MutableSet<String>
+        get() = sharedPreferences.getStringSet("notified_set", emptySet())?.toMutableSet()?: mutableSetOf()
+        set(value) {
+            sharedPreferences.edit().putStringSet("notified_set", value.toSet()).apply()
+        }
+
+    var developerMode: Boolean
+        get() = sharedPreferences.getBoolean("developer_mode", false)
+        set(value) {
+            sharedPreferences.edit().putBoolean("developer_mode", value).apply()
+        }
+
+    object NotificationStatusManager {
+        fun markAsNotified(ddlId: Long) {
+            val set = notifiedSet
+            set.add(ddlId.toString())
+            notifiedSet = set
+        }
+
+        fun hasBeenNotified(ddlId: Long): Boolean {
+            return notifiedSet.contains(ddlId.toString())
+        }
+
+        fun clearAllNotified() {
+            notifiedSet = mutableSetOf()
+        }
+    }
 
     // v2.0 - filter功能
     /**
@@ -239,5 +289,25 @@ object GlobalUtils {
         }
 
         return habitMeta
+    }
+
+    fun setAlarms(databaseHelper: DatabaseHelper, context: Context) {
+        if (!deadlineNotification) {
+            return
+        }
+
+        val pendingTasks = databaseHelper.getDDLsByType(DeadlineType.TASK)
+            .filter {
+                if (it.isCompleted || it.isArchived) {
+                    return@filter false
+                }
+
+                val endTime = parseDateTime(it.endTime)
+                endTime != null && endTime.isAfter(LocalDateTime.now())
+            }
+
+        pendingTasks.forEach { ddlItem ->
+            DeadlineAlarmScheduler.scheduleExactAlarm(context, ddlItem)
+        }
     }
 }
