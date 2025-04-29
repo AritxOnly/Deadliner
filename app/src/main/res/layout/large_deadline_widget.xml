@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/widget_large_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp"
+    style="@style/Widget.Deadliner.AppWidget.Container"
+    android:theme="@style/Theme.Deadliner.AppWidgetContainer">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:layout_margin="8dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:text="Deadliner"
+        android:textSize="18sp"
+        android:textColor="@color/widget_icon_tint"
+        android:padding="4dp" />
+
+    <!-- “+” 按钮，固定在右上角 -->
+    <ImageView
+        android:id="@+id/btn_add_ddl"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:contentDescription="添加"
+        android:src="@drawable/ic_widget_plus"
+        android:layout_margin="8dp"
+        android:padding="4dp" />
+
+    <!-- 用于装载所有 DDL item 的父容器 -->
+    <LinearLayout
+        android:id="@+id/large_item_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/btn_add_ddl"
+        android:clipToPadding="false"
+        android:divider="?android:attr/dividerVertical"
+        android:orientation="vertical"
+        android:paddingTop="4dp"
+        android:showDividers="none">
+
+        <!-- 这里不再写死 Item1/2/3，Widget 更新时往 container.addView() 或者 RemoteViewsCollection 填充 -->
+    </LinearLayout>
+
+</RelativeLayout>

@@ -16,4 +16,6 @@
     <color name="chart_green">#FFBFD1C4</color>
     <color name="chart_orange">#FFFED59E</color>
     <color name="chart_blue">#FFB3CAD8</color>
+
+    <color name="widget_icon_tint">#FFFFFF</color>
 </resources>

@@ -803,6 +803,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         for (appWidgetId in appWidgetIds) {
             MultiDeadlineWidget.updateWidget(this, appWidgetManager, appWidgetId)
         }
+
+        val largeWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, LargeDeadlineWidget::class.java))
+        for (largeWidgetId in largeWidgetIds) {
+            LargeDeadlineWidget.updateWidget(this, appWidgetManager, largeWidgetId)
+        }
     }
 
     private fun refreshData() {

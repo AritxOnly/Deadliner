@@ -15,5 +15,7 @@ class DailyAlarmReceiver : BroadcastReceiver() {
         Log.d("AlarmDebug", "DailyAlarmReceiver")
 
         sendDailyNotification(context)
+
+        DeadlineAlarmScheduler.scheduleDailyAlarm(context)
     }
 }

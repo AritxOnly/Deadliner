@@ -122,10 +122,9 @@ object DeadlineAlarmScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        alarmManager.setInexactRepeating(
+        alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             triggerMillis,
-            AlarmManager.INTERVAL_DAY,
             pi
         )
 
