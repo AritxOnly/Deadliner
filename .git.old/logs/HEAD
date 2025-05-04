@@ -1,0 +1,5 @@
+0000000000000000000000000000000000000000 87ec68a483bbee09b9623b8ae340af26380523e9 AritxOnly <aritx_zhou@qq.com> 1745889679 +0800	clone: from github.com:AritxOnly/Deadliner.git
+87ec68a483bbee09b9623b8ae340af26380523e9 4770e3f016b77e6af1be9f33bac8d4d47e6163b6 AritxOnly <aritx_zhou@qq.com> 1745889726 +0800	checkout: moving from master to dev_notification
+4770e3f016b77e6af1be9f33bac8d4d47e6163b6 2bd75771ca70eb80e01628f6d8e23ca54142476c AritxOnly <aritx_zhou@qq.com> 1745913182 +0800	commit: 🚀dev-2.1.0: Fix probably bug in DailyAlarmReceiver; Add large widget
+2bd75771ca70eb80e01628f6d8e23ca54142476c 1c5d1110947dda2206b7c9fb0eb6731f612b12b3 AritxOnly <aritx_zhou@qq.com> 1745919539 +0800	commit: 🚀dev-2.1.0: Selection in DeadlineDetailActivity
+1c5d1110947dda2206b7c9fb0eb6731f612b12b3 1c5d1110947dda2206b7c9fb0eb6731f612b12b3 AritxOnly <aritx_zhou@qq.com> 1745919575 +0800	checkout: moving from dev_notification to dev_customcolor

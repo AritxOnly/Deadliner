@@ -1,0 +1,35 @@
+<resources>
+    <color name="primary">#6200EE</color>
+    <color name="primaryContainer">#BB86FC</color>
+    <color name="secondary">#03DAC6</color>
+    <color name="secondaryContainer">#018786</color>
+    <color name="background">#FFFFFF</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="onPrimary">#FFFFFF</color>
+    <color name="onSecondary">#000000</color>
+    <color name="onBackground">#000000</color>
+    <color name="onSurface">#000000</color>
+    <color name="light_blue_50">#FFE1F5FE</color>
+    <color name="light_blue_200">#FF81D4FA</color>
+    <color name="light_blue_600">#FF039BE5</color>
+    <color name="light_blue_900">#FF01579B</color>
+
+    <color name="stared_yellow">#ffffe819</color>
+
+    <color name="chart_red">#FFF77E66</color>
+    <color name="chart_green">#FF82ABA3</color>
+    <color name="chart_orange">#FFFEC37D</color>
+    <color name="chart_blue">#FF97A5C0</color>
+
+    <color name="progress_bg">#552C2C2C</color> <!-- 适合亮色模式的颜色 -->
+
+    <color name="transparent">#00000000</color>
+
+    <array name="material3_swipe_refresh_colors">
+        <item>?attr/colorPrimary</item>
+        <item>?attr/colorSecondary</item>
+        <item>?attr/colorTertiary</item>
+    </array>
+
+    <color name="widget_icon_tint">#000000</color>
+</resources>
