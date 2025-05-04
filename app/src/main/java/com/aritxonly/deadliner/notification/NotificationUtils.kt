@@ -82,6 +82,7 @@ object NotificationUtil {
             ).apply {
                 description = "ColorOS专用渠道"
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                enableVibration(true)
             }
 
             context.getSystemService(NotificationManager::class.java)
@@ -165,7 +166,6 @@ object NotificationUtil {
             setContentTitle(title)
             setContentText(summary)
             setStyle(NotificationCompat.BigTextStyle().bigText(summary))
-            setOngoing(true)
 
             // OPPO（ColorOS）额外字段
             if (isOppoDevice()) {
@@ -194,7 +194,6 @@ object NotificationUtil {
             priority = NotificationCompat.PRIORITY_MAX
             setCategory(NotificationCompat.CATEGORY_ALARM)
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            setOngoing(true)
 
             // 点击打开应用
             val pendingIntent = PendingIntent.getActivity(

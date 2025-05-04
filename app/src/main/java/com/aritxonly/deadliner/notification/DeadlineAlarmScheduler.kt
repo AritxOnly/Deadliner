@@ -29,9 +29,9 @@ object DeadlineAlarmScheduler {
         }
 
         val intent = Intent(context, DeadlineAlarmReceiver::class.java).apply {
-            Log.d("AlarmDebug", "putting extra ${ddl.id}")
             putExtra("DDL_ID", ddl.id)
             action = "com.aritxonly.deadliner.ACTION_DDL_ALARM"
+            addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }
 
         val requestCode = abs(ddl.id.hashCode())
@@ -43,19 +43,33 @@ object DeadlineAlarmScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val showIntent = Intent(context, MainActivity::class.java).apply {
+            putExtra("OPEN_DDL_ID", ddl.id)
+        }
+        val showPendingIntent = PendingIntent.getActivity(
+            context,
+            requestCode + 1,
+            showIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         // 提前720分钟（12小时）触发
         val triggerTime = GlobalUtils.safeParseDateTime(ddl.endTime)
             .minusMinutes(720)
             .atZone(ZoneId.systemDefault())
-            .toEpochSecond() * 1000
+            .toInstant()
+            .toEpochMilli()
 
         Log.d("AlarmDebug", "设置闹钟时间: ${Date(triggerTime)} | DDL结束时间: ${ddl.endTime}")
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerTime,
-            pendingIntent
-        )
+        val info = AlarmManager.AlarmClockInfo(triggerTime, showPendingIntent)
+        alarmManager.setAlarmClock(info, pendingIntent)
+
+//        alarmManager.setExactAndAllowWhileIdle(
+//            AlarmManager.RTC_WAKEUP,
+//            triggerTime,
+//            pendingIntent
+//        )
     }
 
     fun cancelAllAlarms(context: Context) {
@@ -114,6 +128,7 @@ object DeadlineAlarmScheduler {
 
         val intent = Intent(context, DailyAlarmReceiver::class.java).apply {
             action = "com.aritxonly.deadliner.ACTION_DAILY_ALARM"
+            addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }
         val magicNumber = 114514    // senpai
         val pi = PendingIntent.getBroadcast(
@@ -123,11 +138,22 @@ object DeadlineAlarmScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerMillis,
-            pi
+        val showIntent = Intent(context, MainActivity::class.java)
+        val showPi = PendingIntent.getActivity(
+            context,
+            magicNumber + 1,
+            showIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
+        val info = AlarmManager.AlarmClockInfo(triggerMillis, showPi)
+        alarmManager.setAlarmClock(info, pi)
+
+//        alarmManager.setExactAndAllowWhileIdle(
+//            AlarmManager.RTC_WAKEUP,
+//            triggerMillis,
+//            pi
+//        )
 
         Log.d("AlarmDebug", "已调度每日通知，每天 ${hour}:${minute}，首次触发：${Date(triggerMillis)}")
     }
