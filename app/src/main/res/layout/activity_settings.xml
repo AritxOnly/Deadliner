@@ -251,6 +251,15 @@
                         android:textSize="16sp"
                         app:useMaterialThemeColors="true"/>
 
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchHideFromRecent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="8dp"
+                        android:text="@string/settings_hide_from_recent"
+                        android:textSize="16sp"
+                        app:useMaterialThemeColors="true"/>
+
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonCancelAll"
                         android:layout_width="match_parent"

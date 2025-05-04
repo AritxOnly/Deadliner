@@ -167,6 +167,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         DynamicColors.applyToActivityIfAvailable(this)
 
+        GlobalUtils.decideHideFromRecent(this, this@MainActivity)
+
         // 获取主题中的 colorSurface 值
         val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
         val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)

@@ -1,5 +1,7 @@
 package com.aritxonly.deadliner
 
+import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
@@ -150,6 +152,14 @@ object GlobalUtils {
         get() = sharedPreferences.getBoolean("dynamic_colors", true)
         set(value) {
             sharedPreferences.edit().putBoolean("dynamic_colors", value).apply()
+        }
+
+//    var customColorScheme:
+
+    var hideFromRecent: Boolean
+        get() = sharedPreferences.getBoolean("hide_from_recent", false)
+        set(value) {
+            sharedPreferences.edit().putBoolean("hide_from_recent", value).apply()
         }
 
     object NotificationStatusManager {
@@ -320,5 +330,13 @@ object GlobalUtils {
         pendingTasks.forEach { ddlItem ->
             DeadlineAlarmScheduler.scheduleExactAlarm(context, ddlItem)
         }
+    }
+
+    fun decideHideFromRecent(context: Context, activity: Activity) {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val myTaskId = activity.taskId
+        activityManager.appTasks
+            .firstOrNull { it.taskInfo?.id == myTaskId }
+            ?.setExcludeFromRecents(hideFromRecent)
     }
 }

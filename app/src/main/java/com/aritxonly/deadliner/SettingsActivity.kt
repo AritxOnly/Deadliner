@@ -2,6 +2,7 @@ package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -59,6 +60,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var buttonShowIntroPage: MaterialButton
     private lateinit var buttonCloudSyncServer: MaterialButton
 
+    private lateinit var switchHideFromRecent: MaterialSwitch
+
     private var resetTimes = 0
 
     companion object {
@@ -78,6 +81,8 @@ class SettingsActivity : AppCompatActivity() {
         // 设置状态栏和导航栏颜色
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
+        GlobalUtils.decideHideFromRecent(this, this@SettingsActivity)
+
         // 初始化控件
         switchVibration = findViewById(R.id.switchVibration)
         switchProgressDir = findViewById(R.id.switchProgressDir)
@@ -88,6 +93,7 @@ class SettingsActivity : AppCompatActivity() {
         switchFireworksOnFinish = findViewById(R.id.switchFireworksOnFinish)
         switchDetailDisplayMode = findViewById(R.id.switchDetailDisplayMode)
         switchNearbyTasksBadge = findViewById(R.id.switchNearbyTasksBadge)
+        switchHideFromRecent = findViewById(R.id.switchHideFromRecent)
         buttonAuthorPage = findViewById(R.id.buttonAuthorPage)
         buttonHomePage = findViewById(R.id.buttonHomePage)
         buttonIssues = findViewById(R.id.buttonIssues)
@@ -116,6 +122,7 @@ class SettingsActivity : AppCompatActivity() {
         switchFireworksOnFinish.isChecked = GlobalUtils.fireworksOnFinish
         switchDetailDisplayMode.isChecked = GlobalUtils.detailDisplayMode
         switchNearbyTasksBadge.isChecked = GlobalUtils.nearbyTasksBadge
+        switchHideFromRecent.isChecked = GlobalUtils.hideFromRecent
 
         // 监听开关状态变化并保存设置
         switchVibration.setOnCheckedChangeListener { _, isChecked ->
@@ -216,6 +223,11 @@ class SettingsActivity : AppCompatActivity() {
                     .show()
             }
             true
+        }
+
+        switchHideFromRecent.setOnCheckedChangeListener { _, isChecked ->
+            GlobalUtils.hideFromRecent = isChecked
+            GlobalUtils.decideHideFromRecent(this, this@SettingsActivity)
         }
 
         // 设置超链接按钮点击事件
