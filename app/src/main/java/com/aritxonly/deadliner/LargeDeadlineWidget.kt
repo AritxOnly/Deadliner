@@ -127,6 +127,7 @@ internal fun updateLargeAppWidget(
         )
         // 剩余时间文本
         val text = if (item.remainingMillis < 0) {
+            itemRv.setProgressBar(R.id.item_progress, 100, 0, false)
             "逾期"
         } else {
             val days: Double = item.remainingMillis.toDouble() / (3600000 * 24)

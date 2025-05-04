@@ -128,7 +128,6 @@
         android:layout_width="0dp"
         android:layout_height="128dp"
         android:layout_marginTop="16dp"
-        android:inputType="text"
         app:boxCornerRadiusBottomEnd="12dp"
         app:boxCornerRadiusBottomStart="12dp"
         app:boxCornerRadiusTopEnd="12dp"
@@ -142,9 +141,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="top|start"
-            android:inputType="text"
-            android:scrollHorizontally="false"
-            android:imeOptions="actionDone|flagNoEnterAction" />
+            android:inputType="textMultiLine"
+            android:scrollHorizontally="false" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <!-- 习惯：频率类型-频率-目标次数 -->

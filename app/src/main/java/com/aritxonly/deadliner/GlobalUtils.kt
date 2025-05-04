@@ -74,6 +74,11 @@ object GlobalUtils {
         set(value) {
             sharedPreferences.edit().putInt("daily_notification_hour", value).apply()
         }
+    var dailyNotificationMinute: Int
+        get() = sharedPreferences.getInt("daily_notification_minute", 0)
+        set(value) {
+            sharedPreferences.edit().putInt("daily_notification_minute", value).apply()
+        }
 
     var motivationalQuotes: Boolean
         get() = sharedPreferences.getBoolean("motivational_quotes", true)
@@ -139,6 +144,12 @@ object GlobalUtils {
         get() = sharedPreferences.getBoolean("developer_mode", false)
         set(value) {
             sharedPreferences.edit().putBoolean("developer_mode", value).apply()
+        }
+
+    var dynamicColors: Boolean
+        get() = sharedPreferences.getBoolean("dynamic_colors", true)
+        set(value) {
+            sharedPreferences.edit().putBoolean("dynamic_colors", value).apply()
         }
 
     object NotificationStatusManager {

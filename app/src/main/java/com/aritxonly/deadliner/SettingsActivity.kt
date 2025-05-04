@@ -149,6 +149,12 @@ class SettingsActivity : AppCompatActivity() {
                 DeadlineAlarmScheduler.cancelDailyAlarm(applicationContext)
             }
         }
+        switchDailyStatsNotification.setOnLongClickListener {
+            if (GlobalUtils.dailyStatsNotification) {
+                showDailyTimePicker()
+            }
+            true
+        }
 
         switchMotivationalQuotes.setOnCheckedChangeListener { _, isChecked ->
             GlobalUtils.motivationalQuotes = isChecked
@@ -186,6 +192,30 @@ class SettingsActivity : AppCompatActivity() {
                     }
                     .show()
             }
+        }
+        switchNearbyTasksBadge.setOnLongClickListener {
+            if (GlobalUtils.nearbyTasksBadge) {
+                val options = arrayOf("数字角标", "圆点角标")
+                var selectedItem = 0
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.alert_select_badge_type)
+                    .setSingleChoiceItems(options, selectedItem) { dialog, which ->
+                        selectedItem = which
+                    }
+                    .setPositiveButton(R.string.accept) { dialog, which ->
+                        if (selectedItem != -1) {
+                            when (selectedItem) {
+                                0 -> GlobalUtils.nearbyDetailedBadge = true
+                                else -> GlobalUtils.nearbyDetailedBadge = false
+                            }
+                        }
+                    }
+                    .setNegativeButton(R.string.cancel) { dialog, which ->
+
+                    }
+                    .show()
+            }
+            true
         }
 
         // 设置超链接按钮点击事件
@@ -437,16 +467,19 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showDailyTimePicker() {
         val currentHour = GlobalUtils.dailyNotificationHour
+        val currentMinute = GlobalUtils.dailyNotificationMinute
         val picker = MaterialTimePicker.Builder()
             .setTimeFormat(TimeFormat.CLOCK_24H)
             .setHour(currentHour)
-            .setMinute(0)
+            .setMinute(currentMinute)
             .setTitleText("选择每日通知时间")
             .build()
 
         picker.addOnPositiveButtonClickListener {
             val selectedHour = picker.hour
+            val selectedMinute = picker.minute
             GlobalUtils.dailyNotificationHour = selectedHour
+            GlobalUtils.dailyNotificationMinute = selectedMinute
             DeadlineAlarmScheduler.scheduleDailyAlarm(applicationContext)
         }
 

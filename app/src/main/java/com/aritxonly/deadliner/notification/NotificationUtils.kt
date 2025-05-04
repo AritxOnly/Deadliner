@@ -21,6 +21,7 @@ import com.aritxonly.deadliner.DDLItem
 import com.aritxonly.deadliner.DatabaseHelper
 import com.aritxonly.deadliner.DeadlineType
 import com.aritxonly.deadliner.GlobalUtils
+import com.aritxonly.deadliner.LauncherActivity
 import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -61,6 +62,9 @@ object NotificationUtil {
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 500, 200, 500)
             }
+
+            context.getSystemService(NotificationManager::class.java)
+                .createNotificationChannel(dailyChannel)
         }
 
         // ColorOS专用渠道
@@ -73,10 +77,10 @@ object NotificationUtil {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 "important_channel",
-                "Critical Alerts",
+                "Deadliner重要通知",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "ColorOS important notifications"
+                description = "ColorOS专用渠道"
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
 
@@ -156,13 +160,30 @@ object NotificationUtil {
         val title = "今日任务概览"
         val summary = "逾期：$overdueCount，进行中：$inProgressCount，今日到期：$dueTodayCount"
 
-        return NotificationCompat.Builder(context, CHANNEL_DAILY_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(summary)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(summary))
-            .setOngoing(true)
-            .build()
+        val builder = NotificationCompat.Builder(context, CHANNEL_DAILY_ID).apply {
+            setSmallIcon(R.mipmap.ic_launcher)
+            setContentTitle(title)
+            setContentText(summary)
+            setStyle(NotificationCompat.BigTextStyle().bigText(summary))
+            setOngoing(true)
+
+            // OPPO（ColorOS）额外字段
+            if (isOppoDevice()) {
+                addExtras(Bundle().apply {
+                    putString("oppo_notification_channel_id", "important_channel")
+                })
+            }
+
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                114514,
+                Intent(context, LauncherActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            setContentIntent(pendingIntent)
+        }
+
+        return builder.build()
     }
 
     private fun buildNotification(context: Context, ddl: DDLItem): Notification {
@@ -179,7 +200,7 @@ object NotificationUtil {
             val pendingIntent = PendingIntent.getActivity(
                 context,
                 ddl.id.hashCode(),
-                Intent(context, MainActivity::class.java),
+                Intent(context, LauncherActivity::class.java),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             setContentIntent(pendingIntent)

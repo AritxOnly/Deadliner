@@ -96,11 +96,12 @@ object DeadlineAlarmScheduler {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
         val hour = GlobalUtils.dailyNotificationHour
+        val minute = GlobalUtils.dailyNotificationMinute
 
         val now = LocalDateTime.now()
         var nextTrigger = now
             .withHour(hour)
-            .withMinute(0)
+            .withMinute(minute)
             .withSecond(0)
             .withNano(0)
         if (nextTrigger.isBefore(now) || nextTrigger.isEqual(now)) {
@@ -128,7 +129,7 @@ object DeadlineAlarmScheduler {
             pi
         )
 
-        Log.d("AlarmDebug", "已调度每日通知，每天 ${hour}:00，首次触发：${Date(triggerMillis)}")
+        Log.d("AlarmDebug", "已调度每日通知，每天 ${hour}:${minute}，首次触发：${Date(triggerMillis)}")
     }
 
     fun cancelDailyAlarm(context: Context) {
