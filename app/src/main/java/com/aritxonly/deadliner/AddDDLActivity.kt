@@ -68,6 +68,8 @@ class AddDDLActivity : AppCompatActivity() {
         DynamicColors.applyToActivitiesIfAvailable(this.application)
         DynamicColors.applyToActivityIfAvailable(this)
 
+        GlobalUtils.decideHideFromRecent(this, this@AddDDLActivity)
+
         // 获取主题中的 colorSurface 值
         val colorSurface = getThemeColor(android.R.attr.colorBackground)
 
