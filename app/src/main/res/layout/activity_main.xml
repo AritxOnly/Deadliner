@@ -90,10 +90,10 @@
     <ImageButton
         android:id="@+id/settingsButton"
         android:padding="8dp"
-        android:layout_width="38dp"
-        android:layout_height="38dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="18dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="18dp"
+        android:layout_marginEnd="16dp"
         android:background="@drawable/circle_background_main"
         android:scaleType="centerInside"
         android:src="@drawable/ic_settings"
@@ -101,16 +101,16 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageButton
-        android:id="@+id/overviewButton"
+        android:id="@+id/aiButton"
         android:visibility="gone"
         android:padding="8dp"
-        android:layout_width="38dp"
-        android:layout_height="38dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginTop="20dp"
         android:layout_marginEnd="16dp"
         android:background="@drawable/circle_background_main"
         android:scaleType="centerInside"
-        android:src="@drawable/ic_chart"
+        android:src="@drawable/ic_ai"
         app:layout_constraintEnd_toStartOf="@id/settingsButton"
         app:layout_constraintTop_toTopOf="parent"
         app:tint="?attr/colorOnSurface" />

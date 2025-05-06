@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -222,6 +223,12 @@ fun OverviewScreen(
     colorScheme: AppColorScheme,
     onClose: () -> Unit
 ) {
+    val expressiveTypeModifier = Modifier
+        .size(40.dp)
+        .clip(CircleShape)
+        .background(Color(colorScheme.surfaceContainer), CircleShape)
+        .padding(8.dp)
+
     Scaffold(
         containerColor = Color(colorScheme.surface),
         modifier = Modifier.background(Color(colorScheme.surface)),
@@ -229,14 +236,19 @@ fun OverviewScreen(
             TopAppBar(
                 title = { Text("概览", color = Color(colorScheme.onSurface)) },
                 navigationIcon = {
-                    IconButton(onClick = onClose) {
+                    IconButton(
+                        onClick = onClose,
+//                        modifier = expressiveTypeModifier
+                    ) {
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "关闭",
-                            tint = Color(colorScheme.onSurface)
+                            tint = Color(colorScheme.onSurface),
+                            modifier = expressiveTypeModifier
                         )
                     }
-                }
+                },
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
         }
     ) { paddingValues ->

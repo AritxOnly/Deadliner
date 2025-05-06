@@ -21,6 +21,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,10 +32,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -185,6 +191,12 @@ fun DeadlineDetailScreen(
 
     Log.d("DetailPage", "DeadlineDetailScreen: $isStared")
 
+    val expressiveTypeModifier = Modifier
+        .size(40.dp)
+        .clip(CircleShape)
+        .background(Color(colorScheme.surfaceContainer), CircleShape)
+        .padding(8.dp)
+
     Scaffold(
         modifier = Modifier.background(Color(colorScheme.surface)),
         topBar = {
@@ -202,7 +214,8 @@ fun DeadlineDetailScreen(
                         Icon(
                             Icons.Default.Close,
                             contentDescription = "关闭",
-                            tint = Color(colorScheme.onSurface)
+                            tint = Color(colorScheme.onSurface),
+                            modifier = expressiveTypeModifier
                         )
                     }
                 },
@@ -211,7 +224,8 @@ fun DeadlineDetailScreen(
                         Icon(
                             painterResource(id = R.drawable.ic_edit),
                             contentDescription = "编辑",
-                            tint = Color(colorScheme.onSurface)
+                            tint = Color(colorScheme.onSurface),
+                            modifier = expressiveTypeModifier
                         )
                     }
                     IconButton(onClick = {
@@ -228,10 +242,12 @@ fun DeadlineDetailScreen(
                         Icon(
                             iconStar,
                             contentDescription = "星标",
-                            tint = tintColor
+                            tint = tintColor,
+                            modifier = expressiveTypeModifier
                         )
                     }
-                }
+                },
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
         }
     ) { innerPadding ->

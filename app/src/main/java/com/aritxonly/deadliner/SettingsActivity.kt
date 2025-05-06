@@ -13,9 +13,12 @@ import android.util.TypedValue
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.view.children
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -299,6 +302,32 @@ class SettingsActivity : AppCompatActivity() {
         val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
         toolbar.setNavigationOnClickListener {
             finishAfterTransition() // 返回上一个界面
+        }
+        // Material You Expressive Style BUTTON
+        toolbar.post {
+            val navDrawable = toolbar.navigationIcon ?: return@post
+            val navButton = toolbar.children
+                .firstOrNull { (it as? ImageView)?.drawable == navDrawable }
+                ?: return@post
+
+            val sizeDp = 40
+            val density = navButton.resources.displayMetrics.density
+            val sizePx = (sizeDp * density).toInt()
+
+            val lp = navButton.layoutParams
+                .also {
+                    it.width = sizePx
+                    it.height = sizePx
+                }
+            navButton.layoutParams = lp
+
+            val paddingDp = 8
+            val padPx = (paddingDp * density).toInt()
+            navButton.setPadding(padPx, padPx, padPx, padPx)
+
+            navButton.background = ContextCompat.getDrawable(this, R.drawable.circle_background_main)
+
+            navButton.requestLayout()
         }
 
         buttonImport.setOnClickListener {
