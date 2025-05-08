@@ -86,6 +86,7 @@ import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
+import com.aritxonly.deadliner.web.WebUtils
 import com.google.android.material.materialswitch.MaterialSwitch
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
@@ -801,6 +802,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     GlobalUtils.cloudSyncServer = inputServer.text?.toString()
                     GlobalUtils.cloudSyncPort = inputPort.text?.toString()?.toIntOrNull()?:5000
                     GlobalUtils.cloudSyncConstantToken = inputToken.text?.toString()
+                    WebUtils.init()
                     decideCloudStatus()
                 }
                 .setNegativeButton(R.string.cancel, null)
@@ -1640,15 +1642,21 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     private fun decideCloudStatus() {
-        if (!GlobalUtils.cloudSyncEnable ||
-            GlobalUtils.cloudSyncServer == null ||
-            GlobalUtils.cloudSyncConstantToken == null) {
+        val server = GlobalUtils.cloudSyncServer
+        val token = GlobalUtils.cloudSyncConstantToken
+        val enable = GlobalUtils.cloudSyncEnable
+
+        if (!enable || server == null || token == null) {
             cloudButton.setImageResource(R.drawable.ic_cloud_off)
+            return
         }
-        if (GlobalUtils.cloudSyncEnable &&
-            GlobalUtils.cloudSyncServer != null
-            && GlobalUtils.cloudSyncConstantToken != null) {
-            cloudButton.setImageResource(R.drawable.ic_cloud)
+
+        // 开启协程检查 Web 是否可用
+        lifecycleScope.launch {
+            val available = WebUtils.isWebAvailable()
+            cloudButton.setImageResource(
+                if (available) R.drawable.ic_cloud else R.drawable.ic_cloud_off
+            )
         }
     }
 }
