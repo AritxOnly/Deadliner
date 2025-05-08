@@ -225,7 +225,7 @@ fun DeadlineDetailScreen(
                             painterResource(id = R.drawable.ic_edit),
                             contentDescription = "编辑",
                             tint = Color(colorScheme.onSurface),
-                            modifier = expressiveTypeModifier
+                            modifier = expressiveTypeModifier.padding(1.dp)
                         )
                     }
                     IconButton(onClick = {
@@ -247,7 +247,8 @@ fun DeadlineDetailScreen(
                         )
                     }
                 },
-                modifier = Modifier.padding(horizontal = 8.dp)
+                modifier = Modifier.background(Color(colorScheme.surface))
+                    .padding(horizontal = 8.dp)
             )
         }
     ) { innerPadding ->

@@ -30,16 +30,24 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarState
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +56,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +65,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
+import java.time.Duration
 
 // 辅助函数：判断任务是否逾期
 // 假设 endTime 格式为 "yyyy-MM-dd HH:mm"
@@ -229,12 +239,30 @@ fun OverviewScreen(
         .background(Color(colorScheme.surfaceContainer), CircleShape)
         .padding(8.dp)
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+
+    val fraction by remember {
+        derivedStateOf { scrollBehavior.state.collapsedFraction }
+    }
+
+    val isCollapsed = fraction > 0.5f
+
+    val titleStyle = if (isCollapsed) {
+        MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
+    } else {
+        MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
+    }
+
     Scaffold(
         containerColor = Color(colorScheme.surface),
         modifier = Modifier.background(Color(colorScheme.surface)),
         topBar = {
-            TopAppBar(
-                title = { Text("概览", color = Color(colorScheme.onSurface)) },
+            LargeTopAppBar(
+                title = { Text(
+                    "概览",
+                    color = Color(colorScheme.onSurface),
+                    style = titleStyle
+                ) },
                 navigationIcon = {
                     IconButton(
                         onClick = onClose,
@@ -248,14 +276,34 @@ fun OverviewScreen(
                         )
                     }
                 },
-                modifier = Modifier.padding(horizontal = 8.dp)
+                actions = {
+                    IconButton(
+                        onClick = {}
+                    ) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = "更多",
+                            tint = Color(colorScheme.onSurface),
+                            modifier = expressiveTypeModifier
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = Color(colorScheme.surface),
+                    scrolledContainerColor = Color(colorScheme.surface)
+                ),
+                modifier = Modifier
+                    .background(Color(colorScheme.surface))
+                    .padding(horizontal = 8.dp),
+                scrollBehavior = scrollBehavior
             )
         }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
-                .background(Color(colorScheme.surface)),
+                .background(Color(colorScheme.surface))
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
             verticalArrangement = Arrangement.spacedBy((-8).dp)
         ) {
             item {

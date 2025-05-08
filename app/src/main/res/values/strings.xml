@@ -41,23 +41,49 @@
     <string name="settings_homepage">访问作者主页</string>
     <string name="settings_github">访问项目主页</string>
     <string name="settings_issues">提交错误报告</string>
+
+<!--    <string-array name="excitement_array">-->
+<!--        <item>今天你Deadline了吗？😝</item>-->
+<!--        <item>Deadline临近了🥺</item>-->
+<!--        <item>再坚持一下，很快就能做完啦☺️</item>-->
+<!--        <item>提前开始Deadline是一件好事哦😉</item>-->
+<!--        <item>保持专注，你一定能搞定！💪</item>-->
+<!--        <item>不要担心，你比你想象的更强大！✨</item>-->
+<!--        <item>完成Deadline后，奖励自己一个小惊喜吧！🎉</item>-->
+<!--        <item>Deadline不再是敌人，而是你超越自己的机会！🚀</item>-->
+<!--        <item>放轻松，深呼吸，你可以做到！🌟</item>-->
+<!--        <item>你的努力不会白费，每一步都在靠近目标！🏃‍♂️💨</item>-->
+<!--        <item>加油！完成Deadline，你就是今天的英雄！🦸‍♀️🦸‍♂️</item>-->
+<!--        <item>记住，Deadline是你进步的最佳见证者！📈</item>-->
+<!--        <item>坚持住！完成后你会感谢现在努力的自己！🙏</item>-->
+<!--        <item>每个小目标的达成都值得庆祝！🥳</item>-->
+<!--        <item>再努力一下，成功就在前方！🏆</item>-->
+<!--    </string-array>-->
+
+    <!-- Try something more expressive -->
     <string-array name="excitement_array">
-        <item>今天你Deadline了吗？😝</item>
-        <item>Deadline临近了🥺</item>
-        <item>再坚持一下，很快就能做完啦☺️</item>
-        <item>提前开始Deadline是一件好事哦😉</item>
-        <item>保持专注，你一定能搞定！💪</item>
-        <item>不要担心，你比你想象的更强大！✨</item>
-        <item>完成Deadline后，奖励自己一个小惊喜吧！🎉</item>
-        <item>Deadline不再是敌人，而是你超越自己的机会！🚀</item>
-        <item>放轻松，深呼吸，你可以做到！🌟</item>
-        <item>你的努力不会白费，每一步都在靠近目标！🏃‍♂️💨</item>
-        <item>加油！完成Deadline，你就是今天的英雄！🦸‍♀️🦸‍♂️</item>
-        <item>记住，Deadline是你进步的最佳见证者！📈</item>
-        <item>坚持住！完成后你会感谢现在努力的自己！🙏</item>
-        <item>每个小目标的达成都值得庆祝！🥳</item>
-        <item>再努力一下，成功就在前方！🏆</item>
+        <item>Deadline 在追杀你！快跑💨</item>
+        <item>任务完成度：1% → 99%🤯</item>
+        <item>再拖？DDL要咬人了！🦖</item>
+        <item>你离「完成」只差一个「提交」🚀</item>
+        <item>提醒：别躺了，起来肝！🛏️→💻</item>
+        <item>「先玩5分钟」→ 5小时😱</item>
+        <item>你的待办列表：📜🔥（烧起来了）</item>
+        <item>今日任务：活着 + 搞定它💪</item>
+        <item>DDL越近，手速越快⚡</item>
+        <item>「我明天做」→ 经典flag🚩</item>
+        <item>任务完成 ✔️ 奖励：睡大觉！😴</item>
+        <item>检测到：你在焦虑🌀</item>
+        <item>别刷手机了！📱→❌</item>
+        <item>「最后亿分钟」⌛</item>
+        <item>任务堆积如山？愚公移山！⛰️</item>
+        <item>DDL是你的敌人？不，是动力！💥</item>
+        <item>「我好了」→「我装的」😏</item>
+        <item>今日成就：没放弃！🏆</item>
+        <item>建议：先做最难的！🎯</item>
+        <item>完成它！然后大喊：Next！🎤</item>
     </string-array>
+
     <string name="appwidget_text">EXAMPLE</string>
     <string name="add_widget">添加小组件</string>
     <string name="app_widget_description">主屏幕倒计时小组件</string>

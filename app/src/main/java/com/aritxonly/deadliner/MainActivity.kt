@@ -86,6 +86,7 @@ import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
+import com.google.android.material.materialswitch.MaterialSwitch
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -121,6 +122,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private lateinit var viewHolderWithAppBar: View
     private lateinit var viewHolderWithNoAppBar: View
+
+    private lateinit var cloudButton: ImageButton
 
     private val handler = Handler(Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
@@ -736,6 +739,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         dataOverlay = findViewById(R.id.dataOverlay)
         refreshIndicator = findViewById(R.id.refreshIndicator)
+        cloudButton = findViewById(R.id.cloudButton)
 
         swipeRefreshLayout.setColorSchemeColors(
             getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
@@ -773,6 +777,34 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         }
         excitementText.setOnClickListener {
             recyclerView.smoothScrollToPosition(0)
+        }
+
+        decideCloudStatus()
+        cloudButton.setOnClickListener {
+            val dialogView = layoutInflater.inflate(R.layout.dialog_cloud_settings, null)
+            val switch = dialogView.findViewById<MaterialSwitch>(R.id.cloudSwitch)
+            val inputServer = dialogView.findViewById<TextInputEditText>(R.id.inputServer)
+            val inputPort = dialogView.findViewById<TextInputEditText>(R.id.inputPort)
+            val inputToken = dialogView.findViewById<TextInputEditText>(R.id.inputToken)
+
+            // 初始化值
+            switch.isChecked = GlobalUtils.cloudSyncEnable
+            inputServer.setText(GlobalUtils.cloudSyncServer ?: "")
+            inputPort.setText(GlobalUtils.cloudSyncPort.toString())
+            inputToken.setText(GlobalUtils.cloudSyncConstantToken ?: "")
+
+            MaterialAlertDialogBuilder(this@MainActivity)
+                .setTitle("云服务设置")
+                .setView(dialogView)
+                .setPositiveButton(R.string.save) { _, _ ->
+                    GlobalUtils.cloudSyncEnable = switch.isChecked
+                    GlobalUtils.cloudSyncServer = inputServer.text?.toString()
+                    GlobalUtils.cloudSyncPort = inputPort.text?.toString()?.toIntOrNull()?:5000
+                    GlobalUtils.cloudSyncConstantToken = inputToken.text?.toString()
+                    decideCloudStatus()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
         }
 
         setupTabs()
@@ -1605,5 +1637,18 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.parse("package:$packageName")
         })
+    }
+
+    private fun decideCloudStatus() {
+        if (!GlobalUtils.cloudSyncEnable ||
+            GlobalUtils.cloudSyncServer == null ||
+            GlobalUtils.cloudSyncConstantToken == null) {
+            cloudButton.setImageResource(R.drawable.ic_cloud_off)
+        }
+        if (GlobalUtils.cloudSyncEnable &&
+            GlobalUtils.cloudSyncServer != null
+            && GlobalUtils.cloudSyncConstantToken != null) {
+            cloudButton.setImageResource(R.drawable.ic_cloud)
+        }
     }
 }

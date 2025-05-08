@@ -162,6 +162,30 @@ object GlobalUtils {
             sharedPreferences.edit().putBoolean("hide_from_recent", value).apply()
         }
 
+    var cloudSyncEnable: Boolean
+        get() = sharedPreferences.getBoolean("cloud_sync_enable", false)
+        set(value) {
+            sharedPreferences.edit().putBoolean("cloud_sync_enable", value).apply()
+        }
+
+    var cloudSyncServer: String?
+        get() = sharedPreferences.getString("cloud_sync_server", null)
+        set(value) {
+            sharedPreferences.edit().putString("cloud_sync_server", value).apply()
+        }
+
+    var cloudSyncPort: Int
+        get() = sharedPreferences.getInt("cloud_sync_port", 5000)
+        set(value) {
+            sharedPreferences.edit().putInt("cloud_sync_port", value).apply()
+        }
+
+    var cloudSyncConstantToken: String?
+        get() = sharedPreferences.getString("cloud_sync_constant_token", null)
+        set(value) {
+            sharedPreferences.edit().putString("cloud_sync_constant_token", value).apply()
+        }
+
     object NotificationStatusManager {
         fun markAsNotified(ddlId: Long) {
             val set = notifiedSet
