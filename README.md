@@ -1,6 +1,9 @@
 # Deadliner
 
-Deadliner，一款为我的女友打造的截止日期与习惯管理应用。
+Deadliner，一款简洁高效的Deadline记录管理软件，灵感来自于作者女朋友的真实需求。
+
+> [!IMPORTANT]
+> Since this is my first Android project, I may have used hardcoded strings in some places, which could make translation into other languages more difficult. If you’re interested in localizing this app, feel free to contact me at aritxonly@qq.com for further support.
 
 ## 功能
 
@@ -65,7 +68,7 @@ Deadliner，一款为我的女友打造的截止日期与习惯管理应用。
 
 ## 跨平台
 
-🚀 [**Deadliner-Web 正在开发中**](https://github.com/AritxOnly/Deadliner-Web)：基于Flutter的跨平台APP，后端使用Node.js和Python Flusk构建（暂未开放）
+🚀 [**Deadliner-Web 正在开发中**](https://github.com/AritxOnly/Deadliner-Web)：基于Flutter的跨平台APP，后端使用Node.js和Python Flask构建（暂未开放）
 
 ## 许可证
 
