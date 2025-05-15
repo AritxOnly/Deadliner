@@ -220,7 +220,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 pauseRefresh = true
 
                 val myColorScheme = AppColorScheme(
-                    primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
+                    primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimarySurface),
                     onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
                     primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
                     surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
@@ -484,7 +484,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             when (menuItem.itemId) {
                 R.id.chart -> {
                     val myColorScheme = AppColorScheme(
-                        primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
+                        primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimarySurface),
                         onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
                         primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
                         surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
@@ -743,7 +743,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         cloudButton = findViewById(R.id.cloudButton)
 
         swipeRefreshLayout.setColorSchemeColors(
-            getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
+            getMaterialThemeColor(com.google.android.material.R.attr.colorPrimarySurface),
             getMaterialThemeColor(com.google.android.material.R.attr.colorSecondary),
             getMaterialThemeColor(com.google.android.material.R.attr.colorTertiary)
         )
@@ -912,7 +912,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         }
 
                         // 获取本地版本号
-                        val localVersion = packageManager.getPackageInfo(packageName, 0).versionName
+                        val localVersion =
+                            packageManager.getPackageInfo(packageName, 0).versionName ?: return@let
 
                         // 比较版本号
                         if (isNewVersionAvailable(localVersion, latestVersion)) {

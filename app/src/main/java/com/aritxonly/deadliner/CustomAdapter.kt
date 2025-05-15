@@ -232,7 +232,7 @@ class CustomAdapter(
         if (endTime == GlobalUtils.timeNull) {
             // 若为空，不显示
             progress = 1f
-            monthProgress.setIndicatorColor(getThemeColor(com.google.android.material.R.attr.colorControlHighlight))
+            monthProgress.setIndicatorColor(getThemeColor(android.R.attr.colorControlActivated))
         } else {
             val startTime = GlobalUtils.safeParseDateTime(habitItem.startTime)
 

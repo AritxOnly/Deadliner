@@ -149,6 +149,7 @@
 
                     <com.google.android.material.button.MaterialButtonToggleGroup
                         android:id="@+id/toggleGroupArchiveTime"
+                        style="@style/Widget.Material3.MaterialButtonGroup.Connected"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:singleSelection="true"
