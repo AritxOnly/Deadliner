@@ -86,8 +86,12 @@ import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
+import android.content.res.Resources
+import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.web.WebUtils
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.shape.MaterialShapeDrawable
+import androidx.core.graphics.toColorInt
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -275,7 +279,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         viewHolderWithAppBar
                     else viewHolderWithNoAppBar
 
-                Snackbar.make(snackBarParent, "打卡成功 🎉", Snackbar.LENGTH_LONG)
+                val snackbar = Snackbar.make(snackBarParent, "打卡成功 🎉", Snackbar.LENGTH_LONG)
                     .setAction("撤销") {
                         val todayStr = LocalDate.now().toString()
                         // 解析 note JSON
@@ -295,7 +299,18 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         )
                         databaseHelper.updateDDL(revertedHabit)
                         viewModel.loadData(currentType)
-                    }.setAnchorView(bottomAppBar).show()
+                    }.setAnchorView(bottomAppBar)
+
+                val bg = snackbar.view.background
+                if (bg is MaterialShapeDrawable) {
+                    snackbar.view.background = bg.apply {
+                        shapeAppearanceModel = shapeAppearanceModel
+                            .toBuilder()
+                            .setAllCornerSizes(16f.dpToPx())
+                            .build()
+                    }
+                }
+                snackbar.show()
             }
         }
 
@@ -359,15 +374,17 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 val itemView = viewHolder.itemView
                 val itemHeight = itemView.bottom - itemView.top
 
+                val horizontalPadding = 4f.dpToPx()
+
                 if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
                     val path = Path()
 
                     // 左滑：绘制低饱和度红色背景和🗑图标
                     if (dX < 0) {
-                        paint.color = Color.parseColor("#FFEBEE") // 低饱和度红色
+                        paint.color = "#FFEBEE".toColorInt() // 低饱和度红色
 
                         val background = RectF(
-                            itemView.right + dX,
+                            itemView.right + dX + horizontalPadding,
                             itemView.top.toFloat(),
                             itemView.right.toFloat(),
                             itemView.bottom.toFloat()
@@ -389,12 +406,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                     // 右滑：绘制低饱和度绿色背景和✅图标
                     if (dX > 0) {
-                        paint.color = Color.parseColor("#E8F5E9") // 低饱和度绿色
+                        paint.color = "#E8F5E9".toColorInt() // 低饱和度绿色
 
                         val background = RectF(
                             itemView.left.toFloat(),
                             itemView.top.toFloat(),
-                            itemView.left + dX,
+                            itemView.left + dX - horizontalPadding,
                             itemView.bottom.toFloat()
                         )
 
@@ -1668,4 +1685,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             )
         }
     }
+
+    private fun Float.dpToPx(): Float =
+        this * Resources.getSystem().displayMetrics.density + 0.5f
 }
+

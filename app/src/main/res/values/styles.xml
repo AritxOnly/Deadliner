@@ -55,4 +55,13 @@
     <style name="ShapeAppearance.Custom.Corner16" parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerSize">16dp</item>
     </style>
+
+    <style name="ShapeAppearanceOverlay.Snackbar.Corner16" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="Widget.Custom.Snackbar" parent="Widget.MaterialComponents.Snackbar">
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay.Snackbar.Corner16</item>
+    </style>
 </resources>
