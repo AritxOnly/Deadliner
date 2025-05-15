@@ -44,4 +44,15 @@
         <item name="singleSelection">true</item>
         <item name="selectionRequired">true</item>
     </style>
+
+    <style name="Widget.Custom.ToggleButton" parent="Widget.Material3Expressive.Button.OutlinedButton">
+        <item name="backgroundTint">@color/toggle_button_color_selector</item>
+        <!-- 覆盖圆角 -->
+        <item name="shapeAppearance">@style/ShapeAppearance.Custom.Corner16</item>
+        <item name="strokeColor">@color/transparent</item>
+    </style>
+
+    <style name="ShapeAppearance.Custom.Corner16" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerSize">16dp</item>
+    </style>
 </resources>

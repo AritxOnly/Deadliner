@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:layout_margin="12dp">
 
     <!-- 输入DDL名称 -->
     <ImageButton
@@ -197,6 +197,7 @@
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/freqTypeToggleGroup"
+        style="@style/Widget.Material3.MaterialButtonGroup.Connected"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
@@ -213,7 +214,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="不限"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDaily"
@@ -221,7 +222,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="每日"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnWeekly"
@@ -229,7 +230,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="每周"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnYearly"
@@ -237,7 +238,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="每月"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
     </com.google.android.material.button.MaterialButtonToggleGroup>
 

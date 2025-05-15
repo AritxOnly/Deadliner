@@ -159,7 +159,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/button1Day"
-                            style="?attr/materialButtonOutlinedStyle"
+                            style="@style/Widget.Custom.ToggleButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:text="1天"
@@ -168,7 +168,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/button3Day"
-                            style="?attr/materialButtonOutlinedStyle"
+                            style="@style/Widget.Custom.ToggleButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:text="3天"
@@ -177,7 +177,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/button7Day"
-                            style="?attr/materialButtonOutlinedStyle"
+                            style="@style/Widget.Custom.ToggleButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:text="7天"

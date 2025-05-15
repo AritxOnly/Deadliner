@@ -220,7 +220,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 pauseRefresh = true
 
                 val myColorScheme = AppColorScheme(
-                    primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimarySurface),
+                    primary = getThemeColor(androidx.appcompat.R.attr.colorPrimary),
                     onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
                     primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
                     surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
@@ -484,7 +484,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             when (menuItem.itemId) {
                 R.id.chart -> {
                     val myColorScheme = AppColorScheme(
-                        primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimarySurface),
+                        primary = getThemeColor(androidx.appcompat.R.attr.colorPrimary),
                         onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
                         primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
                         surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
@@ -743,7 +743,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         cloudButton = findViewById(R.id.cloudButton)
 
         swipeRefreshLayout.setColorSchemeColors(
-            getMaterialThemeColor(com.google.android.material.R.attr.colorPrimarySurface),
+            getThemeColor(androidx.appcompat.R.attr.colorPrimary),
             getMaterialThemeColor(com.google.android.material.R.attr.colorSecondary),
             getMaterialThemeColor(com.google.android.material.R.attr.colorTertiary)
         )
@@ -808,6 +808,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 .setNegativeButton(R.string.cancel, null)
                 .show()
         }
+
+        addEventButton.stateListAnimator = null
 
         setupTabs()
 
@@ -1206,6 +1208,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             val filter = SearchFilter.parse(s.toString())
 
             viewModel.filterData(filter, currentType)
+        }
+
+        addEventButton.apply {
+            isPressed = false
+            clearFocus()
+            refreshDrawableState()
         }
     }
 

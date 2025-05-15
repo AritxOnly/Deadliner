@@ -9,6 +9,8 @@ import com.aritxonly.deadliner.GlobalUtils
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
+        GlobalUtils.init(context)
+
         when (intent?.action) {
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED -> {
