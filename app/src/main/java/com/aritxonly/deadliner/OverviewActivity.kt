@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,6 +60,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -269,7 +271,7 @@ fun OverviewScreen(
 //                        modifier = expressiveTypeModifier
                     ) {
                         Icon(
-                            Icons.Default.ArrowBack,
+                            painterResource(R.drawable.ic_back),
                             contentDescription = "关闭",
                             tint = Color(colorScheme.onSurface),
                             modifier = expressiveTypeModifier
@@ -281,7 +283,7 @@ fun OverviewScreen(
                         onClick = {}
                     ) {
                         Icon(
-                            Icons.Default.MoreVert,
+                            painterResource(R.drawable.ic_more),
                             contentDescription = "更多",
                             tint = Color(colorScheme.onSurface),
                             modifier = expressiveTypeModifier
@@ -548,7 +550,15 @@ fun OverviewPreview() {
                 primaryContainer = MaterialTheme.colorScheme.primaryContainer.toArgb(),
                 surface = MaterialTheme.colorScheme.surface.toArgb(),
                 onSurface = MaterialTheme.colorScheme.onSurface.toArgb(),
-                surfaceContainer = MaterialTheme.colorScheme.surfaceContainer.toArgb()
+                surfaceContainer = MaterialTheme.colorScheme.surfaceContainer.toArgb(),
+                secondary = MaterialTheme.colorScheme.secondary.toArgb(),
+                onSecondary = MaterialTheme.colorScheme.onSecondary.toArgb(),
+                secondaryContainer = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
+                onSecondaryContainer = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
+                tertiary = MaterialTheme.colorScheme.tertiary.toArgb(),
+                onTertiary = MaterialTheme.colorScheme.onTertiary.toArgb(),
+                tertiaryContainer = MaterialTheme.colorScheme.tertiaryContainer.toArgb(),
+                onTertiaryContainer = MaterialTheme.colorScheme.onTertiaryContainer.toArgb(),
             )
         ) {}
     }

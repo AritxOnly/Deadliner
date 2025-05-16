@@ -24,7 +24,6 @@ object DeadlineAlarmScheduler {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
         if (!alarmManager.canScheduleExactAlarms()) {
-            context.startActivity(Intent(ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
             return
         }
 

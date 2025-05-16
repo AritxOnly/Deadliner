@@ -92,6 +92,7 @@ import com.aritxonly.deadliner.web.WebUtils
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.shape.MaterialShapeDrawable
 import androidx.core.graphics.toColorInt
+import androidx.core.net.toUri
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -150,6 +151,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         )
     }
 
+    private lateinit var materialColorScheme: AppColorScheme
+
     // 定义权限请求启动器
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -171,6 +174,23 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
         DeadlineAlarmScheduler.cancelDailyAlarm(applicationContext)
 
+        materialColorScheme = AppColorScheme(
+            primary = getThemeColor(androidx.appcompat.R.attr.colorPrimary),
+            onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+            primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
+            surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
+            onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
+            surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer),
+            secondary = getMaterialThemeColor(com.google.android.material.R.attr.colorSecondary),
+            onSecondary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSecondary),
+            secondaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSecondaryContainer),
+            onSecondaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSecondaryContainer),
+            tertiary = getMaterialThemeColor(com.google.android.material.R.attr.colorTertiary),
+            onTertiary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnTertiary),
+            tertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorTertiaryContainer),
+            onTertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorOnTertiaryContainer),
+        )
+
 //        DynamicColors.applyToActivitiesIfAvailable(application)
 
         DynamicColors.applyToActivityIfAvailable(this)
@@ -178,8 +198,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         GlobalUtils.decideHideFromRecent(this, this@MainActivity)
 
         // 获取主题中的 colorSurface 值
-        val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
-        val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
+        val colorSurface = materialColorScheme.surface
+        val colorContainer = materialColorScheme.surfaceContainer
 
         Log.d("MainActivity", "colorSurface ${colorSurface.toHexString()}")
         // 设置状态栏和导航栏颜色
@@ -223,17 +243,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                 pauseRefresh = true
 
-                val myColorScheme = AppColorScheme(
-                    primary = getThemeColor(androidx.appcompat.R.attr.colorPrimary),
-                    onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                    primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
-                    surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
-                    onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
-                    surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
-                )
-
                 val intent = DeadlineDetailActivity.newIntent(this@MainActivity, clickedItem).apply {
-                    putExtra("EXTRA_APP_COLOR_SCHEME", myColorScheme)
+                    putExtra("EXTRA_APP_COLOR_SCHEME", materialColorScheme)
                 }
                 startActivity(intent)
                 pauseRefresh = false
@@ -500,17 +511,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         bottomAppBar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.chart -> {
-                    val myColorScheme = AppColorScheme(
-                        primary = getThemeColor(androidx.appcompat.R.attr.colorPrimary),
-                        onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                        primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
-                        surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
-                        onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
-                        surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainerLow)
-                    )
-                    Log.d("MainActivity", "surface=${myColorScheme.surface.toHexString()}")
 
-                    val intent = OverviewActivity.newIntent(this, myColorScheme)
+                    val intent = OverviewActivity.newIntent(this, materialColorScheme)
 
                     startActivity(intent)
                     true
@@ -1628,7 +1630,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             setMessage("请将Deadliner设为「不受电池优化限制」")
             setPositiveButton("去设置") { _, _ ->
                 startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = Uri.parse("package:$packageName")
+                    data = "package:$packageName".toUri()
                 })
             }
             setCancelable(false)

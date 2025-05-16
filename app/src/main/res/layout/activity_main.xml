@@ -111,8 +111,7 @@
         android:scaleType="centerInside"
         android:src="@drawable/ic_cloud"
         app:layout_constraintEnd_toStartOf="@id/settingsButton"
-        app:layout_constraintTop_toTopOf="parent"
-        app:tint="?attr/colorOnSurface" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/titleBar"
@@ -206,7 +205,7 @@
             android:contentDescription="@string/add_edit_deadline"
             android:fadingEdge="none"
             android:src="@drawable/ic_add"
-            app:backgroundTint="?attr/colorTertiaryContainer"
+            app:backgroundTint="?attr/colorSecondaryContainer"
             app:layout_anchor="@id/bottomAppBar" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
