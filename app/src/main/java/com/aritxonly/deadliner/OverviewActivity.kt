@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,8 +46,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarState
+import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -117,13 +121,12 @@ class OverviewActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        super.onCreate(savedInstanceState)
 
         val appColorScheme = intent.getParcelableExtra<AppColorScheme>("EXTRA_APP_COLOR_SCHEME")
             ?: throw IllegalArgumentException("Missing AppColorScheme")
-
-        setSystemBarColors(appColorScheme.surface, isLightColor(appColorScheme.surface), appColorScheme.surface)
 
         val databaseHelper = DatabaseHelper.getInstance(applicationContext)
 
@@ -149,10 +152,6 @@ class OverviewActivity : ComponentActivity() {
                     .toList()
                     .sortedBy { timeBucketOrder[it.first] ?: Int.MAX_VALUE }
 
-                Scaffold(modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(appColorScheme.surface))
-                ) { innerPadding ->
                     OverviewScreen(
                         activeStats = mapOf(
                             "已完成" to completedItems.size,
@@ -169,49 +168,8 @@ class OverviewActivity : ComponentActivity() {
                     ) {
                         finish()
                     }
-                }
             }
         }
-    }
-
-    /**
-     * 设置状态栏和导航栏颜色及图标颜色
-     */
-    private fun setSystemBarColors(color: Int, lightIcons: Boolean, colorNavigationBar: Int) {
-        window.apply {
-            addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = color
-            navigationBarColor = colorNavigationBar
-
-            // 设置状态栏图标颜色
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                )
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                decorView.systemUiVisibility = if (lightIcons) {
-                    decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                } else {
-                    decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-                }
-            }
-        }
-    }
-
-    /**
-     * 判断颜色是否为浅色
-     */
-    private fun isLightColor(color: Int): Boolean {
-        val darkness = 1 - (0.299 * ((color shr 16 and 0xFF) / 255.0) +
-                0.587 * ((color shr 8 and 0xFF) / 255.0) +
-                0.114 * ((color and 0xFF) / 255.0))
-        return darkness < 0.5
     }
 }
 
@@ -256,8 +214,9 @@ fun OverviewScreen(
     }
 
     Scaffold(
-        containerColor = Color(colorScheme.surface),
-        modifier = Modifier.background(Color(colorScheme.surface)),
+        containerColor = Color.Transparent,
+        contentColor = contentColorFor(Color.Transparent),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             LargeTopAppBar(
                 title = { Text(

@@ -117,8 +117,9 @@ class DeadlineDetailActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        super.onCreate(savedInstanceState)
 
         val initialDeadline = intent.getParcelableExtra<DDLItem>(EXTRA_DEADLINE)
         ?: throw IllegalArgumentException("Missing Deadline parameter")

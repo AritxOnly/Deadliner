@@ -2,6 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/mainSettings"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -430,6 +431,16 @@
                         app:iconPadding="8dp"
                         app:backgroundTint="@android:color/transparent"
                         app:strokeWidth="0dp"/>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchExperimentalEdgeToEdge"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="8dp"
+                        android:text="@string/settings_experimental_e2e"
+                        android:textSize="16sp"
+                        app:useMaterialThemeColors="true"
+                        app:thumbIcon="@drawable/switch_thumb_icon"/>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

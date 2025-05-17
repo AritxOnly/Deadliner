@@ -87,12 +87,17 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
 import android.content.res.Resources
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.web.WebUtils
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.shape.MaterialShapeDrawable
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -170,6 +175,22 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        if (GlobalUtils.experimentalEdgeToEdge) {
+            enableEdgeToEdge()
+
+            val rootView = findViewById<ConstraintLayout>(R.id.main)
+            ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
+                val statusBarInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+                val navBarInset    = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+
+                view.updatePadding(top = statusBarInset)
+
+                bottomBarContainer.updatePadding(bottom = navBarInset)
+
+                WindowInsetsCompat.CONSUMED
+            }
+        }
 
         DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
         DeadlineAlarmScheduler.cancelDailyAlarm(applicationContext)
@@ -1080,6 +1101,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
      * 设置状态栏和导航栏颜色及图标颜色
      */
     private fun setSystemBarColors(color: Int, lightIcons: Boolean, colorNavigationBar: Int) {
+        if (GlobalUtils.experimentalEdgeToEdge) return
+
         window.apply {
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             statusBarColor = color
@@ -1117,6 +1140,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         lightIcons: Boolean,
         duration: Long = 200
     ) {
+        if (GlobalUtils.experimentalEdgeToEdge) return
+
         val window = this.window ?: return
 
         val interpolator = AccelerateDecelerateInterpolator()
@@ -1148,6 +1173,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     private fun setSystemBarIcons(lightIcons: Boolean) {
+        if (GlobalUtils.experimentalEdgeToEdge) return
+
         val window = this.window ?: return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

@@ -37,6 +37,7 @@
     <string name="settings_nearby_notification">Deadline临近通知</string>
     <string name="settings_everyday_notification">每日Deadline统计通知</string>
     <string name="settings_hide_from_recent">将应用从最近应用列表隐藏</string>
+    <string name="settings_experimental_e2e">系统栏边到边沉浸（实验性）</string>
     <string name="settings_excitement">主菜单鼓励语句</string>
     <string name="settings_homepage">访问作者主页</string>
     <string name="settings_github">访问项目主页</string>

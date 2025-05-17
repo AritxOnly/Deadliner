@@ -21,6 +21,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
+import androidx.core.content.edit
 
 object GlobalUtils {
 
@@ -44,114 +45,114 @@ object GlobalUtils {
     var vibration: Boolean
         get() = sharedPreferences.getBoolean("vibration", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("vibration", value).apply()
+            sharedPreferences.edit { putBoolean("vibration", value) }
         }
 
     var progressDir: Boolean
         get() = sharedPreferences.getBoolean("main_progress_dir", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("main_progress_dir", value).apply()
+            sharedPreferences.edit { putBoolean("main_progress_dir", value) }
         }
 
     var progressWidget: Boolean
         get() = sharedPreferences.getBoolean("widget_progress_dir", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("widget_progress_dir", value).apply()
+            sharedPreferences.edit { putBoolean("widget_progress_dir", value) }
         }
 
     var deadlineNotification: Boolean
         get() = sharedPreferences.getBoolean("deadline_notification", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("deadline_notification", value).apply()
+            sharedPreferences.edit { putBoolean("deadline_notification", value) }
         }
 
     var dailyStatsNotification: Boolean
         get() = sharedPreferences.getBoolean("daily_stats_notification", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("daily_stats_notification", value).apply()
+            sharedPreferences.edit { putBoolean("daily_stats_notification", value) }
         }
 
     var dailyNotificationHour: Int
         get() = sharedPreferences.getInt("daily_notification_hour", 9)
         set(value) {
-            sharedPreferences.edit().putInt("daily_notification_hour", value).apply()
+            sharedPreferences.edit { putInt("daily_notification_hour", value) }
         }
     var dailyNotificationMinute: Int
         get() = sharedPreferences.getInt("daily_notification_minute", 0)
         set(value) {
-            sharedPreferences.edit().putInt("daily_notification_minute", value).apply()
+            sharedPreferences.edit { putInt("daily_notification_minute", value) }
         }
 
     var motivationalQuotes: Boolean
         get() = sharedPreferences.getBoolean("motivational_quotes", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("motivational_quotes", value).apply()
+            sharedPreferences.edit { putBoolean("motivational_quotes", value) }
         }
 
     var fireworksOnFinish: Boolean
         get() = sharedPreferences.getBoolean("fireworks_anim", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("fireworks_anim", value).apply()
+            sharedPreferences.edit { putBoolean("fireworks_anim", value) }
         }
 
     var autoArchiveTime: Int
         get() = sharedPreferences.getInt("archive_time", 7)
         set(value) {
-            sharedPreferences.edit().putInt("archive_time", value).apply()
+            sharedPreferences.edit { putInt("archive_time", value) }
         }
 
     var firstRun: Boolean
         get() = sharedPreferences.getBoolean("first_run_v2", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("first_run_v2", value).apply()
+            sharedPreferences.edit { putBoolean("first_run_v2", value) }
         }
 
     var showIntroPage: Boolean
         get() = sharedPreferences.getBoolean("show_intro_page", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("show_intro_page", value).apply()
+            sharedPreferences.edit { putBoolean("show_intro_page", value) }
         }
 
     var detailDisplayMode: Boolean
         get() = sharedPreferences.getBoolean("detail_display_mode", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("detail_display_mode", value).apply()
+            sharedPreferences.edit { putBoolean("detail_display_mode", value) }
         }
 
     var nearbyTasksBadge: Boolean
         get() = sharedPreferences.getBoolean("nearby_tasks_badge", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("nearby_tasks_badge", value).apply()
+            sharedPreferences.edit { putBoolean("nearby_tasks_badge", value) }
         }
 
     var nearbyDetailedBadge: Boolean
         get() = sharedPreferences.getBoolean("nearby_detailed_badge", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("nearby_detailed_badge", value).apply()
+            sharedPreferences.edit { putBoolean("nearby_detailed_badge", value) }
         }
 
     var notificationBefore: Int
         get() = sharedPreferences.getInt("notification_before", 0b111)
         set(value) {
-            sharedPreferences.edit().putInt("notification_before", value).apply()
+            sharedPreferences.edit { putInt("notification_before", value) }
         }
 
     private var notifiedSet: MutableSet<String>
         get() = sharedPreferences.getStringSet("notified_set", emptySet())?.toMutableSet()?: mutableSetOf()
         set(value) {
-            sharedPreferences.edit().putStringSet("notified_set", value.toSet()).apply()
+            sharedPreferences.edit { putStringSet("notified_set", value.toSet()) }
         }
 
     var developerMode: Boolean
         get() = sharedPreferences.getBoolean("developer_mode", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("developer_mode", value).apply()
+            sharedPreferences.edit { putBoolean("developer_mode", value) }
         }
 
     var dynamicColors: Boolean
         get() = sharedPreferences.getBoolean("dynamic_colors", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("dynamic_colors", value).apply()
+            sharedPreferences.edit { putBoolean("dynamic_colors", value) }
         }
 
 //    var customColorScheme:
@@ -159,31 +160,37 @@ object GlobalUtils {
     var hideFromRecent: Boolean
         get() = sharedPreferences.getBoolean("hide_from_recent", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("hide_from_recent", value).apply()
+            sharedPreferences.edit { putBoolean("hide_from_recent", value) }
         }
 
     var cloudSyncEnable: Boolean
         get() = sharedPreferences.getBoolean("cloud_sync_enable", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("cloud_sync_enable", value).apply()
+            sharedPreferences.edit { putBoolean("cloud_sync_enable", value) }
         }
 
     var cloudSyncServer: String?
         get() = sharedPreferences.getString("cloud_sync_server", null)
         set(value) {
-            sharedPreferences.edit().putString("cloud_sync_server", value).apply()
+            sharedPreferences.edit { putString("cloud_sync_server", value) }
         }
 
     var cloudSyncPort: Int
         get() = sharedPreferences.getInt("cloud_sync_port", 5000)
         set(value) {
-            sharedPreferences.edit().putInt("cloud_sync_port", value).apply()
+            sharedPreferences.edit { putInt("cloud_sync_port", value) }
         }
 
     var cloudSyncConstantToken: String?
         get() = sharedPreferences.getString("cloud_sync_constant_token", null)
         set(value) {
-            sharedPreferences.edit().putString("cloud_sync_constant_token", value).apply()
+            sharedPreferences.edit { putString("cloud_sync_constant_token", value) }
+        }
+
+    var experimentalEdgeToEdge: Boolean
+        get() = sharedPreferences.getBoolean("enable_edge_to_edge", true)
+        set(value) {
+            sharedPreferences.edit { putBoolean("enable_edge_to_edge", value) }
         }
 
     object NotificationStatusManager {

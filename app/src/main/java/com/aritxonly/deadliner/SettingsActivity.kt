@@ -14,11 +14,17 @@ import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
+import androidx.core.view.updatePadding
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -64,6 +70,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var buttonCloudSyncServer: MaterialButton
 
     private lateinit var switchHideFromRecent: MaterialSwitch
+    private lateinit var switchExperimentalEdgeToEdge: MaterialSwitch
 
     private var resetTimes = 0
 
@@ -77,6 +84,19 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         DynamicColors.applyToActivityIfAvailable(this)
+
+        if (GlobalUtils.experimentalEdgeToEdge) {
+            enableEdgeToEdge()
+
+            val rootView = findViewById<LinearLayout>(R.id.mainSettings)
+            ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
+                val statusBarInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+
+                view.updatePadding(top = statusBarInset)
+
+                WindowInsetsCompat.CONSUMED
+            }
+        }
 
         // 获取主题中的 colorSurface 值
         val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
@@ -97,6 +117,7 @@ class SettingsActivity : AppCompatActivity() {
         switchDetailDisplayMode = findViewById(R.id.switchDetailDisplayMode)
         switchNearbyTasksBadge = findViewById(R.id.switchNearbyTasksBadge)
         switchHideFromRecent = findViewById(R.id.switchHideFromRecent)
+        switchExperimentalEdgeToEdge = findViewById(R.id.switchExperimentalEdgeToEdge)
         buttonAuthorPage = findViewById(R.id.buttonAuthorPage)
         buttonHomePage = findViewById(R.id.buttonHomePage)
         buttonIssues = findViewById(R.id.buttonIssues)
@@ -126,6 +147,7 @@ class SettingsActivity : AppCompatActivity() {
         switchDetailDisplayMode.isChecked = GlobalUtils.detailDisplayMode
         switchNearbyTasksBadge.isChecked = GlobalUtils.nearbyTasksBadge
         switchHideFromRecent.isChecked = GlobalUtils.hideFromRecent
+        switchExperimentalEdgeToEdge.isChecked = GlobalUtils.experimentalEdgeToEdge
 
         // 监听开关状态变化并保存设置
         switchVibration.setOnCheckedChangeListener { _, isChecked ->
@@ -231,6 +253,17 @@ class SettingsActivity : AppCompatActivity() {
         switchHideFromRecent.setOnCheckedChangeListener { _, isChecked ->
             GlobalUtils.hideFromRecent = isChecked
             GlobalUtils.decideHideFromRecent(this, this@SettingsActivity)
+        }
+
+        switchExperimentalEdgeToEdge.setOnCheckedChangeListener { _, isChecked ->
+            GlobalUtils.experimentalEdgeToEdge = isChecked
+            MaterialAlertDialogBuilder(this)
+                .setMessage("导入成功，需要重启应用生效")
+                .setPositiveButton("立即重启") { _, _ ->
+                    restartApp()
+                }
+                .setNegativeButton("稍后", null)
+                .show()
         }
 
         // 设置超链接按钮点击事件
@@ -531,6 +564,8 @@ class SettingsActivity : AppCompatActivity() {
      * 设置状态栏和导航栏颜色及图标颜色
      */
     private fun setSystemBarColors(color: Int, lightIcons: Boolean) {
+        if (GlobalUtils.experimentalEdgeToEdge) return
+
         window.apply {
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             statusBarColor = color
