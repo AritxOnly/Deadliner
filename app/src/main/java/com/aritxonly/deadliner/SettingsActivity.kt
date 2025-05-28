@@ -32,6 +32,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.slider.Slider
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -56,7 +57,6 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var buttonIssues: MaterialButton
     private lateinit var versionNumber: TextView
     private lateinit var aboutCard: MaterialCardView
-    private lateinit var toggleGroupArchiveTime: MaterialButtonToggleGroup
 
     private lateinit var switchDetailDisplayMode: MaterialSwitch
     private lateinit var switchNearbyTasksBadge: MaterialSwitch
@@ -74,6 +74,8 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var switchHideFromRecent: MaterialSwitch
     private lateinit var switchExperimentalEdgeToEdge: MaterialSwitch
+
+    private lateinit var sliderArchiveTime: Slider
 
     private var resetTimes = 0
 
@@ -126,7 +128,6 @@ class SettingsActivity : AppCompatActivity() {
         buttonIssues = findViewById(R.id.buttonIssues)
         versionNumber = findViewById(R.id.versionNumber)
         aboutCard = findViewById(R.id.aboutCard)
-        toggleGroupArchiveTime = findViewById(R.id.toggleGroupArchiveTime)
 
         buttonImport = findViewById(R.id.buttonImport)
         buttonExport = findViewById(R.id.buttonExport)
@@ -138,6 +139,8 @@ class SettingsActivity : AppCompatActivity() {
         buttonShowIntroPage = findViewById(R.id.buttonShowIntroPage)
         buttonCloudSyncServer = findViewById(R.id.buttonCloudSyncServer)
         buttonCustomFilterList = findViewById(R.id.buttonCustomFilterList)
+
+        sliderArchiveTime = findViewById(R.id.sliderArchiveTime)
 
         decideToShowAdvancedMode()
 
@@ -322,12 +325,9 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        toggleGroupArchiveTime.check(hashButton())
-        toggleGroupArchiveTime.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                GlobalUtils.autoArchiveTime = deHashButton(checkedId)
-                Log.d("GlobalUtils", "${deHashButton(checkedId)}")
-            }
+        sliderArchiveTime.value = GlobalUtils.autoArchiveTime.toFloat()
+        sliderArchiveTime.addOnChangeListener { _, value, _ ->
+            GlobalUtils.autoArchiveTime = value.toInt()
         }
 
         val appVersionString = """
@@ -472,24 +472,6 @@ class SettingsActivity : AppCompatActivity() {
             buttonCancelAll.visibility = View.GONE
             settingsAdvanced.visibility = View.GONE
             settingsAdvancedCard.visibility = View.GONE
-        }
-    }
-
-    private fun hashButton() : Int {
-        when (GlobalUtils.autoArchiveTime) {
-            1 -> return R.id.button1Day
-            3 -> return R.id.button3Day
-            7 -> return R.id.button7Day
-            else -> throw Exception("Hash button Error")
-        }
-    }
-
-    private fun deHashButton(buttonId: Int): Int {
-        when (buttonId) {
-            R.id.button1Day -> return 1
-            R.id.button3Day -> return 3
-            R.id.button7Day -> return 7
-            else -> throw Exception("DeHash button Error")
         }
     }
 
