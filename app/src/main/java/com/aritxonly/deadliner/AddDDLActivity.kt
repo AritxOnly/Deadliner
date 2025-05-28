@@ -26,6 +26,7 @@ import android.widget.Toast
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.aritxonly.deadliner.GlobalUtils.toDateTimeString
 import com.aritxonly.deadliner.calendar.CalendarHelper
 import com.aritxonly.deadliner.model.DeadlineFrequency
@@ -39,6 +40,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -53,6 +57,7 @@ class AddDDLActivity : AppCompatActivity() {
     private lateinit var endTimeCard: MaterialCardView
     private lateinit var ddlNoteEditText: EditText
     private lateinit var saveButton: Button
+    private lateinit var saveToCalendarButton: Button
     private lateinit var backButton: ImageButton
     private lateinit var ddlNoteLayout: TextInputLayout
 
@@ -99,6 +104,7 @@ class AddDDLActivity : AppCompatActivity() {
         endTimeCard = findViewById(R.id.endTimeCard) // MaterialCardView
         ddlNoteEditText = findViewById(R.id.ddlNoteEditText)
         saveButton = findViewById(R.id.saveButton)
+        saveToCalendarButton = findViewById(R.id.saveToCalendarButton)
         backButton = findViewById(R.id.backButton)
         importFromCalendarButton = findViewById(R.id.importFromCalendarButton)
         ddlNoteLayout = findViewById(R.id.ddlNoteLayout)
@@ -137,58 +143,11 @@ class AddDDLActivity : AppCompatActivity() {
 
         // 保存按钮点击事件
         saveButton.setOnClickListener {
-            val ddlName = ddlNameEditText.text.toString()
-            val ddlNote = ddlNoteEditText.text.toString()
-            val frequency = freqEditText.text.toString().ifBlank { "1" }.toInt()
-            val total = totalEditText.text.toString().ifBlank { "0" }.toIntOrNull()
+            save(toCalendar = false)
+        }
 
-            val frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
-                R.id.btnTotal -> DeadlineFrequency.TOTAL
-                R.id.btnDaily -> DeadlineFrequency.DAILY
-                R.id.btnWeekly -> DeadlineFrequency.WEEKLY
-                R.id.btnYearly -> DeadlineFrequency.MONTHLY
-                else -> DeadlineFrequency.TOTAL
-            }
-
-            if (ddlName.isNotBlank() && startTime != null) {
-                if (selectedPage != 1) {
-                    if (endTime == null) return@setOnClickListener
-                    // 保存到数据库
-                    val ddlId = databaseHelper.insertDDL(
-                        ddlName,
-                        startTime.toString(),
-                        endTime.toString(),
-                        ddlNote,
-                        calendarEventId = calendarEventId
-                    )
-
-                    databaseHelper.getDDLById(ddlId)?.let { item ->
-                        Log.d("AlarmDebug", "Reached here")
-                        if (GlobalUtils.deadlineNotification)
-                            DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, item)
-                    }
-
-                    setResult(RESULT_OK)
-                    finishAfterTransition() // 返回 MainActivity
-                } else {
-                    databaseHelper.insertDDL(
-                        ddlName,
-                        startTime.toString(),
-                        endTime.toString(),
-                        note = HabitMetaData(
-                            completedDates = setOf(),
-                            frequencyType = frequencyType,
-                            frequency = frequency,
-                            total = total ?: 0,
-                            refreshDate = LocalDate.now().toString()
-                        ).toJson(),
-                        type = DeadlineType.HABIT
-                    )
-                    Log.d("endTime", endTime.toString())
-                    setResult(RESULT_OK)
-                    finishAfterTransition() // 返回 MainActivity
-                }
-            }
+        saveToCalendarButton.setOnClickListener {
+            save(toCalendar = true)
         }
 
         backButton.setOnClickListener {
@@ -230,6 +189,76 @@ class AddDDLActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("Calendar", e.toString())
                 Toast.makeText(this, "请检查日历权限：${e.toString()}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun save(toCalendar: Boolean) {
+        val ddlName = ddlNameEditText.text.toString()
+        val ddlNote = ddlNoteEditText.text.toString()
+        val frequency = freqEditText.text.toString().ifBlank { "1" }.toInt()
+        val total = totalEditText.text.toString().ifBlank { "0" }.toIntOrNull()
+
+        val frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
+            R.id.btnTotal -> DeadlineFrequency.TOTAL
+            R.id.btnDaily -> DeadlineFrequency.DAILY
+            R.id.btnWeekly -> DeadlineFrequency.WEEKLY
+            R.id.btnYearly -> DeadlineFrequency.MONTHLY
+            else -> DeadlineFrequency.TOTAL
+        }
+
+        if (ddlName.isNotBlank() && startTime != null) {
+            if (selectedPage != 1) {
+                if (endTime == null) return
+
+                // 保存到数据库
+                val ddlId = databaseHelper.insertDDL(
+                    ddlName,
+                    startTime.toString(),
+                    endTime.toString(),
+                    ddlNote,
+                    calendarEventId = calendarEventId
+                )
+
+                databaseHelper.getDDLById(ddlId)?.let { item ->
+                    if (GlobalUtils.deadlineNotification)
+                        DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, item)
+                    if (toCalendar) {
+                        val calendarHelper = CalendarHelper(this)
+                        lifecycleScope.launch {
+                            try {
+                                val eventId = calendarHelper.insertEvent(item)
+                                item.calendarEventId = eventId
+                                val databaseHelper = DatabaseHelper.getInstance(applicationContext)
+                                databaseHelper.updateDDL(item)
+                                Toast.makeText(this@AddDDLActivity, "已添加至日历", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Log.e("Calendar", e.toString())
+                                Toast.makeText(this@AddDDLActivity, "添加至日历失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+
+                setResult(RESULT_OK)
+                finishAfterTransition() // 返回 MainActivity
+            } else {
+                databaseHelper.insertDDL(
+                    ddlName,
+                    startTime.toString(),
+                    endTime.toString(),
+                    note = HabitMetaData(
+                        completedDates = setOf(),
+                        frequencyType = frequencyType,
+                        frequency = frequency,
+                        total = total ?: 0,
+                        refreshDate = LocalDate.now().toString()
+                    ).toJson(),
+                    type = DeadlineType.HABIT
+                )
+                Log.d("endTime", endTime.toString())
+                setResult(RESULT_OK)
+                finishAfterTransition() // 返回 MainActivity
             }
         }
     }

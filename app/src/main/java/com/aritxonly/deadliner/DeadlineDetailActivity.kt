@@ -351,12 +351,15 @@ fun DeadlineDetailScreen(
                             .show()
 
                     }
-                    "添加至日历" -> {
+                    "保存至日历" -> {
                         val calendarHelper = CalendarHelper(applicationContext)
 
                         coroutineScope.launch {
                             try {
                                 val eventId = calendarHelper.insertEvent(deadline)
+                                deadline.calendarEventId = eventId
+                                val databaseHelper = DatabaseHelper.getInstance(applicationContext)
+                                databaseHelper.updateDDL(deadline)
                                 Toast.makeText(context, "已添加至日历", Toast.LENGTH_SHORT).show()
                             } catch (e: Exception) {
                                 Log.e("Calendar", e.toString())
@@ -384,9 +387,9 @@ fun DeadlineEditFABMenu(
     var items = listOf(
         painterResource(R.drawable.ic_edit) to "编辑",
         painterResource(R.drawable.ic_done) to "标记完成",
-//        painterResource(R.drawable.ic_archiving) to "归档",
+        painterResource(R.drawable.ic_archiving) to "归档",
         painterResource(R.drawable.ic_delete) to "删除",
-        painterResource(R.drawable.ic_event) to "添加至日历"
+        painterResource(R.drawable.ic_event) to "保存至日历"
     )
 
     FloatingActionButtonMenu(

@@ -5,6 +5,7 @@
     <string name="add_ddl_name">添加待办的Deadline</string>
     <string name="add_title">添加Deadline</string>
     <string name="save">保存</string>
+    <string name="save_and_add_to_calendar">保存到日历</string>
     <string name="alert_delete_title">删除Deadline</string>
     <string name="alert_delete_message">你确定要删除这个Deadline吗？</string>
     🗃️
