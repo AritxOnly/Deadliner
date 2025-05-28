@@ -1,19 +1,30 @@
 package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.util.TypedValue
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Filter
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.ListView
+import android.widget.RadioButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.IdRes
+import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
 import com.aritxonly.deadliner.GlobalUtils.toDateTimeString
 import com.aritxonly.deadliner.calendar.CalendarHelper
@@ -26,6 +37,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
+import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -216,6 +228,7 @@ class AddDDLActivity : AppCompatActivity() {
             try {
                 loadCalendarEventsAndShowDialog()
             } catch (e: Exception) {
+                Log.e("Calendar", e.toString())
                 Toast.makeText(this, "请检查日历权限：${e.toString()}", Toast.LENGTH_SHORT).show()
             }
         }
@@ -223,38 +236,151 @@ class AddDDLActivity : AppCompatActivity() {
 
     private fun loadCalendarEventsAndShowDialog() {
         val calendarHelper = CalendarHelper(applicationContext)
-
-        // 使用 CalendarHelper 查询日历事件
-        val calendarEvents = calendarHelper.queryCalendarEvents()
-
+        val calendarEvents = calendarHelper.queryAllCalendarEvents()
         if (calendarEvents.isEmpty()) {
             Toast.makeText(this, "没有可导入的日历事件", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // 准备显示的事件标题列表
-        val eventTitles = calendarEvents.map { event ->
+        // 原始条目文本
+        val titles = calendarEvents.map { event ->
             val time = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())
-            "${event.title} - ${formatLocalDateTime(time!!)}"
-        }.toTypedArray()
+            "${event.title} – ${time?.let(::formatLocalDateTime) ?: "解析失败"}"
+        }
 
-        var selectedPosition = 0
+        // Inflate 布局
+        val dialogView = LayoutInflater.from(this)
+            .inflate(R.layout.dialog_calendar_events, null, false)
+        val etSearch = dialogView.findViewById<TextInputEditText>(R.id.searchEditText)
+        val lvEvents = dialogView.findViewById<ListView>(R.id.eventListView)
 
+        // 自定义 ArrayAdapter + Filterable
+        open class FuzzyAdapter(
+            ctx: Context,
+            @LayoutRes layoutResId: Int,
+            @IdRes textViewResId: Int,
+            items: List<String>
+        ) : ArrayAdapter<String>(ctx, layoutResId, textViewResId, items) {
+
+            private val originalItems = items.toList()
+
+            override fun getFilter(): Filter = object : Filter() {
+                override fun performFiltering(constraint: CharSequence?): FilterResults {
+                    val results = FilterResults()
+                    if (constraint.isNullOrEmpty()) {
+                        results.values = originalItems
+                        results.count = originalItems.size
+                    } else {
+                        val kw = constraint.toString().lowercase(Locale.getDefault())
+                        results.values = originalItems.filter {
+                            it.lowercase(Locale.getDefault()).contains(kw)
+                        }
+                        results.count = (results.values as List<*>).size
+                    }
+                    return results
+                }
+
+                @Suppress("UNCHECKED_CAST")
+                override fun publishResults(constraint: CharSequence?, results: FilterResults) {
+                    clear()
+                    addAll(results.values as List<String>)
+                    notifyDataSetChanged()
+                }
+            }
+        }
+
+        // 1. 用自定义适配器
+        val adapter = object : FuzzyAdapter(
+            this,
+            R.layout.dialog_single_choice_layout,
+            android.R.id.text1,
+            titles
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                // 让 ArrayAdapter 帮我们 inflate 并 bind 文本
+                val view = super.getView(position, convertView, parent)
+                // 同时根据 ListView 的选中状态，更新 RadioButton
+                val lv = parent as ListView
+                val rb = view.findViewById<RadioButton>(R.id.radio)
+                rb.isChecked = lv.isItemChecked(position)
+                return view
+            }
+        }
+        lvEvents.adapter = adapter
+        lvEvents.choiceMode = ListView.CHOICE_MODE_SINGLE
+
+        // 2. 搜索框监听：每次文本变化都触发 filter
+        etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                adapter.filter.filter(s)
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        // 3. 记录用户的点击
+        var selectedPosition = -1
+        lvEvents.setOnItemClickListener { _, _, pos, _ ->
+            selectedPosition = pos
+            lvEvents.setItemChecked(pos, true)
+            adapter.notifyDataSetChanged()
+        }
+
+        // 4. 弹窗
         MaterialAlertDialogBuilder(this)
             .setTitle("选择要导入的事件")
-            .setSingleChoiceItems(eventTitles, -1) { dialog, which ->
-                selectedPosition = which
-            }
+            .setView(dialogView)
+            .setNeutralButton("过滤账户") { _, _ -> showCalendarFilterDialog() }
             .setPositiveButton("导入") { dialog, _ ->
-                // 获取选中的事件
-                val event = calendarEvents[selectedPosition]
-                ddlNameEditText.setText(event.title)
-                ddlNoteEditText.setText(event.description)
-                endTime = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())
-                val endTimeContent: TextView = findViewById(R.id.endTimeContent)
-                endTimeContent.text = formatLocalDateTime(endTime!!)
-                calendarEventId = event.id
+                if (selectedPosition >= 0) {
+                    val event = calendarEvents[selectedPosition]
+                    ddlNameEditText.setText(event.title)
+                    ddlNoteEditText.setText(event.description)
+                    endTime = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())
+                    findViewById<TextView>(R.id.endTimeContent)
+                        .text = formatLocalDateTime(endTime!!)
+                    calendarEventId = event.id
+                } else {
+                    Toast.makeText(this, "请先选择一个事件", Toast.LENGTH_SHORT).show()
+                }
                 dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showCalendarFilterDialog() {
+        // 先拿到所有账号
+        val helper = CalendarHelper(applicationContext)
+        val accounts = helper.getAllCalendarAccounts()
+
+        if (accounts.isEmpty()) {
+            Toast.makeText(this, "当前没有可用的日历账户", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 准备对话框要显示的条目和选中状态
+        val names = accounts.map { it.accountName.ifEmpty { it.accountName } }.toTypedArray()
+        val savedSet = GlobalUtils.filteredCalendars?:setOf()
+        val checked = names.map { savedSet.contains(it) }.toBooleanArray()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("选择要隐藏的日历账户")
+            .setMultiChoiceItems(names, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }
+            .setPositiveButton("确定") { _, _ ->
+                // 把勾选了的那些账户名存到 prefs 里
+                val newFiltered = names
+                    .zip(checked.toList())
+                    .filter { it.second }    // true 表示要“过滤掉”
+                    .map   { it.first }
+                    .toSet()
+
+                GlobalUtils.filteredCalendars = newFiltered
+
+                Toast.makeText(this, "已保存日历过滤设置", Toast.LENGTH_SHORT).show()
+                loadCalendarEventsAndShowDialog()
             }
             .setNegativeButton("取消", null)
             .show()
@@ -282,7 +408,7 @@ class AddDDLActivity : AppCompatActivity() {
 
     fun formatLocalDateTime(dateTime: LocalDateTime): String {
         // 定义格式化器
-        val formatter = DateTimeFormatter.ofPattern("MM月dd日 HH:mm", Locale.CHINA)
+        val formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm", Locale.CHINA)
         // 格式化 LocalDateTime
         return dateTime.format(formatter)
     }

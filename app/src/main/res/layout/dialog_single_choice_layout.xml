@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="0dp"
+    android:paddingEnd="0dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <!-- 单选按钮 -->
+    <com.google.android.material.radiobutton.MaterialRadioButton
+        android:id="@+id/radio"
+        style="@style/Widget.Material3.CompoundButton.RadioButton"
+        android:layout_marginStart="8dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
+        android:drawablePadding="0dp"
+        app:useMaterialThemeColors="true"
+        app:buttonTint="?attr/colorSecondary"/>
+
+    <!-- 文本标题 -->
+    <TextView
+        android:id="@android:id/text1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="-4dp"
+        android:layout_marginEnd="8dp"
+        android:layout_weight="1"
+        android:textAppearance="?attr/textAppearanceBody1" />
+
+</LinearLayout>

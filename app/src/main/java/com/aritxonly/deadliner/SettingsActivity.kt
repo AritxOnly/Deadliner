@@ -33,6 +33,8 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import java.io.FileInputStream
@@ -68,6 +70,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var buttonShowIntroPage: MaterialButton
     private lateinit var buttonCloudSyncServer: MaterialButton
+    private lateinit var buttonCustomFilterList: MaterialButton
 
     private lateinit var switchHideFromRecent: MaterialSwitch
     private lateinit var switchExperimentalEdgeToEdge: MaterialSwitch
@@ -134,6 +137,7 @@ class SettingsActivity : AppCompatActivity() {
 
         buttonShowIntroPage = findViewById(R.id.buttonShowIntroPage)
         buttonCloudSyncServer = findViewById(R.id.buttonCloudSyncServer)
+        buttonCustomFilterList = findViewById(R.id.buttonCustomFilterList)
 
         decideToShowAdvancedMode()
 
@@ -385,7 +389,68 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         buttonCloudSyncServer.setOnClickListener {
-            MaterialAlertDialogBuilder(this).show()
+        }
+
+        buttonCustomFilterList.setOnClickListener {
+            // 原始数据源
+            val allItems = GlobalUtils.customCalendarFilterList?.filterNotNull()?.toMutableList() ?: mutableListOf()
+            // 用户当前选中的
+            val selectedItems = GlobalUtils.customCalendarFilterListSelected?.filterNotNull()?.toMutableSet() ?: allItems.toMutableSet()
+
+            fun showFilterDialog() {
+                val itemsArray = allItems.toTypedArray()
+                val checkedArray = BooleanArray(itemsArray.size) { index ->
+                    // 默认已选中 current selection（如果第一次打开且 selectedItems 为空，则默认全选）
+                    if (selectedItems.isEmpty()) true
+                    else selectedItems.contains(itemsArray[index])
+                }
+
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("请选择要显示的日历过滤器")
+                    .setMultiChoiceItems(itemsArray, checkedArray) { _, which, isChecked ->
+                        val item = itemsArray[which]
+                        if (isChecked) selectedItems.add(item)
+                        else selectedItems.remove(item)
+                    }
+                    .setNeutralButton("添加项") { dialog, _ ->
+                        dialog.dismiss()
+                        // 弹出输入框，添加新选项
+                        val inputLayout = TextInputLayout(this).apply {
+                            hint = "新过滤器名称"
+                            setPadding(32, 0, 32, 0)
+                        }
+                        val editText = TextInputEditText(inputLayout.context)
+                        inputLayout.addView(editText)
+
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle("新增过滤器")
+                            .setView(inputLayout)
+                            .setPositiveButton("确定") { subDialog, _ ->
+                                val newItem = editText.text?.toString()?.trim()
+                                if (!newItem.isNullOrEmpty() && !allItems.contains(newItem)) {
+                                    // 更新数据源和选中集
+                                    allItems.add(newItem)
+                                    selectedItems.add(newItem)
+                                    GlobalUtils.customCalendarFilterList = allItems.toSet()
+                                    GlobalUtils.customCalendarFilterListSelected = selectedItems.toSet()
+                                }
+                                subDialog.dismiss()
+                                // 重新打开主多选框
+                                showFilterDialog()
+                            }
+                            .setNegativeButton("取消", null)
+                            .show()
+                    }
+                    .setPositiveButton("确认") { dialog, _ ->
+                        GlobalUtils.customCalendarFilterListSelected = selectedItems.toSet()
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
+
+            // 首次打开
+            showFilterDialog()
         }
     }
 

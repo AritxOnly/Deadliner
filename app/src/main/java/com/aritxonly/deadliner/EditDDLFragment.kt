@@ -247,7 +247,7 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
      * 格式化 LocalDateTime 为字符串
      */
     private fun formatLocalDateTime(dateTime: LocalDateTime): String {
-        val formatter = DateTimeFormatter.ofPattern("MM月dd日 HH:mm", Locale.CHINA)
+        val formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm", Locale.CHINA)
         return dateTime.format(formatter)
     }
 

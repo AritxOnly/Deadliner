@@ -157,6 +157,7 @@
     <string name="settings_export">导出</string>
     <string name="settings_cloud_sync">云服务器设置</string>
     <string name="settings_show_intro">展示欢迎页</string>
+    <string name="settings_custom_filter_list">自定义日历导入黑名单</string>
     <string name="alert_select_badge_type">选择角标类型</string>
 
 </resources>

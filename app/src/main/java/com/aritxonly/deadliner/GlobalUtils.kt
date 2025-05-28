@@ -197,6 +197,24 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("enable_edge_to_edge", value) }
         }
 
+    var filteredCalendars: Set<String?>?
+        get() = sharedPreferences.getStringSet("filtered_calendars", null)
+        set(value) {
+            sharedPreferences.edit { putStringSet("filtered_calendars", value) }
+        }
+
+    var customCalendarFilterList: Set<String?>?
+        get() = sharedPreferences.getStringSet("custom_filter_list", null)
+        set(value) {
+            sharedPreferences.edit { putStringSet("custom_filter_list", value) }
+        }
+
+    var customCalendarFilterListSelected: Set<String?>?
+        get() = sharedPreferences.getStringSet("custom_filter_list_selected", null)
+        set(value) {
+            sharedPreferences.edit { putStringSet("custom_filter_list_selected", value) }
+        }
+
     object NotificationStatusManager {
         fun markAsNotified(ddlId: Long) {
             val set = notifiedSet

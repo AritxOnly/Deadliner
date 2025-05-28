@@ -5,16 +5,22 @@ import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.provider.CalendarContract
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.GlobalUtils
+import com.aritxonly.deadliner.GlobalUtils.toDateTimeString
 import com.aritxonly.deadliner.model.CalendarEvent
+import com.aritxonly.deadliner.model.CalendarInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
+import java.time.Duration
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
+import kotlin.math.abs
 
 /**
  * Helper for creating, updating, and deleting calendar events from DDLItem instances.
@@ -120,10 +126,55 @@ class CalendarHelper(private val context: Context) {
         eventId
     }
 
-    fun queryCalendarEvents(): List<CalendarEvent> {
+    fun getAllCalendarAccounts(): List<CalendarInfo> {
         val resolver = context.contentResolver
-        val calendarId = getOrCreateCalendarId()
 
+        val uri = CalendarContract.Calendars.CONTENT_URI
+        val projection = arrayOf(
+            CalendarContract.Calendars._ID,
+            CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
+            CalendarContract.Calendars.ACCOUNT_NAME,
+            CalendarContract.Calendars.ACCOUNT_TYPE
+        )
+
+        val calendars = mutableListOf<CalendarInfo>()
+
+        resolver.query(uri, projection, null, null, null)?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Calendars._ID))
+                val name = cursor.getString(cursor.getColumnIndexOrThrow(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME))
+                val accountName = cursor.getString(cursor.getColumnIndexOrThrow(CalendarContract.Calendars.ACCOUNT_NAME))
+                val accountType = cursor.getString(cursor.getColumnIndexOrThrow(CalendarContract.Calendars.ACCOUNT_TYPE))
+
+                calendars.add(CalendarInfo(id, name, accountName, accountType))
+            }
+        }
+
+        return calendars
+    }
+
+    fun queryAllCalendarEvents(): List<CalendarEvent> {
+        val accounts = getAllCalendarAccounts()
+        val events = mutableListOf<CalendarEvent>()
+        val filtered = GlobalUtils.filteredCalendars?:setOf()
+        val customFilters = GlobalUtils.customCalendarFilterListSelected?:setOf()
+        for (account in accounts) {
+            if (filtered.contains(account.accountName)) continue
+            val id = account.id
+            events.addAll(queryCalendarEvents(id))
+        }
+        events.sortBy {
+            abs(Duration.between(
+                LocalDateTime.now(),
+                GlobalUtils.safeParseDateTime(it.startMillis.toDateTimeString())
+            ).toMillis())
+        }
+        events.filterNot { customFilters.contains(it.title) }
+        return events
+    }
+
+    fun queryCalendarEvents(calendarId: Long): List<CalendarEvent> {
+        val resolver = context.contentResolver
         val uri = CalendarContract.Events.CONTENT_URI
         val projection = arrayOf(
             CalendarContract.Events._ID,
@@ -133,30 +184,39 @@ class CalendarHelper(private val context: Context) {
             CalendarContract.Events.DESCRIPTION,
             CalendarContract.Events.RRULE
         )
-
         val selection = "${CalendarContract.Events.CALENDAR_ID} = ?"
         val selectionArgs = arrayOf(calendarId.toString())
 
         val events = mutableListOf<CalendarEvent>()
         resolver.query(uri, projection, selection, selectionArgs, null)?.use { cursor ->
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Events._ID))
-                val title = cursor.getString(cursor.getColumnIndexOrThrow(CalendarContract.Events.TITLE))
-                val dtStart = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Events.DTSTART))
-                val dtEnd = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Events.DTEND))
-                val description = cursor.getString(cursor.getColumnIndexOrThrow(CalendarContract.Events.DESCRIPTION))
-                val rrule = cursor.getString(cursor.getColumnIndexOrThrow(CalendarContract.Events.RRULE))
+            // 先把列索引拿出来，省得每次都查
+            val idxId    = cursor.getColumnIndexOrThrow(CalendarContract.Events._ID)
+            val idxTitle = cursor.getColumnIndexOrThrow(CalendarContract.Events.TITLE)
+            val idxStart = cursor.getColumnIndexOrThrow(CalendarContract.Events.DTSTART)
+            val idxEnd   = cursor.getColumnIndexOrThrow(CalendarContract.Events.DTEND)
+            val idxDesc  = cursor.getColumnIndexOrThrow(CalendarContract.Events.DESCRIPTION)
+            val idxRule  = cursor.getColumnIndexOrThrow(CalendarContract.Events.RRULE)
 
-                val event = CalendarEvent(
+            while (cursor.moveToNext()) {
+                val id    = cursor.getLong(idxId)
+                // 下面几个字段都可能为 null，加一个默认值
+                val title = cursor.getString(idxTitle) ?: "(无标题)"
+                val dtStart = cursor.getLong(idxStart)
+                val dtEnd   = cursor.getLong(idxEnd)
+                val desc    = cursor.getString(idxDesc)  ?: ""
+                val rule    = cursor.getString(idxRule)  ?: ""
+
+                events.add(CalendarEvent(
                     id = id,
                     title = title,
                     startMillis = dtStart,
-                    endMillis = dtEnd,
-                    description = description,
-                    rrule = rrule
-                )
-                events.add(event)
+                    endMillis   = dtEnd,
+                    description = desc,
+                    rrule       = rule
+                ))
             }
+        } ?: run {
+            Log.e("CalendarHelper", "queryCalendarEvents: cursor 为 null")
         }
 
         return events

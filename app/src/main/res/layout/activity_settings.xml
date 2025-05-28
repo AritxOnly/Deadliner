@@ -432,6 +432,24 @@
                         app:backgroundTint="@android:color/transparent"
                         app:strokeWidth="0dp"/>
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonCustomFilterList"
+                        android:layout_marginVertical="8dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:text="@string/settings_custom_filter_list"
+                        android:textSize="16sp"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Button"
+                        android:textColor="?attr/colorOnSurface"
+                        android:gravity="start|center_vertical"
+                        android:paddingStart="0dp"
+                        android:paddingVertical="8dp"
+                        app:iconGravity="end"
+                        app:iconPadding="8dp"
+                        app:backgroundTint="@android:color/transparent"
+                        app:strokeWidth="0dp"/>
+
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchExperimentalEdgeToEdge"
                         android:layout_width="match_parent"
