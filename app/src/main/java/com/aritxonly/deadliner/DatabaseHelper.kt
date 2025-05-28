@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.util.Log
+import kotlin.Long
 
 
 class DatabaseHelper private constructor(context: Context) :
@@ -29,7 +30,7 @@ class DatabaseHelper private constructor(context: Context) :
         }
 
         const val DATABASE_NAME = "deadliner.db"
-        private const val DATABASE_VERSION = 6
+        private const val DATABASE_VERSION = 7
         private const val TABLE_NAME = "ddl_items"
         private const val COLUMN_ID = "id"
         private const val COLUMN_NAME = "name"
@@ -42,6 +43,7 @@ class DatabaseHelper private constructor(context: Context) :
         private const val COLUMN_IS_STARED = "is_stared"
         private const val COLUMN_TYPE = "type"
         private const val COLUMN_HABIT_COUNT = "habit_count"
+        private const val COLUMN_CALENDAR_EVENT_ID = "calendar_event"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -57,7 +59,8 @@ class DatabaseHelper private constructor(context: Context) :
                 $COLUMN_IS_ARCHIVED INTEGER,
                 $COLUMN_IS_STARED INTEGER,
                 $COLUMN_TYPE TEXT NOT NULL,
-                $COLUMN_HABIT_COUNT INTEGER
+                $COLUMN_HABIT_COUNT INTEGER,
+                $COLUMN_CALENDAR_EVENT_ID INTEGER
             )
         """.trimIndent()
         db.execSQL(createTableQuery)
@@ -94,6 +97,10 @@ class DatabaseHelper private constructor(context: Context) :
                 db.endTransaction()
             }
         }
+        if (oldVersion < 7) {
+            Log.d("DatabaseHelper", "Update DB to v7")
+            db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_CALENDAR_EVENT_ID INT DEFAULT -1")
+        }
     }
 
     // 插入 DDL 数据
@@ -117,6 +124,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_IS_STARED, false)
             put(COLUMN_TYPE, type.toString())
             put(COLUMN_HABIT_COUNT, 0)
+            put(COLUMN_CALENDAR_EVENT_ID, -1)
         }
         return db.insert(TABLE_NAME, null, values)
     }
@@ -148,6 +156,10 @@ class DatabaseHelper private constructor(context: Context) :
     }
 
     private fun parseCursor(cursor: Cursor): List<DDLItem> {
+        fun parseCalendarEventId(id: Int): Long? {
+            return if (id == -1) null else id.toLong()
+        }
+
         val result = mutableListOf<DDLItem>()
         with(cursor) {
             while (moveToNext()) {
@@ -163,7 +175,10 @@ class DatabaseHelper private constructor(context: Context) :
                         isArchived = getInt(getColumnIndexOrThrow(COLUMN_IS_ARCHIVED)).toBoolean(),
                         isStared = getInt(getColumnIndexOrThrow(COLUMN_IS_STARED)).toBoolean(),
                         type = DeadlineType.fromString(getString(getColumnIndexOrThrow(COLUMN_TYPE))),
-                        habitCount = getInt(getColumnIndexOrThrow(COLUMN_HABIT_COUNT))
+                        habitCount = getInt(getColumnIndexOrThrow(COLUMN_HABIT_COUNT)),
+                        calendarEventId = parseCalendarEventId(
+                            getInt(getColumnIndexOrThrow(COLUMN_CALENDAR_EVENT_ID))
+                        )
                     )
                 )
             }
@@ -194,6 +209,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_IS_STARED, item.isStared.toInt())
             put(COLUMN_TYPE, item.type.toString())
             put(COLUMN_HABIT_COUNT, item.habitCount)
+            put(COLUMN_CALENDAR_EVENT_ID, item.calendarEventId?:-1)
         }
         db.update(TABLE_NAME, values, "$COLUMN_ID = ?", arrayOf(item.id.toString()))
     }

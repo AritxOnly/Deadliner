@@ -70,6 +70,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -94,10 +95,13 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.MainActivity
+import com.aritxonly.deadliner.calendar.CalendarHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -226,6 +230,7 @@ fun DeadlineDetailScreen(
 ) {
     var waterLevel by remember { mutableFloatStateOf(0f) }
     var isStared by remember { mutableStateOf(deadline.isStared) }
+    var isCompleted by remember { mutableStateOf(deadline.isCompleted) }
 
     Log.d("DetailPage", "DeadlineDetailScreen: $isStared")
 
@@ -234,6 +239,8 @@ fun DeadlineDetailScreen(
         .clip(CircleShape)
         .background(Color(colorScheme.surfaceContainer), CircleShape)
         .padding(8.dp)
+
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         modifier = Modifier.background(Color(colorScheme.surface)),
@@ -301,11 +308,14 @@ fun DeadlineDetailScreen(
             )
             DeadlineDetailInfo(deadline, waterLevel)
 
-            DeadlineEditFABMenu(modifier = Modifier.align(Alignment.BottomEnd)) { desc ->
+            DeadlineEditFABMenu(
+                isCompleted = isCompleted,
+                modifier = Modifier.align(Alignment.BottomEnd)
+            ) { desc ->
                 Log.d("Desc", desc)
                 when (desc) {
                     "编辑" -> onEdit()
-                    "完成" -> {
+                    "完成", "标记完成", "撤销完成" -> {
                         deadline.isCompleted = !deadline.isCompleted
                         if (deadline.isCompleted) {
                             Toast.makeText(context, R.string.toast_finished, Toast.LENGTH_SHORT).show()
@@ -340,6 +350,19 @@ fun DeadlineDetailScreen(
                             .show()
 
                     }
+                    "添加至日历" -> {
+                        val calendarHelper = CalendarHelper(applicationContext)
+
+                        coroutineScope.launch {
+                            try {
+                                val eventId = calendarHelper.insertEvent(deadline)
+                                Toast.makeText(context, "已添加至日历", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Log.e("Calendar", e.toString())
+                                Toast.makeText(context, "添加至日历失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -348,16 +371,21 @@ fun DeadlineDetailScreen(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun DeadlineEditFABMenu(modifier: Modifier, callback: (desc: String) -> Unit) {
+fun DeadlineEditFABMenu(
+    isCompleted: Boolean,
+    modifier: Modifier,
+    callback: (desc: String) -> Unit
+) {
     var fabMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
 
     var items = listOf(
         painterResource(R.drawable.ic_edit) to "编辑",
-        painterResource(R.drawable.ic_done) to "完成",
-        painterResource(R.drawable.ic_archiving) to "归档",
+        painterResource(R.drawable.ic_done) to "标记完成",
+//        painterResource(R.drawable.ic_archiving) to "归档",
         painterResource(R.drawable.ic_delete) to "删除",
+        painterResource(R.drawable.ic_event) to "添加至日历"
     )
 
     FloatingActionButtonMenu(

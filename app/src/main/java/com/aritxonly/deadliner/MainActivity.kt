@@ -160,16 +160,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private lateinit var materialColorScheme: AppColorScheme
 
-    // 定义权限请求启动器
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            Toast.makeText(this, "通知权限已授予", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "通知权限被拒绝，请在设置中手动开启", Toast.LENGTH_SHORT).show()
-        }
-    }
+    private val CALENDAR_PERMISSIONS = arrayOf(
+        android.Manifest.permission.READ_CALENDAR,
+        android.Manifest.permission.WRITE_CALENDAR
+    )
+
+    private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 跟随主题色
@@ -867,6 +863,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         // 初始化通知系统并检查关键权限
         initializeNotificationSystem()
+        initCalendarPermission()
         GlobalUtils.setAlarms(databaseHelper, applicationContext)
         DeadlineAlarmScheduler.scheduleDailyAlarm(applicationContext)
         checkCriticalPermissions()
@@ -1674,22 +1671,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         }.show()
     }
 
-    private fun showXiaomiAutoStartDialog() {
-        MaterialAlertDialogBuilder(this).apply {
-            setTitle("自启动权限")
-            setMessage("请在小米设置中允许Deadliner自启动")
-            setPositiveButton("去设置") { _, _ ->
-                try {
-                    startActivity(Intent("miui.intent.action.OP_AUTO_START").apply {
-                        addCategory(Intent.CATEGORY_DEFAULT)
-                    })
-                } catch (e: Exception) {
-                    openAppSettings()
-                }
-            }
-        }.show()
-    }
-
     /**************************************
      * 工具方法
      **************************************/
@@ -1700,10 +1681,44 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         } else true
     }
 
-    private fun openAppSettings() {
-        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = Uri.parse("package:$packageName")
-        })
+    private fun initCalendarPermission() {
+        permissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            // 处理权限请求结果
+            if (permissions.values.all { it }) {
+
+            } else {
+                // 权限被拒绝
+                onCalendarPermissionDenied()
+            }
+        }
+
+        checkAndRequestCalendarPermissions()
+    }
+
+    private fun checkAndRequestCalendarPermissions() {
+        val missingPermissions = CALENDAR_PERMISSIONS.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingPermissions.isEmpty()) {
+
+        } else {
+            // 请求缺失的权限
+            permissionLauncher.launch(missingPermissions.toTypedArray())
+        }
+    }
+
+    private fun onCalendarPermissionDenied() {
+        // 提示用户权限被拒绝
+        Toast.makeText(this, "需要日历权限以同步事件", Toast.LENGTH_LONG).show()
+
+        // 可选：引导用户前往应用设置手动授权
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", packageName, null)
+        }
+        startActivity(intent)
     }
 
     private fun decideCloudStatus() {
