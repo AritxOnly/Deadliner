@@ -87,6 +87,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
 import android.content.res.Resources
+import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
@@ -97,6 +98,7 @@ import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
@@ -186,7 +188,15 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                 view.updatePadding(top = statusBarInset)
 
-                bottomBarContainer.updatePadding(bottom = navBarInset)
+                bottomAppBar.updatePadding(bottom = navBarInset)
+
+                var isFABSet = false
+                addEventButton.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    if (!isFABSet) {
+                        bottomMargin += navBarInset / 2
+                        isFABSet = true
+                    }
+                }
 
                 WindowInsetsCompat.CONSUMED
             }

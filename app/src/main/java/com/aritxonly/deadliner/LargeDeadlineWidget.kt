@@ -117,7 +117,8 @@ internal fun updateLargeAppWidget(
         itemRv.setViewVisibility(R.id.starIcon, starVisibility)
         // 进度
         val total = ChronoUnit.MILLIS.between(item.startTime, item.endTime)
-        val done = ChronoUnit.MILLIS.between(item.startTime, now).coerceIn(0, total)
+        val maxTotal = maxOf(0, total)
+        val done = ChronoUnit.MILLIS.between(item.startTime, now).coerceIn(0, maxTotal)
         val percent = (done * 100 / total).toInt()
         itemRv.setProgressBar(
             R.id.item_progress,

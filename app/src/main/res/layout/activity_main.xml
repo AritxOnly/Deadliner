@@ -160,6 +160,7 @@
     <!-- 虚化遮罩 -->
     <View
         android:id="@+id/bottomBlur"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="16dp"
         android:layout_gravity="bottom"
@@ -170,6 +171,7 @@
 
     <View
         android:id="@+id/bottomBarBackground"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="?attr/colorSurfaceContainer"
