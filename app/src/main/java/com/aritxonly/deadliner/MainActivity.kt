@@ -89,8 +89,6 @@ import android.Manifest
 import android.content.res.Resources
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.web.WebUtils
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.shape.MaterialShapeDrawable
@@ -100,6 +98,10 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.HabitMetaData
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 

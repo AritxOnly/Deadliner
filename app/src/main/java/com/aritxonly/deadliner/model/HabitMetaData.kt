@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.model
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken

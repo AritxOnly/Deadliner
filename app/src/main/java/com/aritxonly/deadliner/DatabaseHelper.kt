@@ -6,6 +6,8 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.util.Log
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineType
 import kotlin.Long
 
 
@@ -109,7 +111,8 @@ class DatabaseHelper private constructor(context: Context) :
         startTime: String,
         endTime: String,
         note: String = "",
-        type: DeadlineType = DeadlineType.TASK
+        type: DeadlineType = DeadlineType.TASK,
+        calendarEventId: Long? = null
     ): Long {
         Log.d("Database", "Inserting $name, $startTime, $endTime, $note, $type")
         val db = writableDatabase
@@ -124,7 +127,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_IS_STARED, false)
             put(COLUMN_TYPE, type.toString())
             put(COLUMN_HABIT_COUNT, 0)
-            put(COLUMN_CALENDAR_EVENT_ID, -1)
+            put(COLUMN_CALENDAR_EVENT_ID, (calendarEventId?:-1).toInt())
         }
         return db.insert(TABLE_NAME, null, values)
     }

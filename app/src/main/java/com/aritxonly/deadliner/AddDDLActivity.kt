@@ -1,9 +1,6 @@
 package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -16,20 +13,22 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.aritxonly.deadliner.GlobalUtils.toDateTimeString
+import com.aritxonly.deadliner.calendar.CalendarHelper
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.toJson
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
-import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputLayout
-import com.google.android.material.timepicker.MaterialTimePicker
-import com.google.android.material.timepicker.TimeFormat
-import java.sql.Time
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -56,6 +55,10 @@ class AddDDLActivity : AppCompatActivity() {
     private lateinit var totalTextInput: TextInputLayout
     private lateinit var totalEditText: EditText
     private lateinit var freqTypeHint: TextView
+
+    private lateinit var importFromCalendarButton: ImageButton
+
+    private var calendarEventId: Long? = null
 
     private var selectedPage = 0
 
@@ -85,6 +88,7 @@ class AddDDLActivity : AppCompatActivity() {
         ddlNoteEditText = findViewById(R.id.ddlNoteEditText)
         saveButton = findViewById(R.id.saveButton)
         backButton = findViewById(R.id.backButton)
+        importFromCalendarButton = findViewById(R.id.importFromCalendarButton)
         ddlNoteLayout = findViewById(R.id.ddlNoteLayout)
 
         freqEditLayout = findViewById(R.id.freqEditLayout)
@@ -142,7 +146,8 @@ class AddDDLActivity : AppCompatActivity() {
                         ddlName,
                         startTime.toString(),
                         endTime.toString(),
-                        ddlNote
+                        ddlNote,
+                        calendarEventId = calendarEventId
                     )
 
                     databaseHelper.getDDLById(ddlId)?.let { item ->
@@ -162,7 +167,7 @@ class AddDDLActivity : AppCompatActivity() {
                             completedDates = setOf(),
                             frequencyType = frequencyType,
                             frequency = frequency,
-                            total = total?:0,
+                            total = total ?: 0,
                             refreshDate = LocalDate.now().toString()
                         ).toJson(),
                         type = DeadlineType.HABIT
@@ -206,6 +211,53 @@ class AddDDLActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+
+        importFromCalendarButton.setOnClickListener {
+            try {
+                loadCalendarEventsAndShowDialog()
+            } catch (e: Exception) {
+                Toast.makeText(this, "请检查日历权限：${e.toString()}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun loadCalendarEventsAndShowDialog() {
+        val calendarHelper = CalendarHelper(applicationContext)
+
+        // 使用 CalendarHelper 查询日历事件
+        val calendarEvents = calendarHelper.queryCalendarEvents()
+
+        if (calendarEvents.isEmpty()) {
+            Toast.makeText(this, "没有可导入的日历事件", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 准备显示的事件标题列表
+        val eventTitles = calendarEvents.map { event ->
+            val time = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())
+            "${event.title} - ${formatLocalDateTime(time!!)}"
+        }.toTypedArray()
+
+        var selectedPosition = 0
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("选择要导入的事件")
+            .setSingleChoiceItems(eventTitles, -1) { dialog, which ->
+                selectedPosition = which
+            }
+            .setPositiveButton("导入") { dialog, _ ->
+                // 获取选中的事件
+                val event = calendarEvents[selectedPosition]
+                ddlNameEditText.setText(event.title)
+                ddlNoteEditText.setText(event.description)
+                endTime = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())
+                val endTimeContent: TextView = findViewById(R.id.endTimeContent)
+                endTimeContent.text = formatLocalDateTime(endTime!!)
+                calendarEventId = event.id
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     private fun initTab() {

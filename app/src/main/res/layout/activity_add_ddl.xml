@@ -24,16 +24,28 @@
     <TextView
         android:id="@+id/textView"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:text="Deadline"
-        android:textSize="28sp"
-        android:textStyle="bold"
+        android:layout_height="40dp"
+        android:text="添加任务"
+        android:gravity="center"
+        android:textSize="22sp"
         android:textColor="?attr/colorOnSurface"
         app:layout_constraintStart_toEndOf="@id/backButton"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="@id/backButton"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toStartOf="@id/importFromCalendarButton" />
+
+    <ImageButton
+        android:id="@+id/importFromCalendarButton"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="8dp"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/circle_background_main"
+        android:scaleType="centerInside"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/textView"
+        app:srcCompat="@drawable/ic_event" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/typeTabLayout"

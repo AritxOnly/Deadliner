@@ -12,6 +12,8 @@ import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineType
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 

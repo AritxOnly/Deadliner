@@ -6,9 +6,10 @@ import android.content.Context
 import android.net.Uri
 import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
-import com.aritxonly.deadliner.DDLItem
-import com.aritxonly.deadliner.DeadlineType
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.GlobalUtils
+import com.aritxonly.deadliner.model.CalendarEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -117,6 +118,48 @@ class CalendarHelper(private val context: Context) {
         resolver.insert(CalendarContract.Reminders.CONTENT_URI, reminderValues)
 
         eventId
+    }
+
+    fun queryCalendarEvents(): List<CalendarEvent> {
+        val resolver = context.contentResolver
+        val calendarId = getOrCreateCalendarId()
+
+        val uri = CalendarContract.Events.CONTENT_URI
+        val projection = arrayOf(
+            CalendarContract.Events._ID,
+            CalendarContract.Events.TITLE,
+            CalendarContract.Events.DTSTART,
+            CalendarContract.Events.DTEND,
+            CalendarContract.Events.DESCRIPTION,
+            CalendarContract.Events.RRULE
+        )
+
+        val selection = "${CalendarContract.Events.CALENDAR_ID} = ?"
+        val selectionArgs = arrayOf(calendarId.toString())
+
+        val events = mutableListOf<CalendarEvent>()
+        resolver.query(uri, projection, selection, selectionArgs, null)?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Events._ID))
+                val title = cursor.getString(cursor.getColumnIndexOrThrow(CalendarContract.Events.TITLE))
+                val dtStart = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Events.DTSTART))
+                val dtEnd = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Events.DTEND))
+                val description = cursor.getString(cursor.getColumnIndexOrThrow(CalendarContract.Events.DESCRIPTION))
+                val rrule = cursor.getString(cursor.getColumnIndexOrThrow(CalendarContract.Events.RRULE))
+
+                val event = CalendarEvent(
+                    id = id,
+                    title = title,
+                    startMillis = dtStart,
+                    endMillis = dtEnd,
+                    description = description,
+                    rrule = rrule
+                )
+                events.add(event)
+            }
+        }
+
+        return events
     }
 
     /**

@@ -7,13 +7,11 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentManager
-import com.aritxonly.deadliner.notification.NotificationUtil
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -22,6 +20,12 @@ import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
 import androidx.core.content.edit
+import com.aritxonly.deadliner.model.CalendarEvent
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.HabitMetaData
+import java.time.Instant
 
 object GlobalUtils {
 
@@ -335,7 +339,13 @@ object GlobalUtils {
         val type = object : TypeToken<HabitMetaData>() {}.type
         val habitMeta: HabitMetaData = try {
             gson.fromJson(note, type)
-                ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0, LocalDate.now().toString())
+                ?: HabitMetaData(
+                    emptySet(),
+                    DeadlineFrequency.DAILY,
+                    1,
+                    0,
+                    LocalDate.now().toString()
+                )
         } catch (e: Exception) {
             HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0, LocalDate.now().toString())
         }
@@ -369,5 +379,10 @@ object GlobalUtils {
         activityManager.appTasks
             .firstOrNull { it.taskInfo?.id == myTaskId }
             ?.setExcludeFromRecents(hideFromRecent)
+    }
+
+    fun Long.toDateTimeString(): String {
+        val zonedDateTime = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault())
+        return zonedDateTime.toLocalDateTime().toString()
     }
 }

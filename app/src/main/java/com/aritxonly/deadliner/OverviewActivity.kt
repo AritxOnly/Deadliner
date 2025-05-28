@@ -67,6 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import java.time.Duration
 
