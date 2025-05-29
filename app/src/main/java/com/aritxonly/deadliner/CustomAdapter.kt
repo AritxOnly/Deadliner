@@ -256,7 +256,7 @@ class CustomAdapter(
             DeadlineFrequency.DAILY -> "每日进度 ${habitItem.habitCount}/${habitMeta.frequency}"
             DeadlineFrequency.WEEKLY -> "每周进度 ${habitItem.habitCount}/${habitMeta.frequency}"
             DeadlineFrequency.MONTHLY -> "每月进度 ${habitItem.habitCount}/${habitMeta.frequency}"
-        } + if (habitMeta.frequencyType != DeadlineFrequency.TOTAL) " · " else "" +
+        } + if (habitMeta.frequencyType != DeadlineFrequency.TOTAL && habitMeta.total != 0) " · " else "" +
         if (habitMeta.total != 0) "总进度 ${habitItem.habitTotalCount}/${habitMeta.total}" else ""
 
         // 6. 设置打卡按钮状态
@@ -264,9 +264,10 @@ class CustomAdapter(
             (habitItem.habitCount < habitMeta.frequency) && (completedDates.size < habitMeta.total)
         } else true) && (habitItem.habitTotalCount < habitMeta.total)) || (habitMeta.total == 0)
 
-        val alreadyChecked = if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
-            habitItem.habitTotalCount >= habitMeta.total
-        } else today in completedDates
+        val alreadyChecked = when (habitMeta.frequencyType) {
+            DeadlineFrequency.TOTAL -> false
+            else -> habitMeta.frequency <= habitItem.habitCount
+        }
         val canPerformClick = canCheckIn && !alreadyChecked
         checkButton.text = if (habitMeta.total != 0 && habitItem.habitTotalCount >= habitMeta.total)
                 "已完成" else if (alreadyChecked)

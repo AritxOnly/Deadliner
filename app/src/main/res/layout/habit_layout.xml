@@ -17,6 +17,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:layout_marginTop="12dp"
+        android:layout_marginEnd="12dp"
         android:text="每日阅读"
         android:textColor="?attr/colorOnSurface"
         android:textSize="24sp"
