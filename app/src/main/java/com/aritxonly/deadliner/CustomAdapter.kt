@@ -194,11 +194,11 @@ class CustomAdapter(
         Log.d("Database", "${habitMeta.frequencyType}")
         val freqDesc = when (habitMeta.frequencyType) {
             DeadlineFrequency.DAILY ->
-                "每天${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}天"
+                "每天${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}次"
             DeadlineFrequency.WEEKLY ->
-                "每周${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}天"
+                "每周${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}次"
             DeadlineFrequency.MONTHLY ->
-                "每月${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}天"
+                "每月${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}次"
             DeadlineFrequency.TOTAL -> {
                 if (habitMeta.total == 0) "持续坚持"
                 else "共计${habitMeta.total}次"
@@ -260,15 +260,15 @@ class CustomAdapter(
         if (habitMeta.total != 0) "总进度 ${habitItem.habitTotalCount}/${habitMeta.total}" else ""
 
         // 6. 设置打卡按钮状态
-        val canCheckIn = (habitMeta.total != 0 && if (habitMeta.frequencyType != DeadlineFrequency.TOTAL) {
+        val canCheckIn = (habitMeta.total != 0 && (if (habitMeta.frequencyType != DeadlineFrequency.TOTAL) {
             (habitItem.habitCount < habitMeta.frequency) && (completedDates.size < habitMeta.total)
-        } else true) || (habitMeta.total == 0) || (habitItem.habitTotalCount < habitMeta.total)
+        } else true) && (habitItem.habitTotalCount < habitMeta.total)) || (habitMeta.total == 0)
 
         val alreadyChecked = if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
             habitItem.habitTotalCount >= habitMeta.total
         } else today in completedDates
         val canPerformClick = canCheckIn && !alreadyChecked
-        checkButton.text = if (habitItem.habitTotalCount >= habitMeta.total)
+        checkButton.text = if (habitMeta.total != 0 && habitItem.habitTotalCount >= habitMeta.total)
                 "已完成" else if (alreadyChecked)
                     "今日已打卡" else "打卡"
         checkButton.icon = if (alreadyChecked) null

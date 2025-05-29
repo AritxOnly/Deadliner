@@ -435,7 +435,7 @@ object GlobalUtils {
 
         val totalString = if (total == null) "不计次数" else "共计 $total 次"
 
-        return typeString + "打卡" + frequencyString + "次，" + totalString
+        return typeString + "打卡 " + frequencyString + " 次，" + totalString
     }
 
     fun canHabitBeDone(item: DDLItem, metaData: HabitMetaData): Boolean {

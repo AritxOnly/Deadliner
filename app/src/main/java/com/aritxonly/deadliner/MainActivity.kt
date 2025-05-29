@@ -87,6 +87,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
 import android.app.AlertDialog
+import android.app.Dialog
 import android.content.DialogInterface
 import android.content.res.Resources
 import android.view.ViewGroup
@@ -101,6 +102,7 @@ import com.google.android.material.shape.MaterialShapeDrawable
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
