@@ -17,5 +17,6 @@ data class DDLItem(
     var isStared: Boolean = false,
     var type: DeadlineType = DeadlineType.TASK,
     var habitCount: Int = 0,
+    var habitTotalCount: Int = 0,
     var calendarEventId: Long? = null
 ) : Parcelable

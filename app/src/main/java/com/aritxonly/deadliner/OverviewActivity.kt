@@ -234,18 +234,6 @@ fun OverviewScreen(
                         )
                     }
                 },
-                actions = {
-                    IconButton(
-                        onClick = {}
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.ic_more),
-                            contentDescription = "更多",
-                            tint = Color(colorScheme.onSurface),
-                            modifier = expressiveTypeModifier
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = Color(colorScheme.surface),
                     scrolledContainerColor = Color(colorScheme.surface)

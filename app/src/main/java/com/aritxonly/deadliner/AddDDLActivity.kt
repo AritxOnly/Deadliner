@@ -26,6 +26,7 @@ import android.widget.Toast
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import com.aritxonly.deadliner.GlobalUtils.toDateTimeString
 import com.aritxonly.deadliner.calendar.CalendarHelper
@@ -72,12 +73,18 @@ class AddDDLActivity : AppCompatActivity() {
     private lateinit var totalTextInput: TextInputLayout
     private lateinit var totalEditText: EditText
     private lateinit var freqTypeHint: TextView
+    private lateinit var habitNoteHint: TextView
 
     private lateinit var importFromCalendarButton: ImageButton
 
     private var calendarEventId: Long? = null
 
     private var selectedPage = 0
+
+    private var frequency: Int? = null
+    private var total: Int? = null
+    private var frequencyType = DeadlineFrequency.TOTAL
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d("AddDDLActivity", "available: ${DynamicColors.isDynamicColorAvailable()}")
@@ -117,6 +124,7 @@ class AddDDLActivity : AppCompatActivity() {
         totalTextInput = findViewById(R.id.totalTextInput)
         totalEditText = findViewById(R.id.totalEditText)
         freqTypeHint = findViewById(R.id.freqTypeHint)
+        habitNoteHint = findViewById(R.id.habitNoteHint)
 
         val startTimeContent: TextView = findViewById(R.id.startTimeContent)
         val endTimeContent: TextView = findViewById(R.id.endTimeContent)
@@ -167,6 +175,7 @@ class AddDDLActivity : AppCompatActivity() {
                         freqTypeToggleGroup.visibility = View.GONE
                         freqTypeHint.visibility = View.GONE
                         freqEditLayout.visibility = View.GONE
+                        habitNoteHint.visibility = View.GONE
                     }
                     1 -> {
                         ddlNoteLayout.visibility = View.GONE
@@ -174,6 +183,7 @@ class AddDDLActivity : AppCompatActivity() {
                         freqTypeToggleGroup.visibility = View.VISIBLE
                         freqTypeHint.visibility = View.VISIBLE
                         freqEditLayout.visibility = View.VISIBLE
+                        habitNoteHint.visibility = View.VISIBLE
                     }
                     else -> {}
                 }
@@ -183,6 +193,34 @@ class AddDDLActivity : AppCompatActivity() {
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
 
+        freqEditText.addTextChangedListener(
+            afterTextChanged = { editable ->
+                frequency = editable?.toString()?.toIntOrNull()
+                val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+                habitNoteHint.text = formattedNote
+            }
+        )
+
+        totalEditText.addTextChangedListener(
+            afterTextChanged = { editable ->
+                total = editable?.toString()?.toIntOrNull()
+                val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+                habitNoteHint.text = formattedNote
+            }
+        )
+
+        freqTypeToggleGroup.addOnButtonCheckedListener { _, _, _ ->
+            frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
+                R.id.btnTotal -> DeadlineFrequency.TOTAL
+                R.id.btnDaily -> DeadlineFrequency.DAILY
+                R.id.btnWeekly -> DeadlineFrequency.WEEKLY
+                R.id.btnYearly -> DeadlineFrequency.MONTHLY
+                else -> DeadlineFrequency.TOTAL
+            }
+            val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+            habitNoteHint.text = formattedNote
+        }
+
         importFromCalendarButton.setOnClickListener {
             try {
                 loadCalendarEventsAndShowDialog()
@@ -191,6 +229,9 @@ class AddDDLActivity : AppCompatActivity() {
                 Toast.makeText(this, "请检查日历权限：${e.toString()}", Toast.LENGTH_SHORT).show()
             }
         }
+
+        val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+        habitNoteHint.text = formattedNote
     }
 
     private fun save(toCalendar: Boolean) {

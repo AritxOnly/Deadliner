@@ -86,8 +86,14 @@ import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.res.Resources
 import android.view.ViewGroup
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Button
+import android.widget.ViewFlipper
 import androidx.activity.enableEdgeToEdge
 import com.aritxonly.deadliner.web.WebUtils
 import com.google.android.material.materialswitch.MaterialSwitch
@@ -102,6 +108,7 @@ import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
+import com.google.android.material.loadingindicator.LoadingIndicator
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -161,13 +168,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     private lateinit var materialColorScheme: AppColorScheme
-
-    private val CALENDAR_PERMISSIONS = arrayOf(
-        android.Manifest.permission.READ_CALENDAR,
-        android.Manifest.permission.WRITE_CALENDAR
-    )
-
-    private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
+    private var dialogFlipper: ViewFlipper? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 跟随主题色
@@ -188,12 +189,16 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                 bottomAppBar.updatePadding(bottom = navBarInset)
 
-                var isFABSet = false
+                val TAG_ORIG_MARGIN = R.id.addEvent // 任意一个不会冲突的 id
+                if (addEventButton.getTag(TAG_ORIG_MARGIN) == null) {
+                    val lp = addEventButton.layoutParams as ViewGroup.MarginLayoutParams
+                    addEventButton.setTag(TAG_ORIG_MARGIN, lp.bottomMargin)
+                }
+
+                // 2. 每次都按「原始 + inset/2」来设置
+                val originalMargin = addEventButton.getTag(TAG_ORIG_MARGIN) as Int
                 addEventButton.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                    if (!isFABSet) {
-                        bottomMargin += navBarInset / 2
-                        isFABSet = true
-                    }
+                    bottomMargin = originalMargin + navBarInset / 2
                 }
 
                 WindowInsetsCompat.CONSUMED
@@ -863,14 +868,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         checkForUpdates()
 
-        // 初始化通知系统并检查关键权限
-        initializeNotificationSystem()
-        initCalendarPermission()
-        GlobalUtils.setAlarms(databaseHelper, applicationContext)
-        DeadlineAlarmScheduler.scheduleDailyAlarm(applicationContext)
-        checkCriticalPermissions()
-        // 恢复所有未完成DDL的闹钟
-        restoreAllAlarms()
+        if (!GlobalUtils.permissionSetupDone) {
+            showFirstTimeSetupDialog()
+        } else {
+            runPostSetupInitialization()
+        }
     }
 
     override fun onDestroy() {
@@ -992,7 +994,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val latestParts = cleanedLatestVersion.split(".")
 
         for (i in 0 until minOf(localParts.size, latestParts.size)) {
-            val localPart = localParts[i].toIntOrNull() ?: 0
+            val localPart = localParts[i].toIntOrNull() ?: -1
             val latestPart = latestParts[i].toIntOrNull() ?: 0
 
             if (localPart < latestPart) return true  // 有新版本
@@ -1276,6 +1278,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         private const val REQUEST_CODE_ADD_DDL = 1
         const val ANIMATION_DURATION = 160L
         private const val REQUEST_CODE_NOTIFICATION_PERMISSION = 0x2001
+        private const val REQUEST_CODE_CALENDAR_PERMISSION = 0x2002
     }
 
     /* New to v2.0 */
@@ -1623,6 +1626,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
         when (requestCode) {
             REQUEST_CODE_NOTIFICATION_PERMISSION -> {
                 if (grantResults.isNotEmpty() && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
@@ -1642,22 +1646,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, ddl)
             }
         }
-    }
-
-    /**************************************
-     * 用户引导系统
-     **************************************/
-    private fun showPermissionGuidance() {
-        MaterialAlertDialogBuilder(this).apply {
-            setTitle("权限说明")
-            setMessage("为保证Deadliner在后台正常运行，需要以下权限：\n\n1. 通知权限\n2. 电池优化例外\n3. 自启动权限")
-            setPositiveButton("立即设置") { _, _ ->
-                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.parse("package:$packageName")
-                })
-            }
-            setNegativeButton("稍后再说", null)
-        }.show()
     }
 
     private fun showBatteryOptimizationDialog() {
@@ -1681,35 +1669,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             pm.isIgnoringBatteryOptimizations(packageName)
         } else true
-    }
-
-    private fun initCalendarPermission() {
-        permissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
-            // 处理权限请求结果
-            if (permissions.values.all { it }) {
-
-            } else {
-                // 权限被拒绝
-                onCalendarPermissionDenied()
-            }
-        }
-
-        checkAndRequestCalendarPermissions()
-    }
-
-    private fun checkAndRequestCalendarPermissions() {
-        val missingPermissions = CALENDAR_PERMISSIONS.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-
-        if (missingPermissions.isEmpty()) {
-
-        } else {
-            // 请求缺失的权限
-            permissionLauncher.launch(missingPermissions.toTypedArray())
-        }
     }
 
     private fun onCalendarPermissionDenied() {
@@ -1744,5 +1703,114 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private fun Float.dpToPx(): Float =
         this * Resources.getSystem().displayMetrics.density + 0.5f
+
+    private val notifyLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        dialogFlipper?.showNext()  // 或者其他逻辑
+    }
+
+    private val calendarLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results: Map<String, Boolean> ->
+        if (!results.values.all { it }) {
+            // 权限被拒绝
+            onCalendarPermissionDenied()
+        }
+        dialogFlipper?.showNext()
+    }
+
+    private fun showFirstTimeSetupDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_first_time_setup, null)
+        dialogFlipper = dialogView.findViewById<ViewFlipper>(R.id.vf_steps)
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+        dialog.show()
+
+        // Step1 按钮
+        dialogView.findViewById<Button>(R.id.btn_next1).setOnClickListener {
+            // 请求通知权限
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                notifyLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                dialogFlipper?.showNext()
+            }
+        }
+        dialogView.findViewById<Button>(R.id.btn_skip1).setOnClickListener {
+            dialogFlipper?.showNext()
+        }
+
+        // Step2 按钮
+        dialogView.findViewById<Button>(R.id.btn_next2).setOnClickListener {
+            calendarLauncher.launch(arrayOf(
+                Manifest.permission.READ_CALENDAR,
+                Manifest.permission.WRITE_CALENDAR
+            ))
+        }
+        dialogView.findViewById<Button>(R.id.btn_skip2).setOnClickListener {
+            dialogFlipper?.showNext()
+        }
+
+        dialogView.findViewById<Button>(R.id.btn_next3).setOnClickListener {
+            Toast.makeText(this, "正在加载指南页面，点击任意区域跳过", Toast.LENGTH_LONG).show()
+
+            val webViewView = layoutInflater.inflate(R.layout.dialog_webview, null)
+            val webDialog = MaterialAlertDialogBuilder(this)
+                .setView(webViewView)
+                .setCancelable(true)
+                .create()
+
+            val webView = webViewView.findViewById<WebView>(R.id.setup_webview)
+            val li = webViewView.findViewById<LoadingIndicator>(R.id.loading_indicator)
+
+            webView.webViewClient = object : WebViewClient() {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    super.onPageStarted(view, url, favicon)
+                    li.visibility = View.VISIBLE
+                }
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    li.visibility = View.GONE
+                }
+            }
+
+            webView.settings.javaScriptEnabled = true
+
+            webView.loadUrl(GlobalUtils.generateWikiForSpecificDevice())
+
+            webDialog.setOnDismissListener {
+                if (!isIgnoringBatteryOptimizations()) {
+                    startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = "package:$packageName".toUri()
+                    })
+                }
+
+                dialogFlipper?.showNext()
+            }
+
+            webDialog.show()
+        }
+        dialogView.findViewById<Button>(R.id.btn_skip3).setOnClickListener {
+            dialogFlipper?.showNext()
+        }
+
+        // Step4 完成
+        dialogView.findViewById<Button>(R.id.btn_done).setOnClickListener {
+            GlobalUtils.permissionSetupDone = true
+            dialog.dismiss()
+            runPostSetupInitialization()
+        }
+    }
+
+    private fun runPostSetupInitialization() {
+        initializeNotificationSystem()
+        GlobalUtils.setAlarms(databaseHelper, applicationContext)
+        DeadlineAlarmScheduler.scheduleDailyAlarm(applicationContext)
+        checkCriticalPermissions()
+        restoreAllAlarms()
+    }
 }
 

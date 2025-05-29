@@ -184,7 +184,8 @@ class CustomAdapter(
         // 1. 绑定标题与连击天数（使用辅助函数计算当前连击）
         holder.titleText.text = habitItem.name
         val currentStreak = calculateCurrentStreak(completedDates)
-        streakText.text = "${currentStreak}天连击"
+        val canBeDone = GlobalUtils.canHabitBeDone(habitItem, habitMeta)
+        streakText.text = if (canBeDone) "${currentStreak}天连击" else "时间不足"
 
         // 2. 更新星标状态（根据 habitItem.isStared 字段）
         holder.starIcon.visibility = if (habitItem.isStared) View.VISIBLE else View.GONE
@@ -251,26 +252,25 @@ class CustomAdapter(
         monthProgress.progress = (progress * 100).toInt()
 
         progressLabel.text = when (habitMeta.frequencyType) {
-            DeadlineFrequency.TOTAL -> if (habitMeta.total != 0)
-                "总进度 ${habitItem.habitCount}/${habitMeta.total}"
-            else ""
+            DeadlineFrequency.TOTAL -> ""
             DeadlineFrequency.DAILY -> "每日进度 ${habitItem.habitCount}/${habitMeta.frequency}"
             DeadlineFrequency.WEEKLY -> "每周进度 ${habitItem.habitCount}/${habitMeta.frequency}"
             DeadlineFrequency.MONTHLY -> "每月进度 ${habitItem.habitCount}/${habitMeta.frequency}"
-        }
+        } + if (habitMeta.frequencyType != DeadlineFrequency.TOTAL) " · " else "" +
+        if (habitMeta.total != 0) "总进度 ${habitItem.habitTotalCount}/${habitMeta.total}" else ""
 
         // 6. 设置打卡按钮状态
-        val canCheckIn = (habitMeta.total != 0 && if (habitMeta.frequencyType == DeadlineFrequency.TOTAL) {
-            (habitItem.habitCount < habitMeta.total)
-        } else {
+        val canCheckIn = (habitMeta.total != 0 && if (habitMeta.frequencyType != DeadlineFrequency.TOTAL) {
             (habitItem.habitCount < habitMeta.frequency) && (completedDates.size < habitMeta.total)
-        }) || (habitMeta.total == 0)
+        } else true) || (habitMeta.total == 0) || (habitItem.habitTotalCount < habitMeta.total)
 
         val alreadyChecked = if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
-            habitItem.habitCount >= habitMeta.frequency
+            habitItem.habitTotalCount >= habitMeta.total
         } else today in completedDates
         val canPerformClick = canCheckIn && !alreadyChecked
-        checkButton.text = if (alreadyChecked) "今日已打卡" else "打卡"
+        checkButton.text = if (habitItem.habitTotalCount >= habitMeta.total)
+                "已完成" else if (alreadyChecked)
+                    "今日已打卡" else "打卡"
         checkButton.icon = if (alreadyChecked) null
         else ContextCompat.getDrawable(context, R.drawable.ic_check)
 
@@ -280,10 +280,10 @@ class CustomAdapter(
         if (selectedPositions.contains(position)) {
             constraintLayout.setBackgroundResource(R.drawable.item_background_selected)
         } else {
-            if (habitMeta.total != 0 && completedDates.size >= habitMeta.total) {
+            if (habitMeta.total != 0 && habitItem.habitTotalCount >= habitMeta.total) {
                 constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
 
-                streakText.text = "已完成"
+                streakText.text = ""
 
                 // 设置为isCompleted
                 if (!habitItem.isCompleted) {
@@ -331,7 +331,8 @@ class CustomAdapter(
         // 更新 habitCount 累计打卡次数 +1
         val updatedHabit = habitItem.copy(
             note = updatedNote,
-            habitCount = habitItem.habitCount + 1
+            habitCount = habitItem.habitCount + 1,
+            habitTotalCount = habitItem.habitTotalCount + 1
         )
 
         onCheckInGlobalListener?.onCheckInSuccessGlobal(context, updatedHabit, habitMeta)

@@ -7,6 +7,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.content.res.Resources
+import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
@@ -38,6 +40,17 @@ class LargeDeadlineWidget : AppWidgetProvider() {
         }
     }
 
+    override fun onAppWidgetOptionsChanged(
+        context: Context?,
+        appWidgetManager: AppWidgetManager?,
+        appWidgetId: Int,
+        newOptions: Bundle?
+    ) {
+        if (context != null && appWidgetManager != null)
+            updateLargeAppWidget(context, appWidgetManager, appWidgetId)
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+    }
+
     private fun refreshAllWidgets(context: Context) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val thisWidget = ComponentName(context, LargeDeadlineWidget::class.java)
@@ -62,6 +75,29 @@ internal fun updateLargeAppWidget(
     val views = RemoteViews(context.packageName, R.layout.large_deadline_widget)
     val sharedPreferences = context.getSharedPreferences("app_settings", MODE_PRIVATE)
     val direction = sharedPreferences.getBoolean("widget_progress_dir", false)
+
+    // 获取小部件选项（包含尺寸信息）
+    val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+
+    // 获取小部件最小高度（单位为dp）
+    val minHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
+
+    // 转换为像素（考虑屏幕密度）
+    val displayMetrics = context.resources.displayMetrics
+    val density = displayMetrics.density
+    val minHeightPx = (minHeightDp * density).toInt()
+
+    // 估算容器可用高度（减去添加按钮和其他元素的高度）
+    val buttonHeightPx = (60 * density).toInt()  // 添加按钮高度估算
+    val marginsPx = (16 * density).toInt()       // 安全边距
+    val containerHeightPx = minHeightPx - buttonHeightPx - marginsPx
+
+    val itemHeightPx = 36f.dpToPx()
+
+    val maxItems = when {
+        containerHeightPx <= 0 -> 0
+        else -> (containerHeightPx / itemHeightPx).coerceAtMost(10) // 最多显示10条
+    } - 1   // -1用于平衡布局
 
     // 打开 AddDDLActivity 的 PendingIntent
     val addIntent = Intent(context, AddDDLActivity::class.java).apply {
@@ -108,6 +144,7 @@ internal fun updateLargeAppWidget(
     val sorted = parsed
         .sortedWith(compareBy<ParsedDDL> { it.ddl.isStared.not() }
             .thenBy { it.remainingMillis })
+        .take(maxItems)
 
     // 动态添加每条 item
     for (item in sorted) {
@@ -148,3 +185,6 @@ internal fun updateLargeAppWidget(
 
     appWidgetManager.updateAppWidget(appWidgetId, views)
 }
+
+fun Float.dpToPx(): Int =
+    (this * Resources.getSystem().displayMetrics.density + 0.5f).toInt()

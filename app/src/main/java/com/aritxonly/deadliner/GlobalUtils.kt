@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentManager
@@ -26,6 +27,7 @@ import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
 import java.time.Instant
+import java.util.Locale
 
 object GlobalUtils {
 
@@ -215,6 +217,12 @@ object GlobalUtils {
             sharedPreferences.edit { putStringSet("custom_filter_list_selected", value) }
         }
 
+    var permissionSetupDone: Boolean
+        get() = sharedPreferences.getBoolean("permission_setup_done", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("permission_setup_done", value) }
+        }
+
     object NotificationStatusManager {
         fun markAsNotified(ddlId: Long) {
             val set = notifiedSet
@@ -402,5 +410,54 @@ object GlobalUtils {
     fun Long.toDateTimeString(): String {
         val zonedDateTime = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault())
         return zonedDateTime.toLocalDateTime().toString()
+    }
+
+    fun generateWikiForSpecificDevice(): String {
+        val manufacturer = Build.MANUFACTURER.lowercase(Locale.getDefault())
+        val brand = Build.BRAND.lowercase(Locale.getDefault())
+
+        val baseWikiUrl = "https://github.com/AritxOnly/Deadliner/wiki/%E9%80%9A%E7%9F%A5%E6%8E%A8%E9%80%81%E5%8A%9F%E8%83%BD%E7%94%A8%E6%88%B7%E6%96%87%E6%A1%A3"
+
+        Log.d("WikiGenerate", manufacturer)
+
+        return baseWikiUrl
+    }
+
+    fun generateHabitNote(frequency: Int?, total: Int?, type: DeadlineFrequency): String {
+        val typeString = when (type) {
+            DeadlineFrequency.DAILY -> "每天"
+            DeadlineFrequency.WEEKLY -> "每周"
+            DeadlineFrequency.MONTHLY -> "每月"
+            else -> "每天"
+        }
+
+        val frequencyString = (frequency?:1).toString()
+
+        val totalString = if (total == null) "不计次数" else "共计 $total 次"
+
+        return typeString + "打卡" + frequencyString + "次，" + totalString
+    }
+
+    fun canHabitBeDone(item: DDLItem, metaData: HabitMetaData): Boolean {
+        val endTime = parseDateTime(item.endTime)
+        if (endTime == null) {
+            return true
+        }
+
+        val remainingTime = Duration.between(LocalDateTime.now(), endTime).toDays()
+        val remainingTasks = metaData.total - item.habitTotalCount
+        return when (metaData.frequencyType) {
+            DeadlineFrequency.TOTAL ->
+                true
+
+            DeadlineFrequency.DAILY ->
+                (remainingTime * metaData.frequency >= remainingTasks)
+
+            DeadlineFrequency.WEEKLY ->
+                ((remainingTime / 7) * metaData.frequency >= remainingTasks)
+
+            DeadlineFrequency.MONTHLY ->
+                ((remainingTime / 30) * metaData.frequency >= remainingTasks)
+        }
     }
 }

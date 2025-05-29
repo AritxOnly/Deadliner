@@ -32,7 +32,7 @@ class DatabaseHelper private constructor(context: Context) :
         }
 
         const val DATABASE_NAME = "deadliner.db"
-        private const val DATABASE_VERSION = 7
+        private const val DATABASE_VERSION = 8
         private const val TABLE_NAME = "ddl_items"
         private const val COLUMN_ID = "id"
         private const val COLUMN_NAME = "name"
@@ -45,6 +45,7 @@ class DatabaseHelper private constructor(context: Context) :
         private const val COLUMN_IS_STARED = "is_stared"
         private const val COLUMN_TYPE = "type"
         private const val COLUMN_HABIT_COUNT = "habit_count"
+        private const val COLUMN_HABIT_TOTAL_COUNT = "habit_total_count"
         private const val COLUMN_CALENDAR_EVENT_ID = "calendar_event"
     }
 
@@ -62,6 +63,7 @@ class DatabaseHelper private constructor(context: Context) :
                 $COLUMN_IS_STARED INTEGER,
                 $COLUMN_TYPE TEXT NOT NULL,
                 $COLUMN_HABIT_COUNT INTEGER,
+                $COLUMN_HABIT_TOTAL_COUNT INTEGER,
                 $COLUMN_CALENDAR_EVENT_ID INTEGER
             )
         """.trimIndent()
@@ -103,6 +105,10 @@ class DatabaseHelper private constructor(context: Context) :
             Log.d("DatabaseHelper", "Update DB to v7")
             db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_CALENDAR_EVENT_ID INT DEFAULT -1")
         }
+        if (oldVersion < 8) {
+            Log.d("DatabaseHelper", "Update DB to v8")
+            db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_HABIT_TOTAL_COUNT INT DEFAULT 0")
+        }
     }
 
     // 插入 DDL 数据
@@ -127,6 +133,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_IS_STARED, false)
             put(COLUMN_TYPE, type.toString())
             put(COLUMN_HABIT_COUNT, 0)
+            put(COLUMN_HABIT_TOTAL_COUNT, 0)
             put(COLUMN_CALENDAR_EVENT_ID, (calendarEventId?:-1).toInt())
         }
         return db.insert(TABLE_NAME, null, values)
@@ -179,6 +186,7 @@ class DatabaseHelper private constructor(context: Context) :
                         isStared = getInt(getColumnIndexOrThrow(COLUMN_IS_STARED)).toBoolean(),
                         type = DeadlineType.fromString(getString(getColumnIndexOrThrow(COLUMN_TYPE))),
                         habitCount = getInt(getColumnIndexOrThrow(COLUMN_HABIT_COUNT)),
+                        habitTotalCount = getInt(getColumnIndexOrThrow(COLUMN_HABIT_TOTAL_COUNT)),
                         calendarEventId = parseCalendarEventId(
                             getInt(getColumnIndexOrThrow(COLUMN_CALENDAR_EVENT_ID))
                         )
@@ -212,6 +220,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_IS_STARED, item.isStared.toInt())
             put(COLUMN_TYPE, item.type.toString())
             put(COLUMN_HABIT_COUNT, item.habitCount)
+            put(COLUMN_HABIT_TOTAL_COUNT, item.habitTotalCount)
             put(COLUMN_CALENDAR_EVENT_ID, item.calendarEventId?:-1)
         }
         db.update(TABLE_NAME, values, "$COLUMN_ID = ?", arrayOf(item.id.toString()))
