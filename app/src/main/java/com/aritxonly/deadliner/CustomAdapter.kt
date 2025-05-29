@@ -20,6 +20,12 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import android.content.res.Resources
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.toJson
+import com.aritxonly.deadliner.model.updateNoteWithDate
 import java.time.temporal.ChronoUnit
 
 val Int.dp: Int
@@ -178,7 +184,8 @@ class CustomAdapter(
         // 1. 绑定标题与连击天数（使用辅助函数计算当前连击）
         holder.titleText.text = habitItem.name
         val currentStreak = calculateCurrentStreak(completedDates)
-        streakText.text = "${currentStreak}天连击"
+        val canBeDone = GlobalUtils.canHabitBeDone(habitItem, habitMeta)
+        streakText.text = if (canBeDone) "${currentStreak}天连击" else "时间不足"
 
         // 2. 更新星标状态（根据 habitItem.isStared 字段）
         holder.starIcon.visibility = if (habitItem.isStared) View.VISIBLE else View.GONE
@@ -187,11 +194,11 @@ class CustomAdapter(
         Log.d("Database", "${habitMeta.frequencyType}")
         val freqDesc = when (habitMeta.frequencyType) {
             DeadlineFrequency.DAILY ->
-                "每天${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}天"
+                "每天${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}次"
             DeadlineFrequency.WEEKLY ->
-                "每周${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}天"
+                "每周${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}次"
             DeadlineFrequency.MONTHLY ->
-                "每月${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}天"
+                "每月${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}次"
             DeadlineFrequency.TOTAL -> {
                 if (habitMeta.total == 0) "持续坚持"
                 else "共计${habitMeta.total}次"
@@ -232,7 +239,7 @@ class CustomAdapter(
         if (endTime == GlobalUtils.timeNull) {
             // 若为空，不显示
             progress = 1f
-            monthProgress.setIndicatorColor(getThemeColor(com.google.android.material.R.attr.colorControlHighlight))
+            monthProgress.setIndicatorColor(getThemeColor(android.R.attr.colorControlActivated))
         } else {
             val startTime = GlobalUtils.safeParseDateTime(habitItem.startTime)
 
@@ -245,26 +252,26 @@ class CustomAdapter(
         monthProgress.progress = (progress * 100).toInt()
 
         progressLabel.text = when (habitMeta.frequencyType) {
-            DeadlineFrequency.TOTAL -> if (habitMeta.total != 0)
-                "总进度 ${habitItem.habitCount}/${habitMeta.total}"
-            else ""
+            DeadlineFrequency.TOTAL -> ""
             DeadlineFrequency.DAILY -> "每日进度 ${habitItem.habitCount}/${habitMeta.frequency}"
             DeadlineFrequency.WEEKLY -> "每周进度 ${habitItem.habitCount}/${habitMeta.frequency}"
             DeadlineFrequency.MONTHLY -> "每月进度 ${habitItem.habitCount}/${habitMeta.frequency}"
-        }
+        } + if (habitMeta.frequencyType != DeadlineFrequency.TOTAL && habitMeta.total != 0) " · " else "" +
+        if (habitMeta.total != 0) "总进度 ${habitItem.habitTotalCount}/${habitMeta.total}" else ""
 
         // 6. 设置打卡按钮状态
-        val canCheckIn = (habitMeta.total != 0 && if (habitMeta.frequencyType == DeadlineFrequency.TOTAL) {
-            (habitItem.habitCount < habitMeta.total)
-        } else {
+        val canCheckIn = (habitMeta.total != 0 && (if (habitMeta.frequencyType != DeadlineFrequency.TOTAL) {
             (habitItem.habitCount < habitMeta.frequency) && (completedDates.size < habitMeta.total)
-        }) || (habitMeta.total == 0)
+        } else true) && (habitItem.habitTotalCount < habitMeta.total)) || (habitMeta.total == 0)
 
-        val alreadyChecked = if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
-            habitItem.habitCount >= habitMeta.frequency
-        } else today in completedDates
+        val alreadyChecked = when (habitMeta.frequencyType) {
+            DeadlineFrequency.TOTAL -> false
+            else -> habitMeta.frequency <= habitItem.habitCount
+        }
         val canPerformClick = canCheckIn && !alreadyChecked
-        checkButton.text = if (alreadyChecked) "今日已打卡" else "打卡"
+        checkButton.text = if (habitMeta.total != 0 && habitItem.habitTotalCount >= habitMeta.total)
+                "已完成" else if (alreadyChecked)
+                    "今日已打卡" else "打卡"
         checkButton.icon = if (alreadyChecked) null
         else ContextCompat.getDrawable(context, R.drawable.ic_check)
 
@@ -274,10 +281,10 @@ class CustomAdapter(
         if (selectedPositions.contains(position)) {
             constraintLayout.setBackgroundResource(R.drawable.item_background_selected)
         } else {
-            if (habitMeta.total != 0 && completedDates.size >= habitMeta.total) {
+            if (habitMeta.total != 0 && habitItem.habitTotalCount >= habitMeta.total) {
                 constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
 
-                streakText.text = "已完成"
+                streakText.text = ""
 
                 // 设置为isCompleted
                 if (!habitItem.isCompleted) {
@@ -325,7 +332,8 @@ class CustomAdapter(
         // 更新 habitCount 累计打卡次数 +1
         val updatedHabit = habitItem.copy(
             note = updatedNote,
-            habitCount = habitItem.habitCount + 1
+            habitCount = habitItem.habitCount + 1,
+            habitTotalCount = habitItem.habitTotalCount + 1
         )
 
         onCheckInGlobalListener?.onCheckInSuccessGlobal(context, updatedHabit, habitMeta)
@@ -440,8 +448,8 @@ class CustomAdapter(
                     "剩余 %.1f天".format(compactDays)
             } else {
                 if (GlobalUtils.detailDisplayMode)
-                    (if (days != 0) "${days}d " else "") +
-                    (if (hours != 0) "${hours}h " else "") +
+                    (if (days != 0) "${days}d" else "") +
+                    (if (hours != 0) "${hours}h" else "") +
                     "${minutesPart}m"
                 else
                     "%.1fd".format(compactDays)

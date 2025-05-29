@@ -89,14 +89,28 @@
 
     <ImageButton
         android:id="@+id/settingsButton"
-        android:layout_width="26dp"
-        android:layout_height="26dp"
-        android:layout_marginTop="23dp"
-        android:layout_marginEnd="18dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="8dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="18dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/circle_background_main"
         android:scaleType="centerInside"
         android:src="@drawable/ic_settings"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/cloudButton"
+        android:padding="8dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="18dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/circle_background_main"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_cloud"
+        app:layout_constraintEnd_toStartOf="@id/settingsButton"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -116,14 +130,18 @@
 
     <TextView
         android:id="@+id/excitementText"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="4dp"
+        android:gravity="start"
         android:textColor="?attr/colorOnSurface"
         android:textSize="12sp"
         android:visibility="gone"
+        android:ellipsize="end"
+        android:maxLines="1"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/cloudButton"
         app:layout_constraintTop_toBottomOf="@id/titleBar" />
 
     <com.google.android.material.tabs.TabLayout
@@ -142,6 +160,7 @@
     <!-- 虚化遮罩 -->
     <View
         android:id="@+id/bottomBlur"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="16dp"
         android:layout_gravity="bottom"
@@ -152,6 +171,7 @@
 
     <View
         android:id="@+id/bottomBarBackground"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="?attr/colorSurfaceContainer"
@@ -187,7 +207,7 @@
             android:contentDescription="@string/add_edit_deadline"
             android:fadingEdge="none"
             android:src="@drawable/ic_add"
-            app:backgroundTint="?attr/colorTertiaryContainer"
+            app:backgroundTint="?attr/colorSecondaryContainer"
             app:layout_anchor="@id/bottomAppBar" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>

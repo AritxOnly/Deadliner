@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,19 +27,29 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,14 +58,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
+import java.time.Duration
 
 // 辅助函数：判断任务是否逾期
 // 假设 endTime 格式为 "yyyy-MM-dd HH:mm"
@@ -104,13 +119,12 @@ class OverviewActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        super.onCreate(savedInstanceState)
 
         val appColorScheme = intent.getParcelableExtra<AppColorScheme>("EXTRA_APP_COLOR_SCHEME")
             ?: throw IllegalArgumentException("Missing AppColorScheme")
-
-        setSystemBarColors(appColorScheme.surface, isLightColor(appColorScheme.surface), appColorScheme.surface)
 
         val databaseHelper = DatabaseHelper.getInstance(applicationContext)
 
@@ -136,10 +150,6 @@ class OverviewActivity : ComponentActivity() {
                     .toList()
                     .sortedBy { timeBucketOrder[it.first] ?: Int.MAX_VALUE }
 
-                Scaffold(modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(appColorScheme.surface))
-                ) { innerPadding ->
                     OverviewScreen(
                         activeStats = mapOf(
                             "已完成" to completedItems.size,
@@ -156,49 +166,8 @@ class OverviewActivity : ComponentActivity() {
                     ) {
                         finish()
                     }
-                }
             }
         }
-    }
-
-    /**
-     * 设置状态栏和导航栏颜色及图标颜色
-     */
-    private fun setSystemBarColors(color: Int, lightIcons: Boolean, colorNavigationBar: Int) {
-        window.apply {
-            addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = color
-            navigationBarColor = colorNavigationBar
-
-            // 设置状态栏图标颜色
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                )
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                decorView.systemUiVisibility = if (lightIcons) {
-                    decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                } else {
-                    decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-                }
-            }
-        }
-    }
-
-    /**
-     * 判断颜色是否为浅色
-     */
-    private fun isLightColor(color: Int): Boolean {
-        val darkness = 1 - (0.299 * ((color shr 16 and 0xFF) / 255.0) +
-                0.587 * ((color shr 8 and 0xFF) / 255.0) +
-                0.114 * ((color and 0xFF) / 255.0))
-        return darkness < 0.5
     }
 }
 
@@ -222,28 +191,65 @@ fun OverviewScreen(
     colorScheme: AppColorScheme,
     onClose: () -> Unit
 ) {
+    val expressiveTypeModifier = Modifier
+        .size(40.dp)
+        .clip(CircleShape)
+        .background(Color(colorScheme.surfaceContainer), CircleShape)
+        .padding(8.dp)
+
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+
+    val fraction by remember {
+        derivedStateOf { scrollBehavior.state.collapsedFraction }
+    }
+
+    val isCollapsed = fraction > 0.5f
+
+    val titleStyle = if (isCollapsed) {
+        MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
+    } else {
+        MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
+    }
+
     Scaffold(
-        containerColor = Color(colorScheme.surface),
-        modifier = Modifier.background(Color(colorScheme.surface)),
+        containerColor = Color.Transparent,
+        contentColor = contentColorFor(Color.Transparent),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                title = { Text("概览", color = Color(colorScheme.onSurface)) },
+            LargeTopAppBar(
+                title = { Text(
+                    "概览",
+                    color = Color(colorScheme.onSurface),
+                    style = titleStyle
+                ) },
                 navigationIcon = {
-                    IconButton(onClick = onClose) {
+                    IconButton(
+                        onClick = onClose,
+                    ) {
                         Icon(
-                            Icons.Default.ArrowBack,
+                            painterResource(R.drawable.ic_back),
                             contentDescription = "关闭",
-                            tint = Color(colorScheme.onSurface)
+                            tint = Color(colorScheme.onSurface),
+                            modifier = expressiveTypeModifier
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = Color(colorScheme.surface),
+                    scrolledContainerColor = Color(colorScheme.surface)
+                ),
+                modifier = Modifier
+                    .background(Color(colorScheme.surface))
+                    .padding(horizontal = 8.dp),
+                scrollBehavior = scrollBehavior
             )
         }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
-                .background(Color(colorScheme.surface)),
+                .background(Color(colorScheme.surface))
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
             verticalArrangement = Arrangement.spacedBy((-8).dp)
         ) {
             item {
@@ -488,7 +494,15 @@ fun OverviewPreview() {
                 primaryContainer = MaterialTheme.colorScheme.primaryContainer.toArgb(),
                 surface = MaterialTheme.colorScheme.surface.toArgb(),
                 onSurface = MaterialTheme.colorScheme.onSurface.toArgb(),
-                surfaceContainer = MaterialTheme.colorScheme.surfaceContainer.toArgb()
+                surfaceContainer = MaterialTheme.colorScheme.surfaceContainer.toArgb(),
+                secondary = MaterialTheme.colorScheme.secondary.toArgb(),
+                onSecondary = MaterialTheme.colorScheme.onSecondary.toArgb(),
+                secondaryContainer = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
+                onSecondaryContainer = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
+                tertiary = MaterialTheme.colorScheme.tertiary.toArgb(),
+                onTertiary = MaterialTheme.colorScheme.onTertiary.toArgb(),
+                tertiaryContainer = MaterialTheme.colorScheme.tertiaryContainer.toArgb(),
+                onTertiaryContainer = MaterialTheme.colorScheme.onTertiaryContainer.toArgb(),
             )
         ) {}
     }

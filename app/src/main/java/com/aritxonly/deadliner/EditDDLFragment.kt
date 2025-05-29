@@ -2,24 +2,29 @@ package com.aritxonly.deadliner
 
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.util.TypedValue
 import android.view.*
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.DialogFragment
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.toJson
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import javax.microedition.khronos.opengles.GL
 
 class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLItem) -> Unit) : DialogFragment() {
 
@@ -174,7 +179,7 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
                             completedDates = setOf(),
                             frequencyType = frequencyType,
                             frequency = frequency,
-                            total = total?:0,
+                            total = total ?: 0,
                             refreshDate = LocalDate.now().toString()
                         ).toJson(),
                         type = DeadlineType.HABIT
@@ -245,7 +250,7 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
      * 格式化 LocalDateTime 为字符串
      */
     private fun formatLocalDateTime(dateTime: LocalDateTime): String {
-        val formatter = DateTimeFormatter.ofPattern("MM月dd日 HH:mm", Locale.CHINA)
+        val formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm", Locale.CHINA)
         return dateTime.format(formatter)
     }
 

@@ -3,6 +3,7 @@ package com.aritxonly.deadliner
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
@@ -11,6 +12,8 @@ import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineType
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -23,6 +26,24 @@ class MultiDeadlineWidget : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+        when (intent.action) {
+            Intent.ACTION_MY_PACKAGE_REPLACED, // 应用升级（覆盖安装）
+            Intent.ACTION_CONFIGURATION_CHANGED, // 设置改变
+            Intent.ACTION_BOOT_COMPLETED -> {  // 开机后
+                refreshAllWidgets(context)
+            }
+        }
+    }
+
+    private fun refreshAllWidgets(context: Context) {
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val thisWidget = ComponentName(context, MultiDeadlineWidget::class.java)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
+        onUpdate(context, appWidgetManager, appWidgetIds)
     }
 
     companion object {

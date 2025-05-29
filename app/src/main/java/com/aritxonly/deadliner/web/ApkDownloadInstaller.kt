@@ -7,8 +7,6 @@ import android.net.Uri
 import android.os.*
 import android.util.Log
 import android.view.LayoutInflater
-import android.widget.Button
-import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider

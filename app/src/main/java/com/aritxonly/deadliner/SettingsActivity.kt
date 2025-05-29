@@ -2,27 +2,29 @@ package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
-import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings.Global
 import android.text.Html
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
-import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.transition.Explode
-import androidx.transition.Slide
-import androidx.transition.Visibility
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.children
+import androidx.core.view.updatePadding
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -32,6 +34,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.slider.Slider
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -51,12 +57,25 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var buttonIssues: MaterialButton
     private lateinit var versionNumber: TextView
     private lateinit var aboutCard: MaterialCardView
-    private lateinit var toggleGroupArchiveTime: MaterialButtonToggleGroup
 
     private lateinit var switchDetailDisplayMode: MaterialSwitch
+    private lateinit var switchNearbyTasksBadge: MaterialSwitch
 
     private lateinit var buttonImport: MaterialButton
     private lateinit var buttonExport: MaterialButton
+
+    private lateinit var buttonCancelAll: MaterialButton
+    private lateinit var settingsAdvanced: TextView
+    private lateinit var settingsAdvancedCard: MaterialCardView
+
+    private lateinit var buttonShowIntroPage: MaterialButton
+    private lateinit var buttonCloudSyncServer: MaterialButton
+    private lateinit var buttonCustomFilterList: MaterialButton
+
+    private lateinit var switchHideFromRecent: MaterialSwitch
+    private lateinit var switchExperimentalEdgeToEdge: MaterialSwitch
+
+    private lateinit var sliderArchiveTime: Slider
 
     private var resetTimes = 0
 
@@ -71,11 +90,26 @@ class SettingsActivity : AppCompatActivity() {
 
         DynamicColors.applyToActivityIfAvailable(this)
 
+        if (GlobalUtils.experimentalEdgeToEdge) {
+            enableEdgeToEdge()
+
+            val rootView = findViewById<LinearLayout>(R.id.mainSettings)
+            ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
+                val statusBarInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+
+                view.updatePadding(top = statusBarInset)
+
+                WindowInsetsCompat.CONSUMED
+            }
+        }
+
         // 获取主题中的 colorSurface 值
         val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
 
         // 设置状态栏和导航栏颜色
         setSystemBarColors(colorSurface, isLightColor(colorSurface))
+
+        GlobalUtils.decideHideFromRecent(this, this@SettingsActivity)
 
         // 初始化控件
         switchVibration = findViewById(R.id.switchVibration)
@@ -86,15 +120,29 @@ class SettingsActivity : AppCompatActivity() {
         switchMotivationalQuotes = findViewById(R.id.switchMotivationalQuotes)
         switchFireworksOnFinish = findViewById(R.id.switchFireworksOnFinish)
         switchDetailDisplayMode = findViewById(R.id.switchDetailDisplayMode)
+        switchNearbyTasksBadge = findViewById(R.id.switchNearbyTasksBadge)
+        switchHideFromRecent = findViewById(R.id.switchHideFromRecent)
+        switchExperimentalEdgeToEdge = findViewById(R.id.switchExperimentalEdgeToEdge)
         buttonAuthorPage = findViewById(R.id.buttonAuthorPage)
         buttonHomePage = findViewById(R.id.buttonHomePage)
         buttonIssues = findViewById(R.id.buttonIssues)
         versionNumber = findViewById(R.id.versionNumber)
         aboutCard = findViewById(R.id.aboutCard)
-        toggleGroupArchiveTime = findViewById(R.id.toggleGroupArchiveTime)
 
         buttonImport = findViewById(R.id.buttonImport)
         buttonExport = findViewById(R.id.buttonExport)
+
+        buttonCancelAll = findViewById(R.id.buttonCancelAll)
+        settingsAdvanced = findViewById(R.id.settingsAdvanced)
+        settingsAdvancedCard = findViewById(R.id.settingsAdvancedCard)
+
+        buttonShowIntroPage = findViewById(R.id.buttonShowIntroPage)
+        buttonCloudSyncServer = findViewById(R.id.buttonCloudSyncServer)
+        buttonCustomFilterList = findViewById(R.id.buttonCustomFilterList)
+
+        sliderArchiveTime = findViewById(R.id.sliderArchiveTime)
+
+        decideToShowAdvancedMode()
 
         switchVibration.isChecked = GlobalUtils.vibration
         switchProgressDir.isChecked = GlobalUtils.progressDir
@@ -104,6 +152,9 @@ class SettingsActivity : AppCompatActivity() {
         switchMotivationalQuotes.isChecked = GlobalUtils.motivationalQuotes
         switchFireworksOnFinish.isChecked = GlobalUtils.fireworksOnFinish
         switchDetailDisplayMode.isChecked = GlobalUtils.detailDisplayMode
+        switchNearbyTasksBadge.isChecked = GlobalUtils.nearbyTasksBadge
+        switchHideFromRecent.isChecked = GlobalUtils.hideFromRecent
+        switchExperimentalEdgeToEdge.isChecked = GlobalUtils.experimentalEdgeToEdge
 
         // 监听开关状态变化并保存设置
         switchVibration.setOnCheckedChangeListener { _, isChecked ->
@@ -120,10 +171,28 @@ class SettingsActivity : AppCompatActivity() {
 
         switchDeadlineNotification.setOnCheckedChangeListener { _, isChecked ->
             GlobalUtils.deadlineNotification = isChecked
+            if (!isChecked) {
+                DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
+                GlobalUtils.NotificationStatusManager.clearAllNotified()
+            } else {
+                Log.d("AlarmDebug", "Reached Here")
+                GlobalUtils.setAlarms(DatabaseHelper.getInstance(applicationContext), applicationContext)
+            }
         }
 
         switchDailyStatsNotification.setOnCheckedChangeListener { _, isChecked ->
             GlobalUtils.dailyStatsNotification = isChecked
+            if (isChecked) {
+                showDailyTimePicker()
+            } else {
+                DeadlineAlarmScheduler.cancelDailyAlarm(applicationContext)
+            }
+        }
+        switchDailyStatsNotification.setOnLongClickListener {
+            if (GlobalUtils.dailyStatsNotification) {
+                showDailyTimePicker()
+            }
+            true
         }
 
         switchMotivationalQuotes.setOnCheckedChangeListener { _, isChecked ->
@@ -136,6 +205,72 @@ class SettingsActivity : AppCompatActivity() {
 
         switchDetailDisplayMode.setOnCheckedChangeListener { _, isChecked ->
             GlobalUtils.detailDisplayMode = isChecked
+        }
+
+        switchNearbyTasksBadge.setOnCheckedChangeListener { _, isChecked ->
+            GlobalUtils.nearbyTasksBadge = isChecked
+            if (isChecked) {
+                val options = arrayOf("数字角标", "圆点角标")
+                var selectedItem = 0
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.alert_select_badge_type)
+                    .setSingleChoiceItems(options, selectedItem) { dialog, which ->
+                        selectedItem = which
+                    }
+                    .setPositiveButton(R.string.accept) { dialog, which ->
+                        if (selectedItem != -1) {
+                            when (selectedItem) {
+                                0 -> GlobalUtils.nearbyDetailedBadge = true
+                                else -> GlobalUtils.nearbyDetailedBadge = false
+                            }
+                        }
+                    }
+                    .setNegativeButton(R.string.cancel) { dialog, which ->
+                        GlobalUtils.nearbyTasksBadge = false
+                        switchNearbyTasksBadge.isChecked = false
+                    }
+                    .show()
+            }
+        }
+        switchNearbyTasksBadge.setOnLongClickListener {
+            if (GlobalUtils.nearbyTasksBadge) {
+                val options = arrayOf("数字角标", "圆点角标")
+                var selectedItem = 0
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.alert_select_badge_type)
+                    .setSingleChoiceItems(options, selectedItem) { dialog, which ->
+                        selectedItem = which
+                    }
+                    .setPositiveButton(R.string.accept) { dialog, which ->
+                        if (selectedItem != -1) {
+                            when (selectedItem) {
+                                0 -> GlobalUtils.nearbyDetailedBadge = true
+                                else -> GlobalUtils.nearbyDetailedBadge = false
+                            }
+                        }
+                    }
+                    .setNegativeButton(R.string.cancel) { dialog, which ->
+
+                    }
+                    .show()
+            }
+            true
+        }
+
+        switchHideFromRecent.setOnCheckedChangeListener { _, isChecked ->
+            GlobalUtils.hideFromRecent = isChecked
+            GlobalUtils.decideHideFromRecent(this, this@SettingsActivity)
+        }
+
+        switchExperimentalEdgeToEdge.setOnCheckedChangeListener { _, isChecked ->
+            GlobalUtils.experimentalEdgeToEdge = isChecked
+            MaterialAlertDialogBuilder(this)
+                .setMessage("导入成功，需要重启应用生效")
+                .setPositiveButton("立即重启") { _, _ ->
+                    restartApp()
+                }
+                .setNegativeButton("稍后", null)
+                .show()
         }
 
         // 设置超链接按钮点击事件
@@ -166,52 +301,156 @@ class SettingsActivity : AppCompatActivity() {
                 ).show()
                 return@setOnClickListener
             }
+            val hint = if (GlobalUtils.developerMode) "关闭" else "打开"
             resetTimes++
             when (resetTimes) {
                 in 2..4 -> {
-                    Snackbar.make(
-                        aboutCard,
-                        "再点击${5 - resetTimes}次即可在下次打开时显示欢迎页面",
-                        Snackbar.LENGTH_SHORT
+                    Toast.makeText(
+                        this,
+                        "再点击${5 - resetTimes}次即可${hint}高级模式",
+                        Toast.LENGTH_SHORT
                     ).show()
                 }
                 5 -> {
-                    Snackbar.make(
-                        aboutCard,
-                        "下次打开Deadliner将显示欢迎页面",
-                        Snackbar.LENGTH_SHORT
+                    Toast.makeText(
+                        this,
+                        "高级模式已${hint}",
+                        Toast.LENGTH_SHORT
                     ).show()
-                    GlobalUtils.showIntroPage = true
+                    GlobalUtils.developerMode = !GlobalUtils.developerMode
                     resetTimes = 0
+
+                    decideToShowAdvancedMode()
                 }
             }
         }
 
-        toggleGroupArchiveTime.check(hashButton())
-        toggleGroupArchiveTime.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                GlobalUtils.autoArchiveTime = deHashButton(checkedId)
-                Log.d("GlobalUtils", "${deHashButton(checkedId)}")
-            }
+        sliderArchiveTime.value = GlobalUtils.autoArchiveTime.toFloat()
+        sliderArchiveTime.addOnChangeListener { _, value, _ ->
+            GlobalUtils.autoArchiveTime = value.toInt()
         }
 
         val appVersionString = """
             <strong>Deadliner</strong> ${packageManager.getPackageInfo(packageName, 0).versionName}<br>
             By Author <strong>Aritx Zhou</strong>
         """.trimIndent()
-        versionNumber.setText(Html.fromHtml(appVersionString))
+        versionNumber.text = Html.fromHtml(appVersionString)
 
         val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
         toolbar.setNavigationOnClickListener {
             finishAfterTransition() // 返回上一个界面
         }
+        // Material You Expressive Style BUTTON
+        toolbar.post {
+            val navDrawable = toolbar.navigationIcon ?: return@post
+            val navButton = toolbar.children
+                .firstOrNull { (it as? ImageView)?.drawable == navDrawable }
+                ?: return@post
+
+            val sizeDp = 40
+            val density = navButton.resources.displayMetrics.density
+            val sizePx = (sizeDp * density).toInt()
+
+            val lp = navButton.layoutParams
+                .also {
+                    it.width = sizePx
+                    it.height = sizePx
+                }
+            navButton.layoutParams = lp
+
+            val paddingDp = 8
+            val padPx = (paddingDp * density).toInt()
+            navButton.setPadding(padPx, padPx, padPx, padPx)
+
+            navButton.background = ContextCompat.getDrawable(this, R.drawable.circle_background_main)
+
+            navButton.requestLayout()
+        }
 
         buttonImport.setOnClickListener {
+            DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
+            GlobalUtils.NotificationStatusManager.clearAllNotified()
+            Toast.makeText(this, "已成功销毁所有闹钟时间", Toast.LENGTH_SHORT).show()
             openBackup()
         }
 
         buttonExport.setOnClickListener {
             createBackup()
+        }
+
+        buttonCancelAll.setOnClickListener {
+            DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
+            GlobalUtils.NotificationStatusManager.clearAllNotified()
+            Toast.makeText(this, "已成功销毁所有闹钟时间", Toast.LENGTH_SHORT).show()
+        }
+
+        buttonShowIntroPage.setOnClickListener {
+            GlobalUtils.showIntroPage = true
+        }
+
+        buttonCloudSyncServer.setOnClickListener {
+        }
+
+        buttonCustomFilterList.setOnClickListener {
+            // 原始数据源
+            val allItems = GlobalUtils.customCalendarFilterList?.filterNotNull()?.toMutableList() ?: mutableListOf()
+            // 用户当前选中的
+            val selectedItems = GlobalUtils.customCalendarFilterListSelected?.filterNotNull()?.toMutableSet() ?: allItems.toMutableSet()
+
+            fun showFilterDialog() {
+                val itemsArray = allItems.toTypedArray()
+                val checkedArray = BooleanArray(itemsArray.size) { index ->
+                    // 默认已选中 current selection（如果第一次打开且 selectedItems 为空，则默认全选）
+                    if (selectedItems.isEmpty()) true
+                    else selectedItems.contains(itemsArray[index])
+                }
+
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("请选择要显示的日历过滤器")
+                    .setMultiChoiceItems(itemsArray, checkedArray) { _, which, isChecked ->
+                        val item = itemsArray[which]
+                        if (isChecked) selectedItems.add(item)
+                        else selectedItems.remove(item)
+                    }
+                    .setNeutralButton("添加项") { dialog, _ ->
+                        dialog.dismiss()
+                        // 弹出输入框，添加新选项
+                        val inputLayout = TextInputLayout(this).apply {
+                            hint = "新过滤器名称"
+                            setPadding(32, 0, 32, 0)
+                        }
+                        val editText = TextInputEditText(inputLayout.context)
+                        inputLayout.addView(editText)
+
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle("新增过滤器")
+                            .setView(inputLayout)
+                            .setPositiveButton("确定") { subDialog, _ ->
+                                val newItem = editText.text?.toString()?.trim()
+                                if (!newItem.isNullOrEmpty() && !allItems.contains(newItem)) {
+                                    // 更新数据源和选中集
+                                    allItems.add(newItem)
+                                    selectedItems.add(newItem)
+                                    GlobalUtils.customCalendarFilterList = allItems.toSet()
+                                    GlobalUtils.customCalendarFilterListSelected = selectedItems.toSet()
+                                }
+                                subDialog.dismiss()
+                                // 重新打开主多选框
+                                showFilterDialog()
+                            }
+                            .setNegativeButton("取消", null)
+                            .show()
+                    }
+                    .setPositiveButton("确认") { dialog, _ ->
+                        GlobalUtils.customCalendarFilterListSelected = selectedItems.toSet()
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
+
+            // 首次打开
+            showFilterDialog()
         }
     }
 
@@ -224,21 +463,15 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun hashButton() : Int {
-        when (GlobalUtils.autoArchiveTime) {
-            1 -> return R.id.button1Day
-            3 -> return R.id.button3Day
-            7 -> return R.id.button7Day
-            else -> throw Exception("Hash button Error")
-        }
-    }
-
-    private fun deHashButton(buttonId: Int): Int {
-        when (buttonId) {
-            R.id.button1Day -> return 1
-            R.id.button3Day -> return 3
-            R.id.button7Day -> return 7
-            else -> throw Exception("DeHash button Error")
+    private fun decideToShowAdvancedMode() {
+        if (GlobalUtils.developerMode) {
+            buttonCancelAll.visibility = View.VISIBLE
+            settingsAdvanced.visibility = View.VISIBLE
+            settingsAdvancedCard.visibility = View.VISIBLE
+        } else {
+            buttonCancelAll.visibility = View.GONE
+            settingsAdvanced.visibility = View.GONE
+            settingsAdvancedCard.visibility = View.GONE
         }
     }
 
@@ -353,10 +586,33 @@ class SettingsActivity : AppCompatActivity() {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
+    private fun showDailyTimePicker() {
+        val currentHour = GlobalUtils.dailyNotificationHour
+        val currentMinute = GlobalUtils.dailyNotificationMinute
+        val picker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_24H)
+            .setHour(currentHour)
+            .setMinute(currentMinute)
+            .setTitleText("选择每日通知时间")
+            .build()
+
+        picker.addOnPositiveButtonClickListener {
+            val selectedHour = picker.hour
+            val selectedMinute = picker.minute
+            GlobalUtils.dailyNotificationHour = selectedHour
+            GlobalUtils.dailyNotificationMinute = selectedMinute
+            DeadlineAlarmScheduler.scheduleDailyAlarm(applicationContext)
+        }
+
+        picker.show(supportFragmentManager, "daily_time_picker")
+    }
+
     /**
      * 设置状态栏和导航栏颜色及图标颜色
      */
     private fun setSystemBarColors(color: Int, lightIcons: Boolean) {
+        if (GlobalUtils.experimentalEdgeToEdge) return
+
         window.apply {
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             statusBarColor = color

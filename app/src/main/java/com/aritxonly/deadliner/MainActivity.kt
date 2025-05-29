@@ -1,7 +1,6 @@
 package com.aritxonly.deadliner
 
 import ApkDownloaderInstaller
-import android.animation.AnimatorInflater
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
@@ -11,33 +10,31 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.content.res.Resources
+import android.content.pm.PackageManager
 import android.graphics.*
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.Settings
 import android.text.Editable
 import android.text.Spanned
 import android.text.TextWatcher
 import android.util.Log
 import android.util.TypedValue
-import android.view.GestureDetector
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
-import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -48,6 +45,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -59,7 +57,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
 import androidx.work.*
-import androidx.work.PeriodicWorkRequestBuilder
+import com.aritxonly.deadliner.notification.NotificationUtil
+import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomappbar.BottomAppBar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.DynamicColors
@@ -67,12 +66,12 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.noties.markwon.Markwon
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import nl.dionsegijn.konfetti.xml.KonfettiView
 import okhttp3.Call
@@ -86,8 +85,32 @@ import org.json.JSONArray
 import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.concurrent.TimeUnit
-import kotlin.math.abs
+import android.Manifest
+import android.app.AlertDialog
+import android.app.Dialog
+import android.content.DialogInterface
+import android.content.res.Resources
+import android.view.ViewGroup
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Button
+import android.widget.ViewFlipper
+import androidx.activity.enableEdgeToEdge
+import com.aritxonly.deadliner.web.WebUtils
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.shape.MaterialShapeDrawable
+import androidx.core.graphics.toColorInt
+import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
+import androidx.core.view.updatePadding
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.HabitMetaData
+import com.google.android.material.loadingindicator.LoadingIndicator
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -124,6 +147,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var viewHolderWithAppBar: View
     private lateinit var viewHolderWithNoAppBar: View
 
+    private lateinit var cloudButton: ImageButton
+
     private val handler = Handler(Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
         override fun run() {
@@ -144,16 +169,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         )
     }
 
-    // 定义权限请求启动器
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            Toast.makeText(this, "通知权限已授予", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "通知权限被拒绝，请在设置中手动开启", Toast.LENGTH_SHORT).show()
-        }
-    }
+    private lateinit var materialColorScheme: AppColorScheme
+    private var dialogFlipper: ViewFlipper? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 跟随主题色
@@ -162,13 +179,63 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        if (GlobalUtils.experimentalEdgeToEdge) {
+            enableEdgeToEdge()
+
+            val rootView = findViewById<ConstraintLayout>(R.id.main)
+            ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
+                val statusBarInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+                val navBarInset    = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+
+                view.updatePadding(top = statusBarInset)
+
+                bottomAppBar.updatePadding(bottom = navBarInset)
+
+                val TAG_ORIG_MARGIN = R.id.addEvent // 任意一个不会冲突的 id
+                if (addEventButton.getTag(TAG_ORIG_MARGIN) == null) {
+                    val lp = addEventButton.layoutParams as ViewGroup.MarginLayoutParams
+                    addEventButton.setTag(TAG_ORIG_MARGIN, lp.bottomMargin)
+                }
+
+                // 2. 每次都按「原始 + inset/2」来设置
+                val originalMargin = addEventButton.getTag(TAG_ORIG_MARGIN) as Int
+                addEventButton.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    bottomMargin = originalMargin + navBarInset / 2
+                }
+
+                WindowInsetsCompat.CONSUMED
+            }
+        }
+
+        DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
+        DeadlineAlarmScheduler.cancelDailyAlarm(applicationContext)
+
+        materialColorScheme = AppColorScheme(
+            primary = getThemeColor(androidx.appcompat.R.attr.colorPrimary),
+            onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+            primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
+            surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
+            onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
+            surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer),
+            secondary = getMaterialThemeColor(com.google.android.material.R.attr.colorSecondary),
+            onSecondary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSecondary),
+            secondaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSecondaryContainer),
+            onSecondaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSecondaryContainer),
+            tertiary = getMaterialThemeColor(com.google.android.material.R.attr.colorTertiary),
+            onTertiary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnTertiary),
+            tertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorTertiaryContainer),
+            onTertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorOnTertiaryContainer),
+        )
+
 //        DynamicColors.applyToActivitiesIfAvailable(application)
 
         DynamicColors.applyToActivityIfAvailable(this)
 
+        GlobalUtils.decideHideFromRecent(this, this@MainActivity)
+
         // 获取主题中的 colorSurface 值
-        val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
-        val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
+        val colorSurface = materialColorScheme.surface
+        val colorContainer = materialColorScheme.surfaceContainer
 
         Log.d("MainActivity", "colorSurface ${colorSurface.toHexString()}")
         // 设置状态栏和导航栏颜色
@@ -212,17 +279,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                 pauseRefresh = true
 
-                val myColorScheme = AppColorScheme(
-                    primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
-                    onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                    primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
-                    surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
-                    onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
-                    surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
-                )
-
                 val intent = DeadlineDetailActivity.newIntent(this@MainActivity, clickedItem).apply {
-                    putExtra("EXTRA_APP_COLOR_SCHEME", myColorScheme)
+                    putExtra("EXTRA_APP_COLOR_SCHEME", materialColorScheme)
                 }
                 startActivity(intent)
                 pauseRefresh = false
@@ -231,6 +289,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         adapter.multiSelectListener = object : CustomAdapter.MultiSelectListener {
             override fun onSelectionChanged(selectedCount: Int) {
+                showBottomBar()
                 switchAppBarStatus(selectedCount == 0)
                 if (selectedCount != 0) {
                     excitementText.text = "已选中 $selectedCount 项 Deadline"
@@ -267,7 +326,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         viewHolderWithAppBar
                     else viewHolderWithNoAppBar
 
-                Snackbar.make(snackBarParent, "打卡成功 🎉", Snackbar.LENGTH_LONG)
+                val snackbar = Snackbar.make(snackBarParent, "打卡成功 🎉", Snackbar.LENGTH_LONG)
                     .setAction("撤销") {
                         val todayStr = LocalDate.now().toString()
                         // 解析 note JSON
@@ -287,7 +346,18 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         )
                         databaseHelper.updateDDL(revertedHabit)
                         viewModel.loadData(currentType)
-                    }.show()
+                    }.setAnchorView(bottomAppBar)
+
+                val bg = snackbar.view.background
+                if (bg is MaterialShapeDrawable) {
+                    snackbar.view.background = bg.apply {
+                        shapeAppearanceModel = shapeAppearanceModel
+                            .toBuilder()
+                            .setAllCornerSizes(16f.dpToPx())
+                            .build()
+                    }
+                }
+                snackbar.show()
             }
         }
 
@@ -351,15 +421,17 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 val itemView = viewHolder.itemView
                 val itemHeight = itemView.bottom - itemView.top
 
+                val horizontalPadding = 4f.dpToPx()
+
                 if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
                     val path = Path()
 
                     // 左滑：绘制低饱和度红色背景和🗑图标
                     if (dX < 0) {
-                        paint.color = Color.parseColor("#FFEBEE") // 低饱和度红色
+                        paint.color = "#FFEBEE".toColorInt() // 低饱和度红色
 
                         val background = RectF(
-                            itemView.right + dX,
+                            itemView.right + dX + horizontalPadding,
                             itemView.top.toFloat(),
                             itemView.right.toFloat(),
                             itemView.bottom.toFloat()
@@ -381,12 +453,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                     // 右滑：绘制低饱和度绿色背景和✅图标
                     if (dX > 0) {
-                        paint.color = Color.parseColor("#E8F5E9") // 低饱和度绿色
+                        paint.color = "#E8F5E9".toColorInt() // 低饱和度绿色
 
                         val background = RectF(
                             itemView.left.toFloat(),
                             itemView.top.toFloat(),
-                            itemView.left + dX,
+                            itemView.left + dX - horizontalPadding,
                             itemView.bottom.toFloat()
                         )
 
@@ -439,9 +511,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 检查鼓励语句开关状态
         updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
 
-        // 设置通知定时任务
-        updateNotification(GlobalUtils.deadlineNotification)
-
         /* v2.0 added */
         bottomAppBar = findViewById(R.id.bottomAppBar)
         bottomBarContainer = findViewById(R.id.bottomBarContainer)
@@ -478,17 +547,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         bottomAppBar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.chart -> {
-                    val myColorScheme = AppColorScheme(
-                        primary = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
-                        onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                        primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
-                        surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
-                        onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
-                        surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainerLow)
-                    )
-                    Log.d("MainActivity", "surface=${myColorScheme.surface.toHexString()}")
 
-                    val intent = OverviewActivity.newIntent(this, myColorScheme)
+                    val intent = OverviewActivity.newIntent(this, materialColorScheme)
 
                     startActivity(intent)
                     true
@@ -547,6 +607,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 for (position in positionsToDelete) {
                                     val item = adapter.itemList[position]
                                     databaseHelper.deleteDDL(item.id)
+                                    DeadlineAlarmScheduler.cancelAlarm(applicationContext, item.id)
                                 }
                                 viewModel.loadData(currentType)
                                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
@@ -694,30 +755,50 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         bottomBarBackground = findViewById(R.id.bottomBarBackground)
 
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            private var scrolledDistance = 0
+            private var accumulatedDy = 0
+            private var lastDirection = 0 // 0: 初始, 1: 向下, -1: 向上
+            private val scrollThreshold = 20 // 触发阈值
 
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
 
-                scrolledDistance += dy
+                if (dy == 0) return
 
-                if (scrolledDistance > 20 && isBottomBarVisible) {
-                    hideBottomBar()
-                    isBottomBarVisible = false
-                    scrolledDistance = 0
-                } else if (scrolledDistance < -20 && !isBottomBarVisible) {
-                    showBottomBar()
-                    isBottomBarVisible = true
-                    scrolledDistance = 0
+                val currentDirection = if (dy > 0) 1 else -1
+
+                // 方向变化时重置累计距离
+                if (currentDirection != lastDirection) {
+                    accumulatedDy = 0
+                    lastDirection = currentDirection
+                }
+
+                // 累计滚动距离（取绝对值）
+                accumulatedDy += Math.abs(dy)
+
+                // 达到阈值时执行操作
+                if (accumulatedDy >= scrollThreshold) {
+                    if (currentDirection == 1) { // 向下滚动
+                        if (isBottomBarVisible && !adapter.isMultiSelectMode) {
+                            hideBottomBar()
+                            isBottomBarVisible = false
+                        }
+                    } else { // 向上滚动
+                        if (!isBottomBarVisible && !adapter.isMultiSelectMode) {
+                            showBottomBar()
+                            isBottomBarVisible = true
+                        }
+                    }
+                    accumulatedDy = 0 // 重置累计距离防止重复触发
                 }
             }
         })
 
         dataOverlay = findViewById(R.id.dataOverlay)
         refreshIndicator = findViewById(R.id.refreshIndicator)
+        cloudButton = findViewById(R.id.cloudButton)
 
         swipeRefreshLayout.setColorSchemeColors(
-            getMaterialThemeColor(com.google.android.material.R.attr.colorPrimary),
+            getThemeColor(androidx.appcompat.R.attr.colorPrimary),
             getMaterialThemeColor(com.google.android.material.R.attr.colorSecondary),
             getMaterialThemeColor(com.google.android.material.R.attr.colorTertiary)
         )
@@ -754,9 +835,46 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             recyclerView.smoothScrollToPosition(0)
         }
 
+        decideCloudStatus()
+        cloudButton.setOnClickListener {
+            val dialogView = layoutInflater.inflate(R.layout.dialog_cloud_settings, null)
+            val switch = dialogView.findViewById<MaterialSwitch>(R.id.cloudSwitch)
+            val inputServer = dialogView.findViewById<TextInputEditText>(R.id.inputServer)
+            val inputPort = dialogView.findViewById<TextInputEditText>(R.id.inputPort)
+            val inputToken = dialogView.findViewById<TextInputEditText>(R.id.inputToken)
+
+            // 初始化值
+            switch.isChecked = GlobalUtils.cloudSyncEnable
+            inputServer.setText(GlobalUtils.cloudSyncServer ?: "")
+            inputPort.setText(GlobalUtils.cloudSyncPort.toString())
+            inputToken.setText(GlobalUtils.cloudSyncConstantToken ?: "")
+
+            MaterialAlertDialogBuilder(this@MainActivity)
+                .setTitle("云服务设置")
+                .setView(dialogView)
+                .setPositiveButton(R.string.save) { _, _ ->
+                    GlobalUtils.cloudSyncEnable = switch.isChecked
+                    GlobalUtils.cloudSyncServer = inputServer.text?.toString()
+                    GlobalUtils.cloudSyncPort = inputPort.text?.toString()?.toIntOrNull()?:5000
+                    GlobalUtils.cloudSyncConstantToken = inputToken.text?.toString()
+                    WebUtils.init()
+                    decideCloudStatus()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+
+        addEventButton.stateListAnimator = null
+
         setupTabs()
 
         checkForUpdates()
+
+        if (!GlobalUtils.permissionSetupDone) {
+            showFirstTimeSetupDialog()
+        } else {
+            runPostSetupInitialization()
+        }
     }
 
     override fun onDestroy() {
@@ -775,6 +893,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, MultiDeadlineWidget::class.java))
         for (appWidgetId in appWidgetIds) {
             MultiDeadlineWidget.updateWidget(this, appWidgetManager, appWidgetId)
+        }
+
+        val largeWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, LargeDeadlineWidget::class.java))
+        for (largeWidgetId in largeWidgetIds) {
+            LargeDeadlineWidget.updateWidget(this, appWidgetManager, largeWidgetId)
         }
     }
 
@@ -795,39 +918,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         } else {
             titleBar.textSize = 32f // 设置为默认大小
             excitementText.visibility = TextView.GONE
-        }
-    }
-
-    private fun updateNotification(isEnabled: Boolean) {
-        if (!isEnabled) {
-            Log.d("Notification", "Here")
-            // 如果开关关闭，取消定时任务
-            WorkManager.getInstance(this).cancelUniqueWork("DeadlineCheckWork")
-            return
-        }
-
-        // 检查是否已有相同的任务在队列中
-        WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData("DeadlineCheckWork").observe(this) { workInfos ->
-            val isWorkScheduled = workInfos.any { workInfo ->
-                workInfo.state == WorkInfo.State.ENQUEUED || workInfo.state == WorkInfo.State.RUNNING
-            }
-
-            // 如果任务未调度，则启动新的任务
-            if (!isWorkScheduled) {
-                val workRequest = PeriodicWorkRequestBuilder<DeadlineWorker>(1, TimeUnit.HOURS)
-                    .setConstraints(
-                        Constraints.Builder()
-                            .setRequiresBatteryNotLow(true)
-                            .build()
-                    )
-                    .build()
-
-                WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                    "DeadlineCheckWork",
-                    ExistingPeriodicWorkPolicy.KEEP,
-                    workRequest
-                )
-            }
         }
     }
 
@@ -877,7 +967,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         }
 
                         // 获取本地版本号
-                        val localVersion = packageManager.getPackageInfo(packageName, 0).versionName
+                        val localVersion =
+                            packageManager.getPackageInfo(packageName, 0).versionName ?: return@let
 
                         // 比较版本号
                         if (isNewVersionAvailable(localVersion, latestVersion)) {
@@ -905,7 +996,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val latestParts = cleanedLatestVersion.split(".")
 
         for (i in 0 until minOf(localParts.size, latestParts.size)) {
-            val localPart = localParts[i].toIntOrNull() ?: 0
+            val localPart = localParts[i].toIntOrNull() ?: -1
             val latestPart = latestParts[i].toIntOrNull() ?: 0
 
             if (localPart < latestPart) return true  // 有新版本
@@ -979,6 +1070,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
                 val item = adapter.itemList[position]
                 databaseHelper.deleteDDL(item.id)
+                DeadlineAlarmScheduler.cancelAlarm(applicationContext, item.id)
                 viewModel.loadData(currentType)
                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                 decideShowEmptyNotice()
@@ -1022,6 +1114,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
      * 设置状态栏和导航栏颜色及图标颜色
      */
     private fun setSystemBarColors(color: Int, lightIcons: Boolean, colorNavigationBar: Int) {
+        if (GlobalUtils.experimentalEdgeToEdge) return
+
         window.apply {
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
             statusBarColor = color
@@ -1057,8 +1151,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         targetStatusColor: Int,
         targetNavColor: Int,
         lightIcons: Boolean,
-        duration: Long = 300
+        duration: Long = 200
     ) {
+        if (GlobalUtils.experimentalEdgeToEdge) return
+
         val window = this.window ?: return
 
         val interpolator = AccelerateDecelerateInterpolator()
@@ -1090,6 +1186,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     private fun setSystemBarIcons(lightIcons: Boolean) {
+        if (GlobalUtils.experimentalEdgeToEdge) return
+
         val window = this.window ?: return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -1157,11 +1255,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     override fun onResume() {
         super.onResume()
         updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
-        updateNotification(GlobalUtils.deadlineNotification)
         isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
         switchAppBarStatus(true)
         viewModel.loadData(currentType)
         decideShowEmptyNotice()
+
+//        GlobalUtils.setAlarms(databaseHelper, applicationContext)
 
         if (searchOverlay.visibility == View.VISIBLE) {
             val s = searchEditText.text
@@ -1169,11 +1268,19 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
             viewModel.filterData(filter, currentType)
         }
+
+        addEventButton.apply {
+            isPressed = false
+            clearFocus()
+            refreshDrawableState()
+        }
     }
 
     companion object {
         private const val REQUEST_CODE_ADD_DDL = 1
         const val ANIMATION_DURATION = 160L
+        private const val REQUEST_CODE_NOTIFICATION_PERMISSION = 0x2001
+        private const val REQUEST_CODE_CALENDAR_PERMISSION = 0x2002
     }
 
     /* New to v2.0 */
@@ -1334,6 +1441,60 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+
+        // **1.** 先更新一次（防止初始时没有 Badge）
+        updateTabBadges(mapOf(
+            DeadlineType.TASK to viewModel.dueSoonCount(DeadlineType.TASK),
+            DeadlineType.HABIT to viewModel.dueSoonCount(DeadlineType.HABIT)
+        ))
+
+        // **2.** 订阅 ViewModel 中即将到期数量的 LiveData／Flow
+        viewModel.dueSoonCounts.observe(this) { counts ->
+            // counts: Map<DeadlineType, Int>
+            updateTabBadges(counts)
+        }
+    }
+
+    /**
+     * @param counts 一个类型到“即将到期 DDL 数量”的映射
+     */
+    private fun updateTabBadges(counts: Map<DeadlineType, Int>) {
+        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
+
+        fun dp2px(dp: Int): Int =
+            (dp * resources.displayMetrics.density).toInt()
+
+
+        // TASK 对应 position 0，HABIT 对应 position 1
+        counts.forEach { (type, num) ->
+            val index = when (type) {
+                DeadlineType.TASK  -> 0
+                DeadlineType.HABIT -> 1
+            }
+            tabLayout.getTabAt(index)?.let { tab ->
+                if (num > 0 && GlobalUtils.nearbyTasksBadge) {
+                    tab.orCreateBadge.apply {
+                        badgeGravity = BadgeDrawable.TOP_END
+
+                        if (GlobalUtils.nearbyDetailedBadge) {
+                            // 显示数字
+                            number = num
+                            horizontalOffset = dp2px(0)
+                            verticalOffset = dp2px(12)
+                            isVisible = true
+                        } else {
+                            // 清除数字，变成一个纯圆点
+                            clearNumber()
+                            horizontalOffset = dp2px(4)
+                            verticalOffset = dp2px(6)
+                            isVisible = true
+                        }
+                    }
+                } else {
+                    tab.removeBadge()
+                }
+            }
+        }
     }
 
     private fun showOverlay() {
@@ -1365,12 +1526,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 动画2：渐隐背景层
         bottomBarBackground.animate()
             .alpha(0f)
-            .setDuration(300)
+            .setDuration(100)
             .start()
 
         bottomBlur.animate()
             .alpha(0f)
-            .setDuration(200)
+            .setDuration(100)
             .start()
 
         handler.postDelayed({
@@ -1379,7 +1540,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             setSystemBarColorsWithAnimation(
                 colorSurface,
                 colorSurface,
-                isLightColor(colorSurface)
+                isLightColor(colorSurface),
+                duration = 100
             )
         }, 200)
     }
@@ -1398,12 +1560,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 动画2：恢复背景层
         bottomBarBackground.animate()
             .alpha(1f)
-            .setDuration(300)
+            .setDuration(100)
             .start()
 
         bottomBlur.animate()
             .alpha(1f)
-            .setDuration(200)
+            .setDuration(100)
             .start()
 
         handler.postDelayed({
@@ -1412,8 +1574,245 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             setSystemBarColorsWithAnimation(
                 colorSurface,
                 colorContainer,
-                isLightColor(colorContainer)
+                isLightColor(colorContainer),
+                duration = 100
             )
         }, 0)
     }
+
+    private fun initializeNotificationSystem() {
+        NotificationUtil.createNotificationChannels(this)
+    }
+
+    /**************************************
+     * 权限管理系统
+     **************************************/
+    private fun checkCriticalPermissions() {
+        // Android 13+ 通知权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!hasNotificationPermission()) {
+                requestNotificationPermission()
+            }
+        }
+
+        // 电池优化白名单
+        if (!isIgnoringBatteryOptimizations()) {
+            showBatteryOptimizationDialog()
+        }
+    }
+
+    private fun hasNotificationPermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return false
+        }
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return
+        }
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+            REQUEST_CODE_NOTIFICATION_PERMISSION
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            REQUEST_CODE_NOTIFICATION_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    Log.d("Error", "error")
+                }
+            }
+        }
+    }
+
+    /**************************************
+     * 数据恢复系统
+     **************************************/
+    private fun restoreAllAlarms() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val allDDLs = databaseHelper.getAllDDLs()
+            allDDLs.filter { !it.isCompleted }.forEach { ddl ->
+                DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, ddl)
+            }
+        }
+    }
+
+    private fun showBatteryOptimizationDialog() {
+        MaterialAlertDialogBuilder(this).apply {
+            setTitle("电池优化设置")
+            setMessage("请将Deadliner设为「不受电池优化限制」")
+            setPositiveButton("去设置") { _, _ ->
+                startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = "package:$packageName".toUri()
+                })
+            }
+            setCancelable(false)
+        }.show()
+    }
+
+    /**************************************
+     * 工具方法
+     **************************************/
+    private fun isIgnoringBatteryOptimizations(): Boolean {
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            pm.isIgnoringBatteryOptimizations(packageName)
+        } else true
+    }
+
+    private fun onCalendarPermissionDenied() {
+        // 提示用户权限被拒绝
+        Toast.makeText(this, "需要日历权限以同步事件", Toast.LENGTH_LONG).show()
+
+        // 可选：引导用户前往应用设置手动授权
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", packageName, null)
+        }
+        startActivity(intent)
+    }
+
+    private fun decideCloudStatus() {
+        val server = GlobalUtils.cloudSyncServer
+        val token = GlobalUtils.cloudSyncConstantToken
+        val enable = GlobalUtils.cloudSyncEnable
+
+        if (!enable || server == null || token == null) {
+            cloudButton.setImageResource(R.drawable.ic_cloud_off)
+            return
+        }
+
+        // 开启协程检查 Web 是否可用
+        lifecycleScope.launch {
+            val available = WebUtils.isWebAvailable()
+            cloudButton.setImageResource(
+                if (available) R.drawable.ic_cloud else R.drawable.ic_cloud_off
+            )
+        }
+    }
+
+    private fun Float.dpToPx(): Float =
+        this * Resources.getSystem().displayMetrics.density + 0.5f
+
+    private val notifyLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        dialogFlipper?.showNext()  // 或者其他逻辑
+    }
+
+    private val calendarLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results: Map<String, Boolean> ->
+        if (!results.values.all { it }) {
+            // 权限被拒绝
+            onCalendarPermissionDenied()
+        }
+        dialogFlipper?.showNext()
+    }
+
+    private fun showFirstTimeSetupDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_first_time_setup, null)
+        dialogFlipper = dialogView.findViewById<ViewFlipper>(R.id.vf_steps)
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+        dialog.show()
+
+        // Step1 按钮
+        dialogView.findViewById<Button>(R.id.btn_next1).setOnClickListener {
+            // 请求通知权限
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                notifyLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                dialogFlipper?.showNext()
+            }
+        }
+        dialogView.findViewById<Button>(R.id.btn_skip1).setOnClickListener {
+            dialogFlipper?.showNext()
+        }
+
+        // Step2 按钮
+        dialogView.findViewById<Button>(R.id.btn_next2).setOnClickListener {
+            calendarLauncher.launch(arrayOf(
+                Manifest.permission.READ_CALENDAR,
+                Manifest.permission.WRITE_CALENDAR
+            ))
+        }
+        dialogView.findViewById<Button>(R.id.btn_skip2).setOnClickListener {
+            dialogFlipper?.showNext()
+        }
+
+        dialogView.findViewById<Button>(R.id.btn_next3).setOnClickListener {
+            Toast.makeText(this, "正在加载指南页面，点击任意区域跳过", Toast.LENGTH_LONG).show()
+
+            val webViewView = layoutInflater.inflate(R.layout.dialog_webview, null)
+            val webDialog = MaterialAlertDialogBuilder(this)
+                .setView(webViewView)
+                .setCancelable(true)
+                .create()
+
+            val webView = webViewView.findViewById<WebView>(R.id.setup_webview)
+            val li = webViewView.findViewById<LoadingIndicator>(R.id.loading_indicator)
+
+            webView.webViewClient = object : WebViewClient() {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    super.onPageStarted(view, url, favicon)
+                    li.visibility = View.VISIBLE
+                }
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    li.visibility = View.GONE
+                }
+            }
+
+            webView.settings.javaScriptEnabled = true
+
+            webView.loadUrl(GlobalUtils.generateWikiForSpecificDevice())
+
+            webDialog.setOnDismissListener {
+                if (!isIgnoringBatteryOptimizations()) {
+                    startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = "package:$packageName".toUri()
+                    })
+                }
+
+                dialogFlipper?.showNext()
+            }
+
+            webDialog.show()
+        }
+        dialogView.findViewById<Button>(R.id.btn_skip3).setOnClickListener {
+            dialogFlipper?.showNext()
+        }
+
+        // Step4 完成
+        dialogView.findViewById<Button>(R.id.btn_done).setOnClickListener {
+            GlobalUtils.permissionSetupDone = true
+            dialog.dismiss()
+            runPostSetupInitialization()
+        }
+    }
+
+    private fun runPostSetupInitialization() {
+        initializeNotificationSystem()
+        GlobalUtils.setAlarms(databaseHelper, applicationContext)
+        DeadlineAlarmScheduler.scheduleDailyAlarm(applicationContext)
+        checkCriticalPermissions()
+        restoreAllAlarms()
+    }
 }
+

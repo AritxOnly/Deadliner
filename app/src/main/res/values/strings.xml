@@ -5,6 +5,7 @@
     <string name="add_ddl_name">添加待办的Deadline</string>
     <string name="add_title">添加Deadline</string>
     <string name="save">保存</string>
+    <string name="save_and_add_to_calendar">保存到日历</string>
     <string name="alert_delete_title">删除Deadline</string>
     <string name="alert_delete_message">你确定要删除这个Deadline吗？</string>
     🗃️
@@ -26,35 +27,65 @@
     <string name="settings_notification">通知</string>
     <string name="settings_archive">归档</string>
     <string name="settings_backup">备份</string>
+    <string name="settings_developer">高级</string>
     <string name="settings_highlight">关于</string>
     <string name="settings_vibration">启用震动反馈</string>
     <string name="settings_progress_dir_main">主界面正向进度条</string>
     <string name="settings_progress_widget">小组件正向进度条</string>
     <string name="settings_fireworks">完成时显示动画效果</string>
     <string name="settings_detail_display">剩余时间详细显示</string>
+    <string name="settings_tasks_badge">选项卡未完成任务角标</string>
     <string name="settings_nearby_notification">Deadline临近通知</string>
     <string name="settings_everyday_notification">每日Deadline统计通知</string>
+    <string name="settings_hide_from_recent">将应用从最近应用列表隐藏</string>
+    <string name="settings_experimental_e2e">系统栏边到边沉浸（实验性）</string>
     <string name="settings_excitement">主菜单鼓励语句</string>
     <string name="settings_homepage">访问作者主页</string>
     <string name="settings_github">访问项目主页</string>
     <string name="settings_issues">提交错误报告</string>
+
+<!--    <string-array name="excitement_array">-->
+<!--        <item>今天你Deadline了吗？😝</item>-->
+<!--        <item>Deadline临近了🥺</item>-->
+<!--        <item>再坚持一下，很快就能做完啦☺️</item>-->
+<!--        <item>提前开始Deadline是一件好事哦😉</item>-->
+<!--        <item>保持专注，你一定能搞定！💪</item>-->
+<!--        <item>不要担心，你比你想象的更强大！✨</item>-->
+<!--        <item>完成Deadline后，奖励自己一个小惊喜吧！🎉</item>-->
+<!--        <item>Deadline不再是敌人，而是你超越自己的机会！🚀</item>-->
+<!--        <item>放轻松，深呼吸，你可以做到！🌟</item>-->
+<!--        <item>你的努力不会白费，每一步都在靠近目标！🏃‍♂️💨</item>-->
+<!--        <item>加油！完成Deadline，你就是今天的英雄！🦸‍♀️🦸‍♂️</item>-->
+<!--        <item>记住，Deadline是你进步的最佳见证者！📈</item>-->
+<!--        <item>坚持住！完成后你会感谢现在努力的自己！🙏</item>-->
+<!--        <item>每个小目标的达成都值得庆祝！🥳</item>-->
+<!--        <item>再努力一下，成功就在前方！🏆</item>-->
+<!--    </string-array>-->
+
+    <!-- Try something more expressive -->
     <string-array name="excitement_array">
-        <item>今天你Deadline了吗？😝</item>
-        <item>Deadline临近了🥺</item>
-        <item>再坚持一下，很快就能做完啦☺️</item>
-        <item>提前开始Deadline是一件好事哦😉</item>
-        <item>保持专注，你一定能搞定！💪</item>
-        <item>不要担心，你比你想象的更强大！✨</item>
-        <item>完成Deadline后，奖励自己一个小惊喜吧！🎉</item>
-        <item>Deadline不再是敌人，而是你超越自己的机会！🚀</item>
-        <item>放轻松，深呼吸，你可以做到！🌟</item>
-        <item>你的努力不会白费，每一步都在靠近目标！🏃‍♂️💨</item>
-        <item>加油！完成Deadline，你就是今天的英雄！🦸‍♀️🦸‍♂️</item>
-        <item>记住，Deadline是你进步的最佳见证者！📈</item>
-        <item>坚持住！完成后你会感谢现在努力的自己！🙏</item>
-        <item>每个小目标的达成都值得庆祝！🥳</item>
-        <item>再努力一下，成功就在前方！🏆</item>
+        <item>Deadline 在追杀你！快跑💨</item>
+        <item>任务完成度：1% → 99%🤯</item>
+        <item>再拖？DDL要咬人了！🦖</item>
+        <item>你离「完成」只差一个「提交」🚀</item>
+        <item>提醒：别躺了，起来肝！🛏️→💻</item>
+        <item>「先玩5分钟」→ 5小时😱</item>
+        <item>你的待办列表：📜🔥（烧起来了）</item>
+        <item>今日任务：活着 + 搞定它💪</item>
+        <item>DDL越近，手速越快⚡</item>
+        <item>「我明天做」→ 经典flag🚩</item>
+        <item>任务完成 ✔️ 奖励：睡大觉！😴</item>
+        <item>检测到：你在焦虑🌀</item>
+        <item>别刷手机了！📱→❌</item>
+        <item>「最后亿分钟」⌛</item>
+        <item>任务堆积如山？愚公移山！⛰️</item>
+        <item>DDL是你的敌人？不，是动力！💥</item>
+        <item>「我好了」→「我装的」😏</item>
+        <item>今日成就：没放弃！🏆</item>
+        <item>建议：先做最难的！🎯</item>
+        <item>完成它！然后大喊：Next！🎤</item>
     </string-array>
+
     <string name="appwidget_text">EXAMPLE</string>
     <string name="add_widget">添加小组件</string>
     <string name="app_widget_description">主屏幕倒计时小组件</string>
@@ -122,7 +153,12 @@
     <string name="add_ddl_frequency_type">请设置习惯时间限制</string>
     <string name="add_ddl_frequency">打卡频率</string>
     <string name="add_ddl_total">持续天数</string>
+    <string name="clear_all_notification">清空所有通知注册的闹钟</string>
     <string name="settings_import">导入</string>
     <string name="settings_export">导出</string>
+    <string name="settings_cloud_sync">云服务器设置</string>
+    <string name="settings_show_intro">展示欢迎页</string>
+    <string name="settings_custom_filter_list">自定义日历导入黑名单</string>
+    <string name="alert_select_badge_type">选择角标类型</string>
 
 </resources>

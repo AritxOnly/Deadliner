@@ -9,9 +9,12 @@ import android.util.Log
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -20,7 +23,10 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,23 +36,42 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.rounded.Archive
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DoneOutline
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.animateFloatingActionButton
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,12 +80,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
+import com.aritxonly.deadliner.MainActivity
+import com.aritxonly.deadliner.calendar.CalendarHelper
+import com.aritxonly.deadliner.model.DDLItem
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -80,8 +122,9 @@ class DeadlineDetailActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        super.onCreate(savedInstanceState)
 
         val initialDeadline = intent.getParcelableExtra<DDLItem>(EXTRA_DEADLINE)
         ?: throw IllegalArgumentException("Missing Deadline parameter")
@@ -104,10 +147,13 @@ class DeadlineDetailActivity : AppCompatActivity() {
                 var currentDeadline by remember { mutableStateOf(latestDeadline) }
 
                 Scaffold(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
                         .background(color = Color(colorScheme.surface))
                 ) { innerPadding ->
                     DeadlineDetailScreen(
+                        applicationContext = applicationContext,
+                        context = this,
                         deadline = currentDeadline,
                         onClose = { finish() },
                         onEdit = {
@@ -123,7 +169,9 @@ class DeadlineDetailActivity : AppCompatActivity() {
                             databaseHelper.updateDDL(currentDeadline)
                             currentDeadline = databaseHelper.getDDLById(currentDeadline.id) ?: currentDeadline
                         }
-                    )
+                    ) {
+                        finishAfterTransition()
+                    }
                 }
             }
         }
@@ -173,15 +221,27 @@ class DeadlineDetailActivity : AppCompatActivity() {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalStdlibApi::class)
 @Composable
 fun DeadlineDetailScreen(
+    applicationContext: Context,
+    context: Context,
     deadline: DDLItem,
     onClose: () -> Unit,
     onEdit: () -> Unit,
-    onToggleStar: (Boolean) -> Unit
+    onToggleStar: (Boolean) -> Unit,
+    finishActivity: () -> Unit
 ) {
     var waterLevel by remember { mutableFloatStateOf(0f) }
     var isStared by remember { mutableStateOf(deadline.isStared) }
+    var isCompleted by remember { mutableStateOf(deadline.isCompleted) }
 
     Log.d("DetailPage", "DeadlineDetailScreen: $isStared")
+
+    val expressiveTypeModifier = Modifier
+        .size(40.dp)
+        .clip(CircleShape)
+        .background(Color(colorScheme.surfaceContainer), CircleShape)
+        .padding(8.dp)
+
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         modifier = Modifier.background(Color(colorScheme.surface)),
@@ -198,20 +258,14 @@ fun DeadlineDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onClose) {
                         Icon(
-                            Icons.Default.Close,
+                            Icons.Rounded.Close,
                             contentDescription = "关闭",
-                            tint = Color(colorScheme.onSurface)
+                            tint = Color(colorScheme.onSurface),
+                            modifier = expressiveTypeModifier
                         )
                     }
                 },
                 actions = {
-                    IconButton(onClick = onEdit) {
-                        Icon(
-                            painterResource(id = R.drawable.ic_edit),
-                            contentDescription = "编辑",
-                            tint = Color(colorScheme.onSurface)
-                        )
-                    }
                     IconButton(onClick = {
                         isStared = !isStared
                         onToggleStar(isStared)
@@ -226,10 +280,13 @@ fun DeadlineDetailScreen(
                         Icon(
                             iconStar,
                             contentDescription = "星标",
-                            tint = tintColor
+                            tint = tintColor,
+                            modifier = expressiveTypeModifier
                         )
                     }
-                }
+                },
+                modifier = Modifier.background(Color(colorScheme.surface))
+                    .padding(horizontal = 8.dp)
             )
         }
     ) { innerPadding ->
@@ -248,8 +305,164 @@ fun DeadlineDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .aspectRatio(0.6f)
+                    .padding(bottom = 32.dp)
             )
             DeadlineDetailInfo(deadline, waterLevel)
+
+            DeadlineEditFABMenu(
+                isCompleted = isCompleted,
+                modifier = Modifier.align(Alignment.BottomEnd)
+            ) { desc ->
+                Log.d("Desc", desc)
+                when (desc) {
+                    "编辑" -> onEdit()
+                    "完成", "标记完成", "撤销完成" -> {
+                        deadline.isCompleted = !deadline.isCompleted
+                        if (deadline.isCompleted) {
+                            Toast.makeText(context, R.string.toast_finished, Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, R.string.toast_definished, Toast.LENGTH_SHORT).show()
+                        }
+                        val databaseHelper = DatabaseHelper.getInstance(applicationContext)
+                        databaseHelper.updateDDL(deadline)
+                    }
+                    "归档" -> {
+                        deadline.isArchived = true
+                        Toast.makeText(
+                            context,
+                            R.string.toast_archived,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        finishActivity()
+                    }
+                    "删除" -> {
+                        MaterialAlertDialogBuilder(context)
+                            .setTitle(R.string.alert_delete_title)
+                            .setMessage(R.string.alert_delete_message)
+                            .setNegativeButton(R.string.cancel) { _, _ ->
+
+                            }.setPositiveButton(R.string.accept) { dialog, _ ->
+                                val databaseHelper = DatabaseHelper.getInstance(applicationContext)
+                                databaseHelper.deleteDDL(deadline.id)
+                                DeadlineAlarmScheduler.cancelAlarm(applicationContext, deadline.id)
+                                Toast.makeText(context, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
+                                finishActivity()
+                            }
+                            .show()
+
+                    }
+                    "保存至日历" -> {
+                        val calendarHelper = CalendarHelper(applicationContext)
+
+                        coroutineScope.launch {
+                            try {
+                                val eventId = calendarHelper.insertEvent(deadline)
+                                deadline.calendarEventId = eventId
+                                val databaseHelper = DatabaseHelper.getInstance(applicationContext)
+                                databaseHelper.updateDDL(deadline)
+                                Toast.makeText(context, "已添加至日历", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Log.e("Calendar", e.toString())
+                                Toast.makeText(context, "添加至日历失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun DeadlineEditFABMenu(
+    isCompleted: Boolean,
+    modifier: Modifier,
+    callback: (desc: String) -> Unit
+) {
+    var fabMenuExpanded by rememberSaveable { mutableStateOf(false) }
+
+    BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
+
+    var items = listOf(
+        painterResource(R.drawable.ic_edit) to "编辑",
+        painterResource(R.drawable.ic_done) to "标记完成",
+        painterResource(R.drawable.ic_archiving) to "归档",
+        painterResource(R.drawable.ic_delete) to "删除",
+        painterResource(R.drawable.ic_event) to "保存至日历"
+    )
+
+    FloatingActionButtonMenu(
+        expanded = fabMenuExpanded,
+        button = {
+            ToggleFloatingActionButton(
+                modifier = Modifier
+                    .semantics {
+                        traversalIndex = -1f
+                        stateDescription = if (fabMenuExpanded) "展开" else "收起"
+                        contentDescription = "编辑菜单"
+                    }
+                    .animateFloatingActionButton(
+                        visible = true,
+                        alignment = Alignment.BottomEnd
+                    ),
+                containerColor = { x: Float ->
+                    if (x > 0.5f)
+                        Color(colorScheme.tertiary!!)
+                    else
+                        Color(colorScheme.tertiaryContainer!!)
+                },
+                checked = fabMenuExpanded,
+                onCheckedChange = { fabMenuExpanded = !fabMenuExpanded }
+            ) {
+                val closeVector = ImageVector.vectorResource(R.drawable.ic_close)
+                val editVector = ImageVector.vectorResource(R.drawable.ic_edit)
+                val imageVector by remember {
+                    derivedStateOf {
+                        if (checkedProgress > 0.5f) closeVector
+                        else editVector
+                    }
+                }
+
+                Icon(
+                    painter = rememberVectorPainter(imageVector),
+                    contentDescription = null,
+                    modifier = Modifier.animateIcon({ checkedProgress }, color = { progress ->
+                        if (progress > 0.5f)
+                            Color(colorScheme.onTertiary!!)
+                        else
+                            Color(colorScheme.onTertiaryContainer!!)
+                    }),
+                )
+            }
+        },
+        modifier = modifier
+    ) {
+        items.forEachIndexed { i, item ->
+            FloatingActionButtonMenuItem(
+                modifier = Modifier.semantics {
+                    isTraversalGroup = true
+                    if (i == items.size - 1) {
+                        customActions = listOf(
+                            CustomAccessibilityAction(
+                                label = "关闭菜单",
+                                action = {
+                                    fabMenuExpanded = false
+                                    true
+                                }
+                            )
+                        )
+                    }
+                },
+                onClick =  {
+                    callback(item.second)
+                    fabMenuExpanded = false
+                },
+                icon = { Icon(item.first, contentDescription = null) },
+                text = { Text(text = item.second) },
+                containerColor = Color(colorScheme.tertiaryContainer!!),
+                contentColor = Color(colorScheme.onTertiaryContainer!!)
+            )
         }
     }
 }
@@ -283,13 +496,17 @@ fun WaterCupAnimation(deadline: DDLItem,
         ), label = ""
     )
 
-    val color = Color(colorScheme.primary)
+    val color = if (deadline.isCompleted) Color(colorScheme.secondary!!)
+        else Color(colorScheme.primary)
     val waveAmplitude = with(LocalDensity.current) { 8.dp.toPx() }
+
+    val containerColor = if (deadline.isCompleted) Color(colorScheme.secondaryContainer!!)
+        else Color(colorScheme.primaryContainer)
 
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(32.dp))
-            .background(Color(colorScheme.primaryContainer))
+            .background(containerColor)
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val width = size.width
@@ -349,8 +566,10 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
     /**
      * 使用插值法计算背景情况
      */
-    val waterColor = Color(colorScheme.primary)
-    val containerColor = Color(colorScheme.primaryContainer)
+    val waterColor = if (deadline.isCompleted) Color(colorScheme.secondary!!)
+        else Color(colorScheme.primary)
+    val containerColor = if (deadline.isCompleted) Color(colorScheme.secondaryContainer!!)
+        else Color(colorScheme.primaryContainer)
     val currentBackground = lerp(containerColor, waterColor, waterLevel.coerceIn(0f, 1f))
 
     val textColor = remember(currentBackground) {
@@ -374,8 +593,10 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
         Text(text = "结束时间：${endTime.format(dateFormatter)}", style = MaterialTheme.typography.bodyMedium, color = textColor)
         Text(text = "剩余时间：$remainingTimeText", style = MaterialTheme.typography.bodyMedium, color = textColor)
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = deadline.note, style = MaterialTheme.typography.bodyMedium, color = textColor)
-        Spacer(modifier = Modifier.height(20.dp))
+        SelectionContainer {
+            Text(text = deadline.note, style = MaterialTheme.typography.bodyMedium, color = textColor)
+        }
+        Spacer(modifier = Modifier.height(48.dp))
     }
 }
 

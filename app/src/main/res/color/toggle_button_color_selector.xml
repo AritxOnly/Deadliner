@@ -1,0 +1,5 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:color="?attr/colorAccent"/>
+    <item android:state_checkable="true" android:color="?attr/colorSecondaryContainer"/>
+    <item android:color="?attr/colorContainer" />
+</selector>

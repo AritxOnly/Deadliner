@@ -1,7 +1,10 @@
 package com.aritxonly.deadliner
 
+import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentManager
@@ -10,7 +13,6 @@ import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -18,11 +20,28 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
+import androidx.core.content.edit
+import com.aritxonly.deadliner.model.CalendarEvent
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.HabitMetaData
+import java.time.Instant
+import java.util.Locale
 
 object GlobalUtils {
+
     private const val PREF_NAME = "app_settings"
 
     private lateinit var sharedPreferences: SharedPreferences
+
+    class NotificationBefore {
+        companion object {
+            const val ONE_DAY = 0b100
+            const val HALF_DAY = 0b10
+            const val TWO_HOURS = 0b1
+        }
+    }
 
     fun init(context: Context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, AppCompatActivity.MODE_PRIVATE)
@@ -32,68 +51,193 @@ object GlobalUtils {
     var vibration: Boolean
         get() = sharedPreferences.getBoolean("vibration", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("vibration", value).apply()
+            sharedPreferences.edit { putBoolean("vibration", value) }
         }
 
     var progressDir: Boolean
         get() = sharedPreferences.getBoolean("main_progress_dir", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("main_progress_dir", value).apply()
+            sharedPreferences.edit { putBoolean("main_progress_dir", value) }
         }
 
     var progressWidget: Boolean
         get() = sharedPreferences.getBoolean("widget_progress_dir", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("widget_progress_dir", value).apply()
+            sharedPreferences.edit { putBoolean("widget_progress_dir", value) }
         }
 
     var deadlineNotification: Boolean
         get() = sharedPreferences.getBoolean("deadline_notification", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("deadline_notification", value).apply()
+            sharedPreferences.edit { putBoolean("deadline_notification", value) }
         }
 
     var dailyStatsNotification: Boolean
         get() = sharedPreferences.getBoolean("daily_stats_notification", false)
         set(value) {
-            sharedPreferences.edit().putBoolean("daily_stats_notification", value).apply()
+            sharedPreferences.edit { putBoolean("daily_stats_notification", value) }
+        }
+
+    var dailyNotificationHour: Int
+        get() = sharedPreferences.getInt("daily_notification_hour", 9)
+        set(value) {
+            sharedPreferences.edit { putInt("daily_notification_hour", value) }
+        }
+    var dailyNotificationMinute: Int
+        get() = sharedPreferences.getInt("daily_notification_minute", 0)
+        set(value) {
+            sharedPreferences.edit { putInt("daily_notification_minute", value) }
         }
 
     var motivationalQuotes: Boolean
         get() = sharedPreferences.getBoolean("motivational_quotes", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("motivational_quotes", value).apply()
+            sharedPreferences.edit { putBoolean("motivational_quotes", value) }
         }
 
     var fireworksOnFinish: Boolean
         get() = sharedPreferences.getBoolean("fireworks_anim", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("fireworks_anim", value).apply()
+            sharedPreferences.edit { putBoolean("fireworks_anim", value) }
         }
 
     var autoArchiveTime: Int
         get() = sharedPreferences.getInt("archive_time", 7)
         set(value) {
-            sharedPreferences.edit().putInt("archive_time", value).apply()
+            sharedPreferences.edit { putInt("archive_time", value) }
         }
 
     var firstRun: Boolean
         get() = sharedPreferences.getBoolean("first_run_v2", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("first_run_v2", value).apply()
+            sharedPreferences.edit { putBoolean("first_run_v2", value) }
         }
 
     var showIntroPage: Boolean
         get() = sharedPreferences.getBoolean("show_intro_page", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("show_intro_page", value).apply()
+            sharedPreferences.edit { putBoolean("show_intro_page", value) }
         }
 
     var detailDisplayMode: Boolean
         get() = sharedPreferences.getBoolean("detail_display_mode", true)
         set(value) {
-            sharedPreferences.edit().putBoolean("detail_display_mode", value).apply()
+            sharedPreferences.edit { putBoolean("detail_display_mode", value) }
         }
+
+    var nearbyTasksBadge: Boolean
+        get() = sharedPreferences.getBoolean("nearby_tasks_badge", true)
+        set(value) {
+            sharedPreferences.edit { putBoolean("nearby_tasks_badge", value) }
+        }
+
+    var nearbyDetailedBadge: Boolean
+        get() = sharedPreferences.getBoolean("nearby_detailed_badge", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("nearby_detailed_badge", value) }
+        }
+
+    var notificationBefore: Int
+        get() = sharedPreferences.getInt("notification_before", 0b111)
+        set(value) {
+            sharedPreferences.edit { putInt("notification_before", value) }
+        }
+
+    private var notifiedSet: MutableSet<String>
+        get() = sharedPreferences.getStringSet("notified_set", emptySet())?.toMutableSet()?: mutableSetOf()
+        set(value) {
+            sharedPreferences.edit { putStringSet("notified_set", value.toSet()) }
+        }
+
+    var developerMode: Boolean
+        get() = sharedPreferences.getBoolean("developer_mode", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("developer_mode", value) }
+        }
+
+    var dynamicColors: Boolean
+        get() = sharedPreferences.getBoolean("dynamic_colors", true)
+        set(value) {
+            sharedPreferences.edit { putBoolean("dynamic_colors", value) }
+        }
+
+//    var customColorScheme:
+
+    var hideFromRecent: Boolean
+        get() = sharedPreferences.getBoolean("hide_from_recent", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("hide_from_recent", value) }
+        }
+
+    var cloudSyncEnable: Boolean
+        get() = sharedPreferences.getBoolean("cloud_sync_enable", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("cloud_sync_enable", value) }
+        }
+
+    var cloudSyncServer: String?
+        get() = sharedPreferences.getString("cloud_sync_server", null)
+        set(value) {
+            sharedPreferences.edit { putString("cloud_sync_server", value) }
+        }
+
+    var cloudSyncPort: Int
+        get() = sharedPreferences.getInt("cloud_sync_port", 5000)
+        set(value) {
+            sharedPreferences.edit { putInt("cloud_sync_port", value) }
+        }
+
+    var cloudSyncConstantToken: String?
+        get() = sharedPreferences.getString("cloud_sync_constant_token", null)
+        set(value) {
+            sharedPreferences.edit { putString("cloud_sync_constant_token", value) }
+        }
+
+    var experimentalEdgeToEdge: Boolean
+        get() = sharedPreferences.getBoolean("enable_edge_to_edge", true)
+        set(value) {
+            sharedPreferences.edit { putBoolean("enable_edge_to_edge", value) }
+        }
+
+    var filteredCalendars: Set<String?>?
+        get() = sharedPreferences.getStringSet("filtered_calendars", null)
+        set(value) {
+            sharedPreferences.edit { putStringSet("filtered_calendars", value) }
+        }
+
+    var customCalendarFilterList: Set<String?>?
+        get() = sharedPreferences.getStringSet("custom_filter_list", null)
+        set(value) {
+            sharedPreferences.edit { putStringSet("custom_filter_list", value) }
+        }
+
+    var customCalendarFilterListSelected: Set<String?>?
+        get() = sharedPreferences.getStringSet("custom_filter_list_selected", null)
+        set(value) {
+            sharedPreferences.edit { putStringSet("custom_filter_list_selected", value) }
+        }
+
+    var permissionSetupDone: Boolean
+        get() = sharedPreferences.getBoolean("permission_setup_done", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("permission_setup_done", value) }
+        }
+
+    object NotificationStatusManager {
+        fun markAsNotified(ddlId: Long) {
+            val set = notifiedSet
+            set.add(ddlId.toString())
+            notifiedSet = set
+        }
+
+        fun hasBeenNotified(ddlId: Long): Boolean {
+            return notifiedSet.contains(ddlId.toString())
+        }
+
+        fun clearAllNotified() {
+            notifiedSet = mutableSetOf()
+        }
+    }
 
     // v2.0 - filter功能
     /**
@@ -221,11 +365,99 @@ object GlobalUtils {
         val type = object : TypeToken<HabitMetaData>() {}.type
         val habitMeta: HabitMetaData = try {
             gson.fromJson(note, type)
-                ?: HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0, LocalDate.now().toString())
+                ?: HabitMetaData(
+                    emptySet(),
+                    DeadlineFrequency.DAILY,
+                    1,
+                    0,
+                    LocalDate.now().toString()
+                )
         } catch (e: Exception) {
             HabitMetaData(emptySet(), DeadlineFrequency.DAILY, 1, 0, LocalDate.now().toString())
         }
 
         return habitMeta
+    }
+
+    fun setAlarms(databaseHelper: DatabaseHelper, context: Context) {
+        if (!deadlineNotification) {
+            return
+        }
+
+        val pendingTasks = databaseHelper.getDDLsByType(DeadlineType.TASK)
+            .filter {
+                if (it.isCompleted || it.isArchived) {
+                    return@filter false
+                }
+
+                val endTime = parseDateTime(it.endTime)
+                endTime != null && endTime.isAfter(LocalDateTime.now())
+            }
+
+        pendingTasks.forEach { ddlItem ->
+            DeadlineAlarmScheduler.scheduleExactAlarm(context, ddlItem)
+        }
+    }
+
+    fun decideHideFromRecent(context: Context, activity: Activity) {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val myTaskId = activity.taskId
+        activityManager.appTasks
+            .firstOrNull { it.taskInfo?.id == myTaskId }
+            ?.setExcludeFromRecents(hideFromRecent)
+    }
+
+    fun Long.toDateTimeString(): String {
+        val zonedDateTime = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault())
+        return zonedDateTime.toLocalDateTime().toString()
+    }
+
+    fun generateWikiForSpecificDevice(): String {
+        val manufacturer = Build.MANUFACTURER.lowercase(Locale.getDefault())
+        val brand = Build.BRAND.lowercase(Locale.getDefault())
+
+        val baseWikiUrl = "https://github.com/AritxOnly/Deadliner/wiki/%E9%80%9A%E7%9F%A5%E6%8E%A8%E9%80%81%E5%8A%9F%E8%83%BD%E7%94%A8%E6%88%B7%E6%96%87%E6%A1%A3"
+
+        Log.d("WikiGenerate", manufacturer)
+
+        return baseWikiUrl
+    }
+
+    fun generateHabitNote(frequency: Int?, total: Int?, type: DeadlineFrequency): String {
+        val typeString = when (type) {
+            DeadlineFrequency.DAILY -> "每天"
+            DeadlineFrequency.WEEKLY -> "每周"
+            DeadlineFrequency.MONTHLY -> "每月"
+            else -> "每天"
+        }
+
+        val frequencyString = (frequency?:1).toString()
+
+        val totalString = if (total == null) "不计次数" else "共计 $total 次"
+
+        return typeString + "打卡 " + frequencyString + " 次，" + totalString
+    }
+
+    fun canHabitBeDone(item: DDLItem, metaData: HabitMetaData): Boolean {
+        val endTime = parseDateTime(item.endTime)
+        if (endTime == null) {
+            return true
+        }
+
+        val remainingTime = Duration.between(LocalDateTime.now(), endTime).toDays()
+        val remainingTasks = metaData.total - item.habitTotalCount
+        return when (metaData.frequencyType) {
+            DeadlineFrequency.TOTAL ->
+                true
+
+            DeadlineFrequency.DAILY ->
+                (remainingTime * metaData.frequency >= remainingTasks)
+
+            DeadlineFrequency.WEEKLY ->
+                ((remainingTime / 7) * metaData.frequency >= remainingTasks)
+
+            DeadlineFrequency.MONTHLY ->
+                ((remainingTime / 30) * metaData.frequency >= remainingTasks)
+        }
     }
 }

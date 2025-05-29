@@ -30,4 +30,6 @@
         <item>?attr/colorSecondary</item>
         <item>?attr/colorTertiary</item>
     </array>
+
+    <color name="widget_icon_tint">#000000</color>
 </resources>

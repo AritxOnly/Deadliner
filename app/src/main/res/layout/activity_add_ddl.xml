@@ -5,15 +5,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="12dp">
 
     <!-- 输入DDL名称 -->
     <ImageButton
         android:id="@+id/backButton"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="8dp"
         android:layout_marginStart="4dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/circle_background_main"
         android:scaleType="centerInside"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -23,21 +24,34 @@
     <TextView
         android:id="@+id/textView"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:text="Deadline"
-        android:textSize="28sp"
-        android:textStyle="bold"
+        android:layout_height="40dp"
+        android:text="添加任务"
+        android:gravity="center"
+        android:textSize="22sp"
         android:textColor="?attr/colorOnSurface"
         app:layout_constraintStart_toEndOf="@id/backButton"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="@id/backButton"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toStartOf="@id/importFromCalendarButton" />
+
+    <ImageButton
+        android:id="@+id/importFromCalendarButton"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="8dp"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/circle_background_main"
+        android:scaleType="centerInside"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/textView"
+        app:srcCompat="@drawable/ic_event" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/typeTabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         app:layout_constraintTop_toBottomOf="@id/textView"
         style="@style/Widget.Material3.TabLayout.Secondary">
 
@@ -165,7 +179,6 @@
         android:layout_width="0dp"
         android:layout_height="128dp"
         android:layout_marginTop="16dp"
-        android:inputType="text"
         app:boxCornerRadiusBottomEnd="12dp"
         app:boxCornerRadiusBottomStart="12dp"
         app:boxCornerRadiusTopEnd="12dp"
@@ -179,9 +192,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="top|start"
-            android:inputType="text"
-            android:scrollHorizontally="false"
-            android:imeOptions="actionDone|flagNoEnterAction" />
+            android:inputType="textMultiLine"
+            android:scrollHorizontally="false" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <!-- 习惯：频率类型-频率-目标次数 -->
@@ -197,6 +209,7 @@
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/freqTypeToggleGroup"
+        style="@style/Widget.Material3.MaterialButtonGroup.Connected"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
@@ -213,7 +226,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="不限"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDaily"
@@ -221,7 +234,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="每日"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnWeekly"
@@ -229,7 +242,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="每周"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnYearly"
@@ -237,7 +250,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="每月"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
@@ -292,15 +305,43 @@
 
     </LinearLayout>
 
-    <!-- 保存按钮 -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/saveButton"
-        android:layout_width="0dp"
-        android:text="@string/save"
-        android:textSize="16sp"
-        android:layout_height="54dp"
+    <TextView
+        android:id="@+id/habitNoteHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="4dp"
+        app:layout_constraintTop_toBottomOf="@id/freqEditLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <LinearLayout
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:orientation="horizontal"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveToCalendarButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="0dp"
+            android:layout_height="54dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="@string/save_and_add_to_calendar"
+            android:textSize="16sp" />
+
+        <!-- 保存按钮 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveButton"
+            android:layout_width="0dp"
+            android:layout_height="54dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="@string/save"
+            android:textSize="16sp" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

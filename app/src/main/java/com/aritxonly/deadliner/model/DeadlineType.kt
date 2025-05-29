@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.model
 
 enum class DeadlineType {
     TASK,

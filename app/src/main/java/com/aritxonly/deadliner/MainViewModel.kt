@@ -2,6 +2,8 @@ package com.aritxonly.deadliner
 
 import android.util.Log
 import androidx.lifecycle.*
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,10 +21,39 @@ class MainViewModel(
     private val _ddlList = MutableLiveData<List<DDLItem>>()
     val ddlList: LiveData<List<DDLItem>> = _ddlList
 
+    // 用于存储即将到的DDL
+    private val _dueSoonCounts = MutableLiveData<Map<DeadlineType, Int>>()
+    val dueSoonCounts: LiveData<Map<DeadlineType, Int>> = _dueSoonCounts
+
     // 当前筛选的 DeadlineType
     var currentType: DeadlineType = DeadlineType.TASK
 
     fun isEmpty(): Boolean? = _ddlList.value?.isEmpty()
+
+    /**
+     * 计算某个类型下“即将到期”的 DDL 数量：
+     * 例如：剩余时间小于 24 小时且未完成且未归档
+     */
+    private fun computeDueSoonCount(type: DeadlineType): Int {
+        val now = LocalDateTime.now()
+        return dbHelper.getDDLsByType(type)
+            .count { item ->
+                if (item.isCompleted || item.isArchived || item.endTime.isEmpty()) return@count false
+                val end = try {
+                    GlobalUtils.parseDateTime(item.endTime)
+                } catch (e: Exception) {
+                    return@count false
+                }
+                if (end == null) return@count false
+                val remaining = Duration.between(now, end).toMinutes()
+                remaining <= 720
+            }
+    }
+
+    /**
+     * 对外一次性获取某 type 下的即将到期数量
+     */
+    fun dueSoonCount(type: DeadlineType): Int = computeDueSoonCount(type)
 
     private fun filterDataByList(ddlList: List<DDLItem>): List<DDLItem> {
         val filteredList = ddlList.filter { item ->
@@ -82,6 +113,10 @@ class MainViewModel(
         _refreshState.value = RefreshState.Loading(silent)
         viewModelScope.launch(Dispatchers.IO) {
             _ddlList.postValue(filterDataByList(dbHelper.getDDLsByType(type)))
+
+            val map = DeadlineType.entries.associateWith { computeDueSoonCount(it) }
+            _dueSoonCounts.postValue(map)
+
             _refreshState.value = RefreshState.Success
         }
     }
@@ -118,6 +153,9 @@ class MainViewModel(
 
                 matchesText && timeMatch
             }
+
+            val map = DeadlineType.entries.associateWith { computeDueSoonCount(it) }
+            _dueSoonCounts.postValue(map)
 
             _ddlList.postValue(filteredList)
         }

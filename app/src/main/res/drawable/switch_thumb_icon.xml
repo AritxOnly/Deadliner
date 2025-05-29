@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 开 = 显示 ic_on -->
+    <item
+        android:drawable="@drawable/ic_on"
+        android:state_checked="true" />
+
+    <!-- 其它（关）= 显示 ic_off -->
+    <item
+        android:drawable="@drawable/ic_off" />
+</selector>

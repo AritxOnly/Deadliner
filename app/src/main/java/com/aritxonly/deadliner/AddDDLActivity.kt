@@ -1,35 +1,51 @@
 package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
-import android.content.Intent
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.util.TypedValue
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Filter
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.ListView
+import android.widget.RadioButton
 import android.widget.TextView
+import android.widget.Toast
+import androidx.annotation.IdRes
+import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.lifecycleScope
+import com.aritxonly.deadliner.GlobalUtils.toDateTimeString
+import com.aritxonly.deadliner.calendar.CalendarHelper
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.toJson
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
-import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
+import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import com.google.android.material.timepicker.MaterialTimePicker
-import com.google.android.material.timepicker.TimeFormat
-import java.sql.Time
-import java.text.SimpleDateFormat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -42,6 +58,7 @@ class AddDDLActivity : AppCompatActivity() {
     private lateinit var endTimeCard: MaterialCardView
     private lateinit var ddlNoteEditText: EditText
     private lateinit var saveButton: Button
+    private lateinit var saveToCalendarButton: Button
     private lateinit var backButton: ImageButton
     private lateinit var ddlNoteLayout: TextInputLayout
 
@@ -56,8 +73,18 @@ class AddDDLActivity : AppCompatActivity() {
     private lateinit var totalTextInput: TextInputLayout
     private lateinit var totalEditText: EditText
     private lateinit var freqTypeHint: TextView
+    private lateinit var habitNoteHint: TextView
+
+    private lateinit var importFromCalendarButton: ImageButton
+
+    private var calendarEventId: Long? = null
 
     private var selectedPage = 0
+
+    private var frequency: Int? = null
+    private var total: Int? = null
+    private var frequencyType = DeadlineFrequency.TOTAL
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d("AddDDLActivity", "available: ${DynamicColors.isDynamicColorAvailable()}")
@@ -67,6 +94,8 @@ class AddDDLActivity : AppCompatActivity() {
 
         DynamicColors.applyToActivitiesIfAvailable(this.application)
         DynamicColors.applyToActivityIfAvailable(this)
+
+        GlobalUtils.decideHideFromRecent(this, this@AddDDLActivity)
 
         // 获取主题中的 colorSurface 值
         val colorSurface = getThemeColor(android.R.attr.colorBackground)
@@ -82,7 +111,9 @@ class AddDDLActivity : AppCompatActivity() {
         endTimeCard = findViewById(R.id.endTimeCard) // MaterialCardView
         ddlNoteEditText = findViewById(R.id.ddlNoteEditText)
         saveButton = findViewById(R.id.saveButton)
+        saveToCalendarButton = findViewById(R.id.saveToCalendarButton)
         backButton = findViewById(R.id.backButton)
+        importFromCalendarButton = findViewById(R.id.importFromCalendarButton)
         ddlNoteLayout = findViewById(R.id.ddlNoteLayout)
 
         freqEditLayout = findViewById(R.id.freqEditLayout)
@@ -93,6 +124,7 @@ class AddDDLActivity : AppCompatActivity() {
         totalTextInput = findViewById(R.id.totalTextInput)
         totalEditText = findViewById(R.id.totalEditText)
         freqTypeHint = findViewById(R.id.freqTypeHint)
+        habitNoteHint = findViewById(R.id.habitNoteHint)
 
         val startTimeContent: TextView = findViewById(R.id.startTimeContent)
         val endTimeContent: TextView = findViewById(R.id.endTimeContent)
@@ -119,50 +151,11 @@ class AddDDLActivity : AppCompatActivity() {
 
         // 保存按钮点击事件
         saveButton.setOnClickListener {
-            val ddlName = ddlNameEditText.text.toString()
-            val ddlNote = ddlNoteEditText.text.toString()
-            val frequency = freqEditText.text.toString().ifBlank { "1" }.toInt()
-            val total = totalEditText.text.toString().ifBlank { "0" }.toIntOrNull()
+            save(toCalendar = false)
+        }
 
-            val frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
-                R.id.btnTotal -> DeadlineFrequency.TOTAL
-                R.id.btnDaily -> DeadlineFrequency.DAILY
-                R.id.btnWeekly -> DeadlineFrequency.WEEKLY
-                R.id.btnYearly -> DeadlineFrequency.MONTHLY
-                else -> DeadlineFrequency.TOTAL
-            }
-
-            if (ddlName.isNotBlank() && startTime != null) {
-                if (selectedPage != 1) {
-                    if (endTime == null) return@setOnClickListener
-                    // 保存到数据库
-                    databaseHelper.insertDDL(
-                        ddlName,
-                        startTime.toString(),
-                        endTime.toString(),
-                        ddlNote
-                    )
-                    setResult(RESULT_OK)
-                    finishAfterTransition() // 返回 MainActivity
-                } else {
-                    databaseHelper.insertDDL(
-                        ddlName,
-                        startTime.toString(),
-                        endTime.toString(),
-                        note = HabitMetaData(
-                            completedDates = setOf(),
-                            frequencyType = frequencyType,
-                            frequency = frequency,
-                            total = total?:0,
-                            refreshDate = LocalDate.now().toString()
-                        ).toJson(),
-                        type = DeadlineType.HABIT
-                    )
-                    Log.d("endTime", endTime.toString())
-                    setResult(RESULT_OK)
-                    finishAfterTransition() // 返回 MainActivity
-                }
-            }
+        saveToCalendarButton.setOnClickListener {
+            save(toCalendar = true)
         }
 
         backButton.setOnClickListener {
@@ -182,6 +175,7 @@ class AddDDLActivity : AppCompatActivity() {
                         freqTypeToggleGroup.visibility = View.GONE
                         freqTypeHint.visibility = View.GONE
                         freqEditLayout.visibility = View.GONE
+                        habitNoteHint.visibility = View.GONE
                     }
                     1 -> {
                         ddlNoteLayout.visibility = View.GONE
@@ -189,6 +183,7 @@ class AddDDLActivity : AppCompatActivity() {
                         freqTypeToggleGroup.visibility = View.VISIBLE
                         freqTypeHint.visibility = View.VISIBLE
                         freqEditLayout.visibility = View.VISIBLE
+                        habitNoteHint.visibility = View.VISIBLE
                     }
                     else -> {}
                 }
@@ -197,6 +192,268 @@ class AddDDLActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+
+        freqEditText.addTextChangedListener(
+            afterTextChanged = { editable ->
+                frequency = editable?.toString()?.toIntOrNull()
+                val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+                habitNoteHint.text = formattedNote
+            }
+        )
+
+        totalEditText.addTextChangedListener(
+            afterTextChanged = { editable ->
+                total = editable?.toString()?.toIntOrNull()
+                val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+                habitNoteHint.text = formattedNote
+            }
+        )
+
+        freqTypeToggleGroup.addOnButtonCheckedListener { _, _, _ ->
+            frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
+                R.id.btnTotal -> DeadlineFrequency.TOTAL
+                R.id.btnDaily -> DeadlineFrequency.DAILY
+                R.id.btnWeekly -> DeadlineFrequency.WEEKLY
+                R.id.btnYearly -> DeadlineFrequency.MONTHLY
+                else -> DeadlineFrequency.TOTAL
+            }
+            val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+            habitNoteHint.text = formattedNote
+        }
+
+        importFromCalendarButton.setOnClickListener {
+            try {
+                loadCalendarEventsAndShowDialog()
+            } catch (e: Exception) {
+                Log.e("Calendar", e.toString())
+                Toast.makeText(this, "请检查日历权限：${e.toString()}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+        habitNoteHint.text = formattedNote
+    }
+
+    private fun save(toCalendar: Boolean) {
+        val ddlName = ddlNameEditText.text.toString()
+        val ddlNote = ddlNoteEditText.text.toString()
+        val frequency = freqEditText.text.toString().ifBlank { "1" }.toInt()
+        val total = totalEditText.text.toString().ifBlank { "0" }.toIntOrNull()
+
+        val frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
+            R.id.btnTotal -> DeadlineFrequency.TOTAL
+            R.id.btnDaily -> DeadlineFrequency.DAILY
+            R.id.btnWeekly -> DeadlineFrequency.WEEKLY
+            R.id.btnYearly -> DeadlineFrequency.MONTHLY
+            else -> DeadlineFrequency.TOTAL
+        }
+
+        if (ddlName.isNotBlank() && startTime != null) {
+            if (selectedPage != 1) {
+                if (endTime == null) return
+
+                // 保存到数据库
+                val ddlId = databaseHelper.insertDDL(
+                    ddlName,
+                    startTime.toString(),
+                    endTime.toString(),
+                    ddlNote,
+                    calendarEventId = calendarEventId
+                )
+
+                databaseHelper.getDDLById(ddlId)?.let { item ->
+                    if (GlobalUtils.deadlineNotification)
+                        DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, item)
+                    if (toCalendar) {
+                        val calendarHelper = CalendarHelper(this)
+                        lifecycleScope.launch {
+                            try {
+                                val eventId = calendarHelper.insertEvent(item)
+                                item.calendarEventId = eventId
+                                val databaseHelper = DatabaseHelper.getInstance(applicationContext)
+                                databaseHelper.updateDDL(item)
+                                Toast.makeText(this@AddDDLActivity, "已添加至日历", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Log.e("Calendar", e.toString())
+                                Toast.makeText(this@AddDDLActivity, "添加至日历失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+
+                setResult(RESULT_OK)
+                finishAfterTransition() // 返回 MainActivity
+            } else {
+                databaseHelper.insertDDL(
+                    ddlName,
+                    startTime.toString(),
+                    endTime.toString(),
+                    note = HabitMetaData(
+                        completedDates = setOf(),
+                        frequencyType = frequencyType,
+                        frequency = frequency,
+                        total = total ?: 0,
+                        refreshDate = LocalDate.now().toString()
+                    ).toJson(),
+                    type = DeadlineType.HABIT
+                )
+                Log.d("endTime", endTime.toString())
+                setResult(RESULT_OK)
+                finishAfterTransition() // 返回 MainActivity
+            }
+        }
+    }
+
+    private fun loadCalendarEventsAndShowDialog() {
+        val calendarHelper = CalendarHelper(applicationContext)
+        val calendarEvents = calendarHelper.queryAllCalendarEvents()
+        if (calendarEvents.isEmpty()) {
+            Toast.makeText(this, "没有可导入的日历事件", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 原始条目文本
+        val titles = calendarEvents.map { event ->
+            val time = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())
+            "${event.title} – ${time?.let(::formatLocalDateTime) ?: "解析失败"}"
+        }
+
+        // Inflate 布局
+        val dialogView = LayoutInflater.from(this)
+            .inflate(R.layout.dialog_calendar_events, null, false)
+        val etSearch = dialogView.findViewById<TextInputEditText>(R.id.searchEditText)
+        val lvEvents = dialogView.findViewById<ListView>(R.id.eventListView)
+
+        // 自定义 ArrayAdapter + Filterable
+        open class FuzzyAdapter(
+            ctx: Context,
+            @LayoutRes layoutResId: Int,
+            @IdRes textViewResId: Int,
+            items: List<String>
+        ) : ArrayAdapter<String>(ctx, layoutResId, textViewResId, items) {
+
+            private val originalItems = items.toList()
+
+            override fun getFilter(): Filter = object : Filter() {
+                override fun performFiltering(constraint: CharSequence?): FilterResults {
+                    val results = FilterResults()
+                    if (constraint.isNullOrEmpty()) {
+                        results.values = originalItems
+                        results.count = originalItems.size
+                    } else {
+                        val kw = constraint.toString().lowercase(Locale.getDefault())
+                        results.values = originalItems.filter {
+                            it.lowercase(Locale.getDefault()).contains(kw)
+                        }
+                        results.count = (results.values as List<*>).size
+                    }
+                    return results
+                }
+
+                @Suppress("UNCHECKED_CAST")
+                override fun publishResults(constraint: CharSequence?, results: FilterResults) {
+                    clear()
+                    addAll(results.values as List<String>)
+                    notifyDataSetChanged()
+                }
+            }
+        }
+
+        // 1. 用自定义适配器
+        val adapter = object : FuzzyAdapter(
+            this,
+            R.layout.dialog_single_choice_layout,
+            android.R.id.text1,
+            titles
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                // 让 ArrayAdapter 帮我们 inflate 并 bind 文本
+                val view = super.getView(position, convertView, parent)
+                // 同时根据 ListView 的选中状态，更新 RadioButton
+                val lv = parent as ListView
+                val rb = view.findViewById<RadioButton>(R.id.radio)
+                rb.isChecked = lv.isItemChecked(position)
+                return view
+            }
+        }
+        lvEvents.adapter = adapter
+        lvEvents.choiceMode = ListView.CHOICE_MODE_SINGLE
+
+        // 2. 搜索框监听：每次文本变化都触发 filter
+        etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                adapter.filter.filter(s)
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        // 3. 记录用户的点击
+        var selectedPosition = -1
+        lvEvents.setOnItemClickListener { _, _, pos, _ ->
+            selectedPosition = pos
+            lvEvents.setItemChecked(pos, true)
+            adapter.notifyDataSetChanged()
+        }
+
+        // 4. 弹窗
+        MaterialAlertDialogBuilder(this)
+            .setTitle("选择要导入的事件")
+            .setView(dialogView)
+            .setNeutralButton("过滤账户") { _, _ -> showCalendarFilterDialog() }
+            .setPositiveButton("导入") { dialog, _ ->
+                if (selectedPosition >= 0) {
+                    val event = calendarEvents[selectedPosition]
+                    ddlNameEditText.setText(event.title)
+                    ddlNoteEditText.setText(event.description)
+                    endTime = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())
+                    findViewById<TextView>(R.id.endTimeContent)
+                        .text = formatLocalDateTime(endTime!!)
+                    calendarEventId = event.id
+                } else {
+                    Toast.makeText(this, "请先选择一个事件", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showCalendarFilterDialog() {
+        // 先拿到所有账号
+        val helper = CalendarHelper(applicationContext)
+        val accounts = helper.getAllCalendarAccounts()
+
+        if (accounts.isEmpty()) {
+            Toast.makeText(this, "当前没有可用的日历账户", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 准备对话框要显示的条目和选中状态
+        val names = accounts.map { it.accountName.ifEmpty { it.accountName } }.toTypedArray()
+        val savedSet = GlobalUtils.filteredCalendars?:setOf()
+        val checked = names.map { savedSet.contains(it) }.toBooleanArray()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("选择要隐藏的日历账户")
+            .setMultiChoiceItems(names, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }
+            .setPositiveButton("确定") { _, _ ->
+                // 把勾选了的那些账户名存到 prefs 里
+                val newFiltered = names
+                    .zip(checked.toList())
+                    .filter { it.second }    // true 表示要“过滤掉”
+                    .map   { it.first }
+                    .toSet()
+
+                GlobalUtils.filteredCalendars = newFiltered
+
+                Toast.makeText(this, "已保存日历过滤设置", Toast.LENGTH_SHORT).show()
+                loadCalendarEventsAndShowDialog()
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     private fun initTab() {
@@ -221,7 +478,7 @@ class AddDDLActivity : AppCompatActivity() {
 
     fun formatLocalDateTime(dateTime: LocalDateTime): String {
         // 定义格式化器
-        val formatter = DateTimeFormatter.ofPattern("MM月dd日 HH:mm", Locale.CHINA)
+        val formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm", Locale.CHINA)
         // 格式化 LocalDateTime
         return dateTime.format(formatter)
     }

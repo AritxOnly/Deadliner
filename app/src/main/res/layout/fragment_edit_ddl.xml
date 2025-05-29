@@ -3,17 +3,19 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:fitsSystemWindows="true"
+    android:background="?attr/colorSurface"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="12dp">
     <!-- 选择开始时间 -->
 
     <ImageButton
         android:id="@+id/backButton"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginStart="4dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/circle_background_main"
         android:scaleType="centerInside"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -128,7 +130,6 @@
         android:layout_width="0dp"
         android:layout_height="128dp"
         android:layout_marginTop="16dp"
-        android:inputType="text"
         app:boxCornerRadiusBottomEnd="12dp"
         app:boxCornerRadiusBottomStart="12dp"
         app:boxCornerRadiusTopEnd="12dp"
@@ -142,9 +143,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="top|start"
-            android:inputType="text"
-            android:scrollHorizontally="false"
-            android:imeOptions="actionDone|flagNoEnterAction" />
+            android:inputType="textMultiLine"
+            android:scrollHorizontally="false" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <!-- 习惯：频率类型-频率-目标次数 -->
@@ -160,6 +160,7 @@
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/freqTypeToggleGroup"
+        style="@style/Widget.Material3.MaterialButtonGroup.Connected"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
@@ -176,7 +177,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="不限"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDaily"
@@ -184,7 +185,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="每日"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnWeekly"
@@ -192,7 +193,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="每周"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnYearly"
@@ -200,7 +201,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="每月"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            style="@style/Widget.Custom.ToggleButton" />
 
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
