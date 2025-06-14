@@ -28,8 +28,9 @@ import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
-import com.aritxonly.deadliner.GlobalUtils.toDateTimeString
+import com.aritxonly.deadliner.localutils.GlobalUtils.toDateTimeString
 import com.aritxonly.deadliner.calendar.CalendarHelper
+import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData

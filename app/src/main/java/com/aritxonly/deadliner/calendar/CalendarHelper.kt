@@ -9,8 +9,8 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
-import com.aritxonly.deadliner.GlobalUtils
-import com.aritxonly.deadliner.GlobalUtils.toDateTimeString
+import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.GlobalUtils.toDateTimeString
 import com.aritxonly.deadliner.model.CalendarEvent
 import com.aritxonly.deadliner.model.CalendarInfo
 import kotlinx.coroutines.Dispatchers

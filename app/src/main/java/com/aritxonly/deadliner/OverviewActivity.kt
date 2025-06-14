@@ -35,13 +35,18 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
@@ -49,7 +54,10 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,12 +72,23 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.aritxonly.deadliner.composable.BarChartCompletionTimeStats
+import com.aritxonly.deadliner.composable.DailyBarChart
+import com.aritxonly.deadliner.composable.DailyLineChart
+import com.aritxonly.deadliner.composable.PieChartView
+import com.aritxonly.deadliner.composable.WeeklyBarChart
+import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.OverviewUtils
 import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import java.time.Duration
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 // 辅助函数：判断任务是否逾期
 // 假设 endTime 格式为 "yyyy-MM-dd HH:mm"
@@ -130,38 +149,12 @@ class OverviewActivity : ComponentActivity() {
 
         setContent {
             CustomDeadlinerTheme(appColorScheme = appColorScheme) {
-                val items = databaseHelper.getAllDDLs()
+                val items = databaseHelper.getDDLsByType(DeadlineType.TASK)
 
-                // 当前任务：未归档
-                val activeItems = items.filter { !it.isArchived }
-                val completedItems = activeItems.filter { it.isCompleted }
-                val incompleteItems = activeItems.filter { !it.isCompleted && !isOverdue(it) }
-                val overdueItems = activeItems.filter { isOverdue(it) }
 
-                // 历史任务：所有任务
-                val historyCompleted = items.filter { it.isCompleted }
-                val historyIncomplete = items.filter { !it.isCompleted }
-                // 对于历史任务，逾期可以按业务需求定义，此处简单统计未完成为逾期
-                val historyOverdue = overdueItems
-
-                // 完成时间段统计：针对所有完成的任务，按时间段统计
-                val completionTimeStats = historyCompleted.groupBy { extractTimeBucket(it.completeTime) }
-                    .mapValues { it.value.size }
-                    .toList()
-                    .sortedBy { timeBucketOrder[it.first] ?: Int.MAX_VALUE }
 
                     OverviewScreen(
-                        activeStats = mapOf(
-                            "已完成" to completedItems.size,
-                            "未完成" to incompleteItems.size,
-                            "逾期" to overdueItems.size
-                        ),
-                        historyStats = mapOf(
-                            "已完成" to historyCompleted.size,
-                            "未完成" to historyIncomplete.size,
-                            "逾期" to historyOverdue.size
-                        ),
-                        completionTimeStats = completionTimeStats,
+                        items = items,
                         colorScheme = appColorScheme
                     ) {
                         finish()
@@ -185,42 +178,66 @@ fun hashColor(key: String) : Color {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OverviewScreen(
-    activeStats: Map<String, Int>,
-    historyStats: Map<String, Int>,
-    completionTimeStats: List<Pair<String, Int>>,
+    items: List<DDLItem>,
     colorScheme: AppColorScheme,
     onClose: () -> Unit
 ) {
+    // 数据准备
+    // 当前任务：未归档
+    val activeItems = items.filter { !it.isArchived }
+    val completedItems = activeItems.filter { it.isCompleted }
+    val incompleteItems = activeItems.filter { !it.isCompleted && !isOverdue(it) }
+    val overdueItems = activeItems.filter { isOverdue(it) }
+
+    // 历史任务：所有任务
+    val historyCompleted = items.filter { it.isCompleted }
+    val historyIncomplete = items.filter { !it.isCompleted }
+    // 对于历史任务，逾期可以按业务需求定义，此处简单统计未完成为逾期
+    val historyOverdue = overdueItems
+
+    val activeStats = mapOf(
+        "已完成" to completedItems.size,
+        "未完成" to incompleteItems.size,
+        "逾期" to overdueItems.size
+    )
+    val historyStats = mapOf(
+        "已完成" to historyCompleted.size,
+        "未完成" to historyIncomplete.size,
+        "逾期" to historyOverdue.size
+    )
+
+    // 完成时间段统计：针对所有完成的任务，按时间段统计
+    val completionTimeStats = historyCompleted.groupBy { extractTimeBucket(it.completeTime) }
+        .mapValues { it.value.size }
+        .toList()
+        .sortedBy { timeBucketOrder[it.first] ?: Int.MAX_VALUE }
+
+
+    // UI准备
     val expressiveTypeModifier = Modifier
         .size(40.dp)
         .clip(CircleShape)
         .background(Color(colorScheme.surfaceContainer), CircleShape)
         .padding(8.dp)
 
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
-
-    val fraction by remember {
-        derivedStateOf { scrollBehavior.state.collapsedFraction }
-    }
-
-    val isCollapsed = fraction > 0.5f
-
-    val titleStyle = if (isCollapsed) {
-        MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
-    } else {
-        MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
-    }
+    val tabs = listOf("概览统计", "趋势分析", "习惯打卡")
+    val mapIcon = mapOf(
+        "概览统计" to painterResource(R.drawable.ic_analytics),
+        "趋势分析" to painterResource(R.drawable.ic_monitor),
+        "习惯打卡" to painterResource(R.drawable.ic_routine)
+    )
+    var selectedTab by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(1) }
 
     Scaffold(
         containerColor = Color.Transparent,
         contentColor = contentColorFor(Color.Transparent),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            LargeTopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text(
                     "概览",
                     color = Color(colorScheme.onSurface),
-                    style = titleStyle
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
                 ) },
                 navigationIcon = {
                     IconButton(
@@ -234,235 +251,377 @@ fun OverviewScreen(
                         )
                     }
                 },
+                actions = {
+                    Row {
+                        IconButton(
+                            onClick = { },
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_more),
+                                contentDescription = "更多",
+                                tint = Color(colorScheme.onSurface),
+                                modifier = expressiveTypeModifier
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = Color(colorScheme.surface),
                     scrolledContainerColor = Color(colorScheme.surface)
                 ),
                 modifier = Modifier
                     .background(Color(colorScheme.surface))
-                    .padding(horizontal = 8.dp),
-                scrollBehavior = scrollBehavior
+                    .padding(horizontal = 8.dp)
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .padding(paddingValues)
                 .background(Color(colorScheme.surface))
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-            verticalArrangement = Arrangement.spacedBy((-8).dp)
         ) {
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(colorScheme.surfaceContainer)
-                    ),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .background(Color(colorScheme.surfaceContainer))
-                    ) {
-                        Text(
-                            text = "活动任务状态统计",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
-                            color = Color(colorScheme.onSurface)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            activeStats.forEach { (key, value) ->
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.width(80.dp)
-                                ) {
-                                    Text(
-                                        text = key,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(colorScheme.onSurface)
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = value.toString(),
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = hashColor(key = key),
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(colorScheme.surfaceContainer)
-                    ),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
-                ) {
-                    Column(modifier = Modifier
-                        .padding(16.dp)
-                        .background(Color(colorScheme.surfaceContainer))) {
-                        Text(
-                            text = "任务完成时间段统计",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
-                            color = Color(colorScheme.onSurface)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        // 使用条形图展示完成时间段统计
-                        BarChartCompletionTimeStats(
-                            data = completionTimeStats,
-                            textColor = Color(colorScheme.onSurface)
-                        )
-                    }
-                }
-            }
-
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(colorScheme.surfaceContainer)
-                    ),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Text(
-                            text = "任务状态统计",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
-                            color = Color(colorScheme.onSurface)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            historyStats.forEach { (key, value) ->
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.width(80.dp)
-                                ) {
-                                    Text(
-                                        text = key,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(colorScheme.onSurface)
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = value.toString(),
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        color = hashColor(key = key),
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            PieChartView(statistics = historyStats)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun BarChartCompletionTimeStats(
-    data: List<Pair<String, Int>>,
-    barColor: Color = colorResource(id = R.color.chart_blue),
-    textColor: Color = MaterialTheme.colorScheme.onSurface
-) {
-    // 找到最大值用于归一化
-    val maxCount = data.maxOfOrNull { it.second } ?: 1
-    Column(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)) {
-        data.forEach { (timeBucket, count) ->
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
+            PrimaryTabRow(
+                selectedTabIndex = selectedTab,
+                divider = { HorizontalDivider(color = Color(colorScheme.surface)) }
             ) {
-                Text(text = timeBucket, color = textColor)
-                Spacer(modifier = Modifier.width(16.dp))
-                Canvas(modifier = Modifier
-                    .height(20.dp)
-                    .weight(1f)) {
-                    val barWidth = (size.width) * (count / maxCount.toFloat())
-                    drawRoundRect(
-                        color = barColor,
-                        size = Size(barWidth, size.height),
-                        cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                tabs.forEachIndexed { i, title ->
+                    val icon = mapIcon[title] ?: painterResource(R.drawable.ic_info)
+                    Tab(
+                        selected = i == selectedTab,
+                        onClick = { selectedTab = i },
+                        icon = { Icon(icon, contentDescription = title) },
+                        text = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = count.toString(), color = textColor,
-                    textAlign = TextAlign.Right
-                )
+            }
+            when (selectedTab) {
+                0 ->
+                    OverviewStatsScreen(
+                        activeStats,
+                        historyStats,
+                        completionTimeStats,
+                        Modifier
+                            .background(Color(colorScheme.surface)),
+                        colorScheme
+                    )
+                1 ->
+                    TrendAnalysisScreen(
+                        items,
+                        Modifier
+                            .background(Color(colorScheme.surface)),
+                        colorScheme
+                    )
+                2 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("习惯打卡模块待实现")
+                }
             }
         }
     }
 }
 
 @Composable
-fun PieChartView(statistics: Map<String, Int>, size: Dp = 160.dp) {
-    val total = statistics.values.sum().toFloat()
-    val colors = listOf(
-        colorResource(id = R.color.chart_green), 
-        colorResource(id = R.color.chart_orange),
-        colorResource(id = R.color.chart_red)
-    )
+fun TrendAnalysisScreen(
+    items: List<DDLItem>,
+    modifier: Modifier = Modifier,
+    colorScheme: AppColorScheme
+) {
+    val dailyCompleted = OverviewUtils.computeDailyCompletedCounts(items)
+    val dailyOverdue   = OverviewUtils.computeDailyOverdueCounts(items)
+    val dailyRate      = OverviewUtils.computeDailyCompletionRate(items)
+    val weeklyCompleted = OverviewUtils.computeWeeklyCompletedCounts(items)
 
-    Box(
-        modifier = Modifier.width(size),
-        contentAlignment = Alignment.Center
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Canvas(modifier = Modifier.size(size)) {
-            // 获取实际绘制区域尺寸
-            val canvasSize = size.toPx()
-            val centerX = size.toPx() / 2
-            val centerY = size.toPx() / 2
-            val radius = minOf(canvasSize, canvasSize) / 2
+        // 最近7天完成量
+        item {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(colorScheme.surfaceContainer)
+                ),
+                modifier = Modifier
+                    .padding(16.dp, 8.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .background(Color(colorScheme.surfaceContainer))
+                ) {
+                    Text(
+                        text = "最近7天完成量",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = Color(colorScheme.onSurface)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    DailyBarChart(
+                        data = dailyCompleted,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        barColor = hashColor("")
+                    )
+                }
+            }
+        }
 
-            var startAngle = -90f // 从12点钟方向开始
+        // 最近7天完成率
+        item {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(colorScheme.surfaceContainer)
+                ),
+                modifier = Modifier
+                    .padding(16.dp, 8.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .background(Color(colorScheme.surfaceContainer))
+                ) {
+                    Text(
+                        text = "最近7天完成率",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = Color(colorScheme.onSurface)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    DailyLineChart(
+                        data = dailyRate,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        lineColor = Color(colorScheme.secondary)
+                    )
+                }
+            }
+        }
 
-            statistics.entries.forEachIndexed { index, entry ->
-                val sweepAngle = if (total == 0f) 0f else (entry.value / total) * 360f
+        // 最近7天逾期量
+        item {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(colorScheme.surfaceContainer)
+                ),
+                modifier = Modifier
+                    .padding(16.dp, 8.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .background(Color(colorScheme.surfaceContainer))
+                ) {
+                    Text(
+                        text = "最近7天逾期量",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = Color(colorScheme.onSurface)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    DailyBarChart(
+                        data = dailyOverdue,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        barColor = hashColor("逾期")
+                    )
+                }
+            }
+        }
 
-                drawArc(
-                    color = colors.getOrElse(index) { Color.Gray },
-                    startAngle = startAngle,
-                    sweepAngle = sweepAngle,
-                    useCenter = true,
-                    topLeft = Offset(centerX - radius, centerY - radius),
-                    size = Size(radius * 2, radius * 2)
-                )
-                startAngle += sweepAngle
+        // 最近4周完成量
+        item {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(colorScheme.surfaceContainer)
+                ),
+                modifier = Modifier
+                    .padding(16.dp, 8.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .background(Color(colorScheme.surfaceContainer))
+                ) {
+                    Text(
+                        text = "最近4周完成量",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = Color(colorScheme.onSurface)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    WeeklyBarChart(
+                        data = weeklyCompleted,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        barColor = Color(colorScheme.tertiary)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun OverviewStatsScreen(
+    activeStats: Map<String, Int>,
+    historyStats: Map<String, Int>,
+    completionTimeStats: List<Pair<String, Int>>,
+    modifier: Modifier,
+    colorScheme: AppColorScheme
+) {
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy((-8).dp)
+    ) {
+        item {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(colorScheme.surfaceContainer)
+                ),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .background(Color(colorScheme.surfaceContainer))
+                ) {
+                    Text(
+                        text = "活动任务状态统计",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = Color(colorScheme.onSurface)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        activeStats.forEach { (key, value) ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.width(80.dp)
+                            ) {
+                                Text(
+                                    text = key,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(colorScheme.onSurface)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = value.toString(),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = hashColor(key = key),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(colorScheme.surfaceContainer)
+                ),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
+            ) {
+                Column(modifier = Modifier
+                    .padding(16.dp)
+                    .background(Color(colorScheme.surfaceContainer))) {
+                    Text(
+                        text = "任务完成时间段统计",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = Color(colorScheme.onSurface)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // 使用条形图展示完成时间段统计
+                    BarChartCompletionTimeStats(
+                        data = completionTimeStats,
+                        textColor = Color(colorScheme.onSurface)
+                    )
+                }
+            }
+        }
+
+        item {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(colorScheme.surfaceContainer)
+                ),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "任务状态统计",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = Color(colorScheme.onSurface)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        historyStats.forEach { (key, value) ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.width(80.dp)
+                            ) {
+                                Text(
+                                    text = key,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(colorScheme.onSurface)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = value.toString(),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color = hashColor(key = key),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        PieChartView(statistics = historyStats)
+                    }
+                }
             }
         }
     }
@@ -472,22 +631,71 @@ fun PieChartView(statistics: Map<String, Int>, size: Dp = 160.dp) {
 @Composable
 fun OverviewPreview() {
     DeadlinerTheme {
+        val items = listOf<DDLItem>(
+            DDLItem(
+                id = 1,
+                name = "提交报告",
+                startTime = "2025-06-07 09:00",
+                endTime = "2025-06-07 12:00",
+                isCompleted = true,
+                completeTime = "2025-06-07 11:30",
+                note = "按时完成",
+                type = DeadlineType.TASK
+            ),
+            DDLItem(
+                id = 2,
+                name = "团队会议准备",
+                startTime = "2025-06-08 14:00",
+                endTime = "2025-06-08 16:00",
+                isCompleted = true,
+                completeTime = "2025-06-08 15:45",
+                note = "幻灯片已更新",
+                type = DeadlineType.TASK
+            ),
+            DDLItem(
+                id = 3,
+                name = "代码重构",
+                startTime = "2025-06-10 10:00",
+                endTime = "2025-06-10 18:00",
+                isCompleted = false,
+                completeTime = "",
+                note = "进行中",
+                type = DeadlineType.TASK
+            ),
+            DDLItem(
+                id = 4,
+                name = "发布新版本",
+                startTime = "2025-06-12 08:00",
+                endTime = "2025-06-12 12:00",
+                isCompleted = true,
+                completeTime = "2025-06-12 11:50",
+                note = "已部署至服务器",
+                type = DeadlineType.TASK
+            ),
+            DDLItem(
+                id = 5,
+                name = "撰写周报",
+                startTime = "2025-06-13 17:00",
+                endTime = "2025-06-13 19:00",
+                isCompleted = false,
+                completeTime = "",
+                note = "待完成",
+                type = DeadlineType.TASK
+            ),
+            // 逾期任务示例
+            DDLItem(
+                id = 6,
+                name = "更新文档",
+                startTime = "2025-06-05 09:00",
+                endTime = "2025-06-09 17:00",
+                isCompleted = false,
+                completeTime = "",
+                note = "过期未完成",
+                type = DeadlineType.TASK
+            )
+        )
         OverviewScreen(
-            activeStats = mapOf(
-                "已完成" to 10,
-                "未完成" to 4,
-                "逾期" to 5
-            ),
-            historyStats = mapOf(
-                "已完成" to 9,
-                "未完成" to 10,
-                "逾期" to 14
-            ),
-            completionTimeStats = listOf(
-                "早上" to 5,
-                "上午" to 3,
-                "下午" to 6
-            ),
+            items = items,
             colorScheme =  AppColorScheme(
                 primary = MaterialTheme.colorScheme.primary.toArgb(),
                 onPrimary = MaterialTheme.colorScheme.onPrimary.toArgb(),

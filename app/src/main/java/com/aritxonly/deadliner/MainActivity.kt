@@ -106,6 +106,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
+import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
@@ -180,6 +181,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         setContentView(R.layout.activity_main)
 
         if (GlobalUtils.experimentalEdgeToEdge) {
+            // 开启边到边沉浸
             enableEdgeToEdge()
 
             val rootView = findViewById<ConstraintLayout>(R.id.main)
@@ -191,13 +193,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                 bottomAppBar.updatePadding(bottom = navBarInset)
 
-                val TAG_ORIG_MARGIN = R.id.addEvent // 任意一个不会冲突的 id
+                val TAG_ORIG_MARGIN = R.id.addEvent
                 if (addEventButton.getTag(TAG_ORIG_MARGIN) == null) {
                     val lp = addEventButton.layoutParams as ViewGroup.MarginLayoutParams
                     addEventButton.setTag(TAG_ORIG_MARGIN, lp.bottomMargin)
                 }
 
-                // 2. 每次都按「原始 + inset/2」来设置
                 val originalMargin = addEventButton.getTag(TAG_ORIG_MARGIN) as Int
                 addEventButton.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     bottomMargin = originalMargin + navBarInset / 2
