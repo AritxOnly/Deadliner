@@ -987,25 +987,53 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         })
     }
 
-    // 判断是否有新版本（版本号格式：x.y.z）
-    private fun isNewVersionAvailable(localVersion: String, latestVersion: String): Boolean {
-        // 去掉前缀 'v'，确保格式为 x.y.z
-        val cleanedLocalVersion = localVersion.removePrefix("v")
-        val cleanedLatestVersion = latestVersion.removePrefix("v")
+    /**
+     * 按 SemVer 规则比较版本号：
+     *   1) 先比较主、次、补丁号的数字；
+     *   2) 如果数字都相等，再比较 pre-release 后缀，
+     *      认为无后缀 > 有后缀（beta、rc 等等）。
+     *
+     * 返回值：>0 表示 v1>v2，0 表示相等，<0 表示 v1<v2
+     */
+    private fun compareSemVer(v1: String, v2: String): Int {
+        // 去掉前缀 'v'
+        val p1 = v1.removePrefix("v").split(".")
+        val p2 = v2.removePrefix("v").split(".")
 
-        val localParts = cleanedLocalVersion.split(".")
-        val latestParts = cleanedLatestVersion.split(".")
+        val maxLen = maxOf(p1.size, p2.size)
+        for (i in 0 until maxLen) {
+            // 拿到这一段，可能是 "1"、"1-beta"、甚至 "1-beta2"
+            val seg1 = p1.getOrNull(i).orEmpty()
+            val seg2 = p2.getOrNull(i).orEmpty()
 
-        for (i in 0 until minOf(localParts.size, latestParts.size)) {
-            val localPart = localParts[i].toIntOrNull() ?: -1
-            val latestPart = latestParts[i].toIntOrNull() ?: 0
+            // 数字部分在 '-' 之前
+            val num1 = seg1.substringBefore('-').toIntOrNull() ?: 0
+            val num2 = seg2.substringBefore('-').toIntOrNull() ?: 0
+            if (num1 != num2) return num1 - num2
 
-            if (localPart < latestPart) return true  // 有新版本
-            if (localPart > latestPart) return false // 本地版本更新
+            // 数字相同，继续比后缀：
+            val suffix1 = seg1.substringAfter('-', missingDelimiterValue = "")
+            val suffix2 = seg2.substringAfter('-', missingDelimiterValue = "")
+            if (suffix1.isEmpty() && suffix2.isNotEmpty()) {
+                // 1.2.3  > 1.2.3-beta
+                return 1
+            }
+            if (suffix1.isNotEmpty() && suffix2.isEmpty()) {
+                // 1.2.3-beta < 1.2.3
+                return -1
+            }
+            // 如果两边都有后缀，你也可以按字母序比较：
+            if (suffix1 != suffix2) {
+                return suffix1.compareTo(suffix2)
+            }
+            // 否则继续循环下一段
         }
+        return 0
+    }
 
-        // 如果最新版本的部分比本地多，例如 v1.2.3 -> v1.2.3.1，说明有新版本
-        return latestParts.size > localParts.size
+    /** 判断 latestVersion 是否“更大” */
+    private fun isNewVersionAvailable(localVersion: String, latestVersion: String): Boolean {
+        return compareSemVer(localVersion, latestVersion) < 0
     }
 
     // 显示更新提示对话框

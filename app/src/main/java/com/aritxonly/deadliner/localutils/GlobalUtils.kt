@@ -224,6 +224,20 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("permission_setup_done", value) }
         }
 
+    object OverviewSettings {
+        var monthlyCount: Int
+            get() = sharedPreferences.getInt("monthly_count(overview)", 12)
+            set(value) {
+                sharedPreferences.edit { putInt("monthly_count(overview)", value) }
+            }
+
+        var showOverdueInDaily: Boolean
+            get() = sharedPreferences.getBoolean("show_overdue_in_daily(overview)", true)
+            set(value) {
+                sharedPreferences.edit { putBoolean("show_overdue_in_daily(overview)", value) }
+            }
+    }
+
     object NotificationStatusManager {
         fun markAsNotified(ddlId: Long) {
             val set = notifiedSet

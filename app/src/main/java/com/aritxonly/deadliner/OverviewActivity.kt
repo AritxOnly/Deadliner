@@ -3,16 +3,13 @@ package com.aritxonly.deadliner
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import java.time.LocalDateTime
 import android.os.Bundle
-import android.view.View
-import android.view.WindowInsetsController
-import android.view.WindowManager
+import android.view.LayoutInflater
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,33 +24,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -61,32 +58,29 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.composable.BarChartCompletionTimeStats
 import com.aritxonly.deadliner.composable.DailyBarChart
-import com.aritxonly.deadliner.composable.DailyLineChart
-import com.aritxonly.deadliner.composable.PieChartView
+import com.aritxonly.deadliner.composable.DashboardScreen
+import com.aritxonly.deadliner.composable.MonthlyTrendChart
+import com.aritxonly.deadliner.composable.NewPieChart
 import com.aritxonly.deadliner.composable.WeeklyBarChart
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.OverviewUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
-import java.time.Duration
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.slider.Slider
 import kotlin.collections.component1
 import kotlin.collections.component2
 
@@ -148,7 +142,7 @@ class OverviewActivity : ComponentActivity() {
         val databaseHelper = DatabaseHelper.getInstance(applicationContext)
 
         setContent {
-            CustomDeadlinerTheme(appColorScheme = appColorScheme) {
+            DeadlinerTheme {
                 val items = databaseHelper.getDDLsByType(DeadlineType.TASK)
 
 
@@ -175,6 +169,7 @@ fun hashColor(key: String) : Color {
     return color
 }
 
+@SuppressLint("SetTextI18n")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OverviewScreen(
@@ -220,13 +215,15 @@ fun OverviewScreen(
         .background(Color(colorScheme.surfaceContainer), CircleShape)
         .padding(8.dp)
 
-    val tabs = listOf("概览统计", "趋势分析", "习惯打卡")
+    var showSettings by rememberSaveable { mutableStateOf(false) }
+
+    val tabs = listOf("概览统计", "趋势分析", "上月总结")
     val mapIcon = mapOf(
         "概览统计" to painterResource(R.drawable.ic_analytics),
         "趋势分析" to painterResource(R.drawable.ic_monitor),
-        "习惯打卡" to painterResource(R.drawable.ic_routine)
+        "上月总结" to painterResource(R.drawable.ic_dashboard)
     )
-    var selectedTab by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(1) }
+    var selectedTab by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -254,10 +251,10 @@ fun OverviewScreen(
                 actions = {
                     Row {
                         IconButton(
-                            onClick = { },
+                            onClick = { showSettings = true },
                         ) {
                             Icon(
-                                painterResource(R.drawable.ic_more),
+                                painterResource(R.drawable.ic_pref),
                                 contentDescription = "更多",
                                 tint = Color(colorScheme.onSurface),
                                 modifier = expressiveTypeModifier
@@ -311,10 +308,54 @@ fun OverviewScreen(
                             .background(Color(colorScheme.surface)),
                         colorScheme
                     )
-                2 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("习惯打卡模块待实现")
-                }
+                2 ->
+                    DashboardScreen(
+                        items,
+                        colorScheme,
+                        Modifier
+                            .background(Color(colorScheme.surface))
+                    )
             }
+        }
+
+        if (showSettings) {
+            AlertDialog(
+                onDismissRequest = { showSettings = false },
+                confirmButton = {
+                    TextButton(onClick = { showSettings = false }) {
+                        Text("确认")
+                    }
+                },
+                text = {
+                    // 用 AndroidView 加载我们刚才写的 XML 布局
+                    AndroidView(
+                        factory = { context ->
+                            LayoutInflater.from(context)
+                                .inflate(R.layout.dialog_overview_settings, null)
+                                .apply {
+                                    val seek = findViewById<Slider>(R.id.seekbar_monthly)
+                                    val tv = findViewById<TextView>(R.id.text_monthly_value)
+                                    val sw = findViewById<MaterialSwitch>(R.id.switch_overdue)
+
+                                    // 初始化控件状态
+                                    seek.value = (GlobalUtils.OverviewSettings.monthlyCount).toFloat()
+                                    tv.text = "${GlobalUtils.OverviewSettings.monthlyCount} 个月"
+                                    sw.isChecked = GlobalUtils.OverviewSettings.showOverdueInDaily
+
+                                    // 监听用户操作，实时更新 SharedPreferences
+                                    seek.addOnChangeListener { _, _, _ ->
+                                        GlobalUtils.OverviewSettings.monthlyCount = seek.value.toInt()
+                                        tv.text = "${GlobalUtils.OverviewSettings.monthlyCount} 个月"
+                                    }
+                                    sw.setOnCheckedChangeListener { _, isChecked ->
+                                        GlobalUtils.OverviewSettings.showOverdueInDaily = isChecked
+                                    }
+                                }
+                        },
+                        update = { /* nothing to do */ }
+                    )
+                }
+            )
         }
     }
 }
@@ -325,153 +366,125 @@ fun TrendAnalysisScreen(
     modifier: Modifier = Modifier,
     colorScheme: AppColorScheme
 ) {
-    val dailyCompleted = OverviewUtils.computeDailyCompletedCounts(items)
-    val dailyOverdue   = OverviewUtils.computeDailyOverdueCounts(items)
-    val dailyRate      = OverviewUtils.computeDailyCompletionRate(items)
-    val weeklyCompleted = OverviewUtils.computeWeeklyCompletedCounts(items)
+    key(GlobalUtils.OverviewSettings.monthlyCount, GlobalUtils.OverviewSettings.showOverdueInDaily) {
 
-    LazyColumn(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // 最近7天完成量
-        item {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(colorScheme.surfaceContainer)
-                ),
-                modifier = Modifier
-                    .padding(16.dp, 8.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
-            ) {
-                Column(
+        val dailyCompleted  = OverviewUtils.computeDailyCompletedCounts(items)
+        val dailyOverdue    = OverviewUtils.computeDailyOverdueCounts(items)
+        val monthlyStat     = OverviewUtils.computeMonthlyTaskStats(items, months = GlobalUtils.OverviewSettings.monthlyCount)
+        val weeklyCompleted = OverviewUtils.computeWeeklyCompletedCounts(items)
+
+        LazyColumn(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            // 最近7天完成量
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(colorScheme.surfaceContainer)
+                    ),
                     modifier = Modifier
+                        .padding(16.dp, 8.dp)
                         .fillMaxWidth()
-                        .padding(16.dp)
-                        .background(Color(colorScheme.surfaceContainer))
+                        .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
                 ) {
-                    Text(
-                        text = "最近7天完成量",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = Color(colorScheme.onSurface)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    DailyBarChart(
-                        data = dailyCompleted,
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp),
-                        barColor = hashColor("")
-                    )
+                            .padding(16.dp)
+                            .background(Color(colorScheme.surfaceContainer))
+                    ) {
+                        Text(
+                            text = "周完成量",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            color = Color(colorScheme.onSurface)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        DailyBarChart(
+                            data = dailyCompleted,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            barColor = hashColor(""),
+                            overdueColor = hashColor("逾期")
+                        )
+                    }
                 }
             }
-        }
 
-        // 最近7天完成率
-        item {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(colorScheme.surfaceContainer)
-                ),
-                modifier = Modifier
-                    .padding(16.dp, 8.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
-            ) {
-                Column(
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(colorScheme.surfaceContainer)
+                    ),
                     modifier = Modifier
+                        .padding(16.dp, 8.dp)
                         .fillMaxWidth()
-                        .padding(16.dp)
-                        .background(Color(colorScheme.surfaceContainer))
+                        .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
                 ) {
-                    Text(
-                        text = "最近7天完成率",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = Color(colorScheme.onSurface)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    DailyLineChart(
-                        data = dailyRate,
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp),
-                        lineColor = Color(colorScheme.secondary)
-                    )
+                            .padding(16.dp)
+                            .background(Color(colorScheme.surfaceContainer))
+                    ) {
+                        Text(
+                            text = "月度趋势",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            color = Color(colorScheme.onSurface)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        MonthlyTrendChart(
+                            data = monthlyStat,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            totalColor = colorResource(R.color.chart_blue),
+                            completedColor = colorResource(R.color.chart_green),
+                            overdueColor = colorResource(R.color.chart_red)
+                        )
+                    }
                 }
             }
-        }
 
-        // 最近7天逾期量
-        item {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(colorScheme.surfaceContainer)
-                ),
-                modifier = Modifier
-                    .padding(16.dp, 8.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
-            ) {
-                Column(
+            // 最近4周完成量
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(colorScheme.surfaceContainer)
+                    ),
                     modifier = Modifier
+                        .padding(16.dp, 8.dp)
                         .fillMaxWidth()
-                        .padding(16.dp)
-                        .background(Color(colorScheme.surfaceContainer))
+                        .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
                 ) {
-                    Text(
-                        text = "最近7天逾期量",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = Color(colorScheme.onSurface)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    DailyBarChart(
-                        data = dailyOverdue,
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp),
-                        barColor = hashColor("逾期")
-                    )
+                            .padding(16.dp)
+                            .background(Color(colorScheme.surfaceContainer))
+                    ) {
+                        Text(
+                            text = "最近4周完成量",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            color = Color(colorScheme.onSurface)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        WeeklyBarChart(
+                            data = weeklyCompleted,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            barColor = Color(colorScheme.secondary)
+                        )
+                    }
                 }
             }
-        }
 
-        // 最近4周完成量
-        item {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(colorScheme.surfaceContainer)
-                ),
-                modifier = Modifier
-                    .padding(16.dp, 8.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)))
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .background(Color(colorScheme.surfaceContainer))
-                ) {
-                    Text(
-                        text = "最近4周完成量",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = Color(colorScheme.onSurface)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    WeeklyBarChart(
-                        data = weeklyCompleted,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        barColor = Color(colorScheme.tertiary)
-                    )
-                }
-            }
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
@@ -486,7 +499,7 @@ fun OverviewStatsScreen(
 ) {
     LazyColumn(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy((-8).dp)
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         item {
             Card(
@@ -494,7 +507,7 @@ fun OverviewStatsScreen(
                     containerColor = Color(colorScheme.surfaceContainer)
                 ),
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(16.dp, 8.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
             ) {
@@ -545,7 +558,7 @@ fun OverviewStatsScreen(
                     containerColor = Color(colorScheme.surfaceContainer)
                 ),
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(16.dp, 8.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
             ) {
@@ -574,7 +587,7 @@ fun OverviewStatsScreen(
                     containerColor = Color(colorScheme.surfaceContainer)
                 ),
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(16.dp, 8.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius))),
             ) {
@@ -619,11 +632,13 @@ fun OverviewStatsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        PieChartView(statistics = historyStats)
+                        NewPieChart(statistics = historyStats)
                     }
                 }
             }
         }
+
+        item { Spacer(modifier = Modifier.height(8.dp)) }
     }
 }
 

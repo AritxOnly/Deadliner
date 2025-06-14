@@ -1,5 +1,8 @@
 package com.aritxonly.deadliner.composable
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,17 +16,24 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
+import ir.ehsannarmani.compose_charts.PieChart
+import ir.ehsannarmani.compose_charts.models.Pie
 
 
 @Composable
@@ -64,7 +74,57 @@ fun BarChartCompletionTimeStats(
 }
 
 @Composable
-fun PieChartView(statistics: Map<String, Int>, size: Dp = 160.dp) {
+fun NewPieChart(
+    statistics: Map<String, Int>,
+    size: Dp = 160.dp
+) {
+    val green = colorResource(id = R.color.chart_green)
+    val orange = colorResource(id = R.color.chart_orange)
+    val red = colorResource(id = R.color.chart_red)
+    val blue = colorResource(id = R.color.chart_blue)
+
+    val initialData = remember(statistics) {
+        val total = statistics.values.sum().coerceAtLeast(1)
+        statistics.entries.mapIndexed { index, entry ->
+            Pie(
+                label = entry.key,
+                data = entry.value.toDouble(),
+                color = when (index) {
+                    0 -> green
+                    1 -> orange
+                    2 -> red
+                    else -> blue
+                },
+            )
+        }
+    }
+    var data by remember { mutableStateOf(initialData) }
+
+    PieChart(
+        modifier = Modifier.size(size),
+        data = data,
+        onPieClick = { pie ->
+            val idx = data.indexOf(pie)
+            data = data.mapIndexed { i, p -> p.copy(selected = i == idx) }
+        },
+        selectedScale = 1.1f,
+        scaleAnimEnterSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        colorAnimEnterSpec = tween(300),
+        colorAnimExitSpec = tween(300),
+        scaleAnimExitSpec = tween(300),
+        spaceDegreeAnimExitSpec = tween(300),
+        style = Pie.Style.Fill
+    )
+}
+
+@Composable
+fun PieChartView(
+    statistics: Map<String, Int>,
+    size: Dp = 160.dp
+) {
     val total = statistics.values.sum().toFloat()
     val colors = listOf(
         colorResource(id = R.color.chart_green),

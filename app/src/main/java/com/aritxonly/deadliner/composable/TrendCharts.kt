@@ -1,174 +1,221 @@
 package com.aritxonly.deadliner.composable
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.EaseInOutCubic
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.BiasAbsoluteAlignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.OverviewUtils
+import com.aritxonly.deadliner.localutils.OverviewUtils.MonthlyStat
+import ir.ehsannarmani.compose_charts.ColumnChart
+import ir.ehsannarmani.compose_charts.LineChart
+import ir.ehsannarmani.compose_charts.extensions.format
+import ir.ehsannarmani.compose_charts.models.AnimationMode
+import ir.ehsannarmani.compose_charts.models.BarProperties
+import ir.ehsannarmani.compose_charts.models.Bars
+import ir.ehsannarmani.compose_charts.models.DotProperties
+import ir.ehsannarmani.compose_charts.models.DrawStyle
+import ir.ehsannarmani.compose_charts.models.GridProperties
+import ir.ehsannarmani.compose_charts.models.HorizontalIndicatorProperties
+import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
+import ir.ehsannarmani.compose_charts.models.LabelProperties
+import ir.ehsannarmani.compose_charts.models.Line
+import ir.ehsannarmani.compose_charts.models.PopupProperties
+import ir.ehsannarmani.compose_charts.models.StrokeStyle
 import java.time.LocalDate
+import kotlin.collections.get
+
+
+private val DefaultLabelProperties
+    @Composable get() = LabelProperties(enabled = true,
+        textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onSurface)
+    )
+
+private val DefaultIndicatorProperties
+    @Composable get() = HorizontalIndicatorProperties(enabled = true,
+        textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onSurface)
+    )
+
+private val DefaultLabelHelperProperties
+    @Composable get() = LabelHelperProperties(enabled = true,
+        textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onSurface)
+    )
+
+private val DefaultPopupProperties
+    @Composable get() = PopupProperties(
+        enabled = true,
+        animationSpec = tween(300),
+        duration = 2000L,
+        textStyle = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onTertiaryContainer),
+        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        cornerRadius = 8.dp,
+        contentHorizontalPadding = 4.dp,
+        contentVerticalPadding = 2.dp
+    )
 
 @Composable
 fun DailyBarChart(
-    data: List<Pair<LocalDate, Int>>,
+    data: List<Triple<LocalDate, Int, Int>>,
     modifier: Modifier = Modifier,
-    barColor: Color = MaterialTheme.colorScheme.primary
+    barColor: Color = MaterialTheme.colorScheme.primary,
+    overdueColor: Color = MaterialTheme.colorScheme.error
 ) {
     if (data.isEmpty()) {
-        Text("暂无数据", modifier = modifier)
+        Text("暂无数据", modifier = modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurface)
         return
     }
-    val maxValue = data.maxOf { it.second }.coerceAtLeast(1)
+
+    // 转换为 ComposeCharts 的 Bars 格式
+
+    val chartData = remember(data) {
+        data.map { (date, count, overdue) ->
+            Bars(
+                label = date.dayOfMonth.toString(),
+                values = if (GlobalUtils.OverviewSettings.showOverdueInDaily) listOf(
+                    Bars.Data(value = count.toDouble(), color = Brush.verticalGradient(
+                        listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
+                    ), label = "已完成"),
+                    Bars.Data(value = overdue.toDouble(), color = Brush.verticalGradient(
+                        listOf<Color>(overdueColor, overdueColor.copy(alpha = 0.5f))
+                    ), label = "逾期完成")
+                ) else listOf(
+                    Bars.Data(value = count.toDouble(), color = Brush.verticalGradient(
+                        listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
+                    ), label = "已完成")
+                )
+            )
+        }
+    }
 
     Column(modifier = modifier.padding(16.dp)) {
-        Box(
+        ColumnChart(
+            data = chartData,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-        ) {
-            // 绘制柱状图
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val totalW = size.width
-                val barW = totalW / data.size
-                data.forEachIndexed { i, (_, count) ->
-                    val left = i * barW + barW * 0.1f
-                    val barH = (count / maxValue.toFloat()) * size.height
-                    drawRoundRect(
-                        color = barColor,
-                        topLeft = Offset(left, size.height - barH),
-                        size = Size(barW * 0.8f, barH),
-                        cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx())
-                    )
+                .height(200.dp),
+            barProperties = BarProperties(
+                cornerRadius = Bars.Data.Radius.Rectangle(topRight = 4.dp, topLeft = 4.dp),
+                spacing = 1.dp,
+                thickness = if (GlobalUtils.OverviewSettings.showOverdueInDaily) 15.dp else 28.dp
+            ),
+            animationMode = AnimationMode.Together(delayBuilder = { it * 100L }),
+            popupProperties = DefaultPopupProperties.copy(
+                contentBuilder = { dataIndex, valueIndex, value ->
+                    "${data[dataIndex].first}: ${value.format(0)}"
                 }
-            }
-            // 数值标签行，用 weight 平分宽度
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                data.forEach { (_, count) ->
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
-                        Text(
-                            text = count.toString(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        // 日期标签行，同样用 weight
-        Row(modifier = Modifier.fillMaxWidth()) {
-            data.forEach { (date, _) ->
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = date.dayOfMonth.toString(),
-                        style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
+            ),
+            indicatorProperties = HorizontalIndicatorProperties(enabled = false),
+            labelProperties = DefaultLabelProperties,
+            gridProperties = GridProperties(
+                enabled = false,
+            ),
+            labelHelperProperties = DefaultLabelHelperProperties,
+        )
     }
 }
 
 @Composable
-fun DailyLineChart(
-    data: List<Pair<LocalDate, Double>>,
+fun MonthlyTrendChart(
+    data: List<MonthlyStat>,
     modifier: Modifier = Modifier,
-    lineColor: Color = MaterialTheme.colorScheme.secondary
+    totalColor: Color = MaterialTheme.colorScheme.primary,
+    completedColor: Color = MaterialTheme.colorScheme.secondary,
+    overdueColor: Color = MaterialTheme.colorScheme.tertiary
 ) {
-    if (data.isEmpty()) {
-        Text("暂无数据", modifier = modifier)
+    // 获取三维度统计
+    val stats by remember { mutableStateOf(data) }
+    if (stats.isEmpty()) {
+        Text("暂无数据", modifier = modifier.padding(16.dp))
         return
     }
-    val maxValue = data.maxOf { it.second }.coerceAtLeast(1.0)
+
+    // 构造 3 条折线数据
+    val series = remember(stats) {
+        listOf(
+            Line(
+                label = "总任务",
+                values = stats.map { it.total.toDouble() },
+                color = Brush.verticalGradient(
+                    listOf<Color>(totalColor, totalColor.copy(alpha = .5f))
+                ),
+                firstGradientFillColor = totalColor.copy(alpha = .5f),
+                secondGradientFillColor = Color.Transparent,
+                strokeAnimationSpec = tween(2000, easing = EaseInOutCubic),
+                gradientAnimationDelay = 1000,
+                drawStyle = DrawStyle.Stroke(width = 2.dp),
+                dotProperties = DotProperties(
+                    enabled = true,
+                    color = SolidColor(Color.White),
+                    strokeColor = SolidColor(totalColor),
+                )
+            ),
+            Line(
+                label = "完成",
+                values = stats.map { it.completed.toDouble() },
+                color = Brush.verticalGradient(
+                    listOf<Color>(completedColor, completedColor.copy(alpha = .5f))
+                ),
+                firstGradientFillColor = completedColor.copy(alpha = .5f),
+                secondGradientFillColor = Color.Transparent,
+                strokeAnimationSpec = tween(2000, easing = EaseInOutCubic),
+                gradientAnimationDelay = 1000,
+                drawStyle = DrawStyle.Stroke(width = 2.dp),
+                dotProperties = DotProperties(
+                    enabled = true,
+                    color = SolidColor(Color.White),
+                    strokeColor = SolidColor(completedColor),
+                )
+            ),
+            Line(
+                label = "逾期完成",
+                values = stats.map { it.overdueCompleted.toDouble() },
+                color = Brush.verticalGradient(
+                    listOf<Color>(overdueColor, overdueColor.copy(alpha = .5f))
+                ),
+                firstGradientFillColor = overdueColor.copy(alpha = .5f),
+                secondGradientFillColor = Color.Transparent,
+                strokeAnimationSpec = tween(2000, easing = EaseInOutCubic),
+                gradientAnimationDelay = 1000,
+                drawStyle = DrawStyle.Stroke(width = 2.dp),
+                dotProperties = DotProperties(
+                    enabled = true,
+                    color = SolidColor(Color.White),
+                    strokeColor = SolidColor(overdueColor),
+                )
+            )
+        )
+    }
 
     Column(modifier = modifier.padding(16.dp)) {
-        Box(
+        LineChart(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val w = size.width
-                val h = size.height
-                val stepX = w / (data.size - 1).coerceAtLeast(1)
-                data.forEachIndexed { idx, (_, value) ->
-                    val x = idx * stepX
-                    val y = h - (value / maxValue * h).toFloat()
-                    if (idx > 0) {
-                        val prev = data[idx - 1].second
-                        val prevX = (idx - 1) * stepX
-                        val prevY = h - (prev / maxValue * h).toFloat()
-                        drawLine(
-                            color = lineColor,
-                            strokeWidth = 3.dp.toPx(),
-                            start = Offset(prevX, prevY),
-                            end = Offset(x, y)
-                        )
-                    }
-                    // 绘制节点
-                    drawCircle(
-                        color = lineColor,
-                        radius = 4.dp.toPx(),
-                        center = Offset(x, y)
-                    )
+                .height(240.dp),
+            data = series,
+            animationMode = AnimationMode.Together(delayBuilder = { it * 300L }),
+            gridProperties = GridProperties(enabled = false),
+            popupProperties = DefaultPopupProperties.copy(
+                contentBuilder = { dataIndex, valueIndex, value ->
+                    "${data[valueIndex].month}: ${value.format(0)}"
                 }
-            }
-            // 数值标签行
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                data.forEach { (_, value) ->
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
-                        Text(
-                            text = String.format("%.0f", value),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            data.forEach { (date, _) ->
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = date.dayOfMonth.toString(),
-                        style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
+            ),
+            indicatorProperties = DefaultIndicatorProperties,
+            labelProperties = DefaultLabelProperties,
+            labelHelperProperties = DefaultLabelHelperProperties,
+        )
     }
 }
 
@@ -176,70 +223,52 @@ fun DailyLineChart(
 fun WeeklyBarChart(
     data: List<Pair<String, Int>>,
     modifier: Modifier = Modifier,
-    barColor: Color = MaterialTheme.colorScheme.tertiary
+    barColor: Color = MaterialTheme.colorScheme.secondary
 ) {
     if (data.isEmpty()) {
-        Text("暂无数据", modifier = modifier)
+        Text("暂无数据", modifier = modifier.padding(16.dp))
         return
     }
-    val maxValue = data.maxOf { it.second }.coerceAtLeast(1)
+
+    // 转换为 ComposeCharts 的 Bars 格式
+    val chartData = remember(data) {
+        data.map { (label, count) ->
+            Bars(
+                label = label,
+                values = listOf(
+                    Bars.Data(
+                        value = count.toDouble(),
+                        color = Brush.verticalGradient(
+                            listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
+                        ),
+                        label = "已完成"
+                    )
+                )
+            )
+        }
+    }
 
     Column(modifier = modifier.padding(16.dp)) {
-        Box(
+        ColumnChart(
+            data = chartData,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val w = size.width
-                val h = size.height
-                val barW = w / data.size
-                data.forEachIndexed { idx, (_, count) ->
-                    val left = idx * barW + barW * 0.1f
-                    val barH = (count / maxValue.toFloat()) * h
-                    drawRoundRect(
-                        color = barColor,
-                        topLeft = Offset(left, h - barH),
-                        size = Size(barW * 0.8f, barH),
-                        cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx())
-                    )
+                .height(200.dp),
+            barProperties = BarProperties(
+                cornerRadius = Bars.Data.Radius.Rectangle(topRight = 4.dp, topLeft = 4.dp),
+                spacing = 4.dp,
+                thickness = 32.dp
+            ),
+            animationMode = AnimationMode.Together(delayBuilder = { it * 100L }),
+            labelHelperProperties = DefaultLabelHelperProperties,
+            popupProperties = DefaultPopupProperties.copy(
+                contentBuilder = { dataIndex, valueIndex, value ->
+                    "${data[valueIndex].first}: ${value.format(0)}"
                 }
-            }
-            // 数值标签行
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                data.forEach { (_, count) ->
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
-                        Text(
-                            text = count.toString(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            data.forEach { (label, _) ->
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
+            ),
+            indicatorProperties = HorizontalIndicatorProperties(enabled = false),
+            labelProperties = DefaultLabelProperties,
+            gridProperties = GridProperties(enabled = false)
+        )
     }
 }
