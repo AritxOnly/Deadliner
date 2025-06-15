@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:padding="8dp"
+    android:padding="0dp"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
@@ -39,7 +39,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:thumbIcon="@drawable/switch_thumb_icon"
-        android:text="每日完成视图显示"
+        android:text="每周视图显示逾期完成"
         android:textSize="18sp"
         android:layout_margin="8dp"/>
 </LinearLayout>

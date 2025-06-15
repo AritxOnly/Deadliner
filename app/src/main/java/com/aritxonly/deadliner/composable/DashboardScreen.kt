@@ -1,6 +1,11 @@
 package com.aritxonly.deadliner.composable
 
 import android.widget.Space
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,6 +13,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -19,6 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -110,7 +118,7 @@ fun DashboardScreen(
         modifier = modifier
             .fillMaxSize()
             .background(Color(colorScheme.surface))
-            .padding(16.dp, 8.dp, 16.dp, 0.dp)
+            .padding(16.dp, 0.dp)
     ) {
         SummaryGrid(metrics, colorScheme)
     }
@@ -203,36 +211,44 @@ private fun SummaryGrid(
     metrics: List<Metric>,
     colorScheme: AppColorScheme
 ) {
+    val visibleState = remember { MutableTransitionState(false) }
+    LaunchedEffect(Unit) { visibleState.targetState = true }
+
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
         verticalItemSpacing = 8.dp,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item(span = StaggeredGridItemSpan.FullLine) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(192.dp)
-                    .clipToBounds()
-                    .clip(RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius)))
-            ) {
-                TintedGradientImage(
-                    com.aritxonly.deadliner.R.drawable.dashboard_background,
-                    tintColor = Color(colorScheme.primary),
-                    modifier = Modifier.matchParentSize(),
-                    contentDescription = "背景"
-                )
-                Text(
-                    text = "上月总结",
-                    style = MaterialTheme.typography.headlineLargeEmphasized,
-                    fontWeight = FontWeight.Black,
-                    color = Color(colorScheme.onPrimary),
-                    modifier = Modifier.align(Alignment.BottomStart).padding(24.dp)
-                )
+            AnimatedItem(delayMillis = 0) {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth()
+                        .height(192.dp)
+                        .clipToBounds()
+                        .clip(RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius)))
+                ) {
+                    TintedGradientImage(
+                        com.aritxonly.deadliner.R.drawable.dashboard_background,
+                        tintColor = Color(colorScheme.primary),
+                        modifier = Modifier.matchParentSize(),
+                        contentDescription = "背景"
+                    )
+                    Text(
+                        text = "上月总结",
+                        style = MaterialTheme.typography.headlineLargeEmphasized,
+                        fontWeight = FontWeight.Black,
+                        color = Color(colorScheme.onPrimary),
+                        modifier = Modifier.align(Alignment.BottomStart).padding(24.dp)
+                    )
+                }
             }
         }
-        items(metrics) { metric ->
-            SummaryCard(metric, colorScheme)
+        itemsIndexed(metrics) { index, metric ->
+            AnimatedItem(delayMillis = (index + 1) * 100L) {
+                SummaryCard(metric, colorScheme)
+            }
         }
         item(span = StaggeredGridItemSpan.FullLine) { Spacer(modifier = Modifier.height(16.dp)) }
     }
