@@ -93,6 +93,7 @@ class SettingsActivity : AppCompatActivity() {
 
         if (GlobalUtils.experimentalEdgeToEdge) {
             enableEdgeToEdge()
+            window.isNavigationBarContrastEnforced = false
 
             val rootView = findViewById<LinearLayout>(R.id.mainSettings)
             ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->

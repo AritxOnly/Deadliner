@@ -125,6 +125,8 @@ class DeadlineDetailActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
 
+        window.isNavigationBarContrastEnforced = false
+
         super.onCreate(savedInstanceState)
 
         val initialDeadline = intent.getParcelableExtra<DDLItem>(EXTRA_DEADLINE)

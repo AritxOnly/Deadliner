@@ -184,6 +184,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             // 开启边到边沉浸
             enableEdgeToEdge()
 
+            window.isNavigationBarContrastEnforced = false
+
             val rootView = findViewById<ConstraintLayout>(R.id.main)
             ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
                 val statusBarInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top

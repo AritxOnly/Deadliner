@@ -6,6 +6,7 @@ import android.content.Intent
 import java.time.LocalDateTime
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.WindowManager
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -137,6 +138,15 @@ class OverviewActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+
+        window.isNavigationBarContrastEnforced = false
+
+//        if (GlobalUtils.experimentalEdgeToEdge) {
+//            // For HyperOS2
+//            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+//            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+//            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+//        }
 
         super.onCreate(savedInstanceState)
 

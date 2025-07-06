@@ -45,8 +45,10 @@ class ArchiveActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         window.requestFeature(Window.FEATURE_ACTIVITY_TRANSITIONS)
 
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        window.isNavigationBarContrastEnforced = false
+
+        super.onCreate(savedInstanceState)
 
         setupWindowTransitions()
 

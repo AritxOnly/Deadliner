@@ -99,11 +99,11 @@ object NotificationUtil {
             }
         }
 
-        // MIUI权限检查
-        if (isXiaomiDevice() && !checkXiaomiPopupPermission(context)) {
-            showXiaomiPermissionDialog(context)
-            return
-        }
+//        // MIUI权限检查
+//        if (isXiaomiDevice() && !checkXiaomiPopupPermission(context)) {
+//            showXiaomiPermissionDialog(context)
+//            return
+//        }
 
         val notification = buildNotification(context, ddl)
         NotificationManagerCompat.from(context).notify(ddl.id.hashCode(), notification)
@@ -118,11 +118,11 @@ object NotificationUtil {
             }
         }
 
-        // MIUI权限检查
-        if (isXiaomiDevice() && !checkXiaomiPopupPermission(context)) {
-            showXiaomiPermissionDialog(context)
-            return
-        }
+//        // MIUI权限检查
+//        if (isXiaomiDevice() && !checkXiaomiPopupPermission(context)) {
+//            showXiaomiPermissionDialog(context)
+//            return
+//        }
 
         val notification = buildDailyNotification(context)
         NotificationManagerCompat.from(context).notify(114514, notification)
