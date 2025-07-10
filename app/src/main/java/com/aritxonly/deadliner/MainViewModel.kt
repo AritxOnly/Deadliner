@@ -2,6 +2,7 @@ package com.aritxonly.deadliner
 
 import android.util.Log
 import androidx.lifecycle.*
+import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import kotlinx.coroutines.Dispatchers

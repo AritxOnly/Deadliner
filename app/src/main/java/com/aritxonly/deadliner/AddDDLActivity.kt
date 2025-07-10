@@ -28,8 +28,10 @@ import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
-import com.aritxonly.deadliner.GlobalUtils.toDateTimeString
+import com.aritxonly.deadliner.localutils.GlobalUtils.toDateTimeString
 import com.aritxonly.deadliner.calendar.CalendarHelper
+import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.model.CalendarEvent
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
@@ -312,11 +314,16 @@ class AddDDLActivity : AppCompatActivity() {
             return
         }
 
-        // 原始条目文本
-        val titles = calendarEvents.map { event ->
-            val time = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())
-            "${event.title} – ${time?.let(::formatLocalDateTime) ?: "解析失败"}"
+        data class EventItem(val event: CalendarEvent) {
+            val display: String get() {
+                val time = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())
+                return "${event.title} – ${time?.let(::formatLocalDateTime) ?: "解析失败"}"
+            }
+            override fun toString() = display
         }
+
+        // 原始条目文本
+        val items = calendarEvents.map(::EventItem)
 
         // Inflate 布局
         val dialogView = LayoutInflater.from(this)
@@ -325,57 +332,48 @@ class AddDDLActivity : AppCompatActivity() {
         val lvEvents = dialogView.findViewById<ListView>(R.id.eventListView)
 
         // 自定义 ArrayAdapter + Filterable
-        open class FuzzyAdapter(
+        open class EventAdapter(
             ctx: Context,
             @LayoutRes layoutResId: Int,
             @IdRes textViewResId: Int,
-            items: List<String>
-        ) : ArrayAdapter<String>(ctx, layoutResId, textViewResId, items) {
-
-            private val originalItems = items.toList()
+            items: List<EventItem>
+        ) : ArrayAdapter<EventItem>(ctx, layoutResId, textViewResId, items) {
+            private val original = items.toList()
+            private val filtered = items.toMutableList()
 
             override fun getFilter(): Filter = object : Filter() {
-                override fun performFiltering(constraint: CharSequence?): FilterResults {
-                    val results = FilterResults()
-                    if (constraint.isNullOrEmpty()) {
-                        results.values = originalItems
-                        results.count = originalItems.size
+                override fun performFiltering(constraint: CharSequence?) = FilterResults().apply {
+                    filtered.clear()
+                    if (constraint.isNullOrBlank()) {
+                        filtered.addAll(original)
                     } else {
-                        val kw = constraint.toString().lowercase(Locale.getDefault())
-                        results.values = originalItems.filter {
-                            it.lowercase(Locale.getDefault()).contains(kw)
-                        }
-                        results.count = (results.values as List<*>).size
+                        val kw = constraint.toString().lowercase()
+                        filtered.addAll(
+                            original.filter { it.display.lowercase().contains(kw) }
+                        )
                     }
-                    return results
+                    values = filtered.toList()
+                    count = filtered.size
                 }
 
                 @Suppress("UNCHECKED_CAST")
-                override fun publishResults(constraint: CharSequence?, results: FilterResults) {
+                override fun publishResults(c: CharSequence?, results: FilterResults) {
                     clear()
-                    addAll(results.values as List<String>)
+                    addAll(results.values as List<EventItem>)
                     notifyDataSetChanged()
                 }
+            }
+
+            override fun getView(pos: Int, cv: View?, parent: ViewGroup): View {
+                val view = super.getView(pos, cv, parent)
+                val rb = view.findViewById<RadioButton>(R.id.radio)
+                rb.isChecked = (parent as ListView).isItemChecked(pos)
+                return view
             }
         }
 
         // 1. 用自定义适配器
-        val adapter = object : FuzzyAdapter(
-            this,
-            R.layout.dialog_single_choice_layout,
-            android.R.id.text1,
-            titles
-        ) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                // 让 ArrayAdapter 帮我们 inflate 并 bind 文本
-                val view = super.getView(position, convertView, parent)
-                // 同时根据 ListView 的选中状态，更新 RadioButton
-                val lv = parent as ListView
-                val rb = view.findViewById<RadioButton>(R.id.radio)
-                rb.isChecked = lv.isItemChecked(position)
-                return view
-            }
-        }
+        val adapter = EventAdapter(this, R.layout.dialog_single_choice_layout, android.R.id.text1, items)
         lvEvents.adapter = adapter
         lvEvents.choiceMode = ListView.CHOICE_MODE_SINGLE
 
@@ -403,7 +401,8 @@ class AddDDLActivity : AppCompatActivity() {
             .setNeutralButton("过滤账户") { _, _ -> showCalendarFilterDialog() }
             .setPositiveButton("导入") { dialog, _ ->
                 if (selectedPosition >= 0) {
-                    val event = calendarEvents[selectedPosition]
+                    val item = adapter.getItem(selectedPosition)!!
+                    val event = item.event
                     ddlNameEditText.setText(event.title)
                     ddlNoteEditText.setText(event.description)
                     endTime = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())

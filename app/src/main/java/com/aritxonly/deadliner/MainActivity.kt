@@ -56,7 +56,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
-import androidx.work.*
 import com.aritxonly.deadliner.notification.NotificationUtil
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomappbar.BottomAppBar
@@ -86,9 +85,6 @@ import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
-import android.app.AlertDialog
-import android.app.Dialog
-import android.content.DialogInterface
 import android.content.res.Resources
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -102,15 +98,20 @@ import com.google.android.material.shape.MaterialShapeDrawable
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
+import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineFrequency.*
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.google.android.material.loadingindicator.LoadingIndicator
+import java.time.Instant
+import java.time.Period
+import java.time.ZoneId
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
@@ -180,7 +181,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         setContentView(R.layout.activity_main)
 
         if (GlobalUtils.experimentalEdgeToEdge) {
+            // 开启边到边沉浸
             enableEdgeToEdge()
+
+            window.isNavigationBarContrastEnforced = false
 
             val rootView = findViewById<ConstraintLayout>(R.id.main)
             ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
@@ -191,13 +195,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                 bottomAppBar.updatePadding(bottom = navBarInset)
 
-                val TAG_ORIG_MARGIN = R.id.addEvent // 任意一个不会冲突的 id
+                val TAG_ORIG_MARGIN = R.id.addEvent
                 if (addEventButton.getTag(TAG_ORIG_MARGIN) == null) {
                     val lp = addEventButton.layoutParams as ViewGroup.MarginLayoutParams
                     addEventButton.setTag(TAG_ORIG_MARGIN, lp.bottomMargin)
                 }
 
-                // 2. 每次都按「原始 + inset/2」来设置
                 val originalMargin = addEventButton.getTag(TAG_ORIG_MARGIN) as Int
                 addEventButton.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     bottomMargin = originalMargin + navBarInset / 2
@@ -275,7 +278,42 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
              */
             override fun onItemClick(position: Int) {
                 val clickedItem = adapter.itemList[position]
-                if (clickedItem.type == DeadlineType.HABIT) return
+
+                if (clickedItem.type == DeadlineType.HABIT) {
+                    GlobalUtils.showRetroactiveDatePicker(supportFragmentManager) { pickedDateMillis ->
+                        // pickedDateMillis：UTC 毫秒时间戳
+                        // 在这里把 pickedDateMillis 转成 LocalDate 或者你数据类里的格式，然后执行“补签”操作
+                        val pickedDate = Instant.ofEpochMilli(pickedDateMillis)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                        val nowDate = LocalDate.now()
+                        val period: Period = Period.between(pickedDate, nowDate)
+
+                        val habitMeta = GlobalUtils.parseHabitMetaData(clickedItem.note)
+
+                        val shouldPlusOne = when (habitMeta.frequencyType) {
+                            DAILY -> period.days < 1
+                            WEEKLY -> period.days < 7
+                            MONTHLY -> period.months < 1
+                            TOTAL -> true
+                        }
+
+                        val updatedNote = updateNoteWithDate(clickedItem, pickedDate)
+
+                        val updatedHabit = clickedItem.copy(
+                            note = updatedNote,
+                            habitCount = clickedItem.habitCount + if (shouldPlusOne) 1 else 0,
+                            habitTotalCount = clickedItem.habitTotalCount + 1
+                        )
+
+                        onRetroCheckSuccess(clickedItem, habitMeta, pickedDate)
+
+                        databaseHelper.updateDDL(updatedHabit)
+
+                        viewModel.loadData(viewModel.currentType)
+                    }
+                    return
+                }
 
                 pauseRefresh = true
 
@@ -986,25 +1024,53 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         })
     }
 
-    // 判断是否有新版本（版本号格式：x.y.z）
-    private fun isNewVersionAvailable(localVersion: String, latestVersion: String): Boolean {
-        // 去掉前缀 'v'，确保格式为 x.y.z
-        val cleanedLocalVersion = localVersion.removePrefix("v")
-        val cleanedLatestVersion = latestVersion.removePrefix("v")
+    /**
+     * 按 SemVer 规则比较版本号：
+     *   1) 先比较主、次、补丁号的数字；
+     *   2) 如果数字都相等，再比较 pre-release 后缀，
+     *      认为无后缀 > 有后缀（beta、rc 等等）。
+     *
+     * 返回值：>0 表示 v1>v2，0 表示相等，<0 表示 v1<v2
+     */
+    private fun compareSemVer(v1: String, v2: String): Int {
+        // 去掉前缀 'v'
+        val p1 = v1.removePrefix("v").split(".")
+        val p2 = v2.removePrefix("v").split(".")
 
-        val localParts = cleanedLocalVersion.split(".")
-        val latestParts = cleanedLatestVersion.split(".")
+        val maxLen = maxOf(p1.size, p2.size)
+        for (i in 0 until maxLen) {
+            // 拿到这一段，可能是 "1"、"1-beta"、甚至 "1-beta2"
+            val seg1 = p1.getOrNull(i).orEmpty()
+            val seg2 = p2.getOrNull(i).orEmpty()
 
-        for (i in 0 until minOf(localParts.size, latestParts.size)) {
-            val localPart = localParts[i].toIntOrNull() ?: -1
-            val latestPart = latestParts[i].toIntOrNull() ?: 0
+            // 数字部分在 '-' 之前
+            val num1 = seg1.substringBefore('-').toIntOrNull() ?: 0
+            val num2 = seg2.substringBefore('-').toIntOrNull() ?: 0
+            if (num1 != num2) return num1 - num2
 
-            if (localPart < latestPart) return true  // 有新版本
-            if (localPart > latestPart) return false // 本地版本更新
+            // 数字相同，继续比后缀：
+            val suffix1 = seg1.substringAfter('-', missingDelimiterValue = "")
+            val suffix2 = seg2.substringAfter('-', missingDelimiterValue = "")
+            if (suffix1.isEmpty() && suffix2.isNotEmpty()) {
+                // 1.2.3  > 1.2.3-beta
+                return 1
+            }
+            if (suffix1.isNotEmpty() && suffix2.isEmpty()) {
+                // 1.2.3-beta < 1.2.3
+                return -1
+            }
+            // 如果两边都有后缀，你也可以按字母序比较：
+            if (suffix1 != suffix2) {
+                return suffix1.compareTo(suffix2)
+            }
+            // 否则继续循环下一段
         }
+        return 0
+    }
 
-        // 如果最新版本的部分比本地多，例如 v1.2.3 -> v1.2.3.1，说明有新版本
-        return latestParts.size > localParts.size
+    /** 判断 latestVersion 是否“更大” */
+    private fun isNewVersionAvailable(localVersion: String, latestVersion: String): Boolean {
+        return compareSemVer(localVersion, latestVersion) < 0
     }
 
     // 显示更新提示对话框
@@ -1813,6 +1879,68 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         DeadlineAlarmScheduler.scheduleDailyAlarm(applicationContext)
         checkCriticalPermissions()
         restoreAllAlarms()
+    }
+
+    private fun onRetroCheckSuccess(habitItem: DDLItem, habitMeta: HabitMetaData, retroDate: LocalDate) {
+        triggerVibration(this@MainActivity, 100)
+
+        val count = habitItem.habitCount
+        val frequency = habitMeta.frequency
+
+        if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
+            Log.d("Count", count.toString())
+            if (count >= frequency) {
+                if (GlobalUtils.fireworksOnFinish) { konfettiViewMain.start(PartyPresets.festive()) }
+            }
+        } else {
+            if (GlobalUtils.fireworksOnFinish) { konfettiViewMain.start(PartyPresets.festive()) }
+        }
+
+        val snackBarParent = if (isBottomBarVisible)
+            viewHolderWithAppBar
+        else viewHolderWithNoAppBar
+
+        val snackbar = Snackbar.make(snackBarParent, "补签成功 🎉", Snackbar.LENGTH_LONG)
+            .setAction("撤销") {
+                val retroDateStr = retroDate.toString()
+                // 解析 note JSON
+                val json = JSONObject(habitItem.note ?: "{}")
+                val datesArray = json.optJSONArray("completedDates") ?: JSONArray()
+                // 从末尾遍历并移除今日日期
+                for (i in datesArray.length() - 1 downTo 0) {
+                    if (datesArray.optString(i) == retroDateStr) {
+                        datesArray.remove(i)
+                    }
+                }
+                json.put("completedDates", datesArray)
+                val nowDate = LocalDate.now()
+                val period: Period = Period.between(retroDate, nowDate)
+
+                val shouldPlusOne = when (habitMeta.frequencyType) {
+                    DAILY -> period.days < 1
+                    WEEKLY -> period.days < 7
+                    MONTHLY -> period.months < 1
+                    TOTAL -> true
+                }
+                val revertedNoteJson = json.toString()
+                val revertedHabit = habitItem.copy(
+                    note = revertedNoteJson,
+                    habitCount = habitItem.habitCount - if (shouldPlusOne) 1 else 0
+                )
+                databaseHelper.updateDDL(revertedHabit)
+                viewModel.loadData(currentType)
+            }.setAnchorView(bottomAppBar)
+
+        val bg = snackbar.view.background
+        if (bg is MaterialShapeDrawable) {
+            snackbar.view.background = bg.apply {
+                shapeAppearanceModel = shapeAppearanceModel
+                    .toBuilder()
+                    .setAllCornerSizes(16f.dpToPx())
+                    .build()
+            }
+        }
+        snackbar.show()
     }
 }
 

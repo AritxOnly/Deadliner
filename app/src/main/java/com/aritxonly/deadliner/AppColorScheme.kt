@@ -11,12 +11,12 @@ data class AppColorScheme(
     val surface: Int,
     val onSurface: Int,
     val surfaceContainer: Int,
-    val secondary: Int?,
-    val onSecondary: Int?,
-    val secondaryContainer: Int?,
-    val onSecondaryContainer: Int?,
-    val tertiary: Int?,
-    val onTertiary: Int?,
-    val tertiaryContainer: Int?,
-    val onTertiaryContainer: Int?
+    val secondary: Int,
+    val onSecondary: Int,
+    val secondaryContainer: Int,
+    val onSecondaryContainer: Int,
+    val tertiary: Int,
+    val onTertiary: Int,
+    val tertiaryContainer: Int,
+    val onTertiaryContainer: Int
 ) : Parcelable

@@ -116,6 +116,9 @@
                 <action android:name="com.aritxonly.deadliner.ACTION_DAILY_ALARM"/>
             </intent-filter>
         </receiver>
+        <receiver
+            android:name=".notification.NotificationActionReceiver"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.util.Log
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
+import java.time.LocalDateTime
 import kotlin.Long
 
 
@@ -32,7 +33,7 @@ class DatabaseHelper private constructor(context: Context) :
         }
 
         const val DATABASE_NAME = "deadliner.db"
-        private const val DATABASE_VERSION = 8
+        private const val DATABASE_VERSION = 9
         private const val TABLE_NAME = "ddl_items"
         private const val COLUMN_ID = "id"
         private const val COLUMN_NAME = "name"
@@ -47,6 +48,7 @@ class DatabaseHelper private constructor(context: Context) :
         private const val COLUMN_HABIT_COUNT = "habit_count"
         private const val COLUMN_HABIT_TOTAL_COUNT = "habit_total_count"
         private const val COLUMN_CALENDAR_EVENT_ID = "calendar_event"
+        private const val COLUMN_TIMESTAMP = "timestamp"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -64,7 +66,8 @@ class DatabaseHelper private constructor(context: Context) :
                 $COLUMN_TYPE TEXT NOT NULL,
                 $COLUMN_HABIT_COUNT INTEGER,
                 $COLUMN_HABIT_TOTAL_COUNT INTEGER,
-                $COLUMN_CALENDAR_EVENT_ID INTEGER
+                $COLUMN_CALENDAR_EVENT_ID INTEGER,
+                $COLUMN_TIMESTAMP TEXT
             )
         """.trimIndent()
         db.execSQL(createTableQuery)
@@ -109,6 +112,10 @@ class DatabaseHelper private constructor(context: Context) :
             Log.d("DatabaseHelper", "Update DB to v8")
             db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_HABIT_TOTAL_COUNT INT DEFAULT 0")
         }
+        if (oldVersion < 9) {
+            Log.d("DatabaseHelper", "Update DB to v9")
+            db.execSQL("ALTER TABLE $TABLE_NAME ADD COLUMN $COLUMN_TIMESTAMP TEXT DEFAULT '${LocalDateTime.now()}'")
+        }
     }
 
     // 插入 DDL 数据
@@ -135,6 +142,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_HABIT_COUNT, 0)
             put(COLUMN_HABIT_TOTAL_COUNT, 0)
             put(COLUMN_CALENDAR_EVENT_ID, (calendarEventId?:-1).toInt())
+            put(COLUMN_TIMESTAMP, LocalDateTime.now().toString())
         }
         return db.insert(TABLE_NAME, null, values)
     }
@@ -189,7 +197,8 @@ class DatabaseHelper private constructor(context: Context) :
                         habitTotalCount = getInt(getColumnIndexOrThrow(COLUMN_HABIT_TOTAL_COUNT)),
                         calendarEventId = parseCalendarEventId(
                             getInt(getColumnIndexOrThrow(COLUMN_CALENDAR_EVENT_ID))
-                        )
+                        ),
+                        timeStamp = getString(getColumnIndexOrThrow(COLUMN_TIMESTAMP))
                     )
                 )
             }
@@ -222,6 +231,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_HABIT_COUNT, item.habitCount)
             put(COLUMN_HABIT_TOTAL_COUNT, item.habitTotalCount)
             put(COLUMN_CALENDAR_EVENT_ID, item.calendarEventId?:-1)
+            put(COLUMN_TIMESTAMP, LocalDateTime.now().toString())
         }
         db.update(TABLE_NAME, values, "$COLUMN_ID = ?", arrayOf(item.id.toString()))
     }

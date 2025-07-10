@@ -6,6 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
 import android.util.Log
+import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_ALARM_SHOW
+import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_ALARM_TRIGGER
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import java.time.Duration
@@ -15,7 +18,7 @@ import java.util.Date
 import kotlin.math.abs
 
 object DeadlineAlarmScheduler {
-    fun scheduleExactAlarm(context: Context, ddl: DDLItem) {
+    fun scheduleExactAlarm(context: Context, ddl: DDLItem, hours: Long = 12L) {
         if (ddl.type == DeadlineType.HABIT || ddl.isCompleted || ddl.isArchived ||
             GlobalUtils.NotificationStatusManager.hasBeenNotified(ddl.id)) return
 
@@ -39,7 +42,7 @@ object DeadlineAlarmScheduler {
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            requestCode,
+            RC_ALARM_TRIGGER + requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -49,14 +52,14 @@ object DeadlineAlarmScheduler {
         }
         val showPendingIntent = PendingIntent.getActivity(
             context,
-            requestCode + 1,
+            RC_ALARM_SHOW + requestCode + 1,
             showIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         // 提前720分钟（12小时）触发
         val triggerTime = GlobalUtils.safeParseDateTime(ddl.endTime)
-            .minusMinutes(720)
+            .minusMinutes(hours * 60L)
             .atZone(ZoneId.systemDefault())
             .toInstant()
             .toEpochMilli()
@@ -95,7 +98,7 @@ object DeadlineAlarmScheduler {
 
         PendingIntent.getBroadcast(
             context,
-            requestCode,
+            RC_ALARM_TRIGGER + requestCode,
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )?.let { pi ->
@@ -134,7 +137,7 @@ object DeadlineAlarmScheduler {
         val magicNumber = 114514    // senpai
         val pi = PendingIntent.getBroadcast(
             context,
-            magicNumber,
+            RC_ALARM_TRIGGER + magicNumber,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -142,7 +145,7 @@ object DeadlineAlarmScheduler {
         val showIntent = Intent(context, MainActivity::class.java)
         val showPi = PendingIntent.getActivity(
             context,
-            magicNumber + 1,
+            RC_ALARM_SHOW + magicNumber + 1,
             showIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -171,7 +174,7 @@ object DeadlineAlarmScheduler {
         // 只尝试获取已存在的 PendingIntent，不创建新实例
         val pi = PendingIntent.getBroadcast(
             context,
-            magicNumber,
+            RC_ALARM_TRIGGER + magicNumber,
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )

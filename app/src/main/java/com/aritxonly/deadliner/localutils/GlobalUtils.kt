@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.localutils
 
 import android.app.Activity
 import android.app.ActivityManager
@@ -7,26 +7,29 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.fragment.app.FragmentManager
+import com.aritxonly.deadliner.DatabaseHelper
+import com.aritxonly.deadliner.DeadlineAlarmScheduler
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.HabitMetaData
+import com.google.android.material.datepicker.CalendarConstraints
+import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
-import androidx.core.content.edit
-import com.aritxonly.deadliner.model.CalendarEvent
-import com.aritxonly.deadliner.model.DDLItem
-import com.aritxonly.deadliner.model.DeadlineFrequency
-import com.aritxonly.deadliner.model.DeadlineType
-import com.aritxonly.deadliner.model.HabitMetaData
-import java.time.Instant
 import java.util.Locale
 
 object GlobalUtils {
@@ -223,6 +226,20 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("permission_setup_done", value) }
         }
 
+    object OverviewSettings {
+        var monthlyCount: Int
+            get() = sharedPreferences.getInt("monthly_count(overview)", 12)
+            set(value) {
+                sharedPreferences.edit { putInt("monthly_count(overview)", value) }
+            }
+
+        var showOverdueInDaily: Boolean
+            get() = sharedPreferences.getBoolean("show_overdue_in_daily(overview)", true)
+            set(value) {
+                sharedPreferences.edit { putBoolean("show_overdue_in_daily(overview)", value) }
+            }
+    }
+
     object NotificationStatusManager {
         fun markAsNotified(ddlId: Long) {
             val set = notifiedSet
@@ -237,6 +254,14 @@ object GlobalUtils {
         fun clearAllNotified() {
             notifiedSet = mutableSetOf()
         }
+    }
+
+    object PendingCode {
+        const val RC_DDL_DETAIL = 1000
+        const val RC_MARK_COMPLETE = 2000
+        const val RC_DELETE = 3000
+        const val RC_ALARM_TRIGGER = 4000
+        const val RC_ALARM_SHOW = 5000
     }
 
     // v2.0 - filter功能
@@ -255,7 +280,7 @@ object GlobalUtils {
 
     // null pointer对应的safe解析时间：第一次启动时间
     var timeNull: LocalDateTime
-        get() = parseDateTime(sharedPreferences.getString("time_null", LocalDateTime.now().toString())?:LocalDateTime.now().toString())!!
+        get() = parseDateTime(sharedPreferences.getString("time_null", LocalDateTime.now().toString())?: LocalDateTime.now().toString())!!
         set(value) {
             sharedPreferences.edit().putString("time_null", value.toString()).apply()
         }
@@ -269,13 +294,14 @@ object GlobalUtils {
     }
 
     fun parseDateTime(dateTimeString: String): LocalDateTime? {
-        if (dateTimeString == "null") return null
+        if (dateTimeString == "null" || dateTimeString == "") return null
 
         val formatters = listOf(
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
         )
 
         for (formatter in formatters) {
@@ -459,5 +485,23 @@ object GlobalUtils {
             DeadlineFrequency.MONTHLY ->
                 ((remainingTime / 30) * metaData.frequency >= remainingTasks)
         }
+    }
+
+    fun showRetroactiveDatePicker(fragmentManager: FragmentManager, onDatePicked: (Long) -> Unit) {
+        // 限制不选未来日期
+        val constraints = CalendarConstraints.Builder()
+            .setValidator(DateValidatorPointBackward.now())
+            .build()
+
+        val picker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText("选择补签日期")
+            .setCalendarConstraints(constraints)
+            .build()
+
+        picker.addOnPositiveButtonClickListener { selection ->
+            onDatePicked(selection)
+        }
+
+        picker.show(fragmentManager, "retro_date_picker")
     }
 }

@@ -2,10 +2,12 @@ package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.util.TypedValue
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.WindowManager
@@ -80,6 +82,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
@@ -96,9 +99,13 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.calendar.CalendarHelper
+import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
+import okhttp3.internal.toHexString
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -121,8 +128,49 @@ class DeadlineDetailActivity : AppCompatActivity() {
         }
     }
 
+    private class ColorSchemeHelper(val context: Context) {
+        val defaultColorScheme = AppColorScheme(
+            primary = getThemeColor(androidx.appcompat.R.attr.colorPrimary),
+            onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+            primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
+            surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
+            onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
+            surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer),
+            secondary = getMaterialThemeColor(com.google.android.material.R.attr.colorSecondary),
+            onSecondary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSecondary),
+            secondaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSecondaryContainer),
+            onSecondaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSecondaryContainer),
+            tertiary = getMaterialThemeColor(com.google.android.material.R.attr.colorTertiary),
+            onTertiary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnTertiary),
+            tertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorTertiaryContainer),
+            onTertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorOnTertiaryContainer),
+        )
+
+        /**
+         * 获取主题颜色
+         * @param attributeId 主题属性 ID
+         * @return 颜色值
+         */
+        private fun getThemeColor(attributeId: Int): Int {
+            val typedValue = TypedValue()
+            context.theme.resolveAttribute(attributeId, typedValue, true)
+            Log.d("ThemeColor", "getColor $attributeId: ${typedValue.data.toHexString()}")
+            return typedValue.data
+        }
+
+        private fun getMaterialThemeColor(attributeId: Int): Int {
+            return MaterialColors.getColor(
+                ContextWrapper(context),
+                attributeId,
+                android.graphics.Color.WHITE
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+
+        window.isNavigationBarContrastEnforced = false
 
         super.onCreate(savedInstanceState)
 
@@ -130,7 +178,7 @@ class DeadlineDetailActivity : AppCompatActivity() {
         ?: throw IllegalArgumentException("Missing Deadline parameter")
 
         val appColorScheme = intent.getParcelableExtra<AppColorScheme>("EXTRA_APP_COLOR_SCHEME")
-            ?: throw IllegalArgumentException("Missing AppColorScheme")
+            ?: ColorSchemeHelper(this).defaultColorScheme
 
         colorScheme = appColorScheme
 
@@ -285,7 +333,8 @@ fun DeadlineDetailScreen(
                         )
                     }
                 },
-                modifier = Modifier.background(Color(colorScheme.surface))
+                modifier = Modifier
+                    .background(Color(colorScheme.surface))
                     .padding(horizontal = 8.dp)
             )
         }

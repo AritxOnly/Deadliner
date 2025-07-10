@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.aritxonly.deadliner.DatabaseHelper
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
-import com.aritxonly.deadliner.GlobalUtils
+import com.aritxonly.deadliner.localutils.GlobalUtils
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
