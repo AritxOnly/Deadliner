@@ -2,9 +2,12 @@ package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import java.time.LocalDateTime
 import android.os.Bundle
+import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.WindowManager
 import android.widget.TextView
@@ -84,8 +87,10 @@ import com.aritxonly.deadliner.localutils.OverviewUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.slider.Slider
+import okhttp3.internal.toHexString
 import kotlin.collections.component1
 import kotlin.collections.component2
 
@@ -136,22 +141,54 @@ class OverviewActivity : ComponentActivity() {
         }
     }
 
+    private class ColorSchemeHelper(val context: Context) {
+        val defaultColorScheme = AppColorScheme(
+            primary = getThemeColor(androidx.appcompat.R.attr.colorPrimary),
+            onPrimary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+            primaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorPrimaryContainer),
+            surface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface),
+            onSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSurface),
+            surfaceContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer),
+            secondary = getMaterialThemeColor(com.google.android.material.R.attr.colorSecondary),
+            onSecondary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSecondary),
+            secondaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSecondaryContainer),
+            onSecondaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorOnSecondaryContainer),
+            tertiary = getMaterialThemeColor(com.google.android.material.R.attr.colorTertiary),
+            onTertiary = getMaterialThemeColor(com.google.android.material.R.attr.colorOnTertiary),
+            tertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorTertiaryContainer),
+            onTertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorOnTertiaryContainer),
+        )
+
+        /**
+         * 获取主题颜色
+         * @param attributeId 主题属性 ID
+         * @return 颜色值
+         */
+        private fun getThemeColor(attributeId: Int): Int {
+            val typedValue = TypedValue()
+            context.theme.resolveAttribute(attributeId, typedValue, true)
+            Log.d("ThemeColor", "getColor $attributeId: ${typedValue.data.toHexString()}")
+            return typedValue.data
+        }
+
+        private fun getMaterialThemeColor(attributeId: Int): Int {
+            return MaterialColors.getColor(
+                ContextWrapper(context),
+                attributeId,
+                android.graphics.Color.WHITE
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
 
         window.isNavigationBarContrastEnforced = false
 
-//        if (GlobalUtils.experimentalEdgeToEdge) {
-//            // For HyperOS2
-//            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-//            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-//            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-//        }
-
         super.onCreate(savedInstanceState)
 
         val appColorScheme = intent.getParcelableExtra<AppColorScheme>("EXTRA_APP_COLOR_SCHEME")
-            ?: throw IllegalArgumentException("Missing AppColorScheme")
+            ?: ColorSchemeHelper(this).defaultColorScheme
 
         val databaseHelper = DatabaseHelper.getInstance(applicationContext)
 

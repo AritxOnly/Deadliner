@@ -1,7 +1,6 @@
 package com.aritxonly.deadliner.notification
 
 import android.Manifest
-import android.app.AlertDialog
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -13,16 +12,16 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.DatabaseHelper
+import com.aritxonly.deadliner.DeadlineDetailActivity
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.LauncherActivity
-import com.aritxonly.deadliner.MainActivity
+import com.aritxonly.deadliner.OverviewActivity
 import com.aritxonly.deadliner.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.time.Duration
@@ -159,7 +158,7 @@ object NotificationUtil {
         }
 
         val title = "今日任务概览"
-        val summary = "逾期：$overdueCount，进行中：$inProgressCount，今日到期：$dueTodayCount"
+        val summary = "🔥逾期：$overdueCount ⌛️进行中：$inProgressCount 🗓今日到期：$dueTodayCount"
 
         val builder = NotificationCompat.Builder(context, CHANNEL_DAILY_ID).apply {
             setSmallIcon(R.mipmap.ic_launcher)
@@ -177,7 +176,7 @@ object NotificationUtil {
             val pendingIntent = PendingIntent.getActivity(
                 context,
                 114514,
-                Intent(context, LauncherActivity::class.java),
+                Intent(context, OverviewActivity::class.java),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             setContentIntent(pendingIntent)
@@ -187,24 +186,55 @@ object NotificationUtil {
     }
 
     private fun buildNotification(context: Context, ddl: DDLItem): Notification {
+        // 点击打开详情页
+        val detailIntent = DeadlineDetailActivity.newIntent(context, ddl).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val detailPending = PendingIntent.getActivity(
+            context,
+            ddl.id.hashCode(),
+            detailIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // “标记完成”广播 PendingIntent
+        val completeIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = ACTION_MARK_COMPLETE
+            putExtra(EXTRA_DDL_ID, ddl.id)
+        }
+        val completePending = PendingIntent.getBroadcast(
+            context,
+            ddl.id.hashCode(),
+            completeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // “删除”广播 PendingIntent
+        val deleteIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = ACTION_DELETE
+            putExtra(EXTRA_DDL_ID, ddl.id)
+        }
+        val deletePending = PendingIntent.getBroadcast(
+            context,
+            ddl.id.hashCode() + 1,
+            deleteIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         return NotificationCompat.Builder(context, CHANNEL_ID).apply {
-            setSmallIcon(R.mipmap.ic_launcher) // 确保资源存在
-            setContentTitle("DDL警报：${ddl.name}")
-            setContentText("剩余时间：${formatRemainingTime(GlobalUtils.safeParseDateTime(ddl.endTime))}")
+            setSmallIcon(R.mipmap.ic_launcher)
+            setContentTitle("即将到期提醒：${ddl.name}")
+            setContentText("${formatRemainingTime(GlobalUtils.safeParseDateTime(ddl.endTime))} - ${ddl.note}")
+            setStyle(NotificationCompat.BigTextStyle().bigText(ddl.note))
             priority = NotificationCompat.PRIORITY_MAX
             setCategory(NotificationCompat.CATEGORY_ALARM)
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
-            // 点击打开应用
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                ddl.id.hashCode(),
-                Intent(context, LauncherActivity::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            setContentIntent(pendingIntent)
+            setContentIntent(detailPending)
 
-            // ColorOS适配
+            addAction(R.drawable.ic_check, "标记完成", completePending)
+            addAction(R.drawable.ic_delete, "删除", deletePending)
+
             if (isOppoDevice()) {
                 addExtras(Bundle().apply {
                     putString("oppo_notification_channel_id", "important_channel")
@@ -213,46 +243,9 @@ object NotificationUtil {
         }.build()
     }
 
-    // region 厂商适配工具
-    private fun isXiaomiDevice() =
-        Build.MANUFACTURER.equals("xiaomi", ignoreCase = true)
-
     private fun isOppoDevice() =
         Build.MANUFACTURER.equals("oppo", ignoreCase = true)
 
-    private fun checkXiaomiPopupPermission(context: Context): Boolean {
-        return try {
-            Settings.Secure.getInt(
-                context.contentResolver,
-                "miui_permission_controller_clazz"
-            ) == 1
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    private fun showXiaomiPermissionDialog(context: Context) {
-        MaterialAlertDialogBuilder(context)
-            .setTitle("需要后台弹窗权限")
-            .setMessage("请在设置中允许Deadliner显示后台弹窗")
-            .setPositiveButton("去设置") { _, _ ->
-                try {
-                    val intent = Intent("miui.intent.action.APP_PERM_EDITOR").apply {
-                        putExtra("extra_pkgname", context.packageName)
-                    }
-                    context.startActivity(intent)
-                } catch (e: Exception) {
-                    context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                    })
-                }
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
-    // endregion
-
-    // 剩余时间格式化（示例实现）
     private fun formatRemainingTime(endTime: LocalDateTime): String {
         val duration = Duration.between(LocalDateTime.now(), endTime)
         return when {
