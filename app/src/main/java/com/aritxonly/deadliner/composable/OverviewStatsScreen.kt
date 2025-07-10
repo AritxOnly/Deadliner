@@ -1,6 +1,7 @@
 package com.aritxonly.deadliner.composable
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.view.LayoutInflater
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -33,6 +34,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.AppColorScheme
+import com.aritxonly.deadliner.DeadlineDetailActivity
+import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.hashColor
 import com.aritxonly.deadliner.localutils.GlobalUtils
@@ -259,6 +262,11 @@ fun DeadlineItemXmlRow(item: DDLItem, modifier: Modifier = Modifier) {
             val progressTv = view.findViewById<TextView>(R.id.item_progress_text)
             val progressBar = view.findViewById<ProgressBar>(R.id.item_progress)
 
+            view.setOnClickListener {
+                val intent = DeadlineDetailActivity.newIntent(context, item)
+                context.startActivity(intent)
+            }
+
             // 3. 返回根 View
             view
         },
@@ -280,7 +288,7 @@ fun DeadlineItemXmlRow(item: DDLItem, modifier: Modifier = Modifier) {
             val remaining = Duration.between(LocalDateTime.now(), end).toMinutes().toFloat() / 60
 
             progressBar.progress = if (GlobalUtils.progressDir) percent else (100 - percent)
-            progressTv.text = "%.1f".format(remaining) + " $percent%"
+            progressTv.text = "%.1f".format(remaining) + "h $percent%"
         }
     )
 }

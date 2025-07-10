@@ -241,7 +241,7 @@ fun OverviewScreen(
         val endTime = GlobalUtils.parseDateTime(it.endTime) ?: return@filter false
         val endDateIsToday = (endTime.toLocalDate() == LocalDate.now())
         Log.d("OverviewDebug", endDateIsToday.toString())
-        endDateIsToday
+        endDateIsToday && !it.isCompleted
     }
 
     val historyCompleted = items.filter { it.isCompleted }
