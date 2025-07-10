@@ -91,6 +91,7 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.slider.Slider
 import okhttp3.internal.toHexString
+import java.time.LocalDate
 import kotlin.collections.component1
 import kotlin.collections.component2
 
@@ -196,8 +197,6 @@ class OverviewActivity : ComponentActivity() {
             DeadlinerTheme {
                 val items = databaseHelper.getDDLsByType(DeadlineType.TASK)
 
-
-
                     OverviewScreen(
                         items = items,
                         colorScheme = appColorScheme
@@ -212,9 +211,9 @@ class OverviewActivity : ComponentActivity() {
 @Composable
 fun hashColor(key: String) : Color {
     val color = when (key) {
-        "已完成" -> colorResource(id = R.color.chart_green)
+        "今日完成", "已完成" -> colorResource(id = R.color.chart_green)
         "未完成" -> colorResource(id = R.color.chart_orange)
-        "逾期" -> colorResource(id = R.color.chart_red)
+        "今日逾期", "逾期" -> colorResource(id = R.color.chart_red)
         else -> colorResource(id = R.color.chart_blue)
     }
     return color
@@ -231,20 +230,28 @@ fun OverviewScreen(
     // 数据准备
     // 当前任务：未归档
     val activeItems = items.filter { !it.isArchived }
-    val completedItems = activeItems.filter { it.isCompleted }
+    val completedItems = activeItems.filter {
+        val completeTime = GlobalUtils.parseDateTime(it.completeTime) ?: return@filter false
+        val completeDateIsToday = (completeTime.toLocalDate() == LocalDate.now())
+        it.isCompleted && completeDateIsToday
+    }
     val incompleteItems = activeItems.filter { !it.isCompleted && !isOverdue(it) }
-    val overdueItems = activeItems.filter { isOverdue(it) }
+    val overdueItems = activeItems.filter {
+        Log.d("OverviewDebug", "I reach here with ${it.endTime}")
+        val endTime = GlobalUtils.parseDateTime(it.endTime) ?: return@filter false
+        val endDateIsToday = (endTime.toLocalDate() == LocalDate.now())
+        Log.d("OverviewDebug", endDateIsToday.toString())
+        endDateIsToday
+    }
 
-    // 历史任务：所有任务
     val historyCompleted = items.filter { it.isCompleted }
     val historyIncomplete = items.filter { !it.isCompleted }
-    // 对于历史任务，逾期可以按业务需求定义，此处简单统计未完成为逾期
-    val historyOverdue = overdueItems
+    val historyOverdue = activeItems.filter { isOverdue(it) }
 
     val activeStats = mapOf(
-        "已完成" to completedItems.size,
+        "今日完成" to completedItems.size,
         "未完成" to incompleteItems.size,
-        "逾期" to overdueItems.size
+        "今日逾期" to overdueItems.size
     )
     val historyStats = mapOf(
         "已完成" to historyCompleted.size,
@@ -348,6 +355,7 @@ fun OverviewScreen(
                         activeStats,
                         historyStats,
                         completionTimeStats,
+                        overdueItems,
                         Modifier
                             .background(Color(colorScheme.surface)),
                         colorScheme

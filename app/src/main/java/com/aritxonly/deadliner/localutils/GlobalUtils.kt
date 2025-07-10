@@ -294,7 +294,7 @@ object GlobalUtils {
     }
 
     fun parseDateTime(dateTimeString: String): LocalDateTime? {
-        if (dateTimeString == "null") return null
+        if (dateTimeString == "null" || dateTimeString == "") return null
 
         val formatters = listOf(
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
