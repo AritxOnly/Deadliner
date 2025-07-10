@@ -146,7 +146,7 @@
     <string name="filter_dialog_start_time">开始时间</string>
     <string name="filter_dialog_end_time">结束时间</string>
     <string name="filter_dialog_elapse_time">项目进度</string>
-    <string name="title_activity_overview">OverviewActivity</string>
+    <string name="title_activity_overview">任务概览</string>
 
     <string name="snackbar_already_checkin">今天已经打卡过了哦～明天再来吧！☺️</string>
 

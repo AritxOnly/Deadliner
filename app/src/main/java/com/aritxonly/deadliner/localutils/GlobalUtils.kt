@@ -256,6 +256,14 @@ object GlobalUtils {
         }
     }
 
+    object PendingCode {
+        const val RC_DDL_DETAIL = 1000
+        const val RC_MARK_COMPLETE = 2000
+        const val RC_DELETE = 3000
+        const val RC_ALARM_TRIGGER = 4000
+        const val RC_ALARM_SHOW = 5000
+    }
+
     // v2.0 - filter功能
     /**
      * 映射表

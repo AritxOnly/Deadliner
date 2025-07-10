@@ -23,6 +23,9 @@ import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.LauncherActivity
 import com.aritxonly.deadliner.OverviewActivity
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_DDL_DETAIL
+import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_DELETE
+import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_MARK_COMPLETE
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.time.Duration
 import java.time.LocalDateTime
@@ -157,8 +160,8 @@ object NotificationUtil {
             }
         }
 
-        val title = "今日任务概览"
-        val summary = "🔥逾期：$overdueCount ⌛️进行中：$inProgressCount 🗓今日到期：$dueTodayCount"
+        val title = "今日任务概览" + if (dueTodayCount == 0) "" else "- ${dueTodayCount}个任务今日到期"
+        val summary = "🔥逾期 $overdueCount ｜ ⌛️进行中 $inProgressCount"
 
         val builder = NotificationCompat.Builder(context, CHANNEL_DAILY_ID).apply {
             setSmallIcon(R.mipmap.ic_launcher)
@@ -192,7 +195,7 @@ object NotificationUtil {
         }
         val detailPending = PendingIntent.getActivity(
             context,
-            ddl.id.hashCode(),
+            RC_DDL_DETAIL + ddl.id.hashCode(),
             detailIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -204,7 +207,7 @@ object NotificationUtil {
         }
         val completePending = PendingIntent.getBroadcast(
             context,
-            ddl.id.hashCode(),
+            RC_MARK_COMPLETE + ddl.id.hashCode(),
             completeIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -216,8 +219,20 @@ object NotificationUtil {
         }
         val deletePending = PendingIntent.getBroadcast(
             context,
-            ddl.id.hashCode() + 1,
+            RC_DELETE + ddl.id.hashCode() + 1,
             deleteIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // “稍后提醒”广播 PendingIntent
+        val laterIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = ACTION_LATER
+            putExtra(EXTRA_DDL_ID, ddl.id)
+        }
+        val laterPending = PendingIntent.getBroadcast(
+            context,
+            ddl.id.hashCode() + 2,
+            laterIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -232,8 +247,9 @@ object NotificationUtil {
 
             setContentIntent(detailPending)
 
-            addAction(R.drawable.ic_check, "标记完成", completePending)
+            addAction(R.drawable.ic_check, "完成", completePending)
             addAction(R.drawable.ic_delete, "删除", deletePending)
+            addAction(R.drawable.ic_close, "稍后提醒", laterPending)
 
             if (isOppoDevice()) {
                 addExtras(Bundle().apply {
