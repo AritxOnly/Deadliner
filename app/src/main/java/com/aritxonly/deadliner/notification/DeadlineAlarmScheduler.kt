@@ -106,6 +106,17 @@ object DeadlineAlarmScheduler {
             pi.cancel()
             Log.d("AlarmDebug", "取消闹钟：DDL_ID: $ddlId")
         }
+
+        PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )?.let { pi ->
+            alarmManager.cancel(pi)
+            pi.cancel()
+            Log.d("AlarmDebug", "取消旧版本设定的闹钟：DDL_ID: $ddlId")
+        }
     }
 
     fun scheduleDailyAlarm(context: Context) {
@@ -172,21 +183,28 @@ object DeadlineAlarmScheduler {
         val magicNumber = 114514
 
         // 只尝试获取已存在的 PendingIntent，不创建新实例
-        val pi = PendingIntent.getBroadcast(
+        PendingIntent.getBroadcast(
             context,
             RC_ALARM_TRIGGER + magicNumber,
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        if (pi != null) {
+        )?.let { pi->
             // 取消 AlarmManager 中的定时任务
             alarmManager.cancel(pi)
             // 取消掉 PendingIntent 本身
             pi.cancel()
             Log.d("AlarmDebug", "已取消每日通知闹钟")
-        } else {
-            Log.d("AlarmDebug", "没有找到待取消的每日通知闹钟")
+        }
+
+        PendingIntent.getBroadcast(
+            context,
+            magicNumber,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )?.let { pi->
+            alarmManager.cancel(pi)
+            pi.cancel()
+            Log.d("AlarmDebug", "已取消旧版本的每日通知闹钟")
         }
     }
 }
