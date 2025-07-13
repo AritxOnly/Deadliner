@@ -1,17 +1,20 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.widgets
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
-import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
+import com.aritxonly.deadliner.AddDDLActivity
+import com.aritxonly.deadliner.DatabaseHelper
+import com.aritxonly.deadliner.LauncherActivity
+import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
@@ -25,7 +28,7 @@ class MultiDeadlineWidget : AppWidgetProvider() {
         appWidgetIds: IntArray
     ) {
         for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+            updateAppMultiDeadlineWidget(context, appWidgetManager, appWidgetId)
         }
     }
 
@@ -51,7 +54,7 @@ class MultiDeadlineWidget : AppWidgetProvider() {
         fun updateWidget(context: Context,
                          appWidgetManager: AppWidgetManager,
                          appWidgetId: Int) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+            updateAppMultiDeadlineWidget(context, appWidgetManager, appWidgetId)
         }
     }
 }
@@ -67,14 +70,16 @@ fun getThemeColor(context: Context, attrResId: Int): Int {
     }
 }
 
-internal fun updateAppWidget(
+internal fun updateAppMultiDeadlineWidget(
     context: Context,
     appWidgetManager: AppWidgetManager,
     appWidgetId: Int
 ) {
     val views = RemoteViews(context.packageName, R.layout.multi_deadline_widget)
-    val sharedPreferences = context.getSharedPreferences("app_settings", MODE_PRIVATE)
+    val sharedPreferences = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     val direction = sharedPreferences.getBoolean("widget_progress_dir", false)
+    val showAddButton = sharedPreferences.getBoolean("show_add_button_multi_ddl_widget", true)
+    val addButtonVisibility = if (showAddButton) View.VISIBLE else View.GONE
 
     // 设置点击事件，点击小组件打开 MainActivity
     val intent = Intent(context, LauncherActivity::class.java).apply {
@@ -87,11 +92,24 @@ internal fun updateAppWidget(
 
     appWidgetManager.updateAppWidget(appWidgetId, views)
 
-    val dbHelper = DatabaseHelper.getInstance(context)
+    val dbHelper = DatabaseHelper.Companion.getInstance(context)
     val allDDLs = dbHelper.getDDLsByType(DeadlineType.TASK)
 
     val color = getThemeColor(context, android.R.attr.textColorPrimary)
     views.setInt(R.id.widgetFinishIcon, "setColorFilter", color)
+
+    // 打开 AddDDLActivity 的 PendingIntent
+    val addIntent = Intent(context, AddDDLActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
+    val addPi = PendingIntent.getActivity(
+        context,
+        0,
+        addIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    views.setOnClickPendingIntent(R.id.btn_add_ddl, addPi)
+    views.setViewVisibility(R.id.btn_add_ddl, addButtonVisibility)
 
     val now = LocalDateTime.now()
     val parsedDDLs = allDDLs.map { ddl ->
@@ -189,7 +207,8 @@ internal fun updateAppWidget(
         views.setTextViewText(progressTextId, timeText)
     }
 
-    views.setViewVisibility(R.id.widgetFinishNotice, if (showCount == 0) {
+    views.setViewVisibility(
+        R.id.widgetFinishNotice, if (showCount == 0) {
         View.VISIBLE
     } else {
         View.GONE

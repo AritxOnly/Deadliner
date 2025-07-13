@@ -108,6 +108,9 @@ import com.aritxonly.deadliner.model.DeadlineFrequency.*
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.updateNoteWithDate
+import com.aritxonly.deadliner.widgets.HabitMiniWidget
+import com.aritxonly.deadliner.widgets.LargeDeadlineWidget
+import com.aritxonly.deadliner.widgets.MultiDeadlineWidget
 import com.google.android.material.loadingindicator.LoadingIndicator
 import java.time.Instant
 import java.time.Period
@@ -936,6 +939,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val largeWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, LargeDeadlineWidget::class.java))
         for (largeWidgetId in largeWidgetIds) {
             LargeDeadlineWidget.updateWidget(this, appWidgetManager, largeWidgetId)
+        }
+
+        val habitMiniWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this,
+            HabitMiniWidget::class.java))
+        for (habitMiniWidgetId in habitMiniWidgetIds) {
+            HabitMiniWidget.updateWidget(this, appWidgetManager, habitMiniWidgetId)
         }
     }
 

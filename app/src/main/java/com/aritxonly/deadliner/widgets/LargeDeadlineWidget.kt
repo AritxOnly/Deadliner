@@ -1,23 +1,25 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.widgets
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
-import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.res.Resources
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
+import com.aritxonly.deadliner.AddDDLActivity
+import com.aritxonly.deadliner.DatabaseHelper
+import com.aritxonly.deadliner.LauncherActivity
+import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import kotlin.math.max
 
 class LargeDeadlineWidget : AppWidgetProvider() {
     override fun onUpdate(
@@ -74,7 +76,7 @@ internal fun updateLargeAppWidget(
     appWidgetId: Int
 ) {
     val views = RemoteViews(context.packageName, R.layout.large_deadline_widget)
-    val sharedPreferences = context.getSharedPreferences("app_settings", MODE_PRIVATE)
+    val sharedPreferences = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     val direction = sharedPreferences.getBoolean("widget_progress_dir", false)
 
     // 获取小部件选项（包含尺寸信息）
@@ -128,7 +130,7 @@ internal fun updateLargeAppWidget(
     views.removeAllViews(R.id.large_item_container)
 
     // 获取数据
-    val allDdls: List<DDLItem> = DatabaseHelper
+    val allDdls: List<DDLItem> = DatabaseHelper.Companion
         .getInstance(context)
         .getDDLsByType(DeadlineType.TASK)
         .filter { !it.isCompleted && !it.isArchived }
@@ -145,7 +147,7 @@ internal fun updateLargeAppWidget(
     val sorted = parsed
         .sortedWith(compareBy<ParsedDDL> { it.ddl.isStared.not() }
             .thenBy { it.remainingMillis })
-        .take(maxItems)
+        .take(if (maxItems > 0) maxItems else 0)
 
     // 动态添加每条 item
     for (item in sorted) {

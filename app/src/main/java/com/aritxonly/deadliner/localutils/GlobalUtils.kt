@@ -15,6 +15,7 @@ import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -503,5 +504,29 @@ object GlobalUtils {
         }
 
         picker.show(fragmentManager, "retro_date_picker")
+    }
+
+    interface OnWidgetCheckInGlobalListener {
+        fun onCheckInFailedGlobal(context: Context, habitItem: DDLItem)
+        fun onCheckInSuccessGlobal(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData)
+    }
+
+    fun checkInFromWidget(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData, canPerformClick: Boolean, listener: OnWidgetCheckInGlobalListener?) {
+        if (!canPerformClick) {
+            listener?.onCheckInFailedGlobal(context, habitItem)
+            return
+        }
+
+        val today = LocalDate.now()
+        val updatedNote = updateNoteWithDate(habitItem, today)
+        val updatedHabit = habitItem.copy(
+            note = updatedNote,
+            habitCount = habitItem.habitCount + 1,
+            habitTotalCount = habitItem.habitTotalCount + 1
+        )
+
+        listener?.onCheckInSuccessGlobal(context, updatedHabit, habitMeta)
+
+        DatabaseHelper.getInstance(context).updateDDL(updatedHabit)
     }
 }
