@@ -1,18 +1,12 @@
-package com.aritxonly.deadliner.composable
+package com.aritxonly.deadliner.composable.overview
 
-import android.widget.Space
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,9 +34,12 @@ import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.AppColorScheme
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.composable.AnimatedItem
+import com.aritxonly.deadliner.composable.TintedGradientImage
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.YearMonth
+import kotlin.math.abs
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -166,7 +163,7 @@ private fun computeChange(current: Int, previous: Int): Pair<String?, Boolean?> 
         else -> {
             val diff = current - previous
             isDown = if (diff == 0) null else (diff < 0)
-            "${kotlin.math.abs(diff)}"
+            "${abs(diff)}"
         }
     } to isDown
 }
@@ -230,7 +227,7 @@ private fun SummaryGrid(
                         .clip(RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius)))
                 ) {
                     TintedGradientImage(
-                        com.aritxonly.deadliner.R.drawable.dashboard_background,
+                        R.drawable.dashboard_background,
                         tintColor = Color(colorScheme.primary),
                         modifier = Modifier.matchParentSize(),
                         contentDescription = "背景"
@@ -297,7 +294,7 @@ private fun SummaryCard(
                         Icon(
                             imageVector = arrow,
                             contentDescription = null,
-                            tint = if (isDown) colorResource(com.aritxonly.deadliner.R.color.chart_red) else colorResource(com.aritxonly.deadliner.R.color.chart_green),
+                            tint = if (isDown) colorResource(R.color.chart_red) else colorResource(R.color.chart_green),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -306,9 +303,9 @@ private fun SummaryCard(
                         text = change,
                         style = MaterialTheme.typography.bodyLarge,
                         color = when (isDown) {
-                            true -> colorResource(com.aritxonly.deadliner.R.color.chart_red)
-                            false -> colorResource(com.aritxonly.deadliner.R.color.chart_green)
-                            null -> colorResource(com.aritxonly.deadliner.R.color.chart_blue)
+                            true -> colorResource(R.color.chart_red)
+                            false -> colorResource(R.color.chart_green)
+                            null -> colorResource(R.color.chart_blue)
                         }
                     )
                 }

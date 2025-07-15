@@ -1,3 +1,7 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -12,13 +16,22 @@ android {
         applicationId = "com.aritxonly.deadliner"
         minSdk = 31
         targetSdk = 34
-        versionCode = 17
-        versionName = "2.1.1"
+        versionCode = 18
+        versionName = "2.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        val timeStamp = SimpleDateFormat(
+            "yyyy-MM-dd HH:mm:ss",
+            Locale.getDefault()
+        ).format(Date())
+        buildConfigField("String", "BUILD_TIME", "\"$timeStamp\"")
+    }
+    lint {
+        disable += "NullSafeMutableLiveData"
     }
 
     buildTypes {
@@ -40,6 +53,7 @@ android {
     buildFeatures {
         viewBinding = true
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -66,6 +80,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("com.google.android.material:material:1.13.0-alpha13")
     implementation("io.github.ehsannarmani:compose-charts:0.1.7")
+    implementation("androidx.navigation:navigation-compose:2.9.1")
+    implementation("com.github.jeziellago:compose-markdown:0.5.7")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

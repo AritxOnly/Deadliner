@@ -84,6 +84,8 @@ object DeadlineAlarmScheduler {
             Log.d("AlarmDebug", "Removing $ddlId")
             cancelAlarm(context, ddlId)
         }
+
+        cancelDailyAlarm(context)
     }
 
     fun cancelAlarm(context: Context, ddlId: Long) {

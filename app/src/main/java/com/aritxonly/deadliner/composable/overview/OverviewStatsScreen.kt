@@ -1,7 +1,6 @@
-package com.aritxonly.deadliner.composable
+package com.aritxonly.deadliner.composable.overview
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.view.LayoutInflater
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -20,7 +19,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,13 +28,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.AppColorScheme
 import com.aritxonly.deadliner.DeadlineDetailActivity
-import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.composable.AnimatedItem
 import com.aritxonly.deadliner.hashColor
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
@@ -44,7 +41,6 @@ import java.time.Duration
 import java.time.LocalDateTime
 import kotlin.collections.component1
 import kotlin.collections.component2
-import kotlin.math.roundToInt
 
 @Composable
 fun OverviewStatsScreen(

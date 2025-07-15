@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner.composable
+package com.aritxonly.deadliner.composable.overview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +25,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.AppColorScheme
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.composable.AnimatedItem
 import com.aritxonly.deadliner.hashColor
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.OverviewUtils

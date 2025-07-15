@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner.composable
+package com.aritxonly.deadliner.composable.overview
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -26,7 +26,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp

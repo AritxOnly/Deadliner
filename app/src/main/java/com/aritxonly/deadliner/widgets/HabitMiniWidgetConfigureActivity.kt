@@ -2,7 +2,6 @@ package com.aritxonly.deadliner.widgets
 
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
-import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.ContextWrapper
@@ -28,11 +27,16 @@ import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.MaterialColors
 import okhttp3.internal.toHexString
+import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 
 /**
  * The configuration screen for the [HabitMiniWidget] AppWidget.
  */
-class HabitMiniWidgetConfigureActivity : Activity() {
+class HabitMiniWidgetConfigureActivity : ComponentActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     private var onClickListener = View.OnClickListener {
         val context = this@HabitMiniWidgetConfigureActivity
@@ -53,13 +57,11 @@ class HabitMiniWidgetConfigureActivity : Activity() {
     private var selectedHabitId = -1L
 
     public override fun onCreate(icicle: Bundle?) {
+        enableEdgeToEdge()
+
         super.onCreate(icicle)
 
         DynamicColors.applyToActivityIfAvailable(this)
-
-        val colorSurface = getMaterialThemeColor(com.google.android.material.R.attr.colorSurface)
-
-        setSystemBarColors(colorSurface, isLightColor(colorSurface), colorSurface)
 
         // Set the result to CANCELED.  This will cause the widget host to cancel
         // out of the widget placement if the user presses the back button.
@@ -67,6 +69,17 @@ class HabitMiniWidgetConfigureActivity : Activity() {
 
         binding = HabitMiniWidgetConfigureBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val sysBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            view.updatePadding(
+                top    = sysBarInsets.top + 16,
+                bottom = sysBarInsets.bottom + 16
+            )
+
+            insets
+        }
 
         // Find the widget id from the intent.
         val intent = intent
@@ -98,52 +111,6 @@ class HabitMiniWidgetConfigureActivity : Activity() {
         }
 
         binding.addButton.setOnClickListener(onClickListener)
-    }
-
-    /**
-     * 设置状态栏和导航栏颜色及图标颜色
-     */
-    private fun setSystemBarColors(color: Int, lightIcons: Boolean, colorNavigationBar: Int) {
-        if (GlobalUtils.experimentalEdgeToEdge) return
-
-        window.apply {
-            addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = color
-            navigationBarColor = colorNavigationBar
-
-            // 设置状态栏图标颜色
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                )
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                decorView.systemUiVisibility = if (lightIcons) {
-                    decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                } else {
-                    decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-                }
-            }
-        }
-    }
-
-    private fun getMaterialThemeColor(attributeId: Int): Int {
-        return MaterialColors.getColor(ContextWrapper(this), attributeId, Color.WHITE)
-    }
-
-    /**
-     * 判断颜色是否为浅色
-     */
-    private fun isLightColor(color: Int): Boolean {
-        val darkness = 1 - (0.299 * ((color shr 16 and 0xFF) / 255.0) +
-                0.587 * ((color shr 8 and 0xFF) / 255.0) +
-                0.114 * ((color and 0xFF) / 255.0))
-        return darkness < 0.5
     }
 }
 

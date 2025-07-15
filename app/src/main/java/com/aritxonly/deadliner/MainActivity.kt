@@ -1178,7 +1178,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // API 26 及以上版本使用 VibrationEffect
-            vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))
+            vibrator.vibrate(VibrationEffect.createOneShot(duration, GlobalUtils.vibrationAmplitude))
         } else {
             // API 25 及以下版本使用过时的 vibrate 方法
             vibrator.vibrate(duration)

@@ -23,47 +23,91 @@
     <string name="toast_archived">Deadline已归档！🗃️</string>
     <string name="toast_stared">已修改星标状态</string>
 
-    <string name="settings_general">通用</string>
-    <string name="settings_notification">通知</string>
-    <string name="settings_widget">小组件</string>
     <string name="settings_archive">归档</string>
+
+    <string name="settings_title">设置</string>
+    <string name="settings_general">通用</string>
+    <string name="settings_interface_display">个性化</string>
+    <string name="settings_widget">小组件</string>
+    <string name="settings_notification">通知</string>
     <string name="settings_backup">备份</string>
-    <string name="settings_developer">高级</string>
-    <string name="settings_highlight">关于</string>
-    <string name="settings_vibration">启用震动反馈</string>
+    <string name="settings_developer">开发者</string>
+    <string name="settings_wiki">Wiki</string>
+    <string name="settings_feedback">帮助与反馈</string>
+    <string name="settings_webdav">WebDAV</string>
+    <string name="settings_about">关于</string>
+
+    <string name="settings_support_general">界面显示 · UI交互</string>
+    <string name="settings_support_interface_display">个性化你的 Deadliner</string>
+    <string name="settings_support_notification">DDL临近通知 · 每日定时通知</string>
+    <string name="settings_support_backup">导入与导出用户数据库</string>
+    <string name="settings_support_webdav">Deadliner-Web 云同步服务</string>
+    <string name="settings_support_developer">调试选项与实验性内容</string>
+    <string name="settings_support_widget">小组件配置 · 小组件界面与交互设置</string>
+    <string name="settings_support_wiki">访问 Github Wiki 快速入门</string>
+    <string name="settings_support_feedback">向开发者反馈建议或提交bug</string>
+    <string name="settings_support_about"> · 检查更新 · 请开发者喝杯奶茶🧋</string>
+
+    <string name="settings_vibration_title">振动反馈</string>
+    <string name="settings_support_vibration">启用交互振动反馈 · 自定义振动强度</string>
+    <string name="settings_vibration">启用振动反馈</string>
+    <string name="settings_vibration_system">系统默认</string>
+    <string name="settings_vibration_custom">自定义振动强度</string>
+    <string name="settings_vibration_amplitude">振动强度</string>
     <string name="settings_progress_dir_main">主界面正向进度条</string>
     <string name="settings_fireworks">完成时显示动画效果</string>
     <string name="settings_detail_display">剩余时间详细显示</string>
-    <string name="settings_tasks_badge">选项卡未完成任务角标</string>
+
+    <string name="settings_support_progress_dir">主界面任务进度条显示项目进行进度</string>
+    <string name="settings_support_excitement">在主界面标题栏下方显示个性化鼓励语句</string>
+    <string name="settings_support_fireworks">完成任务时在主界面显示礼花效果</string>
+    <string name="settings_support_detail_display">开启后，任务卡片将显示完整时间（精确到分钟）</string>
+    <string name="settings_hide_divider">去线留白设计</string>
+    <string name="settings_support_hide_divider">开启后，界面中的分割线将会被隐藏</string>
+
+    <string name="settings_auto_archive_title">自动归档</string>
+    <string name="settings_support_auto_archive">一段时间后将已完成任务自动放入归档文件夹</string>
+    <string name="settings_auto_archive">启用自动归档</string>
+    <string name="settings_auto_archive_time">自定义自动归档时间</string>
+
+    <string name="settings_tasks_badge_title">任务角标</string>
+    <string name="settings_support_tasks_badge">在主界面选项卡上显示临近任务角标</string>
+    <string name="settings_tasks_badge">启用选项卡任务角标</string>
+    <string name="settings_tasks_badge_number">数字角标</string>
+    <string name="settings_tasks_badge_dot">圆点角标</string>
+
+    <string name="settings_hide_from_recent">从最近应用列表隐藏</string>
+    <string name="settings_support_hide_from_recent">开启选项后，多任务界面将不再显示应用</string>
+
     <string name="settings_progress_widget">小组件正向进度条</string>
     <string name="settings_mdwidget_add_btn">任务小组件按钮交互</string>
     <string name="settings_ldwidget_add_btn">任务大组件按钮交互</string>
+    <string name="settings_support_progress_widget">任务小组件进度条显示项目进行进度</string>
+    <string name="settings_support_mdwidget_add_btn">开启后，任务小组件上将会显示一个浮动的\"+\"按钮，用于从小组件快速添加任务</string>
+    <string name="settings_support_ldwidget_add_btn">开启后，任务大组件上将会显示一个浮动的\"+\"按钮，用于从小组件快速添加任务</string>
+
     <string name="settings_nearby_notification">Deadline临近通知</string>
     <string name="settings_everyday_notification">每日Deadline统计通知</string>
-    <string name="settings_hide_from_recent">将应用从最近应用列表隐藏</string>
+
     <string name="settings_experimental_e2e">系统栏边到边沉浸（实验性）</string>
     <string name="settings_excitement">主菜单鼓励语句</string>
-    <string name="settings_homepage">访问作者主页</string>
-    <string name="settings_github">访问项目主页</string>
-    <string name="settings_issues">提交错误报告</string>
 
-    <!--    <string-array name="excitement_array">-->
-    <!--        <item>今天你Deadline了吗？😝</item>-->
-    <!--        <item>Deadline临近了🥺</item>-->
-    <!--        <item>再坚持一下，很快就能做完啦☺️</item>-->
-    <!--        <item>提前开始Deadline是一件好事哦😉</item>-->
-    <!--        <item>保持专注，你一定能搞定！💪</item>-->
-    <!--        <item>不要担心，你比你想象的更强大！✨</item>-->
-    <!--        <item>完成Deadline后，奖励自己一个小惊喜吧！🎉</item>-->
-    <!--        <item>Deadline不再是敌人，而是你超越自己的机会！🚀</item>-->
-    <!--        <item>放轻松，深呼吸，你可以做到！🌟</item>-->
-    <!--        <item>你的努力不会白费，每一步都在靠近目标！🏃‍♂️💨</item>-->
-    <!--        <item>加油！完成Deadline，你就是今天的英雄！🦸‍♀️🦸‍♂️</item>-->
-    <!--        <item>记住，Deadline是你进步的最佳见证者！📈</item>-->
-    <!--        <item>坚持住！完成后你会感谢现在努力的自己！🙏</item>-->
-    <!--        <item>每个小目标的达成都值得庆祝！🥳</item>-->
-    <!--        <item>再努力一下，成功就在前方！🏆</item>-->
-    <!--    </string-array>-->
+    <string name="settings_highlight">版本信息</string>
+    <string name="settings_version">版本号</string>
+    <string name="settings_compile_date">编译时间</string>
+    <string name="settings_legal">隐私与许可</string>
+    <string name="settings_license">开源许可证</string>
+    <string name="settings_license_summary">MIT LISCENCE 开源许可</string>
+    <string name="settings_privacy_policy">隐私协议</string>
+    <string name="settings_privacy_summary">了解您使用 Deadliner 的隐私权</string>
+    <string name="settings_more">更多</string>
+    <string name="settings_homepage">作者主页</string>
+    <string name="settings_github">源代码</string>
+    <string name="settings_playground">应用乐园详情页</string>
+    <string name="settings_check_for_updates">检查更新</string>
+    <string name="settings_support_check_for_updates">看看有没有版本更新</string>
+
+    <string name="settings_issues">提交错误报告</string>
 
     <!-- Try something more expressive -->
     <string-array name="excitement_array">
@@ -89,15 +133,10 @@
         <item>完成它！然后大喊：Next！🎤</item>
     </string-array>
 
-    <string name="appwidget_text">EXAMPLE</string>
     <string name="add_widget">添加小组件</string>
     <string name="app_md_widget_description">任务小组件</string>
     <string name="app_ld_widget_description">任务大组件</string>
     <string name="app_mh_widget_description">习惯mini组件</string>
-    <string name="app_version">
-        <![CDATA[<strong>Deadliner</strong> v1.2.0.105<br>]]>
-        <![CDATA[By Author <strong>Aritx Zhou</strong>]]>
-    </string>
 
     <string name="unfinished_settings">实验功能，尚未测试完成</string>
 
@@ -164,7 +203,13 @@
     <string name="settings_cloud_sync">云服务器设置</string>
     <string name="settings_show_intro">展示欢迎页</string>
     <string name="settings_custom_filter_list">自定义日历导入黑名单</string>
+    <string name="settings_support_custom_filter_list">用于添加任务时过滤日历中不重要的日历账户</string>
     <string name="alert_select_badge_type">选择角标类型</string>
     <string name="configure">Configure</string>
+    <string name="settings_donate">捐赠</string>
+    <string name="settings_donate_author">捐赠作者</string>
+    <string name="settings_support_donate">🧋一杯奶茶也好，你的支持是对我最大的鼓励</string>
+    <string name="settings_support_daily_notification">开启后，Deadliner将在每天固定时间推送概览统计消息</string>
+    <string name="settings_support_nearby_notification">开启后，将在任务到期前12小时提醒</string>
 
 </resources>

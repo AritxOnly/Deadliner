@@ -522,7 +522,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textSize="16sp"
-                        android:text="@string/app_version"
+                        android:text=""
                         android:layout_margin="16dp"
                         />
                 </LinearLayout>

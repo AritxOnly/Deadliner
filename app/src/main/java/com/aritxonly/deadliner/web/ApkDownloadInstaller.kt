@@ -15,7 +15,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import java.io.File
 
-class ApkDownloaderInstaller(private val context: AppCompatActivity) {
+class ApkDownloaderInstaller(private val context: Context) {
 
     private var downloadId: Long = -1
     private val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager

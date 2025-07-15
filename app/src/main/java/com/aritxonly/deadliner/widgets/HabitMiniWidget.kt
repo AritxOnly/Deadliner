@@ -3,6 +3,7 @@ package com.aritxonly.deadliner.widgets
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
@@ -51,6 +52,14 @@ class HabitMiniWidget : AppWidgetProvider() {
     override fun onReceive(context: Context?, intent: Intent?) {
         super.onReceive(context, intent)
 
+        when (intent?.action) {
+            Intent.ACTION_MY_PACKAGE_REPLACED, // 应用升级（覆盖安装）
+            Intent.ACTION_CONFIGURATION_CHANGED, // 设置改变
+            Intent.ACTION_BOOT_COMPLETED -> {  // 开机后
+                refreshAllWidgets(context)
+            }
+        }
+
         if (intent?.action == ACTION_CHECK_IN) {
             val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
             val habitId = intent.getLongExtra("extra_habit_id", -1L)
@@ -81,6 +90,14 @@ class HabitMiniWidget : AppWidgetProvider() {
                 updateAppMiniHabitWidget(context, appWidgetManager, widgetId)
             }
         }
+    }
+
+    private fun refreshAllWidgets(context: Context?) {
+        if (context == null) return
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val thisWidget = ComponentName(context, MultiDeadlineWidget::class.java)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
+        onUpdate(context, appWidgetManager, appWidgetIds)
     }
 
     companion object {

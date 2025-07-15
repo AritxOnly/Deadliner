@@ -78,6 +78,8 @@ internal fun updateLargeAppWidget(
     val views = RemoteViews(context.packageName, R.layout.large_deadline_widget)
     val sharedPreferences = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     val direction = sharedPreferences.getBoolean("widget_progress_dir", false)
+    val showAddButton = sharedPreferences.getBoolean("show_add_button_large_ddl_widget", true)
+    val addButtonVisibility = if (showAddButton) View.VISIBLE else View.GONE
 
     // 获取小部件选项（包含尺寸信息）
     val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
@@ -113,7 +115,7 @@ internal fun updateLargeAppWidget(
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
     views.setOnClickPendingIntent(R.id.btn_add_ddl, addPi)
-
+    views.setViewVisibility(R.id.btn_add_ddl, addButtonVisibility)
 
     val mainIntent = Intent(context, LauncherActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

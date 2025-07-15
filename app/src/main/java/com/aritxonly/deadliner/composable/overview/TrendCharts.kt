@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner.composable
+package com.aritxonly.deadliner.composable.overview
 
 import androidx.compose.animation.core.EaseInOutCubic
 import androidx.compose.animation.core.tween
@@ -9,16 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.BiasAbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.localutils.GlobalUtils
-import com.aritxonly.deadliner.localutils.OverviewUtils
 import com.aritxonly.deadliner.localutils.OverviewUtils.MonthlyStat
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.LineChart
@@ -34,9 +31,7 @@ import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
 import ir.ehsannarmani.compose_charts.models.LabelProperties
 import ir.ehsannarmani.compose_charts.models.Line
 import ir.ehsannarmani.compose_charts.models.PopupProperties
-import ir.ehsannarmani.compose_charts.models.StrokeStyle
 import java.time.LocalDate
-import kotlin.collections.get
 
 
 private val DefaultLabelProperties

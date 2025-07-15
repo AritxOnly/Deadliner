@@ -7,6 +7,9 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import androidx.fragment.app.FragmentManager
 import com.aritxonly.deadliner.DatabaseHelper
@@ -56,6 +59,12 @@ object GlobalUtils {
         get() = sharedPreferences.getBoolean("vibration", true)
         set(value) {
             sharedPreferences.edit { putBoolean("vibration", value) }
+        }
+
+    var vibrationAmplitude: Int
+        get() = sharedPreferences.getInt("amplitude", -1)
+        set(value) {
+            sharedPreferences.edit { putInt("amplitude", value) }
         }
 
     var progressDir: Boolean
@@ -109,6 +118,12 @@ object GlobalUtils {
         get() = sharedPreferences.getInt("archive_time", 7)
         set(value) {
             sharedPreferences.edit { putInt("archive_time", value) }
+        }
+
+    var autoArchiveEnable: Boolean
+        get() = sharedPreferences.getBoolean("archive_enable", true)
+        set(value) {
+            sharedPreferences.edit { putBoolean("archive_enable", value) }
         }
 
     var firstRun: Boolean
@@ -227,6 +242,28 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("permission_setup_done", value) }
         }
 
+    var mdWidgetAddBtn: Boolean
+        get() = sharedPreferences.getBoolean("show_add_button_multi_ddl_widget", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("show_add_button_multi_ddl_widget", value) }
+        }
+
+    var ldWidgetAddBtn: Boolean
+        get() = sharedPreferences.getBoolean("show_add_button_large_ddl_widget", true)
+        set(value) {
+            sharedPreferences.edit { putBoolean("show_add_button_large_ddl_widget", value) }
+        }
+
+    var hideDivider: Boolean
+        get() = sharedPreferences.getBoolean("hide_divider", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("hide_divider", value) }
+            hideDividerUi = value
+        }
+
+    var hideDividerUi by mutableStateOf(false)
+        private set
+
     object OverviewSettings {
         var monthlyCount: Int
             get() = sharedPreferences.getInt("monthly_count(overview)", 12)
@@ -288,6 +325,7 @@ object GlobalUtils {
 
     private fun loadSettings() {
         Log.d("GlobalUtils", "Settings loaded from SharedPreferences")
+        hideDividerUi = hideDivider
     }
 
     fun dpToPx(dp: Float, context: Context): Float {
@@ -321,6 +359,7 @@ object GlobalUtils {
 
     fun filterArchived(item: DDLItem): Boolean {
         try {
+            if (!autoArchiveEnable) return true
             val completeTime = safeParseDateTime(item.completeTime)
             val daysSinceCompletion = Duration.between(completeTime, LocalDateTime.now()).toDays()
             return daysSinceCompletion <= autoArchiveTime
