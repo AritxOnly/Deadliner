@@ -3,13 +3,17 @@ package com.aritxonly.deadliner.localutils
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Context.VIBRATOR_SERVICE
 import android.content.SharedPreferences
 import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.fragment.app.FragmentManager
 import com.aritxonly.deadliner.DatabaseHelper
@@ -567,5 +571,20 @@ object GlobalUtils {
         listener?.onCheckInSuccessGlobal(context, updatedHabit, habitMeta)
 
         DatabaseHelper.getInstance(context).updateDDL(updatedHabit)
+    }
+
+    fun triggerVibration(context: Context, duration: Long = 100) {
+        if (!vibration) {
+            return
+        }
+
+        val vibrator = ContextCompat.getSystemService(context, Vibrator::class.java)
+
+        vibrator?.vibrate(
+            VibrationEffect.createOneShot(
+                duration,
+                vibrationAmplitude
+            )
+        )
     }
 }

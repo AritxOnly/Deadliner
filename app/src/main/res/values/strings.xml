@@ -105,7 +105,21 @@
     <string name="settings_github">源代码</string>
     <string name="settings_playground">应用乐园详情页</string>
     <string name="settings_check_for_updates">检查更新</string>
-    <string name="settings_support_check_for_updates">看看有没有版本更新</string>
+    <string name="settings_support_check_for_updates">查看版本更新内容</string>
+
+    <string name="settings_donate">捐赠</string>
+    <string name="settings_donate_author">捐赠作者</string>
+    <string name="settings_support_donate">🧋一杯奶茶也好，你的支持是对我最大的鼓励</string>
+    <string name="settings_support_daily_notification">开启后，Deadliner将在每天固定时间推送概览统计消息</string>
+    <string name="settings_support_nearby_notification">开启后，将在任务到期前12小时提醒</string>
+
+    <string name="settings_enable_webDAV">启用WebDAV</string>
+    <string name="settings_webDAV_description">WebDAV 服务为用户提供云端托管 Deadline 数据的平台。\n由于我们本身并不提供云服务，需要用户根据 API 自行组建服务器，我们也提供 Deadliner-WebDAV 项目作为示例实现。</string>
+    <string name="settings_web_section">服务器设置</string>
+    <string name="settings_web_host">服务器IP或域名</string>
+    <string name="settings_web_host_fault">服务器IP或域名需要以https://或http://开头！</string>
+    <string name="settings_web_port">服务器端口</string>
+    <string name="settings_web_token">服务器令牌(用于与后端校验身份)</string>
 
     <string name="settings_issues">提交错误报告</string>
 
@@ -206,10 +220,5 @@
     <string name="settings_support_custom_filter_list">用于添加任务时过滤日历中不重要的日历账户</string>
     <string name="alert_select_badge_type">选择角标类型</string>
     <string name="configure">Configure</string>
-    <string name="settings_donate">捐赠</string>
-    <string name="settings_donate_author">捐赠作者</string>
-    <string name="settings_support_donate">🧋一杯奶茶也好，你的支持是对我最大的鼓励</string>
-    <string name="settings_support_daily_notification">开启后，Deadliner将在每天固定时间推送概览统计消息</string>
-    <string name="settings_support_nearby_notification">开启后，将在任务到期前12小时提醒</string>
 
 </resources>

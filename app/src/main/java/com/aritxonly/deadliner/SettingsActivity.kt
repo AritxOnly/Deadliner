@@ -30,13 +30,16 @@ import com.aritxonly.deadliner.composable.settings.BackupSettingsScreen
 import com.aritxonly.deadliner.composable.settings.BadgeSettingsScreen
 import com.aritxonly.deadliner.composable.settings.DeveloperSettingsScreen
 import com.aritxonly.deadliner.composable.settings.DonateScreen
+import com.aritxonly.deadliner.composable.settings.FeedbackScreen
 import com.aritxonly.deadliner.composable.settings.GeneralSettingsScreen
 import com.aritxonly.deadliner.composable.settings.InterfaceSettingsScreen
 import com.aritxonly.deadliner.composable.settings.LicenseScreen
 import com.aritxonly.deadliner.composable.settings.MainSettingsScreen
 import com.aritxonly.deadliner.composable.settings.NotificationSettingsScreen
+import com.aritxonly.deadliner.composable.settings.PolicyScreen
 import com.aritxonly.deadliner.composable.settings.UpdateScreen
 import com.aritxonly.deadliner.composable.settings.VibrationSettingsScreen
+import com.aritxonly.deadliner.composable.settings.WebSettingsScreen
 import com.aritxonly.deadliner.composable.settings.WidgetSettingsScreen
 import com.aritxonly.deadliner.composable.settings.WikiScreen
 import com.aritxonly.deadliner.localutils.GlobalUtils
@@ -174,7 +177,7 @@ class SettingsActivity : AppCompatActivity() {
 
                     composable(SettingsRoute.Widget.route) { WidgetSettingsScreen { navController.navigateUp() } }
 
-                    composable(SettingsRoute.WebDAV.route) {  }
+                    composable(SettingsRoute.WebDAV.route) { WebSettingsScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Developer.route) {
                         DeveloperSettingsScreen(
                             onClickCustomFilter = {
@@ -251,7 +254,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
 
                     composable(SettingsRoute.Wiki.route) { WikiScreen { navController.navigateUp() } }
-                    composable(SettingsRoute.Feedback.route) {  }
+                    composable(SettingsRoute.Feedback.route) { FeedbackScreen { navController.navigateUp() } }
                     composable(SettingsRoute.About.route) { AboutSettingsScreen(navController) { navController.navigateUp() } }
 
                     composable(SettingsRoute.Vibration.route) { VibrationSettingsScreen { navController.navigateUp() } }
@@ -260,7 +263,7 @@ class SettingsActivity : AppCompatActivity() {
 
                     composable(SettingsRoute.Update.route) { UpdateScreen { navController.navigateUp() } }
                     composable(SettingsRoute.License.route) { LicenseScreen { navController.navigateUp() } }
-                    composable(SettingsRoute.Policy.route) {  }
+                    composable(SettingsRoute.Policy.route) { PolicyScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Donate.route) { DonateScreen { navController.navigateUp() } }
                 }
             }

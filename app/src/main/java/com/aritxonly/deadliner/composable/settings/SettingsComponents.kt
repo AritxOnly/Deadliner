@@ -47,6 +47,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Label
@@ -55,6 +56,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -64,6 +66,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.getValue
@@ -75,9 +78,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -138,14 +145,20 @@ fun SettingsSection(
     topLabel: String? = null,
     mainContent: Boolean = false,
     enabled: Boolean = false,
+    customColor: Color? = null,
     content: @Composable (ColumnScope.() -> Unit)
 ) {
     val radiusDimen = if (mainContent) 48.dp else dimensionResource(R.dimen.item_corner_radius)
-    val containerColor = if (enabled && mainContent)
+    val containerColor = customColor
+        ?: if (enabled && mainContent) {
             MaterialTheme.colorScheme.primaryContainer
-        else MaterialTheme.colorScheme.surfaceContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        }
+
     Column(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         topLabel?.let {
@@ -166,10 +179,12 @@ fun SettingsSection(
 }
 
 @Composable
-fun SettingsSectionDivider() = HorizontalDivider(
-    thickness = if (!GlobalUtils.hideDividerUi) 2.dp else 0.dp,
-    color = MaterialTheme.colorScheme.surface
-)
+fun SettingsSectionDivider(
+    onContainer: Boolean = true
+) = if (!GlobalUtils.hideDividerUi) HorizontalDivider(
+    thickness = 2.dp,
+    color = if (onContainer) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
+) else Spacer(modifier = Modifier.height(0.dp))
 // endregion
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -185,7 +200,6 @@ fun CollapsingTopBarScaffold(
     snackbarHost: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
-    // 1. 统一管理滚动状态
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
         rememberTopAppBarState()
     )
@@ -227,6 +241,8 @@ fun SettingsSwitchItem(
     modifier: Modifier = Modifier,
     mainSwitch: Boolean = false
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = modifier
             .fillMaxWidth(),
@@ -237,7 +253,10 @@ fun SettingsSwitchItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onCheckedChange(!checked) }
+                .clickable {
+                    GlobalUtils.triggerVibration(context, 10L)
+                    onCheckedChange(!checked)
+                }
                 .padding(horizontal = 24.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -251,7 +270,10 @@ fun SettingsSwitchItem(
             )
             Switch(
                 checked = checked,
-                onCheckedChange = onCheckedChange,
+                onCheckedChange = {
+                    GlobalUtils.triggerVibration(context, 10L)
+                    onCheckedChange(it)
+                },
                 thumbContent = if (checked) {
                     {
                         Icon(
@@ -278,6 +300,8 @@ fun SettingsDetailSwitchItem(
     onCheckedChange: (Boolean) -> Unit,
     onLongPress: (Boolean) -> Unit = {},
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -288,8 +312,14 @@ fun SettingsDetailSwitchItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .combinedClickable(
-                    onClick = { onCheckedChange(!checked) },
-                    onLongClick = { onLongPress(!checked) }
+                    onClick = {
+                        GlobalUtils.triggerVibration(context, 10L)
+                        onCheckedChange(!checked)
+                    },
+                    onLongClick = {
+                        GlobalUtils.triggerVibration(context, 20L)
+                        onLongPress(!checked)
+                    }
                 )
                 .padding(horizontal = 24.dp, vertical = 12.dp)
         ) {
@@ -307,7 +337,10 @@ fun SettingsDetailSwitchItem(
                 }
                 Switch(
                     checked = checked,
-                    onCheckedChange = onCheckedChange,
+                    onCheckedChange = {
+                        GlobalUtils.triggerVibration(context, 10L)
+                        onCheckedChange(it)
+                    },
                     thumbContent = if (checked) {
                         {
                             Icon(
@@ -333,6 +366,8 @@ fun SettingsDetailSwitchItem(
     onCheckedChange: (Boolean) -> Unit,
     onLongPress: (Boolean) -> Unit = {},
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -343,8 +378,14 @@ fun SettingsDetailSwitchItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .combinedClickable(
-                    onClick = { onCheckedChange(!checked) },
-                    onLongClick = { onLongPress(checked) }
+                    onClick = {
+                        GlobalUtils.triggerVibration(context, 10L)
+                        onCheckedChange(!checked)
+                    },
+                    onLongClick = {
+                        GlobalUtils.triggerVibration(context, 20L)
+                        onLongPress(!checked)
+                    }
                 )
                 .padding(horizontal = 24.dp, vertical = 12.dp)
         ) {
@@ -362,7 +403,10 @@ fun SettingsDetailSwitchItem(
                 }
                 Switch(
                     checked = checked,
-                    onCheckedChange = onCheckedChange,
+                    onCheckedChange = {
+                        GlobalUtils.triggerVibration(context, 10L)
+                        onCheckedChange(it)
+                    },
                     thumbContent = if (checked) {
                         {
                             Icon(
@@ -372,56 +416,6 @@ fun SettingsDetailSwitchItem(
                             )
                         }
                     } else null
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SettingsSliderItem(
-    @StringRes label: Int,
-    value: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    modifier: Modifier = Modifier,
-    steps: Int = 0,
-    onValueChange: (Float) -> Unit,
-) {
-    var dragging by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(0.dp),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 12.dp)
-        ) {
-            Text(
-                text = stringResource(label),
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            // 整个 Slider 区块放到一个 Box 里
-            Box(Modifier.fillMaxWidth()) {
-                Slider(
-                    value = value,
-                    onValueChange = {
-                        dragging = true
-                        onValueChange(it)
-                    },
-                    onValueChangeFinished = {
-                        dragging = false
-                    },
-                    valueRange = valueRange,
-                    steps = steps,
-                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -448,6 +442,8 @@ fun SettingsSliderItemWithLabel(
     )
     var sliderPosition by remember { mutableStateOf(value) }
 
+    val context = LocalContext.current
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -469,6 +465,7 @@ fun SettingsSliderItemWithLabel(
             Slider(
                 value = sliderPosition,
                 onValueChange = {
+                    GlobalUtils.triggerVibration(context, 10L)
                     sliderPosition = it
                     onValueChange(it)
                 },
@@ -598,6 +595,32 @@ fun SettingsDetailTextButtonItem(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RoundedTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    hint: String,
+    modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    isPassword: Boolean = false
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(hint) },
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        shape = RoundedCornerShape(12.dp),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = keyboardType
+        ),
+        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 data class RadioOption<T>(
     val key: T,
     @StringRes val labelRes: Int
@@ -613,6 +636,8 @@ fun <T> SettingsRadioGroupItem(
     showDivider: Boolean = true,
     divider: @Composable () -> Unit = { SettingsSectionDivider() }
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -624,7 +649,10 @@ fun <T> SettingsRadioGroupItem(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clickable { onOptionSelected(option.key) }
+                        .clickable {
+                            GlobalUtils.triggerVibration(context, 10L)
+                            onOptionSelected(option.key)
+                        }
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -636,7 +664,10 @@ fun <T> SettingsRadioGroupItem(
                     Spacer(Modifier.width(8.dp))
                     RadioButton(
                         selected = option.key == selectedKey,
-                        onClick = { onOptionSelected(option.key) },
+                        onClick = {
+                            GlobalUtils.triggerVibration(context, 10L)
+                            onOptionSelected(option.key)
+                        },
                         colors = RadioButtonDefaults.colors(
                             // 透明背景 already on Card
                             selectedColor = MaterialTheme.colorScheme.primary

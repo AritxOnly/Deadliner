@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var viewHolderWithAppBar: View
     private lateinit var viewHolderWithNoAppBar: View
 
-    private lateinit var cloudButton: ImageButton
+    private lateinit var searchButton: ImageButton
 
     private val handler = Handler(Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
@@ -349,7 +349,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
 
             override fun onCheckInSuccessGlobal(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData) {
-                triggerVibration(this@MainActivity, 100)
+                GlobalUtils.triggerVibration(this@MainActivity, 100)
 
                 val count = habitItem.habitCount
                 val frequency = habitMeta.frequency
@@ -437,11 +437,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                 when (direction) {
                     ItemTouchHelper.LEFT -> {
-                        triggerVibration(this@MainActivity, 200)
+                        GlobalUtils.triggerVibration(this@MainActivity, 200)
                         adapter.onSwipeLeft(viewHolder.adapterPosition)
                     }
                     ItemTouchHelper.RIGHT -> {
-                        triggerVibration(this@MainActivity, 100)
+                        GlobalUtils.triggerVibration(this@MainActivity, 100)
                         adapter.onSwipeRight(viewHolder.adapterPosition)
                     }
                 }
@@ -562,10 +562,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         searchEditText = findViewById(R.id.searchEditText)
         bottomAppBar = findViewById(R.id.bottomAppBar)
 
-        // 底部 AppBar 的搜索图标点击事件：显示搜索覆盖层
-        bottomAppBar.setNavigationOnClickListener {
-            showSearchOverlay()
-        }
+        bottomAppBar.setNavigationOnClickListener {}
 
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -634,7 +631,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 }
                 R.id.delete -> {
                     if (adapter.selectedPositions.isNotEmpty()) {
-                        triggerVibration(this@MainActivity, 200)
+                        GlobalUtils.triggerVibration(this@MainActivity, 200)
                         MaterialAlertDialogBuilder(this@MainActivity)
                             .setTitle(R.string.alert_delete_title)
                             .setMessage(R.string.alert_delete_message)
@@ -671,7 +668,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 R.id.done -> {
                     if (adapter.selectedPositions.isNotEmpty()) {
                         if (currentType == DeadlineType.HABIT) {
-                            triggerVibration(this@MainActivity, 100)
+                            GlobalUtils.triggerVibration(this@MainActivity, 100)
                             val positionsToUpdate = adapter.selectedPositions.toList()
                             for (position in positionsToUpdate) {
                                 val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
@@ -689,7 +686,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                             updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                             true
                         } else {
-                            triggerVibration(this@MainActivity, 100)
+                            GlobalUtils.triggerVibration(this@MainActivity, 100)
                             val positionsToUpdate = adapter.selectedPositions.toList()
                             for (position in positionsToUpdate) {
                                 val item = adapter.itemList[position]
@@ -836,7 +833,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         dataOverlay = findViewById(R.id.dataOverlay)
         refreshIndicator = findViewById(R.id.refreshIndicator)
-        cloudButton = findViewById(R.id.cloudButton)
+        searchButton = findViewById(R.id.searchButton)
 
         swipeRefreshLayout.setColorSchemeColors(
             getThemeColor(androidx.appcompat.R.attr.colorPrimary),
@@ -876,33 +873,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             recyclerView.smoothScrollToPosition(0)
         }
 
-        decideCloudStatus()
-        cloudButton.setOnClickListener {
-            val dialogView = layoutInflater.inflate(R.layout.dialog_cloud_settings, null)
-            val switch = dialogView.findViewById<MaterialSwitch>(R.id.cloudSwitch)
-            val inputServer = dialogView.findViewById<TextInputEditText>(R.id.inputServer)
-            val inputPort = dialogView.findViewById<TextInputEditText>(R.id.inputPort)
-            val inputToken = dialogView.findViewById<TextInputEditText>(R.id.inputToken)
-
-            // 初始化值
-            switch.isChecked = GlobalUtils.cloudSyncEnable
-            inputServer.setText(GlobalUtils.cloudSyncServer ?: "")
-            inputPort.setText(GlobalUtils.cloudSyncPort.toString())
-            inputToken.setText(GlobalUtils.cloudSyncConstantToken ?: "")
-
-            MaterialAlertDialogBuilder(this@MainActivity)
-                .setTitle("云服务设置")
-                .setView(dialogView)
-                .setPositiveButton(R.string.save) { _, _ ->
-                    GlobalUtils.cloudSyncEnable = switch.isChecked
-                    GlobalUtils.cloudSyncServer = inputServer.text?.toString()
-                    GlobalUtils.cloudSyncPort = inputPort.text?.toString()?.toIntOrNull()?:5000
-                    GlobalUtils.cloudSyncConstantToken = inputToken.text?.toString()
-                    WebUtils.init()
-                    decideCloudStatus()
-                }
-                .setNegativeButton(R.string.cancel, null)
-                .show()
+        decideCloudStatus(true)
+        searchButton.setOnClickListener {
+            showSearchOverlay()
         }
 
         addEventButton.stateListAnimator = null
@@ -1166,25 +1139,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         }
     }
 
-    /*
-    * 震动效果📳
-    */
-    fun triggerVibration(context: Context, duration: Long = 100) {
-        if (!GlobalUtils.vibration) {
-            return
-        }
-
-        val vibrator = context.getSystemService(VIBRATOR_SERVICE) as Vibrator
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // API 26 及以上版本使用 VibrationEffect
-            vibrator.vibrate(VibrationEffect.createOneShot(duration, GlobalUtils.vibrationAmplitude))
-        } else {
-            // API 25 及以下版本使用过时的 vibrate 方法
-            vibrator.vibrate(duration)
-        }
-    }
-
     /**
      * 设置状态栏和导航栏颜色及图标颜色
      */
@@ -1441,10 +1395,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
             }
         } else {
-            bottomAppBar.setNavigationIcon(R.drawable.ic_search)
-            bottomAppBar.setNavigationOnClickListener {
-                showSearchOverlay()
-            }
+            decideCloudStatus(isPrimary)
+            bottomAppBar.setNavigationOnClickListener {}
         }
     }
 
@@ -1759,20 +1711,20 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         startActivity(intent)
     }
 
-    private fun decideCloudStatus() {
+    private fun decideCloudStatus(isPrimary: Boolean) {
         val server = GlobalUtils.cloudSyncServer
         val token = GlobalUtils.cloudSyncConstantToken
         val enable = GlobalUtils.cloudSyncEnable
 
         if (!enable || server == null || token == null) {
-            cloudButton.setImageResource(R.drawable.ic_cloud_off)
+            if (isPrimary) bottomAppBar.setNavigationIcon(R.drawable.ic_cloud_off)
             return
         }
 
         // 开启协程检查 Web 是否可用
         lifecycleScope.launch {
             val available = WebUtils.isWebAvailable()
-            cloudButton.setImageResource(
+            bottomAppBar.setNavigationIcon(
                 if (available) R.drawable.ic_cloud else R.drawable.ic_cloud_off
             )
         }
@@ -1891,7 +1843,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     private fun onRetroCheckSuccess(habitItem: DDLItem, habitMeta: HabitMetaData, retroDate: LocalDate) {
-        triggerVibration(this@MainActivity, 100)
+        GlobalUtils.triggerVibration(this@MainActivity, 100)
 
         val count = habitItem.habitCount
         val frequency = habitMeta.frequency

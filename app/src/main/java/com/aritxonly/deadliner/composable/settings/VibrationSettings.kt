@@ -1,5 +1,8 @@
 package com.aritxonly.deadliner.composable.settings
 
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -21,9 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.composable.SvgCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
@@ -32,9 +38,23 @@ import com.aritxonly.deadliner.localutils.GlobalUtils
 fun VibrationSettingsScreen(
     navigateUp: () -> Unit
 ) {
+    val context = LocalContext.current
+
     var vibrationEnabled by remember { mutableStateOf(GlobalUtils.vibration) }
     var vibrationRealAmplitude by remember { mutableIntStateOf(GlobalUtils.vibrationAmplitude) }
-    var vibrationAmplitude by remember { mutableFloatStateOf(196f) }
+    var vibrationAmplitude by remember {
+        mutableFloatStateOf(
+            if (GlobalUtils.vibrationAmplitude == -1) 196f
+            else GlobalUtils.vibrationAmplitude.toFloat()
+        )
+    }
+
+    val vibrationOpts = listOf(
+        RadioOption("system", R.string.settings_vibration_system),
+        RadioOption("custom", R.string.settings_vibration_custom)
+    )
+    val modeRightNow = if (vibrationRealAmplitude == -1) "system" else "custom"
+    var vibrationModeSelected by remember { mutableStateOf(modeRightNow) }
 
     val onVibrationChange: (Boolean) -> Unit = {
         GlobalUtils.vibration = it
@@ -46,18 +66,17 @@ fun VibrationSettingsScreen(
         GlobalUtils.vibrationAmplitude = it.toInt()
     }
 
-    val vibrationOpts = listOf(
-        RadioOption("system", R.string.settings_vibration_system),
-        RadioOption("custom", R.string.settings_vibration_custom)
-    )
-    val modeRightNow = if (vibrationRealAmplitude == -1) "system" else "custom"
-    var vibrationModeSelected by remember { mutableStateOf(modeRightNow) }
-
     val expressiveTypeModifier = Modifier
         .size(40.dp)
         .clip(CircleShape)
         .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
         .padding(8.dp)
+
+    LaunchedEffect(vibrationModeSelected) {
+        if (vibrationModeSelected == "custom") {
+            vibrationAmplitude = vibrationRealAmplitude.toFloat()
+        }
+    }
 
     CollapsingTopBarScaffold(
         title = stringResource(R.string.settings_vibration_title),
@@ -106,11 +125,16 @@ fun VibrationSettingsScreen(
                         selectedKey = vibrationModeSelected,
                         onOptionSelected = {
                             vibrationModeSelected = it
-                            GlobalUtils.vibrationAmplitude = if (vibrationModeSelected == "system") {
-                                vibrationRealAmplitude = -1
-                                -1
+                            if (it == "custom") {
+                                if (vibrationRealAmplitude == -1) {
+                                    val defaultAmplitude = 196f
+                                    vibrationAmplitude = defaultAmplitude
+                                    vibrationRealAmplitude = defaultAmplitude.toInt()
+                                }
+                                GlobalUtils.vibrationAmplitude = vibrationRealAmplitude
                             } else {
-                                vibrationAmplitude.toInt()
+                                vibrationRealAmplitude = -1
+                                GlobalUtils.vibrationAmplitude = -1
                             }
                         },
                         divider = { SettingsSectionDivider() }
