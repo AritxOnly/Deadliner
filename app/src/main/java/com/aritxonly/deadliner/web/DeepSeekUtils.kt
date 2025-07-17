@@ -17,7 +17,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 object DeepSeekUtils {
     private const val BASE_URL = "https://api.deepseek.com/v1/chat/completions"
@@ -77,8 +79,12 @@ object DeepSeekUtils {
             并且**仅返回**符合上述结构的JSON，不要添加任何说明文字
         """.trimIndent()
 
+        val today = LocalDate.now()
+        val datePrompt = "当前日期：${today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}，星期${listOf("日","一","二","三","四","五","六")[today.dayOfWeek.value % 7]}。"
+
         val messages = listOfNotNull(
             Message("system", systemPrompt),
+            Message("user", datePrompt),
             GlobalUtils.customPrompt?.let { Message("user", it) },
             Message("user", rawText)
         )

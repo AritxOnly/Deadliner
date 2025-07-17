@@ -209,7 +209,9 @@ fun AboutSettingsScreen(
                     text = R.string.settings_playground,
                     iconRes = R.drawable.ic_android
                 ) {
-                    // TODO: Open 应用乐园
+                    val url = "https://www.magicalapk.com/app/share/app?id=55830"
+                    val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                    context.startActivity(intent)
                 }
             }
 
