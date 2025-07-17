@@ -34,6 +34,7 @@ import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.CalendarEvent
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.GeneratedDDL
 import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.toJson
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -93,6 +94,8 @@ class AddDDLActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_ddl)
+
+        val generatedDDL = intent.getParcelableExtra<GeneratedDDL>("EXTRA_GENERATE_DDL")
 
         DynamicColors.applyToActivitiesIfAvailable(this.application)
         DynamicColors.applyToActivityIfAvailable(this)
@@ -234,6 +237,12 @@ class AddDDLActivity : AppCompatActivity() {
 
         val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
         habitNoteHint.text = formattedNote
+
+        ddlNameEditText.setText(generatedDDL?.name)
+        endTime = generatedDDL?.dueTime
+        if (generatedDDL != null)
+            endTimeContent.text = formatLocalDateTime(generatedDDL.dueTime)
+        ddlNoteEditText.setText(generatedDDL?.note)
     }
 
     private fun save(toCalendar: Boolean) {

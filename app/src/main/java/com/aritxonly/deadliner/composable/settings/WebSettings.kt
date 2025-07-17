@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.composable.SvgCard
@@ -50,6 +51,8 @@ fun WebSettingsScreen(
     var serverToken by remember { mutableStateOf(GlobalUtils.cloudSyncConstantToken) }
 
     val hostFaultHint = stringResource(R.string.settings_web_host_fault)
+    val hostSuccessHint = stringResource(R.string.settings_web_host_success)
+    val hostIncompleteHint = stringResource(R.string.settings_web_host_incomplete)
 
     val onWebChange: (Boolean) -> Unit = {
         GlobalUtils.cloudSyncEnable = it
@@ -69,11 +72,14 @@ fun WebSettingsScreen(
         serverToken = it
     }
     val onSaveButtonClick: () -> Unit = {
-        if (serverHost?.startsWith("https://") == true || serverHost?.startsWith("http://") == true) {
+        if (serverHost.isNullOrEmpty() || serverToken.isNullOrEmpty()) {
+            Toast.makeText(context, hostIncompleteHint, Toast.LENGTH_SHORT).show()
+        } else if (serverHost?.startsWith("https://") == true || serverHost?.startsWith("http://") == true) {
             GlobalUtils.cloudSyncServer = serverHost
             GlobalUtils.cloudSyncPort = serverPort
             GlobalUtils.cloudSyncConstantToken = serverToken
             WebUtils.init()
+            Toast.makeText(context, hostSuccessHint, Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, hostFaultHint, Toast.LENGTH_SHORT).show()
         }
@@ -137,18 +143,22 @@ fun WebSettingsScreen(
                         RoundedTextField(
                             value = serverPort.toString(),
                             onValueChange = onPortChange,
-                            hint = stringResource(R.string.settings_web_port)
+                            hint = stringResource(R.string.settings_web_port),
+                            keyboardType = KeyboardType.Number
                         )
 
                         RoundedTextField(
                             value = serverToken ?: "",
                             onValueChange = onTokenChange,
-                            hint = stringResource(R.string.settings_web_token)
+                            hint = stringResource(R.string.settings_web_token),
+                            keyboardType = KeyboardType.Password,
+                            isPassword = true
                         )
 
                         Button(
                             onClick = onSaveButtonClick,
                             modifier = Modifier
+                                .padding(top = 8.dp)
                                 .fillMaxWidth()
                         ) {
                             Text("保存")

@@ -28,6 +28,7 @@ import com.aritxonly.deadliner.composable.settings.AboutSettingsScreen
 import com.aritxonly.deadliner.composable.settings.ArchiveSettingsScreen
 import com.aritxonly.deadliner.composable.settings.BackupSettingsScreen
 import com.aritxonly.deadliner.composable.settings.BadgeSettingsScreen
+import com.aritxonly.deadliner.composable.settings.DeepSeekSettingsScreen
 import com.aritxonly.deadliner.composable.settings.DeveloperSettingsScreen
 import com.aritxonly.deadliner.composable.settings.DonateScreen
 import com.aritxonly.deadliner.composable.settings.FeedbackScreen
@@ -37,6 +38,7 @@ import com.aritxonly.deadliner.composable.settings.LicenseScreen
 import com.aritxonly.deadliner.composable.settings.MainSettingsScreen
 import com.aritxonly.deadliner.composable.settings.NotificationSettingsScreen
 import com.aritxonly.deadliner.composable.settings.PolicyScreen
+import com.aritxonly.deadliner.composable.settings.PromptSettingsScreen
 import com.aritxonly.deadliner.composable.settings.UpdateScreen
 import com.aritxonly.deadliner.composable.settings.VibrationSettingsScreen
 import com.aritxonly.deadliner.composable.settings.WebSettingsScreen
@@ -65,6 +67,7 @@ sealed class SettingsRoute(
     object Interface : SettingsRoute("interface", R.string.settings_interface_display, R.string.settings_support_interface_display, R.drawable.ic_palette)
     object Notification : SettingsRoute("notification", R.string.settings_notification, R.string.settings_support_notification, R.drawable.ic_notification_settings)
     object Backup : SettingsRoute("backup", R.string.settings_backup, R.string.settings_support_backup, R.drawable.ic_backup_settings)
+    object DeepSeek : SettingsRoute("deepseek", R.string.settings_deepseek, R.string.settings_support_deepseek, R.drawable.ic_deepseek)
     object WebDAV : SettingsRoute("webdav", R.string.settings_webdav, R.string.settings_support_webdav, R.drawable.ic_cloud)
     object Developer : SettingsRoute("developer", R.string.settings_developer, R.string.settings_support_developer, R.drawable.ic_developer_settings)
     object Widget : SettingsRoute("widget", R.string.settings_widget, R.string.settings_support_widget, R.drawable.ic_widgets_settings)
@@ -77,6 +80,8 @@ sealed class SettingsRoute(
     object Vibration : SettingsRoute("vibration", R.string.settings_vibration_title, R.string.settings_support_vibration, null)
     object Badge : SettingsRoute("badge", R.string.settings_tasks_badge_title, R.string.settings_support_tasks_badge, null)
     object Archive : SettingsRoute("archive", R.string.settings_auto_archive_title, R.string.settings_support_auto_archive, null)
+
+    object Prompt : SettingsRoute("prompt", R.string.settings_deepseek_custom_prompt, R.string.settings_support_deepseek_custom_prompt, null)
 
     object Update : SettingsRoute("update", R.string.settings_check_for_updates, R.string.settings_check_for_updates, R.drawable.ic_update)
     object License : SettingsRoute("license", R.string.settings_license, R.string.settings_license_summary, R.drawable.ic_license)
@@ -94,9 +99,10 @@ sealed class SettingsRoute(
             ),
             listOf(Widget),
             listOf(
+                DeepSeek,
                 WebDAV,
-                Developer,
             ),
+            listOf(Developer),
             listOf(
                 Wiki,
                 Feedback,
@@ -177,7 +183,9 @@ class SettingsActivity : AppCompatActivity() {
 
                     composable(SettingsRoute.Widget.route) { WidgetSettingsScreen { navController.navigateUp() } }
 
+                    composable(SettingsRoute.DeepSeek.route) { DeepSeekSettingsScreen(navController) { navController.navigateUp() } }
                     composable(SettingsRoute.WebDAV.route) { WebSettingsScreen { navController.navigateUp() } }
+
                     composable(SettingsRoute.Developer.route) {
                         DeveloperSettingsScreen(
                             onClickCustomFilter = {
@@ -260,6 +268,8 @@ class SettingsActivity : AppCompatActivity() {
                     composable(SettingsRoute.Vibration.route) { VibrationSettingsScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Badge.route) { BadgeSettingsScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Archive.route) { ArchiveSettingsScreen { navController.navigateUp() } }
+
+                    composable(SettingsRoute.Prompt.route) { PromptSettingsScreen { navController.navigateUp() } }
 
                     composable(SettingsRoute.Update.route) { UpdateScreen { navController.navigateUp() } }
                     composable(SettingsRoute.License.route) { LicenseScreen { navController.navigateUp() } }

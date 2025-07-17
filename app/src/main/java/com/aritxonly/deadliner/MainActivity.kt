@@ -92,6 +92,8 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.ViewFlipper
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import com.aritxonly.deadliner.web.WebUtils
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.shape.MaterialShapeDrawable
@@ -101,6 +103,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
+import com.aritxonly.deadliner.composable.agent.DeepseekOverlay
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
@@ -108,6 +111,7 @@ import com.aritxonly.deadliner.model.DeadlineFrequency.*
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.updateNoteWithDate
+import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.aritxonly.deadliner.widgets.HabitMiniWidget
 import com.aritxonly.deadliner.widgets.LargeDeadlineWidget
 import com.aritxonly.deadliner.widgets.MultiDeadlineWidget
@@ -560,9 +564,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         searchOverlay = findViewById(R.id.searchOverlay)
         searchInputLayout = findViewById(R.id.searchInputLayout)
         searchEditText = findViewById(R.id.searchEditText)
-        bottomAppBar = findViewById(R.id.bottomAppBar)
 
-        bottomAppBar.setNavigationOnClickListener {}
+        bottomAppBar.navigationIcon = if (GlobalUtils.deepSeekEnable)
+            ContextCompat.getDrawable(this, R.drawable.ic_deepseek)
+        else null
+        bottomAppBar.setNavigationOnClickListener {
+            showAgentOverlay()
+        }
 
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -873,7 +881,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             recyclerView.smoothScrollToPosition(0)
         }
 
-        decideCloudStatus(true)
         searchButton.setOnClickListener {
             showSearchOverlay()
         }
@@ -1395,8 +1402,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
             }
         } else {
-            decideCloudStatus(isPrimary)
-            bottomAppBar.setNavigationOnClickListener {}
+            bottomAppBar.navigationIcon = if (GlobalUtils.deepSeekEnable)
+                ContextCompat.getDrawable(this, R.drawable.ic_deepseek)
+            else null
+            bottomAppBar.setNavigationOnClickListener {
+                showAgentOverlay()
+            }
         }
     }
 
@@ -1711,25 +1722,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         startActivity(intent)
     }
 
-    private fun decideCloudStatus(isPrimary: Boolean) {
-        val server = GlobalUtils.cloudSyncServer
-        val token = GlobalUtils.cloudSyncConstantToken
-        val enable = GlobalUtils.cloudSyncEnable
-
-        if (!enable || server == null || token == null) {
-            if (isPrimary) bottomAppBar.setNavigationIcon(R.drawable.ic_cloud_off)
-            return
-        }
-
-        // 开启协程检查 Web 是否可用
-        lifecycleScope.launch {
-            val available = WebUtils.isWebAvailable()
-            bottomAppBar.setNavigationIcon(
-                if (available) R.drawable.ic_cloud else R.drawable.ic_cloud_off
-            )
-        }
-    }
-
     private fun Float.dpToPx(): Float =
         this * Resources.getSystem().displayMetrics.density + 0.5f
 
@@ -1902,6 +1894,30 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
         }
         snackbar.show()
+    }
+
+    private fun showAgentOverlay() {
+        val composeOverlay = findViewById<ComposeView>(R.id.agentCompose)
+
+        composeOverlay.setViewCompositionStrategy(
+            ViewCompositionStrategy.DisposeOnDetachedFromWindow
+        )
+
+        composeOverlay.visibility = View.VISIBLE
+
+        composeOverlay.setContent {
+            DeadlinerTheme {
+                DeepseekOverlay(
+                    onDismiss = {
+                        composeOverlay.disposeComposition()
+                        composeOverlay.visibility = View.GONE
+                    },
+                    onAddDDL = { intent ->
+                        addDDLLauncher.launch(intent)
+                    }
+                )
+            }
+        }
     }
 }
 

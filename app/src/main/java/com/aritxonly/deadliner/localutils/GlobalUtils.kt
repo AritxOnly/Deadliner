@@ -268,6 +268,18 @@ object GlobalUtils {
     var hideDividerUi by mutableStateOf(false)
         private set
 
+    var deepSeekEnable: Boolean
+        get() = sharedPreferences.getBoolean("deepseek_master", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("deepseek_master", value) }
+        }
+
+    var customPrompt: String?
+        get() = sharedPreferences.getString("custom_prompt", null)
+        set(value) {
+            sharedPreferences.edit { putString("custom_prompt", value) }
+        }
+
     object OverviewSettings {
         var monthlyCount: Int
             get() = sharedPreferences.getInt("monthly_count(overview)", 12)

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.SettingsRoute
+import com.aritxonly.deadliner.localutils.GlobalUtils
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,29 +65,31 @@ fun MainSettingsScreen(
                 .padding(innerPadding),
         ) {
             SettingsRoute.allSubRoutes.forEach { group ->
-                item {
-                    SettingsSection {
-                        group.forEachIndexed { index, route ->
-                            val supportText = (if (route.route == "about") "v${context.getAppVersion()} " else "") +
-                                    stringResource(route.supportRes!!)
-                            SettingItem(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { nav.navigate(route.route) },
-                                headlineText = stringResource(route.titleRes),
-                                supportingText = supportText,
-                                leadingContent = {
-                                    Icon(
-                                        imageVector = ImageVector.vectorResource(
-                                            route.iconRes ?: R.drawable.ic_package
-                                        ),
-                                        contentDescription = null
-                                    )
-                                }
-                            )
+                if (!(group.contains(SettingsRoute.Developer) && !GlobalUtils.developerMode)) {
+                    item {
+                        SettingsSection {
+                            group.forEachIndexed { index, route ->
+                                val supportText = (if (route.route == "about") "v${context.getAppVersion()} " else "") +
+                                        stringResource(route.supportRes!!)
+                                SettingItem(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { nav.navigate(route.route) },
+                                    headlineText = stringResource(route.titleRes),
+                                    supportingText = supportText,
+                                    leadingContent = {
+                                        Icon(
+                                            imageVector = ImageVector.vectorResource(
+                                                route.iconRes ?: R.drawable.ic_package
+                                            ),
+                                            contentDescription = null
+                                        )
+                                    }
+                                )
 
-                            if (index != group.lastIndex) {
-                                SettingsSectionDivider()
+                                if (index != group.lastIndex) {
+                                    SettingsSectionDivider()
+                                }
                             }
                         }
                     }

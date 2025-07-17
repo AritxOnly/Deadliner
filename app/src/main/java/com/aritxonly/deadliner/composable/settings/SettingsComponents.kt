@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -48,6 +49,10 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Label
@@ -82,6 +87,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -594,6 +600,18 @@ fun SettingsDetailTextButtonItem(
     }
 }
 
+data class RoundedTextFieldMetrics(
+    val singleLine: Boolean,
+    val minHeight: Dp? = null,
+    val maxHeight: Dp? = null,
+    val cornerSize: Dp,
+)
+
+val RoundedTextFieldMetricsDefaults = RoundedTextFieldMetrics(
+    singleLine = true,
+    cornerSize = 12.dp
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoundedTextField(
@@ -602,21 +620,52 @@ fun RoundedTextField(
     hint: String,
     modifier: Modifier = Modifier,
     keyboardType: KeyboardType = KeyboardType.Text,
-    isPassword: Boolean = false
+    isPassword: Boolean = false,
+    metrics: RoundedTextFieldMetrics = RoundedTextFieldMetricsDefaults
 ) {
+    // 本地状态：是否显示明文
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    val heightModifier = if (metrics.minHeight != null || metrics.maxHeight != null) {
+        Modifier.heightIn(
+            min = metrics.minHeight ?: Dp.Unspecified,
+            max = metrics.maxHeight ?: Dp.Unspecified
+        )
+    } else {
+        Modifier
+    }
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(hint) },
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 16.dp),
-        shape = RoundedCornerShape(12.dp),
-        singleLine = true,
+            .then(heightModifier)
+            .padding(vertical = 8.dp),
+        shape = RoundedCornerShape(metrics.cornerSize),
+        singleLine = metrics.singleLine,
         keyboardOptions = KeyboardOptions(
-            keyboardType = keyboardType
+            keyboardType = keyboardType,
+            imeAction = if (isPassword) ImeAction.Done else ImeAction.Default
         ),
-        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+        visualTransformation = when {
+            isPassword && !passwordVisible -> PasswordVisualTransformation()
+            else -> VisualTransformation.None
+        },
+        trailingIcon = {
+            if (isPassword) {
+                val image = if (passwordVisible)
+                    ImageVector.vectorResource(R.drawable.ic_visibility)
+                else
+                    ImageVector.vectorResource(R.drawable.ic_visibility_off)
+                val description = if (passwordVisible) "Hide password" else "Show password"
+
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = description)
+                }
+            }
+        }
     )
 }
 

@@ -194,8 +194,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            app:navigationIcon="@drawable/ic_cloud"
-            app:navigationContentDescription="云服务状态"
             app:navigationIconTint="?attr/colorControlNormal"
             app:menu="@menu/bottom_app_bar"
             app:backgroundTint="?attr/colorSurfaceContainer"/>
@@ -281,5 +279,11 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_begin="20dp" />
+
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/agentCompose"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

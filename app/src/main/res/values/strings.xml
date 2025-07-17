@@ -30,6 +30,7 @@
     <string name="settings_interface_display">个性化</string>
     <string name="settings_widget">小组件</string>
     <string name="settings_notification">通知</string>
+    <string name="settings_deepseek">DeepSeek</string>
     <string name="settings_backup">备份</string>
     <string name="settings_developer">开发者</string>
     <string name="settings_wiki">Wiki</string>
@@ -41,6 +42,7 @@
     <string name="settings_support_interface_display">个性化你的 Deadliner</string>
     <string name="settings_support_notification">DDL临近通知 · 每日定时通知</string>
     <string name="settings_support_backup">导入与导出用户数据库</string>
+    <string name="settings_support_deepseek">DeepSeek API接入 · 自定义prompt</string>
     <string name="settings_support_webdav">Deadliner-Web 云同步服务</string>
     <string name="settings_support_developer">调试选项与实验性内容</string>
     <string name="settings_support_widget">小组件配置 · 小组件界面与交互设置</string>
@@ -118,8 +120,20 @@
     <string name="settings_web_section">服务器设置</string>
     <string name="settings_web_host">服务器IP或域名</string>
     <string name="settings_web_host_fault">服务器IP或域名需要以https://或http://开头！</string>
+    <string name="settings_web_host_success">设置WebDAV服务器成功！</string>
+    <string name="settings_web_host_incomplete">请填写所有字段！</string>
     <string name="settings_web_port">服务器端口</string>
     <string name="settings_web_token">服务器令牌(用于与后端校验身份)</string>
+
+    <string name="settings_enable_deepseek">启用DeepSeek</string>
+    <string name="settings_deepseek_description">Deadliner 接入 DeepSeek 为用户提供从长段文本中提取任务信息的能力，从而帮助用户快速添加任务。\n用户需要登录 https://platform.deepseek.com 获取自己的 API Key</string>
+    <string name="settings_deepseek_api_key">API Key</string>
+    <string name="settings_deepseek_success">设置DeepSeek APIKey成功！</string>
+    <string name="settings_deepseek_incomplete">请填写API Key！</string>
+    <string name="settings_deepseek_custom_prompt">自定义提示词</string>
+    <string name="settings_deepseek_custom_prompt_title">提示词</string>
+    <string name="settings_support_deepseek_custom_prompt">自定义用户提示词 (不建议初级用户修改)</string>
+    <string name="settings_deepseek_custom_prompt_success">提示词已保存</string>
 
     <string name="settings_issues">提交错误报告</string>
 
@@ -220,5 +234,9 @@
     <string name="settings_support_custom_filter_list">用于添加任务时过滤日历中不重要的日历账户</string>
     <string name="alert_select_badge_type">选择角标类型</string>
     <string name="configure">Configure</string>
+    <string name="settings_advance">高级设置</string>
+    <string name="settings_support_deepseek_test">测试API Key可用性 · 测试自定义提示词</string>
+    <string name="settings_deepseek_test">对话测试</string>
+    <string name="settings_deepseek_custom_prompt_description">自定义用户提示词可以让用户自定义 DeepSeek 从文本中提取的信息密度、信息风格等。自定义的提示词将会被拼接到用户输入文本的前方，统一提供给 DeepSeek API 服务。</string>
 
 </resources>
