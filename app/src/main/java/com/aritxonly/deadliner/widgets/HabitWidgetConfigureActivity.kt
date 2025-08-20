@@ -1,32 +1,18 @@
 package com.aritxonly.deadliner.widgets
 
-import android.animation.AnimatorSet
-import android.animation.ValueAnimator
 import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
-import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.util.TypedValue
 import android.view.View
-import android.view.WindowInsetsController
-import android.view.WindowManager
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.ListView
 import com.aritxonly.deadliner.DatabaseHelper
-import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.databinding.HabitMiniWidgetConfigureBinding
 import com.aritxonly.deadliner.model.DeadlineType
 import androidx.core.content.edit
-import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.google.android.material.color.DynamicColors
-import com.google.android.material.color.MaterialColors
-import okhttp3.internal.toHexString
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
@@ -36,16 +22,28 @@ import androidx.core.view.updatePadding
 /**
  * The configuration screen for the [HabitMiniWidget] AppWidget.
  */
-class HabitMiniWidgetConfigureActivity : ComponentActivity() {
+class HabitWidgetConfigureActivity : ComponentActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-    private var onClickListener = View.OnClickListener {
-        val context = this@HabitMiniWidgetConfigureActivity
+    private var provider: ComponentName? = null
 
-        saveIdPref(context, appWidgetId, selectedHabitId)
+    private var onClickListener = View.OnClickListener {
+        val context = this@HabitWidgetConfigureActivity
+        val awm = AppWidgetManager.getInstance(context)
+
+        saveIdPref(context, appWidgetId, selectedHabitId, provider)
 
         // It is the responsibility of the configuration activity to update the app widget
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        updateAppMiniHabitWidget(context, appWidgetManager, appWidgetId)
+        when (provider?.className) {
+            "com.aritxonly.deadliner.widgets.HabitMiniWidget" -> {
+                updateAppMiniHabitWidget(context, awm, appWidgetId)
+            }
+
+            "com.aritxonly.deadliner.widgets.HabitMediumWidget" -> {
+                updateMediumAppWidget(context, awm, appWidgetId)
+            }
+
+            else -> {}
+        }
 
         // Make sure we pass back the original appWidgetId
         val resultValue = Intent()
@@ -96,6 +94,11 @@ class HabitMiniWidgetConfigureActivity : ComponentActivity() {
             return
         }
 
+        // 获取 provider（用于区分 Mini / Medium）
+        val awm = AppWidgetManager.getInstance(this)
+        val info = awm.getAppWidgetInfo(appWidgetId)
+        provider = info.provider
+
         val habits = DatabaseHelper.getInstance(this).getDDLsByType(DeadlineType.HABIT)
         val names = habits.map { it.name }
 
@@ -114,22 +117,37 @@ class HabitMiniWidgetConfigureActivity : ComponentActivity() {
     }
 }
 
-private const val PREFS_NAME = "com.aritxonly.deadliner.widgets.HabitMiniWidget"
+private const val PREFS_NAME_BASE = "com.aritxonly.deadliner.widgets."
 private const val PREF_PREFIX_KEY = "appwidget_"
 
-internal fun saveIdPref(context: Context, appWidgetId: Int, id: Long) {
-    context.getSharedPreferences(PREFS_NAME, 0).edit {
+internal fun getProviderName(provider: ComponentName?): String? {
+    val className = (provider?:return null).className.substringAfterLast('.')
+    return if (className.endsWith("Provider")) {
+        className.removeSuffix("Provider")
+    } else {
+        className
+    }
+}
+
+internal fun saveIdPref(context: Context, appWidgetId: Int, id: Long, provider: ComponentName?) {
+    val providerName = getProviderName(provider)?:""
+    val prefsName = PREFS_NAME_BASE + providerName
+    context.getSharedPreferences(prefsName, 0).edit {
         putLong(PREF_PREFIX_KEY + appWidgetId, id)
     }
 }
 
-internal fun loadIdPref(context: Context, appWidgetId: Int): Long {
-    val prefs = context.getSharedPreferences(PREFS_NAME, 0)
+internal fun loadIdPref(context: Context, appWidgetId: Int, provider: ComponentName?): Long {
+    val providerName = getProviderName(provider)?:""
+    val prefsName = PREFS_NAME_BASE + providerName
+    val prefs = context.getSharedPreferences(prefsName, 0)
     return prefs.getLong(PREF_PREFIX_KEY + appWidgetId, -1)
 }
 
-internal fun deleteIdPref(context: Context, appWidgetId: Int) {
-    context.getSharedPreferences(PREFS_NAME, 0).edit {
+internal fun deleteIdPref(context: Context, appWidgetId: Int, provider: ComponentName?) {
+    val providerName = getProviderName(provider)?:""
+    val prefsName = PREFS_NAME_BASE + providerName
+    context.getSharedPreferences(prefsName, 0).edit {
         remove(PREF_PREFIX_KEY + appWidgetId)
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -124,6 +125,8 @@ class SettingsActivity : AppCompatActivity() {
     companion object {
         private const val EXPORT_REQUEST_CODE = 1001
         private const val IMPORT_REQUEST_CODE = 1002
+
+        const val EXTRA_INITIAL_ROUTE = "extra_initial_route"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -135,6 +138,7 @@ class SettingsActivity : AppCompatActivity() {
         setContent {
             DeadlinerTheme {
                 val navController = rememberNavController()
+
                 val defaultEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
                     slideInHorizontally(
                         initialOffsetX = { it },
@@ -152,6 +156,15 @@ class SettingsActivity : AppCompatActivity() {
                         targetOffsetX = { it },
                         animationSpec = tween(300)
                     ) + fadeOut(tween(300))
+                }
+
+                val initialRoute = intent.getStringExtra(EXTRA_INITIAL_ROUTE)
+                LaunchedEffect(initialRoute) {
+                    initialRoute?.let { route ->
+                        navController.navigate(route) {
+                            popUpTo(SettingsRoute.Main.route) { inclusive = false }
+                        }
+                    }
                 }
 
                 NavHost(

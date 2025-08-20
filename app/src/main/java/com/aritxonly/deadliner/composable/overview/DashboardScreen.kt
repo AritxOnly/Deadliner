@@ -39,6 +39,8 @@ import com.aritxonly.deadliner.composable.TintedGradientImage
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.YearMonth
+import java.time.format.TextStyle
+import java.util.Locale
 import kotlin.math.abs
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -49,12 +51,18 @@ fun DashboardScreen(
     modifier: Modifier = Modifier
 ) {
     val now = LocalDateTime.now()
-    val lastMonth = YearMonth.from(now).minusMonths(1)
-    val prevMonth = lastMonth.minusMonths(1)
+    // 计算上一个日历月的起始和结束时间
+    val lastMonthYearMonth = YearMonth.from(now).minusMonths(1)
+    val lastMonthStart = lastMonthYearMonth.atDay(1).atStartOfDay()
+    val lastMonthEnd = lastMonthYearMonth.atEndOfMonth().atTime(23, 59, 59)
+    // 计算前上一个日历月的起始和结束时间
+    val prevMonthYearMonth = lastMonthYearMonth.minusMonths(1)
+    val prevMonthStart = prevMonthYearMonth.atDay(1).atStartOfDay()
+    val prevMonthEnd = prevMonthYearMonth.atEndOfMonth().atTime(23, 59, 59)
 
     // 计算特定月份统计
-    val lastStats = collectStats(items, lastMonth, now)
-    val prevStats = collectStats(items, prevMonth, now)
+    val lastStats = collectStatsInRange(items, lastMonthStart, lastMonthEnd)
+    val prevStats = collectStatsInRange(items, prevMonthStart, prevMonthEnd)
 
     // 指标列表
     val (totalChange, totalDown) = computeChange(lastStats.total, prevStats.total)
@@ -70,10 +78,14 @@ fun DashboardScreen(
         prevStats.overdue, prevStats.total
     )
 
+    val monthName = lastMonthYearMonth.month.getDisplayName(
+        TextStyle.FULL, Locale.CHINESE
+    )
+
     val metrics = listOf(
         Metric(
-            label = "${lastMonth.year}年",
-            value = "${lastMonth.monthValue}月"
+            label = "${lastMonthYearMonth.year}年",
+            value = "$monthName"
         ),
         Metric(
             label = "任务总数",
@@ -129,16 +141,18 @@ private data class MonthStats(
     val avgCompletionTime: Duration
 )
 
-private fun collectStats(
+private fun collectStatsInRange(
     items: List<DDLItem>,
-    month: YearMonth,
-    now: LocalDateTime
+    start: LocalDateTime,
+    end: LocalDateTime
 ): MonthStats {
     val filtered = items.mapNotNull { item ->
         val ctStr = item.completeTime.takeIf { it.isNotBlank() } ?: return@mapNotNull null
         val ct = GlobalUtils.safeParseDateTime(ctStr)
         Pair(item, ct)
-    }.filter { YearMonth.from(it.second) == month }
+    }.filter { (_, ct) ->
+        !ct.isBefore(start) && !ct.isAfter(end)
+    }
 
     val total = filtered.size
     val completed = filtered.count { it.first.isCompleted }

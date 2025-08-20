@@ -177,4 +177,6 @@ class MainViewModel(
         data class Loading(val silent: Boolean) : RefreshState()
         object Success : RefreshState()
     }
+
+    var lastClipboardText: String? = null
 }

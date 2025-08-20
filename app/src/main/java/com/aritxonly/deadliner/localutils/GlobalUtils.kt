@@ -301,6 +301,13 @@ object GlobalUtils {
             notifiedSet = set
         }
 
+        fun clearNotified(ddlId: Long) {
+            val set = notifiedSet
+            if (set.remove(ddlId.toString())) {
+                notifiedSet = set
+            }
+        }
+
         fun hasBeenNotified(ddlId: Long): Boolean {
             return notifiedSet.contains(ddlId.toString())
         }
@@ -316,6 +323,7 @@ object GlobalUtils {
         const val RC_DELETE = 3000
         const val RC_ALARM_TRIGGER = 4000
         const val RC_ALARM_SHOW = 5000
+        const val RC_LATER = 6000
     }
 
     // v2.0 - filter功能

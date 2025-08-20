@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.intro
 
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
@@ -10,8 +10,8 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
+import com.aritxonly.deadliner.R
 import com.google.android.material.button.MaterialButton
-import org.w3c.dom.Text
 
 class IntroFragmentWelcome : Fragment() {
 

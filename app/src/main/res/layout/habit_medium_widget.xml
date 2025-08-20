@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp"
+    style="@style/Widget.Deadliner.AppWidget.Container"
+    android:theme="@style/Theme.Material3.DynamicColors.DayNight"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:background="@drawable/app_widget_background">
+
+    <!-- 内容列 -->
+    <LinearLayout
+        android:id="@+id/content_column"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="12dp">
+
+        <!-- 标题：每天背英语单词 -->
+        <TextView
+            android:id="@+id/medium_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="每天背英语单词"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="6dp"/>
+
+        <!-- 副标题：每日坚持 -->
+        <TextView
+            android:id="@+id/medium_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="每日坚持"
+            android:textSize="16sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="?attr/colorOnSurface"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/btn_checkin"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:minWidth="96dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="@drawable/widget_medium_bg"
+        android:paddingHorizontal="4dp">
+
+        <!-- 左边的图标 -->
+        <ImageView
+            android:id="@+id/icon_star"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:tint="?android:attr/textColorPrimaryInverse"
+            android:src="@drawable/ic_check" />
+
+        <!-- 右边的文字 -->
+        <TextView
+            android:id="@+id/tv_checkin"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:layout_gravity="center_vertical|end"
+            android:layout_marginEnd="4dp"
+            android:text="打卡"
+            android:textColor="?android:attr/textColorPrimaryInverse"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</RelativeLayout>

@@ -56,6 +56,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DeepseekOverlay(
+    initialText: String = "",
     onDismiss: () -> Unit,
     onAddDDL: (Intent) -> Unit,
     modifier: Modifier = Modifier.fillMaxSize(),
@@ -64,7 +65,7 @@ fun DeepseekOverlay(
     hintText: String = "输入你的问题…"
 ) {
     // UI 状态
-    var textState by remember { mutableStateOf(TextFieldValue("")) }
+    var textState by remember { mutableStateOf(TextFieldValue(initialText)) }
     var isLoading by remember { mutableStateOf(false) }
     var results by remember { mutableStateOf<List<GeneratedDDL>>(emptyList()) }
     var failed by remember { mutableStateOf(false) }

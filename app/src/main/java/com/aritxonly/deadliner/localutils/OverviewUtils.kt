@@ -67,14 +67,15 @@ object OverviewUtils {
             // 当月逾期完成数：完成且完成日 > 截止日，并以完成月为主
             val overdueCompleted = items.count { item ->
                 if (!item.isCompleted) return@count false
-                val completeDate = runCatching { GlobalUtils.parseDateTime(item.completeTime)?.toLocalDate() }
+                val completeDT = runCatching { GlobalUtils.parseDateTime(item.completeTime) }
                     .getOrNull()
-                val endDate = runCatching { GlobalUtils.parseDateTime(item.endTime)?.toLocalDate() }
+                val endDT = runCatching { GlobalUtils.parseDateTime(item.endTime) }
                     .getOrNull()
-                if (completeDate != null && endDate != null
-                    && completeDate.year == year
-                    && completeDate.monthValue == month
-                    && completeDate.isAfter(endDate)
+
+                if (completeDT != null && endDT != null
+                    && completeDT.year == year
+                    && completeDT.monthValue == month
+                    && completeDT.isAfter(endDT)
                 ) true else false
             }
 

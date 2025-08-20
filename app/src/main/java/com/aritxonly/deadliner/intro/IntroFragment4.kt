@@ -1,12 +1,11 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.intro
 
-import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
+import com.aritxonly.deadliner.R
 
 class IntroFragment4 : Fragment() {
     override fun onCreateView(

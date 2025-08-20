@@ -165,6 +165,7 @@
     <string name="app_md_widget_description">任务小组件</string>
     <string name="app_ld_widget_description">任务大组件</string>
     <string name="app_mh_widget_description">习惯mini组件</string>
+    <string name="app_sh_widget_description">习惯小组件</string>
 
     <string name="unfinished_settings">实验功能，尚未测试完成</string>
 
@@ -221,6 +222,7 @@
     <string name="title_activity_overview">任务概览</string>
 
     <string name="snackbar_already_checkin">今天已经打卡过了哦～明天再来吧！☺️</string>
+    <string name="snackbar_done">任务已经完成啦～🎉️</string>
 
     <string name="add_ddl_frequency_type">请设置习惯时间限制</string>
     <string name="add_ddl_frequency">打卡频率</string>
@@ -238,5 +240,7 @@
     <string name="settings_support_deepseek_test">测试API Key可用性 · 测试自定义提示词</string>
     <string name="settings_deepseek_test">对话测试</string>
     <string name="settings_deepseek_custom_prompt_description">自定义用户提示词可以让用户自定义 DeepSeek 从文本中提取的信息密度、信息风格等。自定义的提示词将会被拼接到用户输入文本的前方，统一提供给 DeepSeek API 服务。</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="app_widget_description">This is an app widget description</string>
 
 </resources>

@@ -48,6 +48,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.io.IOException
 import androidx.core.net.toUri
+import com.aritxonly.deadliner.web.UpdateManager
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -73,34 +74,16 @@ fun UpdateScreen(
     val context = LocalContext.current
 
     val updateState by produceState<UpdateState>(initialValue = UpdateState.Loading) {
-        val url = "https://api.github.com/repos/AritxOnly/Deadliner/releases/latest"
-
         withContext(Dispatchers.IO) {
-            try {
-                val pkg = context.packageManager.getPackageInfo(context.packageName, 0)
-                val current = pkg.versionName ?: "0.0.0"
-
-                val client = OkHttpClient()
-                val request = Request.Builder().url(url).build()
-                client.newCall(request).execute().use { resp ->
-                    if (!resp.isSuccessful) throw IOException("Code ${resp.code}")
-                    val body = resp.body!!.string()
-                    val json = JSONObject(body)
-                    val latest = json.getString("tag_name")
-                    if (compareSemVer(current, latest) < 0) {
-                        val notesMd = json.getString("body")
-                        // 用 Markwon 转 HTML
-                        val assets = json.getJSONArray("assets")
-                        val downloadUrl = if (assets.length() > 0)
-                            assets.getJSONObject(0).getString("browser_download_url")
-                        else ""
-                        value = UpdateState.Available(current, latest, notesMd, downloadUrl)
-                    } else {
-                        value = UpdateState.UpToDate(current)
-                    }
+            value = try {
+                val info = UpdateManager.fetchUpdateInfo(context)
+                if (UpdateManager.isNewer(info.currentVersion, info.latestVersion)) {
+                    UpdateState.Available(info.currentVersion, info.latestVersion, info.releaseNotes, info.downloadUrl)
+                } else {
+                    UpdateState.UpToDate(info.currentVersion)
                 }
             } catch (e: Exception) {
-                value = UpdateState.Error(e.message ?: "Unknown error")
+                UpdateState.Error(e.localizedMessage ?: "Unknown error")
             }
         }
     }
@@ -218,23 +201,4 @@ fun UpdateScreen(
             }
         }
     }
-}
-
-// SemVer 比较函数（同 MainActivity）
-private fun compareSemVer(v1: String, v2: String): Int {
-    val p1 = v1.removePrefix("v").split(".")
-    val p2 = v2.removePrefix("v").split(".")
-    val max = maxOf(p1.size, p2.size)
-    for (i in 0 until max) {
-        val s1 = p1.getOrNull(i).orEmpty()
-        val s2 = p2.getOrNull(i).orEmpty()
-        val n1 = s1.substringBefore('-').toIntOrNull() ?: 0
-        val n2 = s2.substringBefore('-').toIntOrNull() ?: 0
-        if (n1 != n2) return n1 - n2
-        val suf1 = s1.substringAfter('-', "")
-        val suf2 = s2.substringAfter('-', "")
-        if (suf1.isEmpty() != suf2.isEmpty()) return if (suf1.isEmpty()) 1 else -1
-        if (suf1 != suf2) return suf1.compareTo(suf2)
-    }
-    return 0
 }

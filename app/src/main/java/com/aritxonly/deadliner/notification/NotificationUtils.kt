@@ -25,6 +25,7 @@ import com.aritxonly.deadliner.OverviewActivity
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_DDL_DETAIL
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_DELETE
+import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_LATER
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_MARK_COMPLETE
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.time.Duration
@@ -231,7 +232,7 @@ object NotificationUtil {
         }
         val laterPending = PendingIntent.getBroadcast(
             context,
-            ddl.id.hashCode() + 2,
+            RC_LATER + ddl.id.hashCode() + 2,
             laterIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.aritxonly.deadliner.widgets.HabitWidgetConfigureActivity"
+    android:description="@string/app_sh_widget_description"
+    android:initialKeyguardLayout="@layout/habit_medium_widget"
+    android:initialLayout="@layout/habit_medium_widget"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:previewLayout="@layout/habit_medium_widget"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="86400000"
+    android:widgetCategory="home_screen" />

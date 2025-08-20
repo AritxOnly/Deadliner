@@ -85,6 +85,7 @@ import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
+import android.content.ClipData
 import android.content.res.Resources
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -92,6 +93,7 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.ViewFlipper
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import com.aritxonly.deadliner.web.WebUtils
@@ -103,6 +105,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
+import com.aritxonly.deadliner.SettingsActivity.Companion.EXTRA_INITIAL_ROUTE
 import com.aritxonly.deadliner.composable.agent.DeepseekOverlay
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
@@ -112,10 +115,13 @@ import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
+import com.aritxonly.deadliner.web.UpdateInfo
+import com.aritxonly.deadliner.web.UpdateManager
 import com.aritxonly.deadliner.widgets.HabitMiniWidget
 import com.aritxonly.deadliner.widgets.LargeDeadlineWidget
 import com.aritxonly.deadliner.widgets.MultiDeadlineWidget
 import com.google.android.material.loadingindicator.LoadingIndicator
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.Period
 import java.time.ZoneId
@@ -179,6 +185,46 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private lateinit var materialColorScheme: AppColorScheme
     private var dialogFlipper: ViewFlipper? = null
+
+    private lateinit var clipboardManager: android.content.ClipboardManager
+    private val clipListener = android.content.ClipboardManager.OnPrimaryClipChangedListener {
+        handleClipboardChange()
+    }
+    private var hasCheckedInitialClipboard = false
+
+    private fun handleClipboardChange() {
+        val clip: ClipData? = clipboardManager.primaryClip
+        val newText = clip?.getItemAt(0)?.coerceToText(this).toString()
+        if (newText.isNotBlank() && newText != viewModel.lastClipboardText) {
+            viewModel.lastClipboardText = newText
+            triggerFeatureBasedOnClipboard(newText)
+        }
+    }
+
+    private fun triggerFeatureBasedOnClipboard(text: String) {
+        val snackBarParent = if (isBottomBarVisible)
+            viewHolderWithAppBar
+        else viewHolderWithNoAppBar
+
+        val snackbar = Snackbar.make(
+            snackBarParent,
+            "检测到剪切板内容，使用 DeepSeek 快捷添加？",
+            Snackbar.LENGTH_LONG
+        ).setAction("添加") {
+            showAgentOverlay(text)
+        }.setAnchorView(bottomAppBar)
+
+        val bg = snackbar.view.background
+        if (bg is MaterialShapeDrawable) {
+            snackbar.view.background = bg.apply {
+                shapeAppearanceModel = shapeAppearanceModel
+                    .toBuilder()
+                    .setAllCornerSizes(16f.dpToPx())
+                    .build()
+            }
+        }
+        snackbar.show()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 跟随主题色
@@ -889,7 +935,23 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         setupTabs()
 
-        checkForUpdates()
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val info = UpdateManager.fetchUpdateInfo(this@MainActivity)
+                Log.d("UpdateInfo", info.toString())
+                if (UpdateManager.isNewer(info.currentVersion, info.latestVersion)) {
+                    withContext(Dispatchers.Main) {
+                        showUpdatePrompt(info)
+                    }
+                }
+            } catch (e: Exception) {
+                // 忽略错误或者 log
+                Log.w("UpdateInfo", e)
+            }
+        }
+
+        clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        clipboardManager.addPrimaryClipChangedListener(clipListener)
 
         if (!GlobalUtils.permissionSetupDone) {
             showFirstTimeSetupDialog()
@@ -900,6 +962,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     override fun onDestroy() {
         handler.removeCallbacks(autoRefreshRunnable)
+        clipboardManager.removePrimaryClipChangedListener(clipListener)
         super.onDestroy()
     }
 
@@ -907,6 +970,25 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 触发小组件更新
         updateWidget()
         super.onStop()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && !hasCheckedInitialClipboard) {
+            hasCheckedInitialClipboard = true
+            checkClipboardAndPrompt()
+        }
+    }
+
+    private fun checkClipboardAndPrompt() {
+        clipboardManager.primaryClip?.let { clip ->
+            if (clip.itemCount > 0) {
+                val text = clip.getItemAt(0).coerceToText(this).toString()
+                if (text.isNotBlank()) {
+                    triggerFeatureBasedOnClipboard(text)
+                }
+            }
+        }
     }
 
     private fun updateWidget() {
@@ -1896,7 +1978,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         snackbar.show()
     }
 
-    private fun showAgentOverlay() {
+    private fun showAgentOverlay(initialText: String = "") {
         val composeOverlay = findViewById<ComposeView>(R.id.agentCompose)
 
         composeOverlay.setViewCompositionStrategy(
@@ -1908,6 +1990,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         composeOverlay.setContent {
             DeadlinerTheme {
                 DeepseekOverlay(
+                    initialText = initialText,
                     onDismiss = {
                         composeOverlay.disposeComposition()
                         composeOverlay.visibility = View.GONE
@@ -1918,6 +2001,23 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 )
             }
         }
+    }
+
+    private fun showUpdatePrompt(info: UpdateInfo) {
+        val markwon = Markwon.create(this@MainActivity)
+        val releaseNotes = markwon.toMarkdown(info.releaseNotes)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("检测到新版本 ${info.latestVersion}")
+            .setMessage(releaseNotes)
+            .setPositiveButton("去更新") { _, _ ->
+                val intent = Intent(this, SettingsActivity::class.java).apply {
+                    putExtra(EXTRA_INITIAL_ROUTE, SettingsRoute.Update.route)
+                }
+                startActivity(intent)
+            }
+            .setNegativeButton("稍后再说", null)
+            .show()
     }
 }
 
