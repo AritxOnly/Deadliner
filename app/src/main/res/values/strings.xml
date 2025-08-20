@@ -81,6 +81,9 @@
     <string name="settings_hide_from_recent">从最近应用列表隐藏</string>
     <string name="settings_support_hide_from_recent">开启选项后，多任务界面将不再显示应用</string>
 
+    <string name="settings_embedded_activities">平行视窗</string>
+    <string name="settings_support_embedded_activities">开启选项后，主界面将固定在左侧；其他页面分屏在右侧展示</string>
+
     <string name="settings_progress_widget">小组件正向进度条</string>
     <string name="settings_mdwidget_add_btn">任务小组件按钮交互</string>
     <string name="settings_ldwidget_add_btn">任务大组件按钮交互</string>
@@ -242,5 +245,6 @@
     <string name="settings_deepseek_custom_prompt_description">自定义用户提示词可以让用户自定义 DeepSeek 从文本中提取的信息密度、信息风格等。自定义的提示词将会被拼接到用户输入文本的前方，统一提供给 DeepSeek API 服务。</string>
     <string name="appwidget_text">EXAMPLE</string>
     <string name="app_widget_description">This is an app widget description</string>
+    <string name="placeholder">欢迎使用Deadliner👏</string>
 
 </resources>

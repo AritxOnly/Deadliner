@@ -179,7 +179,9 @@ class SettingsActivity : AppCompatActivity() {
                         MainSettingsScreen(navController, onClose = { finishAfterTransition() })
                     }
 
-                    composable(SettingsRoute.General.route) { GeneralSettingsScreen(navController) { navController.navigateUp() } }
+                    composable(SettingsRoute.General.route) { GeneralSettingsScreen(
+                        navController, handleRestart = { showDialogRestartAppTablet() }
+                    ) { navController.navigateUp() } }
                     composable(SettingsRoute.Interface.route) { InterfaceSettingsScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Notification.route) { NotificationSettingsScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Backup.route) {
@@ -398,6 +400,16 @@ class SettingsActivity : AppCompatActivity() {
             e.printStackTrace()
             showToast("❌ 导入失败: ${e.localizedMessage}")
         }
+    }
+
+    private fun showDialogRestartAppTablet() {
+        MaterialAlertDialogBuilder(this)
+            .setMessage("平行窗口设置成功，需要重启应用生效")
+            .setPositiveButton("立即重启") { _, _ ->
+                restartApp()
+            }
+            .setNegativeButton("稍后", null)
+            .show()
     }
 
     private fun restartApp() {

@@ -31,6 +31,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Deadliner"
         tools:targetApi="31">
+        <activity
+            android:name=".PlaceholderActivity"
+            android:exported="false" />
+
+        <property
+            android:name="android.window.PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED"
+            android:value="true" />
+
+        <meta-data
+            android:name="embedded"
+            android:value="true" />
 
         <activity
             android:name=".widgets.HabitWidgetConfigureActivity"

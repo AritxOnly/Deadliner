@@ -280,6 +280,12 @@ object GlobalUtils {
             sharedPreferences.edit { putString("custom_prompt", value) }
         }
 
+    var embeddedActivities: Boolean
+        get() = sharedPreferences.getBoolean("embedded_activities", true)
+        set(value) {
+            sharedPreferences.edit { putBoolean("embedded_activities", value) }
+        }
+
     object OverviewSettings {
         var monthlyCount: Int
             get() = sharedPreferences.getInt("monthly_count(overview)", 12)

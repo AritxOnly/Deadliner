@@ -83,6 +83,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.1")
     implementation("com.github.jeziellago:compose-markdown:0.5.7")
     implementation("com.github.Dimezis:BlurView:version-3.0.0")
+    implementation("androidx.window:window:1.4.0")
+    implementation("androidx.startup:startup-runtime:1.1.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
