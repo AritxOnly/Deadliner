@@ -23,44 +23,122 @@
     <string name="toast_archived">Deadline已归档！🗃️</string>
     <string name="toast_stared">已修改星标状态</string>
 
-    <string name="settings_general">通用</string>
-    <string name="settings_notification">通知</string>
     <string name="settings_archive">归档</string>
+
+    <string name="settings_title">设置</string>
+    <string name="settings_general">通用</string>
+    <string name="settings_interface_display">个性化</string>
+    <string name="settings_widget">小组件</string>
+    <string name="settings_notification">通知</string>
+    <string name="settings_deepseek">DeepSeek</string>
     <string name="settings_backup">备份</string>
-    <string name="settings_developer">高级</string>
-    <string name="settings_highlight">关于</string>
-    <string name="settings_vibration">启用震动反馈</string>
+    <string name="settings_developer">开发者</string>
+    <string name="settings_wiki">Wiki</string>
+    <string name="settings_feedback">帮助与反馈</string>
+    <string name="settings_webdav">WebDAV</string>
+    <string name="settings_about">关于</string>
+
+    <string name="settings_support_general">界面显示 · UI交互</string>
+    <string name="settings_support_interface_display">个性化你的 Deadliner</string>
+    <string name="settings_support_notification">DDL临近通知 · 每日定时通知</string>
+    <string name="settings_support_backup">导入与导出用户数据库</string>
+    <string name="settings_support_deepseek">DeepSeek API接入 · 自定义prompt</string>
+    <string name="settings_support_webdav">Deadliner-Web 云同步服务</string>
+    <string name="settings_support_developer">调试选项与实验性内容</string>
+    <string name="settings_support_widget">小组件配置 · 小组件界面与交互设置</string>
+    <string name="settings_support_wiki">访问 Github Wiki 快速入门</string>
+    <string name="settings_support_feedback">向开发者反馈建议或提交bug</string>
+    <string name="settings_support_about"> · 检查更新 · 请开发者喝杯奶茶🧋</string>
+
+    <string name="settings_vibration_title">振动反馈</string>
+    <string name="settings_support_vibration">启用交互振动反馈 · 自定义振动强度</string>
+    <string name="settings_vibration">启用振动反馈</string>
+    <string name="settings_vibration_system">系统默认</string>
+    <string name="settings_vibration_custom">自定义振动强度</string>
+    <string name="settings_vibration_amplitude">振动强度</string>
     <string name="settings_progress_dir_main">主界面正向进度条</string>
-    <string name="settings_progress_widget">小组件正向进度条</string>
     <string name="settings_fireworks">完成时显示动画效果</string>
     <string name="settings_detail_display">剩余时间详细显示</string>
-    <string name="settings_tasks_badge">选项卡未完成任务角标</string>
+
+    <string name="settings_support_progress_dir">主界面任务进度条显示项目进行进度</string>
+    <string name="settings_support_excitement">在主界面标题栏下方显示个性化鼓励语句</string>
+    <string name="settings_support_fireworks">完成任务时在主界面显示礼花效果</string>
+    <string name="settings_support_detail_display">开启后，任务卡片将显示完整时间（精确到分钟）</string>
+    <string name="settings_hide_divider">去线留白设计</string>
+    <string name="settings_support_hide_divider">开启后，界面中的分割线将会被隐藏</string>
+
+    <string name="settings_auto_archive_title">自动归档</string>
+    <string name="settings_support_auto_archive">一段时间后将已完成任务自动放入归档文件夹</string>
+    <string name="settings_auto_archive">启用自动归档</string>
+    <string name="settings_auto_archive_time">自定义自动归档时间</string>
+
+    <string name="settings_tasks_badge_title">任务角标</string>
+    <string name="settings_support_tasks_badge">在主界面选项卡上显示临近任务角标</string>
+    <string name="settings_tasks_badge">启用选项卡任务角标</string>
+    <string name="settings_tasks_badge_number">数字角标</string>
+    <string name="settings_tasks_badge_dot">圆点角标</string>
+
+    <string name="settings_hide_from_recent">从最近应用列表隐藏</string>
+    <string name="settings_support_hide_from_recent">开启选项后，多任务界面将不再显示应用</string>
+
+    <string name="settings_embedded_activities">平行视窗</string>
+    <string name="settings_support_embedded_activities">开启选项后，主界面将固定在左侧；其他页面分屏在右侧展示</string>
+
+    <string name="settings_progress_widget">小组件正向进度条</string>
+    <string name="settings_mdwidget_add_btn">任务小组件按钮交互</string>
+    <string name="settings_ldwidget_add_btn">任务大组件按钮交互</string>
+    <string name="settings_support_progress_widget">任务小组件进度条显示项目进行进度</string>
+    <string name="settings_support_mdwidget_add_btn">开启后，任务小组件上将会显示一个浮动的\"+\"按钮，用于从小组件快速添加任务</string>
+    <string name="settings_support_ldwidget_add_btn">开启后，任务大组件上将会显示一个浮动的\"+\"按钮，用于从小组件快速添加任务</string>
+
     <string name="settings_nearby_notification">Deadline临近通知</string>
     <string name="settings_everyday_notification">每日Deadline统计通知</string>
-    <string name="settings_hide_from_recent">将应用从最近应用列表隐藏</string>
+
     <string name="settings_experimental_e2e">系统栏边到边沉浸（实验性）</string>
     <string name="settings_excitement">主菜单鼓励语句</string>
-    <string name="settings_homepage">访问作者主页</string>
-    <string name="settings_github">访问项目主页</string>
-    <string name="settings_issues">提交错误报告</string>
 
-<!--    <string-array name="excitement_array">-->
-<!--        <item>今天你Deadline了吗？😝</item>-->
-<!--        <item>Deadline临近了🥺</item>-->
-<!--        <item>再坚持一下，很快就能做完啦☺️</item>-->
-<!--        <item>提前开始Deadline是一件好事哦😉</item>-->
-<!--        <item>保持专注，你一定能搞定！💪</item>-->
-<!--        <item>不要担心，你比你想象的更强大！✨</item>-->
-<!--        <item>完成Deadline后，奖励自己一个小惊喜吧！🎉</item>-->
-<!--        <item>Deadline不再是敌人，而是你超越自己的机会！🚀</item>-->
-<!--        <item>放轻松，深呼吸，你可以做到！🌟</item>-->
-<!--        <item>你的努力不会白费，每一步都在靠近目标！🏃‍♂️💨</item>-->
-<!--        <item>加油！完成Deadline，你就是今天的英雄！🦸‍♀️🦸‍♂️</item>-->
-<!--        <item>记住，Deadline是你进步的最佳见证者！📈</item>-->
-<!--        <item>坚持住！完成后你会感谢现在努力的自己！🙏</item>-->
-<!--        <item>每个小目标的达成都值得庆祝！🥳</item>-->
-<!--        <item>再努力一下，成功就在前方！🏆</item>-->
-<!--    </string-array>-->
+    <string name="settings_highlight">版本信息</string>
+    <string name="settings_version">版本号</string>
+    <string name="settings_compile_date">编译时间</string>
+    <string name="settings_legal">隐私与许可</string>
+    <string name="settings_license">开源许可证</string>
+    <string name="settings_license_summary">MIT LISCENCE 开源许可</string>
+    <string name="settings_privacy_policy">隐私协议</string>
+    <string name="settings_privacy_summary">了解您使用 Deadliner 的隐私权</string>
+    <string name="settings_more">更多</string>
+    <string name="settings_homepage">作者主页</string>
+    <string name="settings_github">源代码</string>
+    <string name="settings_playground">应用乐园详情页</string>
+    <string name="settings_check_for_updates">检查更新</string>
+    <string name="settings_support_check_for_updates">查看版本更新内容</string>
+
+    <string name="settings_donate">捐赠</string>
+    <string name="settings_donate_author">捐赠作者</string>
+    <string name="settings_support_donate">🧋一杯奶茶也好，你的支持是对我最大的鼓励</string>
+    <string name="settings_support_daily_notification">开启后，Deadliner将在每天固定时间推送概览统计消息</string>
+    <string name="settings_support_nearby_notification">开启后，将在任务到期前12小时提醒</string>
+
+    <string name="settings_enable_webDAV">启用WebDAV</string>
+    <string name="settings_webDAV_description">WebDAV 服务为用户提供接入云端托管平台的服务。\n由于我们本身并不提供云服务，需要用户注册任意支持 WebDAV 服务的云盘账户。账号与密码将在本地存储，不会上传到云端。</string>
+    <string name="settings_web_section">服务器设置</string>
+    <string name="settings_web_host">服务器URL</string>
+    <string name="settings_web_host_fault">服务器URL需要以https://或http://开头！</string>
+    <string name="settings_web_host_success">设置WebDAV服务器成功！</string>
+    <string name="settings_web_host_incomplete">请填写所有字段！</string>
+    <string name="settings_web_user">用户名</string>
+    <string name="settings_web_pass">密码</string>
+
+    <string name="settings_enable_deepseek">启用DeepSeek</string>
+    <string name="settings_deepseek_description">Deadliner 接入 DeepSeek 为用户提供从长段文本中提取任务信息的能力，从而帮助用户快速添加任务。\n用户需要登录 https://platform.deepseek.com 获取自己的 API Key</string>
+    <string name="settings_deepseek_api_key">API Key</string>
+    <string name="settings_deepseek_success">设置DeepSeek APIKey成功！</string>
+    <string name="settings_deepseek_incomplete">请填写API Key！</string>
+    <string name="settings_deepseek_custom_prompt">自定义提示词</string>
+    <string name="settings_deepseek_custom_prompt_title">提示词</string>
+    <string name="settings_support_deepseek_custom_prompt">自定义用户提示词 (不建议初级用户修改)</string>
+    <string name="settings_deepseek_custom_prompt_success">提示词已保存</string>
+
+    <string name="settings_issues">提交错误报告</string>
 
     <!-- Try something more expressive -->
     <string-array name="excitement_array">
@@ -86,42 +164,19 @@
         <item>完成它！然后大喊：Next！🎤</item>
     </string-array>
 
-    <string name="appwidget_text">EXAMPLE</string>
     <string name="add_widget">添加小组件</string>
-    <string name="app_widget_description">主屏幕倒计时小组件</string>
-    <string name="app_version">
-        <![CDATA[<strong>Deadliner</strong> v1.2.0.105<br>]]>
-        <![CDATA[By Author <strong>Aritx Zhou</strong>]]>
-    </string>
+    <string name="app_md_widget_description">任务小组件</string>
+    <string name="app_ld_widget_description">任务大组件</string>
+    <string name="app_mh_widget_description">习惯mini组件</string>
+    <string name="app_sh_widget_description">习惯小组件</string>
 
     <string name="unfinished_settings">实验功能，尚未测试完成</string>
 
     <string name="go_next">继续</string>
 
     <!--下面是开始页面的内容-->
-    <string name="main_description">欢迎来到Deadliner v2 💕</string>
-    <string name="main_description_content">全新升级，高效管理任务，轻松掌控截止日期。</string>
-
-    <string name="widget_description">🗓 桌面小组件</string>
-    <string name="widget_description_content">随时查看任务进度，便捷管理。</string>
-
-    <string name="task_management">✅ 任务管理</string>
-    <string name="task_management_content">右滑完成任务，左滑删除，底部应用栏支持筛选、归档和搜索。</string>
-
-    <string name="deadline_features">📅 截止任务优化</string>
-    <string name="deadline_features_content">点击详情，长按多选、置顶任务，灵活管理。</string>
-
-    <string name="habit_tracking">⏰ 打卡任务</string>
-    <string name="habit_tracking_content">支持多次打卡，显示进度与奖励效果。</string>
-
-    <string name="overview_activity">📊 概览页面</string>
-    <string name="overview_activity_content">任务进度以饼图和条形图可视化。</string>
-
-    <string name="detail_activity">🖌 全新详情页</string>
-    <string name="detail_activity_content">全新详情页，截图与朋友分享。</string>
-
-    <string name="welcome">与君一见，\n时光在心。\n欢迎使用！👏</string>
-    <string name="welcome_version">全新Deadliner v2.0，诚邀您体验</string>
+    <string name="welcome">遇见\n你的Deadliner</string>
+    <string name="welcome_version">全新Deadliner v3.0，诚邀您体验</string>
 
     <string name="finish_notice">没有剩余的工作了</string>
     <string name="add_ddl_tile_label">添加新任务</string>
@@ -149,6 +204,7 @@
     <string name="title_activity_overview">任务概览</string>
 
     <string name="snackbar_already_checkin">今天已经打卡过了哦～明天再来吧！☺️</string>
+    <string name="snackbar_done">任务已经完成啦～🎉️</string>
 
     <string name="add_ddl_frequency_type">请设置习惯时间限制</string>
     <string name="add_ddl_frequency">打卡频率</string>
@@ -159,6 +215,16 @@
     <string name="settings_cloud_sync">云服务器设置</string>
     <string name="settings_show_intro">展示欢迎页</string>
     <string name="settings_custom_filter_list">自定义日历导入黑名单</string>
+    <string name="settings_support_custom_filter_list">用于添加任务时过滤日历中不重要的日历账户</string>
     <string name="alert_select_badge_type">选择角标类型</string>
+    <string name="configure">Configure</string>
+    <string name="settings_advance">高级设置</string>
+    <string name="settings_support_deepseek_test">测试API Key可用性 · 测试自定义提示词</string>
+    <string name="settings_deepseek_test">对话测试</string>
+    <string name="settings_deepseek_custom_prompt_description">自定义用户提示词可以让用户自定义 DeepSeek 从文本中提取的信息密度、信息风格等。自定义的提示词将会被拼接到用户输入文本的前方，统一提供给 DeepSeek API 服务。</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="app_widget_description">This is an app widget description</string>
+    <string name="placeholder">欢迎使用Deadliner👏</string>
+    <string name="settings_clipboard">自动从剪切板读取</string>
 
 </resources>

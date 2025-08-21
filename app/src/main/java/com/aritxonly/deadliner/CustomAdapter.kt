@@ -20,6 +20,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import android.content.res.Resources
+import com.aritxonly.deadliner.data.DDLRepository
+import com.aritxonly.deadliner.data.MainViewModel
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
@@ -294,8 +296,7 @@ class CustomAdapter(
                         completeTime = LocalDateTime.now().toString()
                     )
 
-                    val databaseHelper = DatabaseHelper.getInstance(context)
-                    databaseHelper.updateDDL(updatedHabit)
+                    DDLRepository().updateDDL(updatedHabit)
 
                     viewModel.loadData(viewModel.currentType)
                 }
@@ -340,8 +341,7 @@ class CustomAdapter(
         onCheckInGlobalListener?.onCheckInSuccessGlobal(context, updatedHabit, habitMeta)
 
         // 更新数据库记录
-        val databaseHelper = DatabaseHelper.getInstance(context)
-        databaseHelper.updateDDL(updatedHabit)
+        DDLRepository().updateDDL(updatedHabit)
 
         viewModel.loadData(viewModel.currentType)
     }
@@ -370,8 +370,7 @@ class CustomAdapter(
                 habitCount = 0
             )
 
-            val databaseHelper = DatabaseHelper.getInstance(context)
-            databaseHelper.updateDDL(updatedHabit)
+            DDLRepository().updateDDL(updatedHabit)
 
             viewModel.loadData(viewModel.currentType)
         }

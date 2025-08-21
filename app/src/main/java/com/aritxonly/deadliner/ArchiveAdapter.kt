@@ -6,6 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.aritxonly.deadliner.data.DDLRepository
+import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.google.android.material.button.MaterialButton
@@ -54,7 +56,7 @@ class ArchiveAdapter(
             MaterialAlertDialogBuilder(holder.itemView.context)
                 .setTitle("删除已完成的 Deadline？")
                 .setPositiveButton("确定") { _, _ ->
-                    databaseHelper.deleteDDL(item.id)
+                    DDLRepository().deleteDDL(item.id)
 
                     // 重新获取数据 & 过滤
                     updateData(databaseHelper.getAllDDLs(), context)
@@ -68,12 +70,10 @@ class ArchiveAdapter(
 
     // 过滤列表，仅保留符合条件的项目
     private fun filterItems(itemList: List<DDLItem>, context: Context): List<DDLItem> {
-        val databaseHelper = DatabaseHelper.getInstance(context)
-
         return itemList.filterNot { item ->
             if (!item.isCompleted) return@filterNot true
             item.isArchived = (!GlobalUtils.filterArchived(item)) || item.isArchived
-            databaseHelper.updateDDL(item)
+            DDLRepository().updateDDL(item)
             !item.isArchived
         }
     }

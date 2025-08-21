@@ -1,0 +1,40 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp"
+    style="@style/Widget.Deadliner.AppWidget.Container"
+    android:theme="@style/Theme.Material3.DynamicColors.DayNight"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:background="@drawable/app_widget_background">
+
+    <TextView
+        android:id="@+id/mini_text"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="match_parent"
+        style="@style/TextAppearance.AppCompat.Medium"
+        android:gravity="center_vertical|start"
+        android:text="习惯名称"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textFontWeight="600"
+        android:textColor="?attr/colorOnSurface"
+        />
+
+    <ImageView
+        android:id="@+id/btn_check_in"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/widget_fab_bg"
+        android:backgroundTint="?attr/colorPrimary"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="8dp"
+        android:src="@drawable/ic_check"
+        android:tint="?android:attr/textColorPrimaryInverse" />
+
+</LinearLayout>

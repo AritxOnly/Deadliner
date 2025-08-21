@@ -32,4 +32,8 @@
     </array>
 
     <color name="widget_icon_tint">#000000</color>
+
+    <color name="widget_container_bg">?attr/colorPrimaryContainer</color>
+    <color name="widget_container_fg">?attr/colorOnPrimaryContainer</color>
+    <color name="widget_accent_fg">?attr/colorOnPrimary</color>
 </resources>

@@ -85,6 +85,7 @@ import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
+import android.content.ClipData
 import android.content.res.Resources
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -92,6 +93,9 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.ViewFlipper
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import com.aritxonly.deadliner.web.WebUtils
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.shape.MaterialShapeDrawable
@@ -101,14 +105,31 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
+import com.aritxonly.deadliner.SettingsActivity.Companion.EXTRA_INITIAL_ROUTE
+import com.aritxonly.deadliner.composable.agent.DeepseekOverlay
+import com.aritxonly.deadliner.data.DDLRepository
+import com.aritxonly.deadliner.data.DatabaseHelper
+import com.aritxonly.deadliner.data.MainViewModel
+import com.aritxonly.deadliner.data.SyncService
+import com.aritxonly.deadliner.data.ViewModelFactory
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineFrequency.*
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.PartyPresets
 import com.aritxonly.deadliner.model.updateNoteWithDate
+import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
+import com.aritxonly.deadliner.web.UpdateInfo
+import com.aritxonly.deadliner.web.UpdateManager
+import com.aritxonly.deadliner.widgets.HabitMiniWidget
+import com.aritxonly.deadliner.widgets.LargeDeadlineWidget
+import com.aritxonly.deadliner.widgets.MultiDeadlineWidget
 import com.google.android.material.loadingindicator.LoadingIndicator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.Period
 import java.time.ZoneId
@@ -148,7 +169,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private lateinit var viewHolderWithAppBar: View
     private lateinit var viewHolderWithNoAppBar: View
 
-    private lateinit var cloudButton: ImageButton
+    private lateinit var searchButton: ImageButton
 
     private val handler = Handler(Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
@@ -172,6 +193,49 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private lateinit var materialColorScheme: AppColorScheme
     private var dialogFlipper: ViewFlipper? = null
+
+    private lateinit var clipboardManager: android.content.ClipboardManager
+    private val clipListener = android.content.ClipboardManager.OnPrimaryClipChangedListener {
+        if (!GlobalUtils.clipboardEnable) return@OnPrimaryClipChangedListener
+        handleClipboardChange()
+    }
+    private var hasCheckedInitialClipboard = false
+
+    private fun handleClipboardChange() {
+        val clip: ClipData? = clipboardManager.primaryClip
+        val newText = clip?.getItemAt(0)?.coerceToText(this).toString()
+        if (newText.isNotBlank() && newText != viewModel.lastClipboardText) {
+            viewModel.lastClipboardText = newText
+            triggerFeatureBasedOnClipboard(newText)
+        }
+    }
+
+    private fun triggerFeatureBasedOnClipboard(text: String) {
+        if (!GlobalUtils.clipboardEnable) return
+
+        val snackBarParent = if (isBottomBarVisible)
+            viewHolderWithAppBar
+        else viewHolderWithNoAppBar
+
+        val snackbar = Snackbar.make(
+            snackBarParent,
+            "检测到剪切板内容，使用 DeepSeek 快捷添加？",
+            Snackbar.LENGTH_LONG
+        ).setAction("添加") {
+            showAgentOverlay(text)
+        }.setAnchorView(bottomAppBar)
+
+        val bg = snackbar.view.background
+        if (bg is MaterialShapeDrawable) {
+            snackbar.view.background = bg.apply {
+                shapeAppearanceModel = shapeAppearanceModel
+                    .toBuilder()
+                    .setAllCornerSizes(16f.dpToPx())
+                    .build()
+            }
+        }
+        snackbar.show()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 跟随主题色
@@ -308,7 +372,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                         onRetroCheckSuccess(clickedItem, habitMeta, pickedDate)
 
-                        databaseHelper.updateDDL(updatedHabit)
+//                        databaseHelper.updateDDL(updatedHabit)
+                        DDLRepository().updateDDL(updatedHabit)
 
                         viewModel.loadData(viewModel.currentType)
                     }
@@ -346,7 +411,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
 
             override fun onCheckInSuccessGlobal(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData) {
-                triggerVibration(this@MainActivity, 100)
+                GlobalUtils.triggerVibration(this@MainActivity, 100)
 
                 val count = habitItem.habitCount
                 val frequency = habitMeta.frequency
@@ -382,7 +447,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                             note = revertedNoteJson,
                             habitCount = habitItem.habitCount - 1
                         )
-                        databaseHelper.updateDDL(revertedHabit)
+                        DDLRepository().updateDDL(revertedHabit)
                         viewModel.loadData(currentType)
                     }.setAnchorView(bottomAppBar)
 
@@ -404,7 +469,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         swipeRefreshLayout.setOnRefreshListener {
-            refreshData()
+            lifecycleScope.launch(Dispatchers.IO) {
+                DDLRepository().syncNow()
+                refreshData()
+            }
         }
 
         // 添加滑动特效
@@ -434,11 +502,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                 when (direction) {
                     ItemTouchHelper.LEFT -> {
-                        triggerVibration(this@MainActivity, 200)
+                        GlobalUtils.triggerVibration(this@MainActivity, 200)
                         adapter.onSwipeLeft(viewHolder.adapterPosition)
                     }
                     ItemTouchHelper.RIGHT -> {
-                        triggerVibration(this@MainActivity, 100)
+                        GlobalUtils.triggerVibration(this@MainActivity, 100)
                         adapter.onSwipeRight(viewHolder.adapterPosition)
                     }
                 }
@@ -557,11 +625,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         searchOverlay = findViewById(R.id.searchOverlay)
         searchInputLayout = findViewById(R.id.searchInputLayout)
         searchEditText = findViewById(R.id.searchEditText)
-        bottomAppBar = findViewById(R.id.bottomAppBar)
 
-        // 底部 AppBar 的搜索图标点击事件：显示搜索覆盖层
+        bottomAppBar.navigationIcon = if (GlobalUtils.deepSeekEnable)
+            ContextCompat.getDrawable(this, R.drawable.ic_deepseek)
+        else null
         bottomAppBar.setNavigationOnClickListener {
-            showSearchOverlay()
+            showAgentOverlay()
         }
 
         searchEditText.addTextChangedListener(object : TextWatcher {
@@ -631,7 +700,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 }
                 R.id.delete -> {
                     if (adapter.selectedPositions.isNotEmpty()) {
-                        triggerVibration(this@MainActivity, 200)
+                        GlobalUtils.triggerVibration(this@MainActivity, 200)
                         MaterialAlertDialogBuilder(this@MainActivity)
                             .setTitle(R.string.alert_delete_title)
                             .setMessage(R.string.alert_delete_message)
@@ -644,7 +713,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 val positionsToDelete = adapter.selectedPositions.toList().sortedDescending()
                                 for (position in positionsToDelete) {
                                     val item = adapter.itemList[position]
-                                    databaseHelper.deleteDDL(item.id)
+                                    DDLRepository().deleteDDL(item.id)
                                     DeadlineAlarmScheduler.cancelAlarm(applicationContext, item.id)
                                 }
                                 viewModel.loadData(currentType)
@@ -668,7 +737,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 R.id.done -> {
                     if (adapter.selectedPositions.isNotEmpty()) {
                         if (currentType == DeadlineType.HABIT) {
-                            triggerVibration(this@MainActivity, 100)
+                            GlobalUtils.triggerVibration(this@MainActivity, 100)
                             val positionsToUpdate = adapter.selectedPositions.toList()
                             for (position in positionsToUpdate) {
                                 val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
@@ -686,13 +755,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                             updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                             true
                         } else {
-                            triggerVibration(this@MainActivity, 100)
+                            GlobalUtils.triggerVibration(this@MainActivity, 100)
                             val positionsToUpdate = adapter.selectedPositions.toList()
                             for (position in positionsToUpdate) {
                                 val item = adapter.itemList[position]
                                 item.isCompleted = true
                                 item.completeTime = LocalDateTime.now().toString()
-                                databaseHelper.updateDDL(item)
+                                DDLRepository().updateDDL(item)
                             }
                             viewModel.loadData(currentType)
                             Toast.makeText(
@@ -721,7 +790,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                             val item = adapter.itemList[position]
                             if (item.isCompleted) {
                                 item.isArchived = true
-                                databaseHelper.updateDDL(item)
+                                DDLRepository().updateDDL(item)
                                 count++
                             }
                         }
@@ -749,7 +818,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         for (position in positionsToUpdate) {
                             val item = adapter.itemList[position]
                             item.isStared = !item.isStared
-                            databaseHelper.updateDDL(item)
+                            DDLRepository().updateDDL(item)
                             count++
                         }
                         viewModel.loadData(currentType)
@@ -833,7 +902,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         dataOverlay = findViewById(R.id.dataOverlay)
         refreshIndicator = findViewById(R.id.refreshIndicator)
-        cloudButton = findViewById(R.id.cloudButton)
+        searchButton = findViewById(R.id.searchButton)
 
         swipeRefreshLayout.setColorSchemeColors(
             getThemeColor(androidx.appcompat.R.attr.colorPrimary),
@@ -873,50 +942,53 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             recyclerView.smoothScrollToPosition(0)
         }
 
-        decideCloudStatus()
-        cloudButton.setOnClickListener {
-            val dialogView = layoutInflater.inflate(R.layout.dialog_cloud_settings, null)
-            val switch = dialogView.findViewById<MaterialSwitch>(R.id.cloudSwitch)
-            val inputServer = dialogView.findViewById<TextInputEditText>(R.id.inputServer)
-            val inputPort = dialogView.findViewById<TextInputEditText>(R.id.inputPort)
-            val inputToken = dialogView.findViewById<TextInputEditText>(R.id.inputToken)
-
-            // 初始化值
-            switch.isChecked = GlobalUtils.cloudSyncEnable
-            inputServer.setText(GlobalUtils.cloudSyncServer ?: "")
-            inputPort.setText(GlobalUtils.cloudSyncPort.toString())
-            inputToken.setText(GlobalUtils.cloudSyncConstantToken ?: "")
-
-            MaterialAlertDialogBuilder(this@MainActivity)
-                .setTitle("云服务设置")
-                .setView(dialogView)
-                .setPositiveButton(R.string.save) { _, _ ->
-                    GlobalUtils.cloudSyncEnable = switch.isChecked
-                    GlobalUtils.cloudSyncServer = inputServer.text?.toString()
-                    GlobalUtils.cloudSyncPort = inputPort.text?.toString()?.toIntOrNull()?:5000
-                    GlobalUtils.cloudSyncConstantToken = inputToken.text?.toString()
-                    WebUtils.init()
-                    decideCloudStatus()
-                }
-                .setNegativeButton(R.string.cancel, null)
-                .show()
+        searchButton.setOnClickListener {
+            showSearchOverlay()
         }
 
         addEventButton.stateListAnimator = null
 
         setupTabs()
 
-        checkForUpdates()
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val info = UpdateManager.fetchUpdateInfo(this@MainActivity)
+                Log.d("UpdateInfo", info.toString())
+                if (UpdateManager.isNewer(info.currentVersion, info.latestVersion)) {
+                    withContext(Dispatchers.Main) {
+                        showUpdatePrompt(info)
+                    }
+                }
+            } catch (e: Exception) {
+                // 忽略错误或者 log
+                Log.w("UpdateInfo", e)
+            }
+        }
+
+        clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        clipboardManager.addPrimaryClipChangedListener(clipListener)
 
         if (!GlobalUtils.permissionSetupDone) {
             showFirstTimeSetupDialog()
         } else {
             runPostSetupInitialization()
         }
+
+        if (intent?.getBooleanExtra("EXTRA_SHOW_SEARCH", false) == true) {
+            showSearchOverlay()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra("EXTRA_SHOW_SEARCH", false) == true) {
+            showSearchOverlay()
+        }
     }
 
     override fun onDestroy() {
         handler.removeCallbacks(autoRefreshRunnable)
+        clipboardManager.removePrimaryClipChangedListener(clipListener)
         super.onDestroy()
     }
 
@@ -924,6 +996,27 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         // 触发小组件更新
         updateWidget()
         super.onStop()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && !hasCheckedInitialClipboard) {
+            hasCheckedInitialClipboard = true
+            checkClipboardAndPrompt()
+        }
+    }
+
+    private fun checkClipboardAndPrompt() {
+        if (!GlobalUtils.clipboardEnable) return
+
+        clipboardManager.primaryClip?.let { clip ->
+            if (clip.itemCount > 0) {
+                val text = clip.getItemAt(0).coerceToText(this).toString()
+                if (text.isNotBlank()) {
+                    triggerFeatureBasedOnClipboard(text)
+                }
+            }
+        }
     }
 
     private fun updateWidget() {
@@ -936,6 +1029,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val largeWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this, LargeDeadlineWidget::class.java))
         for (largeWidgetId in largeWidgetIds) {
             LargeDeadlineWidget.updateWidget(this, appWidgetManager, largeWidgetId)
+        }
+
+        val habitMiniWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(this,
+            HabitMiniWidget::class.java))
+        for (habitMiniWidgetId in habitMiniWidgetIds) {
+            HabitMiniWidget.updateWidget(this, appWidgetManager, habitMiniWidgetId)
         }
     }
 
@@ -957,71 +1056,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             titleBar.textSize = 32f // 设置为默认大小
             excitementText.visibility = TextView.GONE
         }
-    }
-
-    private fun checkForUpdates() {
-        // GitHub Releases API 地址
-        val url = "https://api.github.com/repos/AritxOnly/Deadliner/releases/latest"
-
-        // 创建 OkHttp 客户端
-        val client = OkHttpClient()
-
-        // 创建请求
-        val request = Request.Builder()
-            .url(url)
-            .get()
-            .build()
-
-        // 执行请求
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                e.printStackTrace() // 网络请求失败时的处理
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful) {
-                    response.body?.string()?.let { responseBody ->
-                        val json = JSONObject(responseBody)
-
-                        // 获取最新版本号
-                        val latestVersion = json.getString("tag_name") // GitHub 上的版本标签
-                        val releaseNotesMarkdown = json.getString("body") // 更新说明
-                        val assetsArray = json.getJSONArray("assets")
-
-                        val markwon = Markwon.create(this@MainActivity)
-                        val releaseNotes = markwon.toMarkdown(releaseNotesMarkdown)
-
-                        val downloadUrl: String?
-                        if (assetsArray.length() > 0) {
-                            downloadUrl = assetsArray.optJSONObject(0)?.optString("browser_download_url", "")
-                            if (!downloadUrl.isNullOrEmpty()) {
-                                Log.d("DownloadURL", "$downloadUrl")
-                            } else {
-                                Log.e("DownloadURL", "downloadUrl null")
-                            }
-                        } else {
-                            Log.e("DownloadURL", "assets null")
-                            return@let
-                        }
-
-                        // 获取本地版本号
-                        val localVersion =
-                            packageManager.getPackageInfo(packageName, 0).versionName ?: return@let
-
-                        // 比较版本号
-                        if (isNewVersionAvailable(localVersion, latestVersion)) {
-                            runOnUiThread {
-                                downloadUrl?.let {
-                                    showUpdateDialog(latestVersion, releaseNotes,
-                                        it
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        })
     }
 
     /**
@@ -1114,7 +1148,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         } else {
             ""
         }
-        databaseHelper.updateDDL(item)
+        DDLRepository().updateDDL(item)
         viewModel.loadData(currentType)
         if (item.isCompleted) {
             if (isFireworksAnimEnable) { konfettiViewMain.start(PartyPresets.festive()) }
@@ -1135,7 +1169,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
             .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
                 val item = adapter.itemList[position]
-                databaseHelper.deleteDDL(item.id)
+                DDLRepository().deleteDDL(item.id)
                 DeadlineAlarmScheduler.cancelAlarm(applicationContext, item.id)
                 viewModel.loadData(currentType)
                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
@@ -1154,25 +1188,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             View.VISIBLE
         } else {
             View.GONE
-        }
-    }
-
-    /*
-    * 震动效果📳
-    */
-    fun triggerVibration(context: Context, duration: Long = 100) {
-        if (!GlobalUtils.vibration) {
-            return
-        }
-
-        val vibrator = context.getSystemService(VIBRATOR_SERVICE) as Vibrator
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // API 26 及以上版本使用 VibrationEffect
-            vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            // API 25 及以下版本使用过时的 vibrate 方法
-            vibrator.vibrate(duration)
         }
     }
 
@@ -1380,7 +1395,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     val firstPosition = adapter.selectedPositions.first()
                     val clickedItem = adapter.itemList[firstPosition]
                     val editDialog = EditDDLFragment(clickedItem) { updatedDDL ->
-                        databaseHelper.updateDDL(updatedDDL)
+                        DDLRepository().updateDDL(updatedDDL)
                         viewModel.loadData(currentType)
                         // 清除多选状态
                         adapter.selectedPositions.clear()
@@ -1432,9 +1447,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
             }
         } else {
-            bottomAppBar.setNavigationIcon(R.drawable.ic_search)
+            bottomAppBar.navigationIcon = if (GlobalUtils.deepSeekEnable)
+                ContextCompat.getDrawable(this, R.drawable.ic_deepseek)
+            else null
             bottomAppBar.setNavigationOnClickListener {
-                showSearchOverlay()
+                showAgentOverlay()
             }
         }
     }
@@ -1709,7 +1726,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
      **************************************/
     private fun restoreAllAlarms() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val allDDLs = databaseHelper.getAllDDLs()
+            val allDDLs = DDLRepository().getAllDDLs()
             allDDLs.filter { !it.isCompleted }.forEach { ddl ->
                 DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, ddl)
             }
@@ -1748,25 +1765,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             data = Uri.fromParts("package", packageName, null)
         }
         startActivity(intent)
-    }
-
-    private fun decideCloudStatus() {
-        val server = GlobalUtils.cloudSyncServer
-        val token = GlobalUtils.cloudSyncConstantToken
-        val enable = GlobalUtils.cloudSyncEnable
-
-        if (!enable || server == null || token == null) {
-            cloudButton.setImageResource(R.drawable.ic_cloud_off)
-            return
-        }
-
-        // 开启协程检查 Web 是否可用
-        lifecycleScope.launch {
-            val available = WebUtils.isWebAvailable()
-            cloudButton.setImageResource(
-                if (available) R.drawable.ic_cloud else R.drawable.ic_cloud_off
-            )
-        }
     }
 
     private fun Float.dpToPx(): Float =
@@ -1882,7 +1880,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     private fun onRetroCheckSuccess(habitItem: DDLItem, habitMeta: HabitMetaData, retroDate: LocalDate) {
-        triggerVibration(this@MainActivity, 100)
+        GlobalUtils.triggerVibration(this@MainActivity, 100)
 
         val count = habitItem.habitCount
         val frequency = habitMeta.frequency
@@ -1927,7 +1925,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     note = revertedNoteJson,
                     habitCount = habitItem.habitCount - if (shouldPlusOne) 1 else 0
                 )
-                databaseHelper.updateDDL(revertedHabit)
+                DDLRepository().updateDDL(revertedHabit)
                 viewModel.loadData(currentType)
             }.setAnchorView(bottomAppBar)
 
@@ -1941,6 +1939,48 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
         }
         snackbar.show()
+    }
+
+    private fun showAgentOverlay(initialText: String = "") {
+        val composeOverlay = findViewById<ComposeView>(R.id.agentCompose)
+
+        composeOverlay.setViewCompositionStrategy(
+            ViewCompositionStrategy.DisposeOnDetachedFromWindow
+        )
+
+        composeOverlay.visibility = View.VISIBLE
+
+        composeOverlay.setContent {
+            DeadlinerTheme {
+                DeepseekOverlay(
+                    initialText = initialText,
+                    onDismiss = {
+                        composeOverlay.disposeComposition()
+                        composeOverlay.visibility = View.GONE
+                    },
+                    onAddDDL = { intent ->
+                        addDDLLauncher.launch(intent)
+                    }
+                )
+            }
+        }
+    }
+
+    private fun showUpdatePrompt(info: UpdateInfo) {
+        val markwon = Markwon.create(this@MainActivity)
+        val releaseNotes = markwon.toMarkdown(info.releaseNotes)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("检测到新版本 ${info.latestVersion}")
+            .setMessage(releaseNotes)
+            .setPositiveButton("去更新") { _, _ ->
+                val intent = Intent(this, SettingsActivity::class.java).apply {
+                    putExtra(EXTRA_INITIAL_ROUTE, SettingsRoute.Update.route)
+                }
+                startActivity(intent)
+            }
+            .setNegativeButton("稍后再说", null)
+            .show()
     }
 }
 

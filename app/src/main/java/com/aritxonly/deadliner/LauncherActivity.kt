@@ -15,7 +15,6 @@ class LauncherActivity : AppCompatActivity() {
         DynamicColors.applyToActivitiesIfAvailable(application)
 
         GlobalUtils.init(this)
-        WebUtils.init()
 
         if (GlobalUtils.showIntroPage) {
             if (GlobalUtils.firstRun) GlobalUtils.timeNull = LocalDateTime.now()

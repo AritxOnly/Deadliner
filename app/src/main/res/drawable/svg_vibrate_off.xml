@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+
+  <!-- 外框 -->
+  <path
+      android:pathData="M313.44,854.7q-33.49,0 -56.64,-23.28t-23.15,-55.94v-590.39q0,-33.49 23.15,-56.64t56.64,-23.15h334.69q33.49,0 56.64,23.15 23.14,23.15 23.14,56.64v590.39q0,32.66 -23.14,55.94 -23.15,23.28 -56.64,23.28L313.44,854.7Z"
+      android:fillColor="?attr/colorOnSurfaceVariant" />
+
+  <!-- 空白中间矩形（白底）-->
+  <path
+      android:pathData="M648.13,775.48v-590.39L313.44,185.09v590.39h334.69Z"
+      android:fillColor="?attr/colorSurfaceVariant" />
+
+  <!-- 顶部小圆点 -->
+  <path
+      android:pathData="M479,331.87q13.92,0 23.66,-9.73 9.73,-9.74 9.73,-23.66t-9.73,-23.66q-9.74,-9.73 -23.66,-9.73t-23.66,9.73q-9.73,9.74 -9.73,23.66t9.73,23.66q9.74,9.73 23.66,9.73Z"
+      android:fillColor="?attr/colorOnSurfaceVariant" />
+</vector>

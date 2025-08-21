@@ -30,10 +30,13 @@ import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import com.aritxonly.deadliner.localutils.GlobalUtils.toDateTimeString
 import com.aritxonly.deadliner.calendar.CalendarHelper
+import com.aritxonly.deadliner.data.DDLRepository
+import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.CalendarEvent
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.GeneratedDDL
 import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.toJson
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -43,8 +46,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -54,7 +55,7 @@ import java.util.*
 @SuppressLint("SimpleDateFormat")
 class AddDDLActivity : AppCompatActivity() {
 
-    private lateinit var databaseHelper: DatabaseHelper
+    private lateinit var repo: DDLRepository
     private lateinit var ddlNameEditText: EditText
     private lateinit var startTimeCard: MaterialCardView
     private lateinit var endTimeCard: MaterialCardView
@@ -94,6 +95,8 @@ class AddDDLActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_ddl)
 
+        val generatedDDL = intent.getParcelableExtra<GeneratedDDL>("EXTRA_GENERATE_DDL")
+
         DynamicColors.applyToActivitiesIfAvailable(this.application)
         DynamicColors.applyToActivityIfAvailable(this)
 
@@ -107,7 +110,7 @@ class AddDDLActivity : AppCompatActivity() {
 
         selectedPage = intent.getIntExtra("EXTRA_CURRENT_TYPE", 0)
 
-        databaseHelper = DatabaseHelper.getInstance(applicationContext)
+        repo = DDLRepository()
         ddlNameEditText = findViewById(R.id.ddlNameEditText)
         startTimeCard = findViewById(R.id.startTimeCard) // MaterialCardView
         endTimeCard = findViewById(R.id.endTimeCard) // MaterialCardView
@@ -234,6 +237,12 @@ class AddDDLActivity : AppCompatActivity() {
 
         val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
         habitNoteHint.text = formattedNote
+
+        ddlNameEditText.setText(generatedDDL?.name)
+        endTime = generatedDDL?.dueTime
+        if (generatedDDL != null)
+            endTimeContent.text = formatLocalDateTime(generatedDDL.dueTime)
+        ddlNoteEditText.setText(generatedDDL?.note)
     }
 
     private fun save(toCalendar: Boolean) {
@@ -255,7 +264,7 @@ class AddDDLActivity : AppCompatActivity() {
                 if (endTime == null) return
 
                 // 保存到数据库
-                val ddlId = databaseHelper.insertDDL(
+                val ddlId = repo.insertDDL(
                     ddlName,
                     startTime.toString(),
                     endTime.toString(),
@@ -263,7 +272,7 @@ class AddDDLActivity : AppCompatActivity() {
                     calendarEventId = calendarEventId
                 )
 
-                databaseHelper.getDDLById(ddlId)?.let { item ->
+                repo.getDDLById(ddlId)?.let { item ->
                     if (GlobalUtils.deadlineNotification)
                         DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, item)
                     if (toCalendar) {
@@ -272,8 +281,7 @@ class AddDDLActivity : AppCompatActivity() {
                             try {
                                 val eventId = calendarHelper.insertEvent(item)
                                 item.calendarEventId = eventId
-                                val databaseHelper = DatabaseHelper.getInstance(applicationContext)
-                                databaseHelper.updateDDL(item)
+                                DDLRepository().updateDDL(item)
                                 Toast.makeText(this@AddDDLActivity, "已添加至日历", Toast.LENGTH_SHORT).show()
                             } catch (e: Exception) {
                                 Log.e("Calendar", e.toString())
@@ -286,7 +294,7 @@ class AddDDLActivity : AppCompatActivity() {
                 setResult(RESULT_OK)
                 finishAfterTransition() // 返回 MainActivity
             } else {
-                databaseHelper.insertDDL(
+                repo.insertDDL(
                     ddlName,
                     startTime.toString(),
                     endTime.toString(),

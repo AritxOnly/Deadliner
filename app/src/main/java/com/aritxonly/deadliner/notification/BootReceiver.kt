@@ -3,7 +3,7 @@ package com.aritxonly.deadliner.notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.aritxonly.deadliner.DatabaseHelper
+import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.localutils.GlobalUtils
 
