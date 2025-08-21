@@ -12,6 +12,7 @@ class MyApp : Application() {
         GlobalUtils.init(this)
         KeystorePreferenceManager.createKeyIfNeeded()
         DeepSeekUtils.init(this)
+        AppSingletons.init(this)
 
         if (GlobalUtils.embeddedActivities) {
             val rules = RuleController.parseRules(this, R.xml.tablet_split_config)

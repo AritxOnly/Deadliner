@@ -349,6 +349,7 @@ class DatabaseHelper private constructor(context: Context) :
     }
 
     // 序列化 ddl_items 指定行为 JSON（作为变更快照）
+    private val gson = com.google.gson.Gson()
     private fun snapshotOf(localId: Long): String {
         val db = readableDatabase
         db.rawQuery("""
@@ -358,25 +359,23 @@ class DatabaseHelper private constructor(context: Context) :
         FROM $TABLE_NAME WHERE $COLUMN_ID=?
     """.trimIndent(), arrayOf(localId.toString())).use { c ->
             if (!c.moveToFirst()) return "{}"
-            fun s(k:String,v:String?)="\"$k\":${if(v==null) "null" else "\"${v.replace("\"","\\\"")}\""}"
-            return """
-        {
-          ${s("id", c.getLong(0).toString())},
-          ${s("name", c.getString(1))},
-          ${s("start_time", c.getString(2))},
-          ${s("end_time", c.getString(3))},
-          "is_completed": ${c.getInt(4)},
-          ${s("complete_time", c.getString(5))},
-          ${s("note", c.getString(6))},
-          "is_archived": ${c.getInt(7)},
-          "is_stared": ${c.getInt(8)},
-          ${s("type", c.getString(9))},
-          "habit_count": ${c.getInt(10)},
-          "habit_total_count": ${c.getInt(11)},
-          "calendar_event_id": ${c.getInt(12)},
-          ${s("timestamp", c.getString(13))}
-        }
-        """.trimIndent()
+            val obj = com.google.gson.JsonObject().apply {
+                addProperty("id", c.getLong(0))
+                addProperty("name", c.getString(1))
+                addProperty("start_time", c.getString(2))
+                addProperty("end_time", c.getString(3))
+                addProperty("is_completed", c.getInt(4))
+                addProperty("complete_time", c.getString(5))
+                addProperty("note", c.getString(6))
+                addProperty("is_archived", c.getInt(7))
+                addProperty("is_stared", c.getInt(8))
+                addProperty("type", c.getString(9))
+                addProperty("habit_count", c.getInt(10))
+                addProperty("habit_total_count", c.getInt(11))
+                addProperty("calendar_event_id", c.getInt(12))
+                addProperty("timestamp", c.getString(13))
+            }
+            return gson.toJson(obj) // ← 紧凑单行，无换行
         }
     }
 
@@ -546,6 +545,8 @@ class DatabaseHelper private constructor(context: Context) :
                             }
                         }
                     }
+
+                    else -> {}
                 }
             } finally {
             } }

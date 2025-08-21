@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner.data
 
+import android.util.Log
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.model.ChangeLine
 import com.aritxonly.deadliner.model.Ver
@@ -25,6 +26,7 @@ class SyncService(
 
     // —— 一次完整同步：先上传再拉取 —— //
     suspend fun syncOnce(): Boolean {
+        Log.d("WebDAV", "syncOnce")
         val up = uploadLocalJournal()
         val down = pullRemoteTail()
         return up && down
@@ -93,23 +95,41 @@ class SyncService(
         true
     }
 
-    // 拉取：从已知偏移用 Range 拉取远端新增尾部并应用
     private suspend fun pullRemoteTail(): Boolean = withContext(Dispatchers.IO) {
         val state = db.getSyncState()
         val file = changesFileName()
 
-        val head = web.head(file)
-        if (head.first == 404) return@withContext true
+        val (code, etag, _) = web.head(file)
+        if (code == 404) {
+//            Log.d("Sync","$file not found; nothing to pull")
+            return@withContext true
+        }
 
-        val offset = state.changesOffset
-        val (bytes, etagAndNewOffset) = web.getRange(file, offset)
+        // ETag 没变 -> 远端文件未变化，直接返回
+        if (etag != null && state.changesEtag != null && etag == state.changesEtag) {
+//            Log.d("Sync","etag unchanged ($etag), skip pulling")
+            return@withContext true
+        }
+
+        // 全量 GET，再回放
+        val (bytes, etag2) = web.getBytes(file)
         if (bytes.isEmpty()) return@withContext true
 
         val text = bytes.toString(StandardCharsets.UTF_8)
-        val lines = text.split('\n').filter { it.isNotBlank() }
-        for (ln in lines) {
+        applyNdjsonTextAll(text)
+
+        // 把偏移直接置为当前长度（方便后续切回增量时使用）
+        db.updateChangesPointer(etag2 ?: etag, bytes.size.toLong())
+//        Log.d("Sync","full pull done: new etag=${etag2 ?: etag}, new offset=${bytes.size}")
+        true
+    }
+
+    private fun applyNdjsonTextAll(text: String) {
+        val parser = com.google.gson.JsonStreamParser(text)
+        var applied = 0
+        while (parser.hasNext()) {
             try {
-                val jo = com.google.gson.JsonParser.parseString(ln).asJsonObject
+                val jo = parser.next().asJsonObject
                 val op = jo.get("op").asString
                 val uid = jo.get("uid").asString
                 val verObj = jo.getAsJsonObject("ver")
@@ -119,14 +139,35 @@ class SyncService(
                     dev = verObj.get("dev").asString
                 )
                 val snap = if (jo.has("doc") && !jo.get("doc").isJsonNull) jo.get("doc").toString() else null
+
+                // 关闭本地记账，避免形成回环
                 db.applyRemoteChange(ChangeLine(op = op, uid = uid, snapshot = snap, ver = ver))
-            } catch (_: Exception) {
-                // 单行解析失败时忽略继续
+                applied++
+            } catch (e: Exception) {
+                Log.w("Sync", "parse one json failed: ${e.message}")
             }
         }
+//        Log.d("Sync", "applied=$applied")
+    }
 
-        val (remoteEtag, newOffset) = etagAndNewOffset
-        db.updateChangesPointer(remoteEtag, newOffset)
-        true
+    suspend fun debugDumpCurrentMonth(): Unit = withContext(Dispatchers.IO) {
+        val file = changesFileName()
+        val (bytes, etag) = web.getBytes(file) // 全量
+        val text = bytes.toString(StandardCharsets.UTF_8)
+        val lines = text.lines().filter { it.isNotBlank() }
+//        android.util.Log.d("SyncDbg","dump $file etag=$etag lines=${lines.size}")
+        lines.take(5).forEachIndexed { i, ln -> android.util.Log.d("SyncDbg","head[$i] $ln") }
+        if (lines.size > 5) android.util.Log.d("SyncDbg","...")
+        lines.takeLast(5).forEachIndexed { i, ln -> android.util.Log.d("SyncDbg","tail[${lines.size-5+i}] $ln") }
+    }
+
+    fun debugResetOffsetToZero() {
+        db.updateChangesPointer(etag = null, offset = 0L)
+        android.util.Log.d("SyncDbg","offset reset to 0")
+    }
+
+    fun debugLogLocalState() {
+        val st = db.getSyncState()
+        android.util.Log.d("SyncDbg","state device=${st.deviceId} lastSeq=${st.lastUploadedSeq} etag=${st.changesEtag} offset=${st.changesOffset}")
     }
 }

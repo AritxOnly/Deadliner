@@ -119,14 +119,14 @@
     <string name="settings_support_nearby_notification">开启后，将在任务到期前12小时提醒</string>
 
     <string name="settings_enable_webDAV">启用WebDAV</string>
-    <string name="settings_webDAV_description">WebDAV 服务为用户提供云端托管 Deadline 数据的平台。\n由于我们本身并不提供云服务，需要用户根据 API 自行组建服务器，我们也提供 Deadliner-WebDAV 项目作为示例实现。</string>
+    <string name="settings_webDAV_description">WebDAV 服务为用户提供接入云端托管平台的服务。\n由于我们本身并不提供云服务，需要用户注册任意支持 WebDAV 服务的云盘账户。账号与密码将在本地存储，不会上传到云端。</string>
     <string name="settings_web_section">服务器设置</string>
-    <string name="settings_web_host">服务器IP或域名</string>
-    <string name="settings_web_host_fault">服务器IP或域名需要以https://或http://开头！</string>
+    <string name="settings_web_host">服务器URL</string>
+    <string name="settings_web_host_fault">服务器URL需要以https://或http://开头！</string>
     <string name="settings_web_host_success">设置WebDAV服务器成功！</string>
     <string name="settings_web_host_incomplete">请填写所有字段！</string>
-    <string name="settings_web_port">服务器端口</string>
-    <string name="settings_web_token">服务器令牌(用于与后端校验身份)</string>
+    <string name="settings_web_user">用户名</string>
+    <string name="settings_web_pass">密码</string>
 
     <string name="settings_enable_deepseek">启用DeepSeek</string>
     <string name="settings_deepseek_description">Deadliner 接入 DeepSeek 为用户提供从长段文本中提取任务信息的能力，从而帮助用户快速添加任务。\n用户需要登录 https://platform.deepseek.com 获取自己的 API Key</string>

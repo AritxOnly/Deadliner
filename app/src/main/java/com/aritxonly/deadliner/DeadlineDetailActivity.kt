@@ -99,6 +99,7 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.calendar.CalendarHelper
+import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.AppColorScheme
@@ -186,9 +187,7 @@ class DeadlineDetailActivity : AppCompatActivity() {
 
         setSystemBarColors(colorScheme.surface, isLightColor(colorScheme.surface), colorScheme.surface)
 
-        val databaseHelper = DatabaseHelper.getInstance(applicationContext)
-
-        val latestDeadline = databaseHelper.getDDLById(initialDeadline.id) ?: initialDeadline
+        val latestDeadline = DDLRepository().getDDLById(initialDeadline.id) ?: initialDeadline
 
         setContent {
             CustomDeadlinerTheme(
@@ -208,7 +207,7 @@ class DeadlineDetailActivity : AppCompatActivity() {
                         onClose = { finish() },
                         onEdit = {
                             val editDialog = EditDDLFragment(currentDeadline) { updatedDDL ->
-                                databaseHelper.updateDDL(updatedDDL)
+                                DDLRepository().updateDDL(updatedDDL)
 
                                 currentDeadline = updatedDDL
                             }
@@ -216,8 +215,8 @@ class DeadlineDetailActivity : AppCompatActivity() {
                         },
                         onToggleStar = { isStared ->
                             currentDeadline.isStared = isStared
-                            databaseHelper.updateDDL(currentDeadline)
-                            currentDeadline = databaseHelper.getDDLById(currentDeadline.id) ?: currentDeadline
+                            DDLRepository().updateDDL(currentDeadline)
+                            currentDeadline = DDLRepository().getDDLById(currentDeadline.id) ?: currentDeadline
                         }
                     ) {
                         finishAfterTransition()
@@ -374,8 +373,7 @@ fun DeadlineDetailScreen(
                         } else {
                             Toast.makeText(context, R.string.toast_definished, Toast.LENGTH_SHORT).show()
                         }
-                        val databaseHelper = DatabaseHelper.getInstance(applicationContext)
-                        databaseHelper.updateDDL(deadline)
+                        DDLRepository().updateDDL(deadline)
                     }
                     "归档" -> {
                         deadline.isArchived = true
@@ -393,8 +391,7 @@ fun DeadlineDetailScreen(
                             .setNegativeButton(R.string.cancel) { _, _ ->
 
                             }.setPositiveButton(R.string.accept) { dialog, _ ->
-                                val databaseHelper = DatabaseHelper.getInstance(applicationContext)
-                                databaseHelper.deleteDDL(deadline.id)
+                                DDLRepository().deleteDDL(deadline.id)
                                 DeadlineAlarmScheduler.cancelAlarm(applicationContext, deadline.id)
                                 Toast.makeText(context, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                                 finishActivity()
@@ -409,8 +406,7 @@ fun DeadlineDetailScreen(
                             try {
                                 val eventId = calendarHelper.insertEvent(deadline)
                                 deadline.calendarEventId = eventId
-                                val databaseHelper = DatabaseHelper.getInstance(applicationContext)
-                                databaseHelper.updateDDL(deadline)
+                                DDLRepository().updateDDL(deadline)
                                 Toast.makeText(context, "已添加至日历", Toast.LENGTH_SHORT).show()
                             } catch (e: Exception) {
                                 Log.e("Calendar", e.toString())

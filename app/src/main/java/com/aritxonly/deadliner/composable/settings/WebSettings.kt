@@ -1,11 +1,8 @@
 package com.aritxonly.deadliner.composable.settings
 
-import ApkDownloaderInstaller
-import android.provider.Settings
-import android.widget.Space
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -21,22 +18,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.aritxonly.deadliner.AppSingletons
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.composable.SvgCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.web.WebUtils
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -44,11 +42,12 @@ fun WebSettingsScreen(
     navigateUp: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var webEnabled by remember { mutableStateOf(GlobalUtils.cloudSyncEnable) }
-    var serverHost by remember { mutableStateOf(GlobalUtils.cloudSyncServer) }
-    var serverPort by remember { mutableIntStateOf(GlobalUtils.cloudSyncPort) }
-    var serverToken by remember { mutableStateOf(GlobalUtils.cloudSyncConstantToken) }
+    var serverBase by remember { mutableStateOf(GlobalUtils.webDavBaseUrl) }
+    var serverUser by remember { mutableStateOf(GlobalUtils.webDavUser) }
+    var serverPass by remember { mutableStateOf(GlobalUtils.webDavPass) }
 
     val hostFaultHint = stringResource(R.string.settings_web_host_fault)
     val hostSuccessHint = stringResource(R.string.settings_web_host_success)
@@ -58,30 +57,65 @@ fun WebSettingsScreen(
         GlobalUtils.cloudSyncEnable = it
         webEnabled = it
     }
-    val onHostChange: (String) -> Unit = {
-        serverHost = it
+    val onBaseChange: (String) -> Unit = {
+        serverBase = it
     }
-    val onPortChange: (String) -> Unit = {
-        serverPort = if (it.isEmpty() || it.isBlank()) {
-            5000
-        } else {
-            it.toIntOrNull()?:5000
-        }
+    val onUserChange: (String) -> Unit = {
+        serverUser = it
     }
-    val onTokenChange: (String) -> Unit = {
-        serverToken = it
+    val onPassChange: (String) -> Unit = {
+        serverPass = it
     }
-    val onSaveButtonClick: () -> Unit = {
-        if (serverHost.isNullOrEmpty() || serverToken.isNullOrEmpty()) {
+
+    val onSaveButtonClick: () -> Unit = onSaveButtonClick@{
+        if (serverBase.isEmpty() || serverUser.isEmpty() || serverPass.isEmpty()) {
             Toast.makeText(context, hostIncompleteHint, Toast.LENGTH_SHORT).show()
-        } else if (serverHost?.startsWith("https://") == true || serverHost?.startsWith("http://") == true) {
-            GlobalUtils.cloudSyncServer = serverHost
-            GlobalUtils.cloudSyncPort = serverPort
-            GlobalUtils.cloudSyncConstantToken = serverToken
-            WebUtils.init()
-            Toast.makeText(context, hostSuccessHint, Toast.LENGTH_SHORT).show()
-        } else {
+            return@onSaveButtonClick
+        }
+        if (!(serverBase.startsWith("https://") || serverBase.startsWith("http://"))) {
             Toast.makeText(context, hostFaultHint, Toast.LENGTH_SHORT).show()
+            return@onSaveButtonClick
+        }
+
+        // 1) 本地保存配置
+        GlobalUtils.webDavBaseUrl = serverBase
+        GlobalUtils.webDavUser = serverUser
+        GlobalUtils.webDavPass = serverPass
+        AppSingletons.updateWeb()
+        Toast.makeText(context, hostSuccessHint, Toast.LENGTH_SHORT).show()
+
+        if (!webEnabled) return@onSaveButtonClick
+
+        // 2) 异步检测可用性 & 触发一次同步
+        scope.launch {
+            try {
+                Toast.makeText(context, "正在检测 WebDAV…", Toast.LENGTH_SHORT).show()
+
+                runCatching { AppSingletons.web.mkcol("Deadliner") }
+
+                // 检测：HEAD Deadliner/（不存在返回 404 也算可用，首次同步会创建）
+                val (code, _, _) = AppSingletons.web.head("Deadliner/")
+                val usable = when (code) {
+                    200, 204, 207, 404 -> true
+                    else -> false
+                }
+                if (!usable) {
+                    Log.e("WebDAV", code.toString())
+                    Toast.makeText(context, "WebDAV 连接失败（HTTP $code）", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+
+                Toast.makeText(context, "WebDAV 可用，开始同步…", Toast.LENGTH_SHORT).show()
+
+                val ok = AppSingletons.sync.syncOnce()
+                if (ok) {
+                    Toast.makeText(context, "同步完成 ✅", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "同步发生并发冲突，已自动重试/下次再试", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "同步失败：${e.message ?: "未知错误"}", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -135,22 +169,21 @@ fun WebSettingsScreen(
                         customColor = MaterialTheme.colorScheme.surface
                     ) {
                         RoundedTextField(
-                            value = serverHost ?: "",
-                            onValueChange = onHostChange,
+                            value = serverBase,
+                            onValueChange = onBaseChange,
                             hint = stringResource(R.string.settings_web_host)
                         )
 
                         RoundedTextField(
-                            value = serverPort.toString(),
-                            onValueChange = onPortChange,
-                            hint = stringResource(R.string.settings_web_port),
-                            keyboardType = KeyboardType.Number
+                            value = serverUser.toString(),
+                            onValueChange = onUserChange,
+                            hint = stringResource(R.string.settings_web_user)
                         )
 
                         RoundedTextField(
-                            value = serverToken ?: "",
-                            onValueChange = onTokenChange,
-                            hint = stringResource(R.string.settings_web_token),
+                            value = serverPass ?: "",
+                            onValueChange = onPassChange,
+                            hint = stringResource(R.string.settings_web_pass),
                             keyboardType = KeyboardType.Password,
                             isPassword = true
                         )

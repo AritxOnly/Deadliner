@@ -107,8 +107,10 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import com.aritxonly.deadliner.SettingsActivity.Companion.EXTRA_INITIAL_ROUTE
 import com.aritxonly.deadliner.composable.agent.DeepseekOverlay
+import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.data.MainViewModel
+import com.aritxonly.deadliner.data.SyncService
 import com.aritxonly.deadliner.data.ViewModelFactory
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.AppColorScheme
@@ -126,6 +128,7 @@ import com.aritxonly.deadliner.widgets.HabitMiniWidget
 import com.aritxonly.deadliner.widgets.LargeDeadlineWidget
 import com.aritxonly.deadliner.widgets.MultiDeadlineWidget
 import com.google.android.material.loadingindicator.LoadingIndicator
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.Period
@@ -366,7 +369,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
                         onRetroCheckSuccess(clickedItem, habitMeta, pickedDate)
 
-                        databaseHelper.updateDDL(updatedHabit)
+//                        databaseHelper.updateDDL(updatedHabit)
+                        DDLRepository().updateDDL(updatedHabit)
 
                         viewModel.loadData(viewModel.currentType)
                     }
@@ -440,7 +444,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                             note = revertedNoteJson,
                             habitCount = habitItem.habitCount - 1
                         )
-                        databaseHelper.updateDDL(revertedHabit)
+                        DDLRepository().updateDDL(revertedHabit)
                         viewModel.loadData(currentType)
                     }.setAnchorView(bottomAppBar)
 
@@ -462,7 +466,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         swipeRefreshLayout.setOnRefreshListener {
-            refreshData()
+            lifecycleScope.launch(Dispatchers.IO) {
+                DDLRepository().syncNow()
+                refreshData()
+            }
         }
 
         // 添加滑动特效
@@ -703,7 +710,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 val positionsToDelete = adapter.selectedPositions.toList().sortedDescending()
                                 for (position in positionsToDelete) {
                                     val item = adapter.itemList[position]
-                                    databaseHelper.deleteDDL(item.id)
+                                    DDLRepository().deleteDDL(item.id)
                                     DeadlineAlarmScheduler.cancelAlarm(applicationContext, item.id)
                                 }
                                 viewModel.loadData(currentType)
@@ -751,7 +758,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 val item = adapter.itemList[position]
                                 item.isCompleted = true
                                 item.completeTime = LocalDateTime.now().toString()
-                                databaseHelper.updateDDL(item)
+                                DDLRepository().updateDDL(item)
                             }
                             viewModel.loadData(currentType)
                             Toast.makeText(
@@ -780,7 +787,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                             val item = adapter.itemList[position]
                             if (item.isCompleted) {
                                 item.isArchived = true
-                                databaseHelper.updateDDL(item)
+                                DDLRepository().updateDDL(item)
                                 count++
                             }
                         }
@@ -808,7 +815,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         for (position in positionsToUpdate) {
                             val item = adapter.itemList[position]
                             item.isStared = !item.isStared
-                            databaseHelper.updateDDL(item)
+                            DDLRepository().updateDDL(item)
                             count++
                         }
                         viewModel.loadData(currentType)
@@ -1190,7 +1197,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         } else {
             ""
         }
-        databaseHelper.updateDDL(item)
+        DDLRepository().updateDDL(item)
         viewModel.loadData(currentType)
         if (item.isCompleted) {
             if (isFireworksAnimEnable) { konfettiViewMain.start(PartyPresets.festive()) }
@@ -1211,7 +1218,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
             .setPositiveButton(resources.getString(R.string.accept)) { dialog, _ ->
                 val item = adapter.itemList[position]
-                databaseHelper.deleteDDL(item.id)
+                DDLRepository().deleteDDL(item.id)
                 DeadlineAlarmScheduler.cancelAlarm(applicationContext, item.id)
                 viewModel.loadData(currentType)
                 Toast.makeText(this@MainActivity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
@@ -1437,7 +1444,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     val firstPosition = adapter.selectedPositions.first()
                     val clickedItem = adapter.itemList[firstPosition]
                     val editDialog = EditDDLFragment(clickedItem) { updatedDDL ->
-                        databaseHelper.updateDDL(updatedDDL)
+                        DDLRepository().updateDDL(updatedDDL)
                         viewModel.loadData(currentType)
                         // 清除多选状态
                         adapter.selectedPositions.clear()
@@ -1768,7 +1775,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
      **************************************/
     private fun restoreAllAlarms() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val allDDLs = databaseHelper.getAllDDLs()
+            val allDDLs = DDLRepository().getAllDDLs()
             allDDLs.filter { !it.isCompleted }.forEach { ddl ->
                 DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, ddl)
             }
@@ -1967,7 +1974,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     note = revertedNoteJson,
                     habitCount = habitItem.habitCount - if (shouldPlusOne) 1 else 0
                 )
-                databaseHelper.updateDDL(revertedHabit)
+                DDLRepository().updateDDL(revertedHabit)
                 viewModel.loadData(currentType)
             }.setAnchorView(bottomAppBar)
 

@@ -1,33 +1,24 @@
 package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.provider.ContactsContract.Data
 import android.transition.Fade
 import android.transition.Slide
-import android.util.Log
 import android.view.MotionEvent
-import android.view.ViewConfiguration
 import android.view.Window
 import android.widget.ImageButton
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
-import androidx.core.view.ViewConfigurationCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.get
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.aritxonly.deadliner.data.DatabaseHelper
+import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import java.time.Duration
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class ArchiveActivity : AppCompatActivity() {
 
@@ -36,7 +27,7 @@ class ArchiveActivity : AppCompatActivity() {
     private lateinit var clearAllButton: MaterialButton
 
     private lateinit var adapter: ArchiveAdapter
-    private lateinit var databaseHelper: DatabaseHelper
+    private lateinit var repo: DDLRepository
 
     private lateinit var rootView: ConstraintLayout
     private var initialY = 0f
@@ -68,9 +59,9 @@ class ArchiveActivity : AppCompatActivity() {
             finishAfterTransition()
         }
 
-        databaseHelper = DatabaseHelper.getInstance(applicationContext)
+        repo = DDLRepository()
 
-        adapter = ArchiveAdapter(databaseHelper.getAllDDLs(), this)
+        adapter = ArchiveAdapter(repo.getAllDDLs(), this)
         archiveRecyclerView.adapter = adapter
         archiveRecyclerView.layoutManager = LinearLayoutManager(this)
 
@@ -78,19 +69,19 @@ class ArchiveActivity : AppCompatActivity() {
             MaterialAlertDialogBuilder(this)
                 .setTitle("清除所有已完成的Deadlines？")
                 .setPositiveButton(resources.getString(R.string.accept)) { _, _ ->
-                    val itemList = databaseHelper.getAllDDLs()
+                    val itemList = repo.getAllDDLs()
                     val filteredList = itemList.filterNot { item ->
                         if (!item.isCompleted) return@filterNot true
                         item.isArchived = (!GlobalUtils.filterArchived(item)) || item.isArchived
-                        databaseHelper.updateDDL(item)
+                        repo.updateDDL(item)
                         !item.isArchived
                     }
 
                     for (item in filteredList) {
-                        databaseHelper.deleteDDL(item.id)
+                        repo.deleteDDL(item.id)
                     }
 
-                    adapter.itemList = databaseHelper.getAllDDLs()
+                    adapter.itemList = repo.getAllDDLs()
                     adapter.notifyDataSetChanged()
 
                     finishAfterTransition()

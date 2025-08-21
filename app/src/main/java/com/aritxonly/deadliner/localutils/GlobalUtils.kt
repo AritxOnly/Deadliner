@@ -18,6 +18,7 @@ import androidx.core.content.edit
 import androidx.fragment.app.FragmentManager
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
+import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
@@ -284,6 +285,24 @@ object GlobalUtils {
         get() = sharedPreferences.getBoolean("embedded_activities", true)
         set(value) {
             sharedPreferences.edit { putBoolean("embedded_activities", value) }
+        }
+
+    var webDavBaseUrl: String
+        get() = sharedPreferences.getString("webdav_base", "")?:""
+        set(value) {
+            sharedPreferences.edit { putString("webdav_base", value) }
+        }
+
+    var webDavUser: String
+        get() = sharedPreferences.getString("webdav_user", "")?:""
+        set(value) {
+            sharedPreferences.edit { putString("webdav_user", value) }
+        }
+
+    var webDavPass: String
+        get() = sharedPreferences.getString("webdav_pass", "")?:""
+        set(value) {
+            sharedPreferences.edit { putString("webdav_pass", value) }
         }
 
     object OverviewSettings {
@@ -596,7 +615,7 @@ object GlobalUtils {
 
         listener?.onCheckInSuccessGlobal(context, updatedHabit, habitMeta)
 
-        DatabaseHelper.getInstance(context).updateDDL(updatedHabit)
+        DDLRepository().updateDDL(updatedHabit)
     }
 
     fun triggerVibration(context: Context, duration: Long = 100) {

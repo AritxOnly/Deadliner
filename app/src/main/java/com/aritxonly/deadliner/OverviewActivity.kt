@@ -53,6 +53,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.composable.overview.DashboardScreen
 import com.aritxonly.deadliner.composable.overview.OverviewStatsScreen
 import com.aritxonly.deadliner.composable.overview.TrendAnalysisScreen
+import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.AppColorScheme
@@ -161,11 +162,9 @@ class OverviewActivity : ComponentActivity() {
         val appColorScheme = intent.getParcelableExtra<AppColorScheme>("EXTRA_APP_COLOR_SCHEME")
             ?: ColorSchemeHelper(this).defaultColorScheme
 
-        val databaseHelper = DatabaseHelper.getInstance(applicationContext)
-
         setContent {
             DeadlinerTheme {
-                val items = databaseHelper.getDDLsByType(DeadlineType.TASK)
+                val items = DDLRepository().getDDLsByType(DeadlineType.TASK)
 
                     OverviewScreen(
                         items = items,

@@ -17,7 +17,7 @@ import java.time.Duration
 import java.time.LocalDateTime
 
 class MainViewModel(
-    private val dbHelper: DatabaseHelper
+    private val repo: DDLRepository
 ) : ViewModel() {
     private val _refreshState = MutableStateFlow<RefreshState>(RefreshState.Idle)
     val refreshState: StateFlow<RefreshState> = _refreshState
@@ -41,7 +41,7 @@ class MainViewModel(
      */
     private fun computeDueSoonCount(type: DeadlineType): Int {
         val now = LocalDateTime.now()
-        return dbHelper.getDDLsByType(type)
+        return repo.getDDLsByType(type)
             .count { item ->
                 if (item.isCompleted || item.isArchived || item.endTime.isEmpty()) return@count false
                 val end = try {
@@ -68,7 +68,7 @@ class MainViewModel(
                     "isArchived ${item.isArchived}")
             if (item.completeTime.isNotEmpty()) {
                 item.isArchived = (!GlobalUtils.filterArchived(item)) || item.isArchived
-                dbHelper.updateDDL(item)
+                repo.updateDDL(item)
                 !item.isArchived
             } else {
                 true // 如果 completeTime 为空，保留该项目
@@ -117,7 +117,7 @@ class MainViewModel(
         currentType = type
         _refreshState.value = RefreshState.Loading(silent)
         viewModelScope.launch(Dispatchers.IO) {
-            _ddlList.postValue(filterDataByList(dbHelper.getDDLsByType(type)))
+            _ddlList.postValue(filterDataByList(repo.getDDLsByType(type)))
 
             val map = DeadlineType.entries.associateWith { computeDueSoonCount(it) }
             _dueSoonCounts.postValue(map)
@@ -131,7 +131,7 @@ class MainViewModel(
     // 2. 如果提供了时间过滤条件，则要求对应的开始时间或完成时间符合条件
     fun filterData(filter: SearchFilter, type: DeadlineType) {
         viewModelScope.launch(Dispatchers.IO) {
-            val filteredList = filterDataByList(dbHelper.getDDLsByType(type)).filter { ddlItem ->
+            val filteredList = filterDataByList(repo.getDDLsByType(type)).filter { ddlItem ->
                 // 文本匹配：检查 name 和 note 是否包含查询关键字
                 val matchesText = ddlItem.name.contains(filter.query, ignoreCase = true) ||
                         ddlItem.note.contains(filter.query, ignoreCase = true)
@@ -168,8 +168,8 @@ class MainViewModel(
 
     fun toggleStar(itemId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            dbHelper.getDDLById(itemId)?.let { item ->
-                dbHelper.updateDDL(item.copy(isStared = !item.isStared))
+            repo.getDDLById(itemId)?.let { item ->
+                repo.updateDDL(item.copy(isStared = !item.isStared))
                 // 刷新当前列表
                 loadData(currentType)
             }
