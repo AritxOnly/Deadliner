@@ -1,6 +1,7 @@
 package com.aritxonly.deadliner.composable.settings
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -71,7 +72,7 @@ fun NotificationSettingsScreen(
         else formatDailyTime(dailyHour, dailyMinute)
     }
     val onDailyNotificationLongPress: (Boolean) -> Unit = {
-        if (it) {
+        if (!it) {
             fragmentManager?.let { supportFragmentManager ->
                 showDailyTimePicker(context, supportFragmentManager) { hour, minute ->
                     dailyMinute = minute

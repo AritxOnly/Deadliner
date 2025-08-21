@@ -33,5 +33,7 @@ object AppSingletons {
             username = GlobalUtils.webDavUser,
             password = GlobalUtils.webDavPass
         )
+
+        sync = SyncService(db, web)
     }
 }

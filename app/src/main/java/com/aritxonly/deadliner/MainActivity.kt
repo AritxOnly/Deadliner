@@ -196,6 +196,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private lateinit var clipboardManager: android.content.ClipboardManager
     private val clipListener = android.content.ClipboardManager.OnPrimaryClipChangedListener {
+        if (!GlobalUtils.clipboardEnable) return@OnPrimaryClipChangedListener
         handleClipboardChange()
     }
     private var hasCheckedInitialClipboard = false
@@ -210,6 +211,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     private fun triggerFeatureBasedOnClipboard(text: String) {
+        if (!GlobalUtils.clipboardEnable) return
+
         val snackBarParent = if (isBottomBarVisible)
             viewHolderWithAppBar
         else viewHolderWithNoAppBar
@@ -993,6 +996,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     private fun checkClipboardAndPrompt() {
+        if (!GlobalUtils.clipboardEnable) return
+
         clipboardManager.primaryClip?.let { clip ->
             if (clip.itemCount > 0) {
                 val text = clip.getItemAt(0).coerceToText(this).toString()

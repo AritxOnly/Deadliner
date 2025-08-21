@@ -175,9 +175,6 @@
             android:name=".SettingsActivity"
             android:exported="false" />
         <activity
-            android:name=".OldSettingsActivity"
-            android:exported="false" />
-        <activity
             android:name=".LauncherActivity"
             android:exported="true"
             android:launchMode="singleTop">

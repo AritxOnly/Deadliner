@@ -154,4 +154,19 @@ class WebUtils(
         }
         return true
     }
+
+    suspend fun ensureDir(dirname: String): Boolean = withContext(Dispatchers.IO) {
+        if (!GlobalUtils.cloudSyncEnable) return@withContext false
+        val dir = dirname.trim('/')
+
+        // 1) HEAD 试探
+        val (code, _, _) = head("$dir/")
+        if (code in listOf(200, 204, 301, 302)) return@withContext true
+        if (code == 401 || code == 403) return@withContext false
+
+        // 2) MKCOL（部分服务会把已存在也回 405/409，这里当成功）
+        return@withContext runCatching {
+            mkcol(dirname)
+        }.getOrDefault(false)
+    }
 }

@@ -246,5 +246,6 @@
     <string name="appwidget_text">EXAMPLE</string>
     <string name="app_widget_description">This is an app widget description</string>
     <string name="placeholder">欢迎使用Deadliner👏</string>
+    <string name="settings_clipboard">自动从剪切板读取</string>
 
 </resources>

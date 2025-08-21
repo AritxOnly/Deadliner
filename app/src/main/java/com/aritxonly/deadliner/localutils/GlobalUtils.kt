@@ -305,6 +305,12 @@ object GlobalUtils {
             sharedPreferences.edit { putString("webdav_pass", value) }
         }
 
+    var clipboardEnable: Boolean
+        get() = sharedPreferences.getBoolean("clipboard", true)
+        set(value) {
+            sharedPreferences.edit { putBoolean("clipboard", value) }
+        }
+
     object OverviewSettings {
         var monthlyCount: Int
             get() = sharedPreferences.getInt("monthly_count(overview)", 12)

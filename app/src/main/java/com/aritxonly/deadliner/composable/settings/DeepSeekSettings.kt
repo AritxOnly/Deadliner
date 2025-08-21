@@ -65,6 +65,12 @@ fun DeepSeekSettingsScreen(
         apiKey = it
     }
 
+    var clipboard by remember { mutableStateOf(GlobalUtils.clipboardEnable) }
+    var onClipboardChange: (Boolean) -> Unit = {
+        GlobalUtils.clipboardEnable = it
+        clipboard = it
+    }
+
     var test by remember { mutableStateOf("") }
     var testResp by remember { mutableStateOf("") }
     val onTestChange: (String) -> Unit = {
@@ -155,6 +161,14 @@ fun DeepSeekSettingsScreen(
                     ) {
                         Text("保存")
                     }
+                }
+
+                SettingsSection(topLabel = stringResource(R.string.settings_more)) {
+                    SettingsSwitchItem(
+                        label = R.string.settings_clipboard,
+                        checked = clipboard,
+                        onCheckedChange = onClipboardChange
+                    )
                 }
 
                 SettingsSection(
