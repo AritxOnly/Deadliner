@@ -85,6 +85,7 @@ dependencies {
     implementation("com.github.Dimezis:BlurView:version-3.0.0")
     implementation("androidx.window:window:1.4.0")
     implementation("androidx.startup:startup-runtime:1.1.1")
+    implementation("com.airbnb.android:lottie:6.6.6")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

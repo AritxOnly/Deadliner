@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="intro_drawables">
+        <item>@raw/intro_welcome</item>
+        <item>@drawable/intro_familiar</item>
+        <item>@drawable/intro_smart</item>
+        <item>@drawable/intro_cloud</item>
+        <item>@drawable/intro_personalized</item>
+    </array>
+
+    <string-array name="intro_titles">
+        <item>遇见焕然一新的 Deadliner</item>
+        <item>遇见熟悉的 Deadliner</item>
+        <item>遇见智能的 Deadliner</item>
+        <item>遇见互联的 Deadliner</item>
+        <item>遇见懂你的 Deadliner</item>
+    </string-array>
+
+    <string-array name="intro_descriptions">
+        <item>✨ 全新 v3，界面与交互全面升级，任务与习惯管理更加顺滑贴心。</item>
+        <item>还是熟悉的配方：右滑完成 ✅ 左滑删除 ❌，置顶与倒计时轻松掌控。</item>
+        <item>🤖 接入 DeepSeek，只需一句话，就能快速生成任务与提醒。</item>
+        <item>☁️ WebDAV 云同步，跨设备无缝衔接，数据安全更放心。</item>
+        <item>🔔 全新小组件与升级通知，让信息更直观，操作更人性化。</item>
+    </string-array>
+</resources>

@@ -138,9 +138,9 @@ object GlobalUtils {
         }
 
     var showIntroPage: Boolean
-        get() = sharedPreferences.getBoolean("show_intro_page", true)
+        get() = sharedPreferences.getBoolean("show_intro_page_v3", true)
         set(value) {
-            sharedPreferences.edit { putBoolean("show_intro_page", value) }
+            sharedPreferences.edit { putBoolean("show_intro_page_v3", value) }
         }
 
     var detailDisplayMode: Boolean

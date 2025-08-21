@@ -13,6 +13,7 @@ import android.widget.RemoteViews
 import com.aritxonly.deadliner.AddDDLActivity
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.LauncherActivity
+import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
@@ -187,6 +188,21 @@ internal fun updateLargeAppWidget(
 
         views.addView(R.id.large_item_container, itemRv)
     }
+
+    val intent = Intent(context, MainActivity::class.java).apply {
+        putExtra("EXTRA_SHOW_SEARCH", true)
+        // 保证不会新开多个 Activity
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+    }
+
+    val pendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    views.setOnClickPendingIntent(R.id.btn_search, pendingIntent)
 
     appWidgetManager.updateAppWidget(appWidgetId, views)
 }

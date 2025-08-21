@@ -2,33 +2,41 @@ package com.aritxonly.deadliner
 
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.aritxonly.deadliner.intro.IntroFragment0
-import com.aritxonly.deadliner.intro.IntroFragment1
-import com.aritxonly.deadliner.intro.IntroFragment2
-import com.aritxonly.deadliner.intro.IntroFragment3
-import com.aritxonly.deadliner.intro.IntroFragment4
-import com.aritxonly.deadliner.intro.IntroFragment5
-import com.aritxonly.deadliner.intro.IntroFragment6
+import com.aritxonly.deadliner.intro.IntroFragment
 import com.aritxonly.deadliner.intro.IntroFragmentWelcome
 
 class IntroViewPagerAdapter(activity: IntroActivity) : FragmentStateAdapter(activity) {
 
-    private val fragments = listOf(
-        IntroFragment0(),
-        IntroFragment1(),
-        IntroFragment2(),
-        IntroFragment3(),
-        IntroFragment4(),
-        IntroFragment5(),
-        IntroFragment6(),
-        IntroFragmentWelcome()
-    )
+    private val titles = activity.resources.getStringArray(R.array.intro_titles)
+    private val descriptions = activity.resources.getStringArray(R.array.intro_descriptions)
+    private val images = activity.resources.obtainTypedArray(R.array.intro_drawables)
 
-    override fun getItemCount(): Int {
-        return fragments.size
-    }
+    // 总页数 = 普通 intro 页 + 欢迎页
+    override fun getItemCount(): Int = titles.size + 1
 
     override fun createFragment(position: Int): Fragment {
-        return fragments[position]
+        return if (position < titles.size) {
+            when (position) {
+                0 -> {
+                    // 第 1 页使用 Lottie
+                    IntroFragment.newLottieInstance(
+                        lottieRaw = R.raw.intro_welcome,
+                        title = titles[position],
+                        description = descriptions[position]
+                    )
+                }
+                else -> {
+                    // 其它页使用 drawable
+                    IntroFragment.newInstance(
+                        images.getResourceId(position, 0),
+                        titles[position],
+                        descriptions[position]
+                    )
+                }
+            }
+        } else {
+            // 最后一页固定 Welcome
+            IntroFragmentWelcome()
+        }
     }
 }

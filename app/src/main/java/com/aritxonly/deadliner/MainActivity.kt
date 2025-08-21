@@ -973,6 +973,17 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         } else {
             runPostSetupInitialization()
         }
+
+        if (intent?.getBooleanExtra("EXTRA_SHOW_SEARCH", false) == true) {
+            showSearchOverlay()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra("EXTRA_SHOW_SEARCH", false) == true) {
+            showSearchOverlay()
+        }
     }
 
     override fun onDestroy() {
@@ -1045,71 +1056,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             titleBar.textSize = 32f // 设置为默认大小
             excitementText.visibility = TextView.GONE
         }
-    }
-
-    private fun checkForUpdates() {
-        // GitHub Releases API 地址
-        val url = "https://api.github.com/repos/AritxOnly/Deadliner/releases/latest"
-
-        // 创建 OkHttp 客户端
-        val client = OkHttpClient()
-
-        // 创建请求
-        val request = Request.Builder()
-            .url(url)
-            .get()
-            .build()
-
-        // 执行请求
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                e.printStackTrace() // 网络请求失败时的处理
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful) {
-                    response.body?.string()?.let { responseBody ->
-                        val json = JSONObject(responseBody)
-
-                        // 获取最新版本号
-                        val latestVersion = json.getString("tag_name") // GitHub 上的版本标签
-                        val releaseNotesMarkdown = json.getString("body") // 更新说明
-                        val assetsArray = json.getJSONArray("assets")
-
-                        val markwon = Markwon.create(this@MainActivity)
-                        val releaseNotes = markwon.toMarkdown(releaseNotesMarkdown)
-
-                        val downloadUrl: String?
-                        if (assetsArray.length() > 0) {
-                            downloadUrl = assetsArray.optJSONObject(0)?.optString("browser_download_url", "")
-                            if (!downloadUrl.isNullOrEmpty()) {
-                                Log.d("DownloadURL", "$downloadUrl")
-                            } else {
-                                Log.e("DownloadURL", "downloadUrl null")
-                            }
-                        } else {
-                            Log.e("DownloadURL", "assets null")
-                            return@let
-                        }
-
-                        // 获取本地版本号
-                        val localVersion =
-                            packageManager.getPackageInfo(packageName, 0).versionName ?: return@let
-
-                        // 比较版本号
-                        if (isNewVersionAvailable(localVersion, latestVersion)) {
-                            runOnUiThread {
-                                downloadUrl?.let {
-                                    showUpdateDialog(latestVersion, releaseNotes,
-                                        it
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        })
     }
 
     /**

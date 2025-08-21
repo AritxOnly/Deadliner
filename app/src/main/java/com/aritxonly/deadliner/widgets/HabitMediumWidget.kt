@@ -13,6 +13,7 @@ import com.aritxonly.deadliner.LauncherActivity
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.HabitMetaData
 import java.time.LocalDate
 
@@ -59,6 +60,20 @@ internal fun updateMediumAppWidget(
     if (habit != null) {
         views.setTextViewText(R.id.medium_title, habit.name)
         val habitMeta = com.aritxonly.deadliner.localutils.GlobalUtils.parseHabitMetaData(habit.note)
+
+        val freqDesc = when (habitMeta.frequencyType) {
+            DeadlineFrequency.DAILY ->
+                "每天${habitMeta.frequency}次"
+            DeadlineFrequency.WEEKLY ->
+                "每周${habitMeta.frequency}次"
+            DeadlineFrequency.MONTHLY ->
+                "每月${habitMeta.frequency}次"
+            DeadlineFrequency.TOTAL -> {
+                if (habitMeta.total == 0) "持续坚持"
+                else "共计${habitMeta.total}次"
+            }
+        }
+        views.setTextViewText(R.id.medium_description, freqDesc)
 
         val canClick = canPerformClickHelper(habit, habitMeta)
         val label = if (canClick) "打卡" else "完成"
