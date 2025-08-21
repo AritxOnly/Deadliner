@@ -45,6 +45,7 @@ import com.aritxonly.deadliner.composable.settings.VibrationSettingsScreen
 import com.aritxonly.deadliner.composable.settings.WebSettingsScreen
 import com.aritxonly.deadliner.composable.settings.WidgetSettingsScreen
 import com.aritxonly.deadliner.composable.settings.WikiScreen
+import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.google.android.material.dialog.MaterialAlertDialogBuilder

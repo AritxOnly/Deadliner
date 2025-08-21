@@ -32,7 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.localutils.GlobalUtils
-import com.aritxonly.deadliner.AppColorScheme
+import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.composable.AnimatedItem
 import com.aritxonly.deadliner.composable.TintedGradientImage

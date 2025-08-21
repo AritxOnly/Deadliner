@@ -16,7 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.fragment.app.FragmentManager
-import com.aritxonly.deadliner.DatabaseHelper
+import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency

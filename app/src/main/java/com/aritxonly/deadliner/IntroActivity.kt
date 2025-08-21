@@ -13,6 +13,7 @@ import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.model.PartyPresets
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.progressindicator.LinearProgressIndicator

@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.unit.dp
-import com.aritxonly.deadliner.AppColorScheme
+import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.composable.AnimatedItem
 import com.aritxonly.deadliner.hashColor

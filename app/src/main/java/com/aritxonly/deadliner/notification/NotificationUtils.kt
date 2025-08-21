@@ -16,7 +16,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.aritxonly.deadliner.model.DDLItem
-import com.aritxonly.deadliner.DatabaseHelper
+import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.DeadlineDetailActivity
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.localutils.GlobalUtils

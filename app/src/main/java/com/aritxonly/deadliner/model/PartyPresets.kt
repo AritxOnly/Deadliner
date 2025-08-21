@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.model
 
 import nl.dionsegijn.konfetti.core.Angle
 import nl.dionsegijn.konfetti.core.Party
@@ -17,9 +17,9 @@ class PartyPresets {
                 speed = 30f,
                 maxSpeed = 50f,
                 damping = 0.9f,
-                angle = Angle.TOP,
+                angle = Angle.Companion.TOP,
                 spread = 45,
-                size = listOf(Size.SMALL, Size.LARGE, Size.LARGE),
+                size = listOf(Size.Companion.SMALL, Size.Companion.LARGE, Size.Companion.LARGE),
                 shapes = listOf(Shape.Square, Shape.Circle, drawable).filterNotNull(),
                 timeToLive = 3000L,
                 rotation = Rotation(),
@@ -70,8 +70,8 @@ class PartyPresets {
                 speed = 10f,
                 maxSpeed = 30f,
                 damping = 0.9f,
-                angle = Angle.RIGHT - 45,
-                spread = Spread.SMALL,
+                angle = Angle.Companion.RIGHT - 45,
+                spread = Spread.Companion.SMALL,
                 colors = listOf(0xfce18a, 0xff726d, 0xf4306d, 0xb48def),
                 emitter = Emitter(duration = 5, TimeUnit.SECONDS).perSecond(30),
                 position = Position.Relative(0.0, 0.5)
@@ -92,8 +92,8 @@ class PartyPresets {
                     speed = 0f,
                     maxSpeed = 15f,
                     damping = 0.9f,
-                    angle = Angle.BOTTOM,
-                    spread = Spread.ROUND,
+                    angle = Angle.Companion.BOTTOM,
+                    spread = Spread.Companion.ROUND,
                     colors = listOf(0xfce18a, 0xff726d, 0xf4306d, 0xb48def),
                     emitter = Emitter(duration = 5, TimeUnit.SECONDS).perSecond(100),
                     position = Position.Relative(0.0, 0.0).between(Position.Relative(1.0, 0.0))

@@ -8,7 +8,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
-import com.aritxonly.deadliner.DatabaseHelper
+import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.databinding.HabitMiniWidgetConfigureBinding
 import com.aritxonly.deadliner.model.DeadlineType
 import androidx.core.content.edit

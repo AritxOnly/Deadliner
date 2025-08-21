@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.model
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

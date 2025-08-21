@@ -53,7 +53,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.composable.overview.DashboardScreen
 import com.aritxonly.deadliner.composable.overview.OverviewStatsScreen
 import com.aritxonly.deadliner.composable.overview.TrendAnalysisScreen
+import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
@@ -456,7 +458,7 @@ fun OverviewPreview() {
         )
         OverviewScreen(
             items = items,
-            colorScheme =  AppColorScheme(
+            colorScheme = AppColorScheme(
                 primary = MaterialTheme.colorScheme.primary.toArgb(),
                 onPrimary = MaterialTheme.colorScheme.onPrimary.toArgb(),
                 primaryContainer = MaterialTheme.colorScheme.primaryContainer.toArgb(),

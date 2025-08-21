@@ -30,7 +30,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.aritxonly.deadliner.AppColorScheme
+import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.DeadlineDetailActivity
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.composable.AnimatedItem

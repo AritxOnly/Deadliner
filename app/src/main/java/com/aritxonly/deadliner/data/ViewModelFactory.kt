@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.data
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

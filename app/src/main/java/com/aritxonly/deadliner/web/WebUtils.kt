@@ -1,117 +1,70 @@
 package com.aritxonly.deadliner.web
 
-import android.util.Log
-import android.widget.Toast
-import com.aritxonly.deadliner.DatabaseHelper
-import com.aritxonly.deadliner.localutils.GlobalUtils
-import com.aritxonly.deadliner.model.DDLItem
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okio.IOException
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
 
-object WebUtils {
-    private const val API_URL_DIR = "api"
-    private const val API_VERSION = "v1"
+class WebUtils(
+    private val baseUrl: String,
+    private val username: String? = null,
+    private val password: String? = null
+) {
+    private val client = OkHttpClient.Builder().build()
 
-    private var apiUrl: String? = null
-
-    fun init() {
-        val host = GlobalUtils.cloudSyncServer ?: return
-        val port = GlobalUtils.cloudSyncPort
-        val formattedHost = if (host.startsWith("http://") || host.startsWith("https://")) host else "http://$host"
-        val base = if (port == 80 || port == 443) {
-            // 不显式添加默认端口
-            formattedHost
-        } else {
-            "$formattedHost:$port"
+    private fun auth(rb: Request.Builder): Request.Builder {
+        if (username != null && password != null) {
+            rb.header("Authorization", Credentials.basic(username, password, Charsets.UTF_8))
         }
-
-        apiUrl = "$base/$API_URL_DIR/$API_VERSION"
+        return rb
     }
 
-    suspend fun isWebAvailable(): Boolean = withContext(Dispatchers.IO) {
-        if (apiUrl == null) return@withContext false
+    suspend fun head(path: String): Triple<Int,String?,Long?> = withContext(Dispatchers.IO) {
+        val req = auth(Request.Builder().url("$baseUrl/$path").head()).build()
+        client.newCall(req).execute().use { resp ->
+            val etag = resp.header("ETag")
+            val len = resp.header("Content-Length")?.toLongOrNull()
+            Triple(resp.code, etag, len)
+        }
+    }
 
-        Log.d("WebUtils", "Ping $apiUrl")
-        try {
-            val client = OkHttpClient()
-            val request = Request.Builder()
-                .url(apiUrl!!)
-                .build()
+    suspend fun getBytes(path: String): Pair<ByteArray,String?> = withContext(Dispatchers.IO) {
+        val req = auth(Request.Builder().url("$baseUrl/$path").get()).build()
+        client.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) throw IOException("GET $path -> ${resp.code}")
+            resp.body!!.bytes() to resp.header("ETag")
+        }
+    }
 
-            val response = client.newCall(request).execute()
-
-            Log.d("WebUtils", "$response")
-
-            response.use {
-                it.isSuccessful
+    suspend fun getRange(path: String, from: Long): Pair<ByteArray, Pair<String?,Long>> =
+        withContext(Dispatchers.IO) {
+            val rb = Request.Builder().url("$baseUrl/$path").get()
+            rb.header("Range", "bytes=$from-")
+            auth(rb)
+            client.newCall(rb.build()).execute().use { resp ->
+                if (resp.code !in listOf(206,200)) throw IOException("GET Range $path -> ${resp.code}")
+                val bytes = resp.body!!.bytes()
+                val etag = resp.header("ETag")
+                val newOffset = from + bytes.size
+                bytes to (etag to newOffset)
             }
-        } catch (e: IOException) {
-            Log.e("WebUtils", e.toString());
-            false
         }
-    }
 
-    suspend fun getFromApiAndUpdate(
-        databaseHelper: DatabaseHelper
-    ): Boolean = withContext(Dispatchers.IO) {
-        if (apiUrl == null) return@withContext false
+    class PreconditionFailed: IOException()
 
-        Log.d("WebUtils", "Get Database from api")
-        try {
-            val client = OkHttpClient()
-            val request = Request.Builder()
-                .url("$apiUrl/db/items")
-                .header("AndroidKey", GlobalUtils.cloudSyncConstantToken?:"")
-                .build()
-
-            val response = client.newCall(request).execute()
-
-            Log.d("WebUtils", "$response")
-
-            response.use {
-                if (!it.isSuccessful) {
-                    throw Exception("Server returned error code ${it.code}")
-                }
-
-                val bodyString = it.body!!.string()
-
-                val gson = Gson()
-
-                val listType = object : TypeToken<List<DDLItem>>() {}.type
-                val ddlList: List<DDLItem> = gson.fromJson(bodyString, listType)
-
-                val actualList = databaseHelper.getAllDDLs()
-
-                for (item in ddlList) {
-                    val matchedItem: DDLItem? = actualList.find { it.name == item.name }
-                    if (matchedItem == null) {
-                        databaseHelper.insertDDL(
-                            item.name,
-                            item.startTime,
-                            item.endTime,
-                            item.note,
-                            item.type,
-                            item.calendarEventId
-                        )
-                    } else {
-                        val webTimestamp = GlobalUtils.safeParseDateTime(item.timeStamp)
-                        val actualTimestamp = GlobalUtils.safeParseDateTime(matchedItem.timeStamp)
-                        if (webTimestamp.isAfter(actualTimestamp)) {
-                            databaseHelper.updateDDL(item)
-                        }
-                    }
-                }
-
-                it.isSuccessful
+    suspend fun putBytes(path: String, bytes: ByteArray, ifMatch: String? = null, ifNoneMatchStar: Boolean = false): String? =
+        withContext(Dispatchers.IO) {
+            val body = bytes.toRequestBody("application/octet-stream".toMediaType())
+            val rb = Request.Builder().url("$baseUrl/$path").put(body)
+            if (ifMatch != null) rb.header("If-Match", ifMatch)
+            if (ifNoneMatchStar) rb.header("If-None-Match", "*")
+            auth(rb)
+            client.newCall(rb.build()).execute().use { resp ->
+                if (resp.code == 412) throw PreconditionFailed()
+                if (!resp.isSuccessful) throw IOException("PUT $path -> ${resp.code}")
+                resp.header("ETag")
             }
-        } catch (e: IOException) {
-            Log.e("WebUtils", e.toString())
-            false
         }
-    }
 }
