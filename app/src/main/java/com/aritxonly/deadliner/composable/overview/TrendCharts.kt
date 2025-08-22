@@ -35,7 +35,7 @@ import ir.ehsannarmani.compose_charts.models.PopupProperties
 import java.time.LocalDate
 
 
-private val DefaultLabelProperties
+internal val DefaultLabelProperties
     @Composable get() = LabelProperties(enabled = true,
         textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onSurface)
     )
@@ -45,12 +45,12 @@ private val DefaultIndicatorProperties
         textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onSurface)
     )
 
-private val DefaultLabelHelperProperties
+internal val DefaultLabelHelperProperties
     @Composable get() = LabelHelperProperties(enabled = true,
         textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onSurface)
     )
 
-private val DefaultPopupProperties
+internal val DefaultPopupProperties
     @Composable get() = PopupProperties(
         enabled = true,
         animationSpec = tween(300),

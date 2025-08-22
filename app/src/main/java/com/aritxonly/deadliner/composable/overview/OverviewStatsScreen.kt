@@ -166,7 +166,7 @@ fun CompletionTimeCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             // 使用条形图展示完成时间段统计
-            BarChartCompletionTimeStats(
+            NewBarChartCompletionTimeStats(
                 data = completionTimeStats,
                 textColor = Color(colorScheme.onSurface)
             )

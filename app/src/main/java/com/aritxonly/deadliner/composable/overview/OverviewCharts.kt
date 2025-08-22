@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
@@ -36,8 +37,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
+import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.PieChart
+import ir.ehsannarmani.compose_charts.RowChart
+import ir.ehsannarmani.compose_charts.extensions.format
+import ir.ehsannarmani.compose_charts.models.AnimationMode
+import ir.ehsannarmani.compose_charts.models.BarProperties
+import ir.ehsannarmani.compose_charts.models.Bars
+import ir.ehsannarmani.compose_charts.models.GridProperties
+import ir.ehsannarmani.compose_charts.models.HorizontalIndicatorProperties
 import ir.ehsannarmani.compose_charts.models.Pie
+import ir.ehsannarmani.compose_charts.models.VerticalIndicatorProperties
 
 
 @Composable
@@ -92,6 +102,56 @@ fun BarChartCompletionTimeStats(
 }
 
 @Composable
+fun NewBarChartCompletionTimeStats(
+    data: List<Pair<String, Int>>,
+    barColor: Color = colorResource(id = R.color.chart_blue),
+    textColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    val chartData = remember(data) {
+        data.map { (label, count) ->
+            Bars(
+                label = label,
+                values = listOf(
+                    Bars.Data(
+                        value = count.toDouble(),
+                        color = Brush.verticalGradient(
+                            listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        RowChart(
+            data = chartData,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp),
+            barProperties = BarProperties(
+                cornerRadius = Bars.Data.Radius.Rectangle(topRight = 4.dp, bottomRight = 4.dp),
+                spacing = 4.dp,
+                thickness = 28.dp
+            ),
+            animationMode = AnimationMode.Together(delayBuilder = { it * 100L }),
+            labelHelperProperties = DefaultLabelHelperProperties.copy(enabled = false),
+            popupProperties = DefaultPopupProperties.copy(
+                contentBuilder = { dataIndex, valueIndex, value ->
+                    "${data[valueIndex].first}: ${value.format(0)}"
+                }
+            ),
+            indicatorProperties = VerticalIndicatorProperties(
+                enabled = true,
+                contentBuilder = { it.toInt().toString() }
+            ),
+            labelProperties = DefaultLabelProperties,
+            gridProperties = GridProperties(enabled = false)
+        )
+    }
+}
+
+@Composable
 fun NewPieChart(
     statistics: Map<String, Int>,
     size: Dp = 160.dp
@@ -126,6 +186,7 @@ fun NewPieChart(
             data = data.mapIndexed { i, p -> p.copy(selected = i == idx) }
         },
         selectedScale = 1.1f,
+        selectedPaddingDegree = 2f,
         scaleAnimEnterSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -134,7 +195,7 @@ fun NewPieChart(
         colorAnimExitSpec = tween(300),
         scaleAnimExitSpec = tween(300),
         spaceDegreeAnimExitSpec = tween(300),
-        style = Pie.Style.Fill
+        style = Pie.Style.Stroke(width = 36.dp)
     )
 }
 
