@@ -68,23 +68,38 @@ object DeepSeekUtils {
         }
     }
 
-    suspend fun generateDeadline(rawText: String): String = withContext(Dispatchers.IO) {
-        val systemPrompt = """
-            你是一个个性化任务管理助手。在对话中，用户将会输入一整段文字，你将要从这段文字中提取出有效任务信息，包括任务名(不多于16字)、任务开始的时间和其他信息，并按以下格式输出：
-            {
-                "name": "任务名称",
-                "dueTime": "2025-03-02 11:45",·
-                "note": "备注信息"
-            }
-            并且**仅返回**符合上述结构的JSON，不要添加任何说明文字
-        """.trimIndent()
+    suspend fun generateDeadline(context: Context, rawText: String): String = withContext(Dispatchers.IO) {
+        if (apiKey.isEmpty() || apiKey.isBlank()) return@withContext ""
 
-        val today = LocalDate.now()
-        val datePrompt = "当前日期：${today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}，星期${listOf("日","一","二","三","四","五","六")[today.dayOfWeek.value % 7]}。"
+        val langTag = currentLangTag(context) // 当前设备语言
+        val timeFormatSpec = "yyyy-MM-dd HH:mm（24小时制，零填充，不带时区）"
+
+        val tzId = java.util.TimeZone.getDefault().id
+        val nowLocal = LocalDateTime.now().toString()
+
+        val systemPrompt = """
+        你是一个任务管理助手。用户会输入一段自然语言文本，请你从中提取任务，并以**纯 JSON**返回，结构如下：
+        {
+          "name": "任务名称（≤16字符）",
+          "dueTime": "截止时间，$timeFormatSpec",
+          "note": "备注信息"
+        }
+
+        规则要求：
+        1) 仅返回 JSON，**不要**额外说明、代码块（```）、尾逗号。
+        2) "name" 和 "note" 必须使用与设备语言一致的语言（当前语言：$langTag）。
+        3) "dueTime" 必须严格用 $timeFormatSpec。
+        4) 如果出现“今天/明天/本周五/下周一/今晚”等相对时间，请基于设备时区 $tzId、当前时间 $nowLocal 推断，最终输出 $timeFormatSpec。
+        5) 如果无法精确分钟，可保守推断（如“晚上”=20:00），但**必须给出具体可解析的时间**。
+        6) JSON 键固定为 name/dueTime/note，不要新增。
+    """.trimIndent()
+
+        val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val localeHint = "当前日期：$today；设备语言：$langTag；时区：$tzId。请严格按上述格式输出 JSON。"
 
         val messages = listOfNotNull(
             Message("system", systemPrompt),
-            Message("user", datePrompt),
+            Message("user", localeHint),
             GlobalUtils.customPrompt?.let { Message("user", it) },
             Message("user", rawText)
         )
@@ -112,5 +127,10 @@ object DeepSeekUtils {
             .create()
 
         return gson.fromJson(json, GeneratedDDL::class.java)
+    }
+
+    private fun currentLangTag(context: Context): String {
+        val loc = context.resources.configuration.locales[0]
+        return loc.toLanguageTag() // e.g., "zh-CN" / "en-US"
     }
 }

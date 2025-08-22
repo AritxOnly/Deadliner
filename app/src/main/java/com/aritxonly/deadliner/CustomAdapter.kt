@@ -188,7 +188,9 @@ class CustomAdapter(
         holder.titleText.text = habitItem.name
         val currentStreak = calculateCurrentStreak(completedDates)
         val canBeDone = GlobalUtils.canHabitBeDone(habitItem, habitMeta)
-        streakText.text = if (canBeDone) "${currentStreak}天连击" else "时间不足"
+        streakText.text = if (canBeDone)
+            context.getString(R.string.days_streak, currentStreak)
+        else context.getString(R.string.no_time_left)
 
         // 2. 更新星标状态（根据 habitItem.isStared 字段）
         holder.starIcon.visibility = if (habitItem.isStared) View.VISIBLE else View.GONE
@@ -197,15 +199,28 @@ class CustomAdapter(
         Log.d("Database", "${habitMeta.frequencyType}")
         val freqDesc = when (habitMeta.frequencyType) {
             DeadlineFrequency.DAILY ->
-                "每天${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}次"
+                if (habitMeta.total == 0)
+                    context.getString(R.string.daily_frequency, habitMeta.frequency)
+                else
+                    context.getString(R.string.daily_frequency_with_total, habitMeta.frequency, habitMeta.total)
+
             DeadlineFrequency.WEEKLY ->
-                "每周${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}次"
+                if (habitMeta.total == 0)
+                    context.getString(R.string.weekly_frequency, habitMeta.frequency)
+                else
+                    context.getString(R.string.weekly_frequency_with_total, habitMeta.frequency, habitMeta.total)
+
             DeadlineFrequency.MONTHLY ->
-                "每月${habitMeta.frequency}" + if (habitMeta.total == 0) "次" else "次/共${habitMeta.total}次"
-            DeadlineFrequency.TOTAL -> {
-                if (habitMeta.total == 0) "持续坚持"
-                else "共计${habitMeta.total}次"
-            }
+                if (habitMeta.total == 0)
+                    context.getString(R.string.monthly_frequency, habitMeta.frequency)
+                else
+                    context.getString(R.string.monthly_frequency_with_total, habitMeta.frequency, habitMeta.total)
+
+            DeadlineFrequency.TOTAL ->
+                if (habitMeta.total == 0)
+                    context.getString(R.string.total_frequency_persistent)
+                else
+                    context.getString(R.string.total_frequency_count, habitMeta.total)
         }
 
         val endTime = GlobalUtils.safeParseDateTime(habitItem.endTime)
@@ -213,8 +228,8 @@ class CustomAdapter(
             val now = LocalDateTime.now()
             val duration = Duration.between(now, endTime)
             val days = duration.toDays()
-            if (days < 0) " · 已逾期"
-            else " · 剩余${days}天"
+            if (days < 0) " · " + context.getString(R.string.ddl_overdue_short)
+            else " · " + context.getString(R.string.remaining_days_arg, days)
         } else ""
 
         // 4. 更新每日进度点（最近7天）
@@ -254,13 +269,28 @@ class CustomAdapter(
 
         monthProgress.progress = (progress * 100).toInt()
 
-        progressLabel.text = when (habitMeta.frequencyType) {
-            DeadlineFrequency.TOTAL -> ""
-            DeadlineFrequency.DAILY -> "每日进度 ${habitItem.habitCount}/${habitMeta.frequency}"
-            DeadlineFrequency.WEEKLY -> "每周进度 ${habitItem.habitCount}/${habitMeta.frequency}"
-            DeadlineFrequency.MONTHLY -> "每月进度 ${habitItem.habitCount}/${habitMeta.frequency}"
-        } + if (habitMeta.frequencyType != DeadlineFrequency.TOTAL && habitMeta.total != 0) " · " else "" +
-        if (habitMeta.total != 0) "总进度 ${habitItem.habitTotalCount}/${habitMeta.total}" else ""
+        val parts = mutableListOf<String>()
+
+        when (habitMeta.frequencyType) {
+            DeadlineFrequency.DAILY -> parts += context.getString(
+                R.string.progress_daily, habitItem.habitCount, habitMeta.frequency
+            )
+            DeadlineFrequency.WEEKLY -> parts += context.getString(
+                R.string.progress_weekly, habitItem.habitCount, habitMeta.frequency
+            )
+            DeadlineFrequency.MONTHLY -> parts += context.getString(
+                R.string.progress_monthly, habitItem.habitCount, habitMeta.frequency
+            )
+            DeadlineFrequency.TOTAL -> { /* 周期型进度不显示 */ }
+        }
+
+        if (habitMeta.total != 0) {
+            parts += context.getString(
+                R.string.progress_total, habitItem.habitTotalCount, habitMeta.total
+            )
+        }
+
+        progressLabel.text = parts.joinToString(separator = " · ")
 
         // 6. 设置打卡按钮状态
         val canCheckIn = (habitMeta.total != 0 && (if (habitMeta.frequencyType != DeadlineFrequency.TOTAL) {
@@ -273,8 +303,8 @@ class CustomAdapter(
         }
         val canPerformClick = canCheckIn && !alreadyChecked
         checkButton.text = if (habitMeta.total != 0 && habitItem.habitTotalCount >= habitMeta.total)
-                "已完成" else if (alreadyChecked)
-                    "今日已打卡" else "打卡"
+                context.getString(R.string.completed) else if (alreadyChecked)
+                    context.getString(R.string.already_check_habit) else context.getString(R.string.check_habit)
         checkButton.icon = if (alreadyChecked) null
         else ContextCompat.getDrawable(context, R.drawable.ic_check)
 
@@ -439,24 +469,32 @@ class CustomAdapter(
 
         remainingTimeTextView.text = if (remainingMinutes >= 0) {
             if (displayFullContent) {
-                if (GlobalUtils.detailDisplayMode)
-                    "剩余 " +
-                    (if (days != 0) "${days}天" else "") +
-                    (if (hours != 0) "${hours}小时" else "") +
-                    "${minutesPart}分钟"
-                else
-                    "剩余 %.1f天".format(compactDays)
+                if (GlobalUtils.detailDisplayMode) {
+                    buildString {
+                        append(context.getString(R.string.remaining_prefix))
+                        if (days != 0) append(context.getString(R.string.remaining_days, days))
+                        if (hours != 0) append(context.getString(R.string.remaining_hours, hours))
+                        append(context.getString(R.string.remaining_minutes, minutesPart))
+                    }
+                } else {
+                    context.getString(R.string.remaining_compact_days, compactDays)
+                }
             } else {
-                if (GlobalUtils.detailDisplayMode)
-                    (if (days != 0) "${days}d" else "") +
-                    (if (hours != 0) "${hours}h" else "") +
-                    "${minutesPart}m"
-                else
-                    "%.1fd".format(compactDays)
+                if (GlobalUtils.detailDisplayMode) {
+                    buildString {
+                        if (days != 0) append(context.getString(R.string.remaining_days_short, days))
+                        if (hours != 0) append(context.getString(R.string.remaining_hours_short, hours))
+                        append(context.getString(R.string.remaining_minutes_short, minutesPart))
+                    }
+                } else {
+                    context.getString(R.string.remaining_compact_days_short, compactDays)
+                }
             }
         } else {
-            if (displayFullContent) "DDL逾期!!!"
-            else "已逾期"
+            if (displayFullContent)
+                context.getString(R.string.ddl_overdue_full)
+            else
+                context.getString(R.string.ddl_overdue_short)
         }
 
         // 计算并设置进度条进度，确保至少为 1
@@ -494,8 +532,8 @@ class CustomAdapter(
             progressBar.setIndicatorColor(finishedColor)
             constraintLayout.setBackgroundResource(R.drawable.item_background_finished)
             progressBar.setProgressCompat(100, true)
-            remainingTimeText.text = "DDL已完成🎉"
-            remainingTimeTextAlt.text = "已完成"
+            remainingTimeText.text = context.getString(R.string.completed_long)
+            remainingTimeTextAlt.text = context.getString(R.string.completed)
         }
 
         /* v2.0 added: 只要被多选则更改颜色 */

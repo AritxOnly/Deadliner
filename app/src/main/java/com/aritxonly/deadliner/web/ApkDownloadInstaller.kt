@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import com.aritxonly.deadliner.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -38,8 +39,8 @@ class ApkDownloaderInstaller(private val context: Context) {
         registerDownloadReceiver(apkFile)
 
         val request = DownloadManager.Request(Uri.parse(apkUrl)).apply {
-            setTitle("正在下载更新")
-            setDescription("请稍候...")
+            setTitle(context.getString(R.string.downloading_update))
+            setDescription(context.getString(R.string.please_wait))
             // 使用 setDestinationInExternalFilesDir() 替代 setDestinationUri(Uri.fromFile(apkFile))
             setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, apkName)
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
@@ -61,15 +62,15 @@ class ApkDownloaderInstaller(private val context: Context) {
         progressText = dialogView.findViewById(R.id.downloadProgressText)
 
         progressDialog = MaterialAlertDialogBuilder(context)
-            .setTitle("下载更新")
+            .setTitle(context.getString(R.string.download_update))
             .setView(dialogView)
             .setCancelable(false)
-            .setPositiveButton("安装") { _, _ ->
+            .setPositiveButton(context.getString(R.string.install)) { _, _ ->
                 if (downloaded) {
                     installApk(apkFile)
                 }
             }
-            .setNegativeButton("取消") { _, _ ->
+            .setNegativeButton(context.getString(R.string.cancel)) { _, _ ->
                 downloadManager.remove(downloadId)
                 isDownloading = false
             }
@@ -95,7 +96,7 @@ class ApkDownloaderInstaller(private val context: Context) {
                         val progress = (bytesDownloaded * 100L / totalBytes).toInt()
                         Handler(Looper.getMainLooper()).post {
                             progressBar.progress = progress
-                            progressText.text = "下载进度: $progress%"
+                            progressText.text = context.getString(R.string.download_progress, progress)
                         }
                     }
                     // 当状态为成功时调用安装逻辑

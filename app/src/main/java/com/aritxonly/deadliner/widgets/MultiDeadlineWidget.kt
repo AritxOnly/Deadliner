@@ -189,17 +189,22 @@ internal fun updateAppMultiDeadlineWidget(
             false)
 
         // 将剩余时间转换为小时和分钟格式
+        val total = ChronoUnit.MILLIS.between(parsed.startTime, parsed.endTime)
+        val maxTotal = maxOf(0, total)
+        val done = ChronoUnit.MILLIS.between(parsed.startTime, now).coerceIn(0, maxTotal)
+        val percent = (done * 100 / total).toInt()
+
         val remainingMillis = parsed.remainingMillis
         val timeText = if (remainingMillis < 0) {
-            views.setProgressBar(progressId, 100, 0, false)
-            "逾期" // 如果已过期或剩余时间为负数，则显示0.0h
+            views.setProgressBar(R.id.item_progress, 100, 0, false)
+            context.getString(R.string.outdated)
         } else {
             val days: Double = remainingMillis.toDouble() / (3600000 * 24)
             if (days < 1.0f) {
                 val hours: Double = remainingMillis.toDouble() / 3600000
-                "%.1f".format(hours) + "小时" + " $progress%"
+                context.getString(R.string.progress_hours, hours, percent)
             } else {
-                "%.1f".format(days) + "天" + " $progress%"
+                context.getString(R.string.progress_days, days, percent)
             }
         }
 

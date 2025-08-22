@@ -43,7 +43,7 @@ fun DonateScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )
@@ -57,9 +57,9 @@ fun DonateScreen(
         ) {
             SettingsSection(mainContent = true, enabled = true) {
                 Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {
-                    Text("穷学生在线求投喂 🥹", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.settings_donate_emotional), style = MaterialTheme.typography.titleMedium)
 
-                    Text("你的支持是对我最大的鼓励~", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.settings_donate_thanks), style = MaterialTheme.typography.bodyLarge)
                 }
             }
 

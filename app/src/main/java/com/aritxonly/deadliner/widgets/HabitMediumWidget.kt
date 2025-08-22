@@ -63,20 +63,33 @@ internal fun updateMediumAppWidget(
 
         val freqDesc = when (habitMeta.frequencyType) {
             DeadlineFrequency.DAILY ->
-                "每天${habitMeta.frequency}次"
+                if (habitMeta.total == 0)
+                    context.getString(R.string.daily_frequency, habitMeta.frequency)
+                else
+                    context.getString(R.string.daily_frequency_with_total, habitMeta.frequency, habitMeta.total)
+
             DeadlineFrequency.WEEKLY ->
-                "每周${habitMeta.frequency}次"
+                if (habitMeta.total == 0)
+                    context.getString(R.string.weekly_frequency, habitMeta.frequency)
+                else
+                    context.getString(R.string.weekly_frequency_with_total, habitMeta.frequency, habitMeta.total)
+
             DeadlineFrequency.MONTHLY ->
-                "每月${habitMeta.frequency}次"
-            DeadlineFrequency.TOTAL -> {
-                if (habitMeta.total == 0) "持续坚持"
-                else "共计${habitMeta.total}次"
-            }
+                if (habitMeta.total == 0)
+                    context.getString(R.string.monthly_frequency, habitMeta.frequency)
+                else
+                    context.getString(R.string.monthly_frequency_with_total, habitMeta.frequency, habitMeta.total)
+
+            DeadlineFrequency.TOTAL ->
+                if (habitMeta.total == 0)
+                    context.getString(R.string.total_frequency_persistent)
+                else
+                    context.getString(R.string.total_frequency_count, habitMeta.total)
         }
         views.setTextViewText(R.id.medium_description, freqDesc)
 
         val canClick = canPerformClickHelper(habit, habitMeta)
-        val label = if (canClick) "打卡" else "完成"
+        val label = if (canClick) context.getString(R.string.check_habit) else context.getString(R.string.complete)
         views.setTextViewText(R.id.tv_checkin, label)
 
         // 点击行为：能打卡 → 发 ACTION_CHECK_IN；否则 → 打开 App（或发一个提示广播）

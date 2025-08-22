@@ -67,7 +67,7 @@ class ArchiveActivity : AppCompatActivity() {
 
         clearAllButton.setOnClickListener {
             MaterialAlertDialogBuilder(this)
-                .setTitle("清除所有已完成的Deadlines？")
+                .setTitle(R.string.clear_all_archive)
                 .setPositiveButton(resources.getString(R.string.accept)) { _, _ ->
                     val itemList = repo.getAllDDLs()
                     val filteredList = itemList.filterNot { item ->

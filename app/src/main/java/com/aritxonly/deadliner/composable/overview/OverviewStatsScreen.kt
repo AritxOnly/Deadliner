@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,8 +28,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.DeadlineDetailActivity
@@ -91,7 +95,7 @@ fun HistoryStatsCard(
                 .padding(16.dp)
         ) {
             Text(
-                text = "任务状态统计",
+                text = stringResource(R.string.task_status_summary),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 color = Color(colorScheme.onSurface)
@@ -109,7 +113,10 @@ fun HistoryStatsCard(
                         Text(
                             text = key,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(colorScheme.onSurface)
+                            color = Color(colorScheme.onSurface),
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible,
+                            modifier = Modifier.basicMarquee()
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -152,7 +159,7 @@ fun CompletionTimeCard(
                 .background(Color(colorScheme.surfaceContainer))
         ) {
             Text(
-                text = "任务完成时间段统计",
+                text = stringResource(R.string.task_complete_time_summary),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 color = Color(colorScheme.onSurface)
@@ -189,7 +196,7 @@ fun ActiveStatsCard(
                 .background(Color(colorScheme.surfaceContainer))
         ) {
             Text(
-                text = "今日任务状态统计",
+                text = stringResource(R.string.today_task_summary),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 color = Color(colorScheme.onSurface)
@@ -207,7 +214,10 @@ fun ActiveStatsCard(
                         Text(
                             text = key,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(colorScheme.onSurface)
+                            color = Color(colorScheme.onSurface),
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible,
+                            modifier = Modifier.basicMarquee()
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -219,12 +229,12 @@ fun ActiveStatsCard(
                     }
                 }
             }
-            val overdueCount = activeStats["今日逾期"] ?: 0
+            val overdueCount = activeStats[stringResource(R.string.today_overdue)] ?: 0
             if (overdueCount > 0 && overdueItems.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    text = "今日逾期任务",
+                    text = stringResource(R.string.today_overdue),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.error,   // 错误色强调
                     modifier = Modifier.padding(bottom = 8.dp).align(Alignment.CenterHorizontally)

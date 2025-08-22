@@ -52,7 +52,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 val delayHours = maxOf(1, totalHours / 2)
                 DeadlineAlarmScheduler.scheduleExactAlarm(context, item, delayHours)
 
-                Toast.makeText(context, "将提前${delayHours}小时提醒你完成DDL☺️", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.remind_in, delayHours), Toast.LENGTH_LONG).show()
             }
 
             else -> return

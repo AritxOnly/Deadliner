@@ -25,7 +25,7 @@
         android:id="@+id/textView"
         android:layout_width="0dp"
         android:layout_height="40dp"
-        android:text="添加任务"
+        android:text="@string/add_task"
         android:gravity="center"
         android:textSize="22sp"
         android:textColor="?attr/colorOnSurface"
@@ -58,12 +58,12 @@
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="任务"/>
+            android:text="@string/task"/>
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="习惯"/>
+            android:text="@string/habit"/>
 
     </com.google.android.material.tabs.TabLayout>
 
@@ -225,7 +225,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="不限"
+            android:text="@string/frequency_none"
             style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
@@ -233,7 +233,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="每日"
+            android:text="@string/frequency_daily"
             style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
@@ -241,7 +241,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="每周"
+            android:text="@string/frequency_weekly"
             style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
@@ -249,7 +249,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="每月"
+            android:text="@string/frequency_monthly"
             style="@style/Widget.Custom.ToggleButton" />
 
     </com.google.android.material.button.MaterialButtonToggleGroup>

@@ -106,7 +106,7 @@ fun DeepSeekSettingsScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )
@@ -159,7 +159,7 @@ fun DeepSeekSettingsScreen(
                             .padding(top = 8.dp)
                             .fillMaxWidth()
                     ) {
-                        Text("保存")
+                        Text(stringResource(R.string.save))
                     }
                 }
 
@@ -204,20 +204,20 @@ fun DeepSeekSettingsScreen(
                     onClick = {
                         scope.launch {
                             testResp = try {
-                                generateDeadline(test)
+                                generateDeadline(context, test)
                             } catch (e: Exception) {
                                 "Error: ${e.message}"
                             }
                         }
                     }
-                ) { Text("测试") }
+                ) { Text(stringResource(R.string.test)) }
             },
             text = {
                 Column {
                     RoundedTextField(
                         value = test,
                         onValueChange = onTestChange,
-                        hint = "测试"
+                        hint = stringResource(R.string.test)
                     )
 
                     Text(text = testResp)

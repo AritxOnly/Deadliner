@@ -61,7 +61,7 @@ fun WidgetSettingsScreen(
             IconButton(onClick = navigateUp, modifier = Modifier.padding(start = 8.dp)) {
                 Icon(
                     painter = painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )
@@ -75,7 +75,7 @@ fun WidgetSettingsScreen(
         ) {
             SvgCard(R.drawable.svg_space, modifier = Modifier.padding(16.dp))
 
-            SettingsSection(topLabel = "任务组件") {
+            SettingsSection(topLabel = stringResource(R.string.settings_widget_tasks)) {
                 SettingsDetailSwitchItem(
                     headline = R.string.settings_progress_widget,
                     supportingText = R.string.settings_support_progress_widget,

@@ -43,10 +43,10 @@ object NotificationUtil {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Deadline临近通知",
+                context.getString(R.string.channel_deadline_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "用于在Deadline到来前推送通知提醒，需要在设置中打开通知推送功能"
+                description = context.getString(R.string.channel_deadline_desc)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 500, 200, 500)
@@ -57,10 +57,10 @@ object NotificationUtil {
 
             val dailyChannel = NotificationChannel(
                 CHANNEL_DAILY_ID,
-                "Deadliner定时通知",
+                context.getString(R.string.channel_daily_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "每天定时向用户推送任务完成情况信息，需要在设置中打开通知推送功能"
+                description = context.getString(R.string.channel_daily_desc)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 500, 200, 500)
@@ -80,10 +80,10 @@ object NotificationUtil {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 "important_channel",
-                "Deadliner重要通知",
+                context.getString(R.string.channel_important_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "ColorOS专用渠道"
+                description = context.getString(R.string.channel_important_desc)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 enableVibration(true)
             }
@@ -161,8 +161,13 @@ object NotificationUtil {
             }
         }
 
-        val title = "今日任务概览" + if (dueTodayCount == 0) "" else "- ${dueTodayCount}个任务今日到期"
-        val summary = "🔥逾期 $overdueCount ｜ ⌛️进行中 $inProgressCount"
+        val title = if (dueTodayCount == 0) {
+            context.getString(R.string.title_today_overview)
+        } else {
+            context.getString(R.string.title_today_overview_with_due, dueTodayCount)
+        }
+
+        val summary = context.getString(R.string.summary_status, overdueCount, inProgressCount)
 
         val builder = NotificationCompat.Builder(context, CHANNEL_DAILY_ID).apply {
             setSmallIcon(R.mipmap.ic_launcher)
@@ -239,8 +244,8 @@ object NotificationUtil {
 
         return NotificationCompat.Builder(context, CHANNEL_ID).apply {
             setSmallIcon(R.mipmap.ic_launcher)
-            setContentTitle("即将到期提醒：${ddl.name}")
-            setContentText("${formatRemainingTime(GlobalUtils.safeParseDateTime(ddl.endTime))} - ${ddl.note}")
+            setContentTitle(context.getString(R.string.notification_near, ddl.name))
+            setContentText("${formatRemainingTime(context, GlobalUtils.safeParseDateTime(ddl.endTime))} - ${ddl.note}")
             setStyle(NotificationCompat.BigTextStyle().bigText(ddl.note))
             priority = NotificationCompat.PRIORITY_MAX
             setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -248,9 +253,9 @@ object NotificationUtil {
 
             setContentIntent(detailPending)
 
-            addAction(R.drawable.ic_check, "完成", completePending)
-            addAction(R.drawable.ic_delete, "删除", deletePending)
-            addAction(R.drawable.ic_close, "稍后提醒", laterPending)
+            addAction(R.drawable.ic_check, context.getString(R.string.complete), completePending)
+            addAction(R.drawable.ic_delete, context.getString(R.string.delete), deletePending)
+            addAction(R.drawable.ic_close, context.getString(R.string.remind_later), laterPending)
 
             if (isOppoDevice()) {
                 addExtras(Bundle().apply {
@@ -263,12 +268,20 @@ object NotificationUtil {
     private fun isOppoDevice() =
         Build.MANUFACTURER.equals("oppo", ignoreCase = true)
 
-    private fun formatRemainingTime(endTime: LocalDateTime): String {
+    private fun formatRemainingTime(context: Context, endTime: LocalDateTime): String {
         val duration = Duration.between(LocalDateTime.now(), endTime)
         return when {
-            duration.toHours() > 0 -> "${duration.toHours()}小时${duration.toMinutes() % 60}分钟"
-            duration.toMinutes() > 0 -> "${duration.toMinutes()}分钟"
-            else -> "即将到期！"
+            duration.toHours() > 0 -> {
+                val hours = duration.toHours()
+                val minutes = duration.toMinutes() % 60
+                context.getString(R.string.remaining_hours_minutes, hours, minutes)
+            }
+            duration.toMinutes() > 0 -> {
+                context.getString(R.string.remaining_minutes, duration.toMinutes())
+            }
+            else -> {
+                context.getString(R.string.remaining_due_soon)
+            }
         }
     }
 }

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="intro_drawables">
+        <item>@raw/intro_welcome</item>
+        <item>@drawable/intro_familiar</item>
+        <item>@drawable/intro_smart</item>
+        <item>@drawable/intro_cloud</item>
+        <item>@drawable/intro_personalized</item>
+    </array>
+
+    <string-array name="intro_titles">
+        <item>Meet the new Deadliner</item>
+        <item>Meet the familiar Deadliner</item>
+        <item>Meet the smart Deadliner</item>
+        <item>Meet the connected Deadliner</item>
+        <item>Meet the Deadliner that understands you</item>
+    </string-array>
+
+    <string-array name="intro_descriptions">
+        <item>✨ Brand new v3 — upgraded UI and smoother task and habit management.</item>
+        <item>Still the same flow: swipe right to complete ✅ swipe left to delete ❌, with easy pin and countdown control.</item>
+        <item>🤖 Powered by DeepSeek — just one sentence creates tasks and reminders in seconds.</item>
+        <item>☁️ WebDAV cloud sync keeps your data seamless and secure across devices.</item>
+        <item>🔔 New widgets and smarter notifications make everything clearer and more intuitive.</item>
+    </string-array>
+</resources>

@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.localutils.GlobalUtils
@@ -69,11 +70,16 @@ fun DailyBarChart(
     overdueColor: Color = MaterialTheme.colorScheme.error
 ) {
     if (data.isEmpty()) {
-        Text("暂无数据", modifier = modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            stringResource(com.aritxonly.deadliner.R.string.no_data_yet),
+            modifier = modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurface
+        )
         return
     }
 
     // 转换为 ComposeCharts 的 Bars 格式
+    val completedText = stringResource(com.aritxonly.deadliner.R.string.completed)
+    val overdueDoneText = stringResource(com.aritxonly.deadliner.R.string.overdue_done)
 
     val chartData = remember(data) {
         data.map { (date, count, overdue) ->
@@ -82,14 +88,14 @@ fun DailyBarChart(
                 values = if (GlobalUtils.OverviewSettings.showOverdueInDaily) listOf(
                     Bars.Data(value = count.toDouble(), color = Brush.verticalGradient(
                         listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
-                    ), label = "已完成"),
+                    ), label = completedText),
                     Bars.Data(value = overdue.toDouble(), color = Brush.verticalGradient(
                         listOf<Color>(overdueColor, overdueColor.copy(alpha = 0.5f))
-                    ), label = "逾期完成")
+                    ), label = overdueDoneText)
                 ) else listOf(
                     Bars.Data(value = count.toDouble(), color = Brush.verticalGradient(
                         listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
-                    ), label = "已完成")
+                    ), label = overdueDoneText)
                 )
             )
         }
@@ -133,15 +139,19 @@ fun MonthlyTrendChart(
     // 获取三维度统计
     val stats by remember { mutableStateOf(data) }
     if (stats.isEmpty()) {
-        Text("暂无数据", modifier = modifier.padding(16.dp))
+        Text(stringResource(com.aritxonly.deadliner.R.string.no_data_yet), modifier = modifier.padding(16.dp))
         return
     }
+
+    val totalTasksText = stringResource(com.aritxonly.deadliner.R.string.total_tasks)
+    val completedText = stringResource(com.aritxonly.deadliner.R.string.completed)
+    val overdueDoneText = stringResource(com.aritxonly.deadliner.R.string.overdue_done)
 
     // 构造 3 条折线数据
     val series = remember(stats) {
         listOf(
             Line(
-                label = "总任务",
+                label = totalTasksText,
                 values = stats.map { it.total.toDouble() },
                 color = Brush.verticalGradient(
                     listOf<Color>(totalColor, totalColor.copy(alpha = .5f))
@@ -158,7 +168,7 @@ fun MonthlyTrendChart(
                 )
             ),
             Line(
-                label = "完成",
+                label = completedText,
                 values = stats.map { it.completed.toDouble() },
                 color = Brush.verticalGradient(
                     listOf<Color>(completedColor, completedColor.copy(alpha = .5f))
@@ -175,7 +185,7 @@ fun MonthlyTrendChart(
                 )
             ),
             Line(
-                label = "逾期完成",
+                label = overdueDoneText,
                 values = stats.map { it.overdueCompleted.toDouble() },
                 color = Brush.verticalGradient(
                     listOf<Color>(overdueColor, overdueColor.copy(alpha = .5f))
@@ -221,11 +231,13 @@ fun WeeklyBarChart(
     barColor: Color = MaterialTheme.colorScheme.secondary
 ) {
     if (data.isEmpty()) {
-        Text("暂无数据", modifier = modifier.padding(16.dp))
+        Text(stringResource(com.aritxonly.deadliner.R.string.no_data_yet), modifier = modifier.padding(16.dp))
         return
     }
 
     // 转换为 ComposeCharts 的 Bars 格式
+    val completedText = stringResource(com.aritxonly.deadliner.R.string.completed)
+
     val chartData = remember(data) {
         data.map { (label, count) ->
             Bars(
@@ -236,7 +248,7 @@ fun WeeklyBarChart(
                         color = Brush.verticalGradient(
                             listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
                         ),
-                        label = "已完成"
+                        label = completedText
                     )
                 )
             )

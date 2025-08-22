@@ -1,5 +1,7 @@
 package com.aritxonly.deadliner.localutils
 
+import android.content.Context
+import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.model.DDLItem
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -168,6 +170,7 @@ object OverviewUtils {
      * 过去 n 周，每周完成总数。返回 [(2025-W23, 12), (2025-W24, 15), …]
      */
     fun computeWeeklyCompletedCounts(
+        context: Context,
         items: List<DDLItem>,
         weeks: Int = 4
     ): List<Pair<String, Int>> {
@@ -185,12 +188,12 @@ object OverviewUtils {
                         }
                 }.getOrNull()
             }
-            .groupingBy { (week, year) -> "第${week}周" }
+            .groupingBy { (week, year) -> context.getString(R.string.xx_th_weeks, week) }
             .eachCount()
 
         return (0 until weeks).map { offset ->
             val date = today.minusWeeks((weeks - 1 - offset).toLong())
-            val key = "第${date.get(weekOfYear)}周"
+            val key = context.getString(R.string.xx_th_weeks, date.get(weekOfYear))
             key to (weekBuckets[key] ?: 0)
         }
     }

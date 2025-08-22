@@ -78,7 +78,7 @@ fun InterfaceSettingsScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )
@@ -92,7 +92,7 @@ fun InterfaceSettingsScreen(
         ) {
             SvgCard(R.drawable.svg_interface, modifier = Modifier.padding(16.dp))
 
-            SettingsSection(topLabel = "主界面") {
+            SettingsSection(topLabel = stringResource(R.string.settings_interface_mainscreen)) {
                 SettingsDetailSwitchItem(
                     headline = R.string.settings_progress_dir_main,
                     supportingText = R.string.settings_support_progress_dir,
@@ -126,7 +126,7 @@ fun InterfaceSettingsScreen(
 
             }
 
-            SettingsSection(topLabel = "设计") {
+            SettingsSection(topLabel = stringResource(R.string.settings_interface_design)) {
                 SettingsDetailSwitchItem(
                     headline = R.string.settings_hide_divider,
                     supportingText = R.string.settings_support_hide_divider,

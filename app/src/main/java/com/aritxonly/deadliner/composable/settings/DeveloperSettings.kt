@@ -54,7 +54,7 @@ fun DeveloperSettingsScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )
@@ -65,7 +65,7 @@ fun DeveloperSettingsScreen(
             .verticalScroll(rememberScrollState())) {
             SvgCard(R.drawable.svg_developer_avatar, modifier = Modifier.padding(16.dp))
 
-            SettingsSection(topLabel = "实验性功能") {
+            SettingsSection(topLabel = stringResource(R.string.settings_experimental)) {
                 SettingsDetailTextButtonItem(
                     headline = R.string.settings_custom_filter_list,
                     supporting = R.string.settings_support_custom_filter_list
@@ -80,7 +80,7 @@ fun DeveloperSettingsScreen(
                 )
             }
 
-            SettingsSection(topLabel = "开发者选项") {
+            SettingsSection(topLabel = stringResource(R.string.settings_developer_options)) {
                 SettingsTextButtonItem(
                     text = R.string.clear_all_notification
                 ) { onClickCancelAll() }

@@ -38,7 +38,7 @@ fun BackupSettingsScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )

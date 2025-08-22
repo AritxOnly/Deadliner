@@ -16,7 +16,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -25,10 +24,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.indication
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,18 +35,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.DoneOutline
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
@@ -82,9 +71,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -97,14 +86,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
-import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.calendar.CalendarHelper
 import com.aritxonly.deadliner.data.DDLRepository
-import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.model.DDLItem
-import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
@@ -112,7 +98,8 @@ import okhttp3.internal.toHexString
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
+import java.time.format.FormatStyle
+import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -292,6 +279,14 @@ fun DeadlineDetailScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
+    val editText = stringResource(R.string.edit)
+    val completeText = stringResource(R.string.complete)
+    val markCompleteText = stringResource(R.string.mark_complete)
+    val undoCompleteText = stringResource(R.string.undo_complete)
+    val archiveText = stringResource(R.string.archive)
+    val deleteText = stringResource(R.string.delete)
+    val saveToCalendarText = stringResource(R.string.save_and_add_to_calendar)
+
     Scaffold(
         modifier = Modifier.background(Color(colorScheme.surface)),
         topBar = {
@@ -308,7 +303,7 @@ fun DeadlineDetailScreen(
                     IconButton(onClick = onClose) {
                         Icon(
                             Icons.Rounded.Close,
-                            contentDescription = "关闭",
+                            contentDescription = stringResource(R.string.close),
                             tint = Color(colorScheme.onSurface),
                             modifier = expressiveTypeModifier
                         )
@@ -328,7 +323,7 @@ fun DeadlineDetailScreen(
                         else Color(colorScheme.onSurface)
                         Icon(
                             iconStar,
-                            contentDescription = "星标",
+                            contentDescription = stringResource(R.string.star),
                             tint = tintColor,
                             modifier = expressiveTypeModifier
                         )
@@ -365,8 +360,8 @@ fun DeadlineDetailScreen(
             ) { desc ->
                 Log.d("Desc", desc)
                 when (desc) {
-                    "编辑" -> onEdit()
-                    "完成", "标记完成", "撤销完成" -> {
+                    editText -> onEdit()
+                    completeText, markCompleteText, undoCompleteText -> {
                         deadline.isCompleted = !deadline.isCompleted
                         if (deadline.isCompleted) {
                             Toast.makeText(context, R.string.toast_finished, Toast.LENGTH_SHORT).show()
@@ -375,7 +370,7 @@ fun DeadlineDetailScreen(
                         }
                         DDLRepository().updateDDL(deadline)
                     }
-                    "归档" -> {
+                    archiveText -> {
                         deadline.isArchived = true
                         Toast.makeText(
                             context,
@@ -384,7 +379,7 @@ fun DeadlineDetailScreen(
                         ).show()
                         finishActivity()
                     }
-                    "删除" -> {
+                    deleteText -> {
                         MaterialAlertDialogBuilder(context)
                             .setTitle(R.string.alert_delete_title)
                             .setMessage(R.string.alert_delete_message)
@@ -399,7 +394,7 @@ fun DeadlineDetailScreen(
                             .show()
 
                     }
-                    "保存至日历" -> {
+                    saveToCalendarText -> {
                         val calendarHelper = CalendarHelper(applicationContext)
 
                         coroutineScope.launch {
@@ -407,10 +402,10 @@ fun DeadlineDetailScreen(
                                 val eventId = calendarHelper.insertEvent(deadline)
                                 deadline.calendarEventId = eventId
                                 DDLRepository().updateDDL(deadline)
-                                Toast.makeText(context, "已添加至日历", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, R.string.add_calendar_success, Toast.LENGTH_SHORT).show()
                             } catch (e: Exception) {
                                 Log.e("Calendar", e.toString())
-                                Toast.makeText(context, "添加至日历失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.add_calendar_failed, e.toString()), Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
@@ -432,12 +427,17 @@ fun DeadlineEditFABMenu(
     BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
 
     var items = listOf(
-        painterResource(R.drawable.ic_edit) to "编辑",
-        painterResource(R.drawable.ic_done) to "标记完成",
-        painterResource(R.drawable.ic_archiving) to "归档",
-        painterResource(R.drawable.ic_delete) to "删除",
-        painterResource(R.drawable.ic_event) to "保存至日历"
+        painterResource(R.drawable.ic_edit) to stringResource(R.string.edit),
+        painterResource(R.drawable.ic_done) to stringResource(R.string.mark_complete),
+        painterResource(R.drawable.ic_archiving) to stringResource(R.string.archive),
+        painterResource(R.drawable.ic_delete) to stringResource(R.string.delete),
+        painterResource(R.drawable.ic_event) to stringResource(R.string.save_and_add_to_calendar)
     )
+
+    val expandText = stringResource(R.string.expand)
+    val retractText = stringResource(R.string.retract)
+    val editMenuText = stringResource(R.string.edit_menu)
+    val closeMenuText = stringResource(R.string.close_menu)
 
     FloatingActionButtonMenu(
         expanded = fabMenuExpanded,
@@ -446,8 +446,8 @@ fun DeadlineEditFABMenu(
                 modifier = Modifier
                     .semantics {
                         traversalIndex = -1f
-                        stateDescription = if (fabMenuExpanded) "展开" else "收起"
-                        contentDescription = "编辑菜单"
+                        stateDescription = if (fabMenuExpanded) expandText else retractText
+                        contentDescription = editMenuText
                     }
                     .animateFloatingActionButton(
                         visible = true,
@@ -455,7 +455,7 @@ fun DeadlineEditFABMenu(
                     ),
                 containerColor = { x: Float ->
                     if (x > 0.5f)
-                        Color(colorScheme.tertiary!!)
+                        Color(colorScheme.tertiary)
                     else
                         Color(colorScheme.tertiaryContainer!!)
                 },
@@ -492,7 +492,7 @@ fun DeadlineEditFABMenu(
                     if (i == items.size - 1) {
                         customActions = listOf(
                             CustomAccessibilityAction(
-                                label = "关闭菜单",
+                                label = closeMenuText,
                                 action = {
                                     fabMenuExpanded = false
                                     true
@@ -507,8 +507,8 @@ fun DeadlineEditFABMenu(
                 },
                 icon = { Icon(item.first, contentDescription = null) },
                 text = { Text(text = item.second) },
-                containerColor = Color(colorScheme.tertiaryContainer!!),
-                contentColor = Color(colorScheme.onTertiaryContainer!!)
+                containerColor = Color(colorScheme.tertiaryContainer),
+                contentColor = Color(colorScheme.onTertiaryContainer)
             )
         }
     }
@@ -590,25 +590,33 @@ fun WaterCupAnimation(deadline: DDLItem,
     }
 }
 
-// 辅助函数：格式化 Duration（例如：2天 3小时 15分）
-fun formatDuration(duration: Duration): String {
+fun formatDuration(context: Context, duration: Duration): String {
     val days = duration.toDays()
     val hours = duration.minusDays(days).toHours()
     val minutes = duration.minusDays(days).minusHours(hours).toMinutes()
-    return if (days > 0) "$days 天 $hours 小时 $minutes 分" else "$hours 小时 $minutes 分"
+
+    return if (days > 0) {
+        context.getString(R.string.duration_full, days, hours, minutes)
+    } else {
+        context.getString(R.string.duration_hours_minutes, hours, minutes)
+    }
 }
 
 @Composable
 fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
+    val context = LocalContext.current
+
     // 将字符串时间解析为 LocalDateTime
     val startTime = GlobalUtils.safeParseDateTime(deadline.startTime)
     val endTime = GlobalUtils.safeParseDateTime(deadline.endTime)
     val now = LocalDateTime.now()
     // 计算剩余时间
     val remainingDuration = Duration.between(now, endTime)
-    val remainingTimeText = if (remainingDuration.isNegative) "已过期" else formatDuration(remainingDuration)
+    val remainingTimeText = if (remainingDuration.isNegative) stringResource(R.string.overdue) else formatDuration(context, remainingDuration)
     // 格式化日期显示
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm")
+    val dateFormatter = DateTimeFormatter
+        .ofLocalizedDateTime(FormatStyle.MEDIUM)
+        .withLocale(Locale.getDefault())
 
     /**
      * 使用插值法计算背景情况
@@ -636,9 +644,21 @@ fun DeadlineDetailInfo(deadline: DDLItem, waterLevel: Float) {
     ) {
         Text(text = deadline.name, style = MaterialTheme.typography.headlineLarge, color = textColor)
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "开始时间：${startTime.format(dateFormatter)}", style = MaterialTheme.typography.bodyMedium, color = textColor)
-        Text(text = "结束时间：${endTime.format(dateFormatter)}", style = MaterialTheme.typography.bodyMedium, color = textColor)
-        Text(text = "剩余时间：$remainingTimeText", style = MaterialTheme.typography.bodyMedium, color = textColor)
+        Text(
+            text = stringResource(R.string.label_start_time, startTime.format(dateFormatter)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor
+        )
+        Text(
+            text = stringResource(R.string.label_end_time, endTime.format(dateFormatter)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor
+        )
+        Text(
+            text = stringResource(R.string.label_remaining_time, remainingTimeText),
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor
+        )
         Spacer(modifier = Modifier.height(8.dp))
         SelectionContainer {
             Text(text = deadline.note, style = MaterialTheme.typography.bodyMedium, color = textColor)

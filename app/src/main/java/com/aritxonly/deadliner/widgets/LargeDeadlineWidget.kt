@@ -174,14 +174,14 @@ internal fun updateLargeAppWidget(
         // 剩余时间文本
         val text = if (item.remainingMillis < 0) {
             itemRv.setProgressBar(R.id.item_progress, 100, 0, false)
-            "逾期"
+            context.getString(R.string.outdated)
         } else {
             val days: Double = item.remainingMillis.toDouble() / (3600000 * 24)
             if (days < 1.0f) {
                 val hours: Double = item.remainingMillis.toDouble() / 3600000
-                "%.1f".format(hours) + "小时" + " $percent%"
+                context.getString(R.string.progress_hours, hours, percent)
             } else {
-                "%.1f".format(days) + "天" + " $percent%"
+                context.getString(R.string.progress_days, days, percent)
             }
         }
         itemRv.setTextViewText(R.id.item_progress_text, text)

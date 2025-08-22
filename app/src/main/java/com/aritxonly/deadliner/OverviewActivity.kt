@@ -43,8 +43,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -79,26 +81,27 @@ fun isOverdue(item: DDLItem): Boolean {
 }
 
 // 辅助函数：根据完成时间提取时间段（00-06, 06-12, 12-18, 18-24）
-fun extractTimeBucket(completeTime: String): String {
+fun extractTimeBucket(context: Context, completeTime: String): String {
     return try {
-        val time = GlobalUtils.safeParseDateTime(completeTime)
+        val time = GlobalUtils.safeParseDateTime(completeTime) // LocalDateTime
         val hour = time.hour
         when (hour) {
-            in 0 until 6 -> "凌晨"
-            in 6 until 12 -> "上午"
-            in 12 until 18 -> "下午"
-            else -> "晚上"
+            in 0 until 6  -> context.getString(R.string.time_bucket_late_night)
+            in 6 until 12 -> context.getString(R.string.time_bucket_morning)
+            in 12 until 18-> context.getString(R.string.time_bucket_afternoon)
+            in 18..23     -> context.getString(R.string.time_bucket_evening)
+            else          -> context.getString(R.string.time_bucket_unknown)
         }
-    } catch (e: Exception) {
-        "未知"
+    } catch (_: Exception) {
+        context.getString(R.string.time_bucket_unknown)
     }
 }
 
-val timeBucketOrder = mapOf(
-    "凌晨" to 0,
-    "上午" to 1,
-    "下午" to 2,
-    "晚上" to 3
+fun buildTimeBucketOrder(context: Context): Map<String, Int> = mapOf(
+    context.getString(R.string.time_bucket_late_night) to 0,
+    context.getString(R.string.time_bucket_morning)    to 1,
+    context.getString(R.string.time_bucket_afternoon)  to 2,
+    context.getString(R.string.time_bucket_evening)    to 3
 )
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -180,9 +183,9 @@ class OverviewActivity : ComponentActivity() {
 @Composable
 fun hashColor(key: String) : Color {
     val color = when (key) {
-        "今日完成", "已完成" -> colorResource(id = R.color.chart_green)
-        "未完成" -> colorResource(id = R.color.chart_orange)
-        "今日逾期", "逾期" -> colorResource(id = R.color.chart_red)
+        stringResource(R.string.today_completed), stringResource(R.string.completed) -> colorResource(id = R.color.chart_green)
+        stringResource(R.string.incomplete) -> colorResource(id = R.color.chart_orange)
+        stringResource(R.string.today_overdue), stringResource(R.string.overdue) -> colorResource(id = R.color.chart_red)
         else -> colorResource(id = R.color.chart_blue)
     }
     return color
@@ -196,6 +199,8 @@ fun OverviewScreen(
     colorScheme: AppColorScheme,
     onClose: () -> Unit
 ) {
+    val context = LocalContext.current
+
     // 数据准备
     // 当前任务：未归档
     val activeItems = items.filter { !it.isArchived }
@@ -218,18 +223,20 @@ fun OverviewScreen(
     val historyOverdue = activeItems.filter { isOverdue(it) }
 
     val activeStats = mapOf(
-        "今日完成" to completedItems.size,
-        "未完成" to incompleteItems.size,
-        "今日逾期" to overdueItems.size
+        stringResource(R.string.today_completed) to completedItems.size,
+        stringResource(R.string.incomplete) to incompleteItems.size,
+        stringResource(R.string.today_overdue) to overdueItems.size
     )
     val historyStats = mapOf(
-        "已完成" to historyCompleted.size,
-        "未完成" to historyIncomplete.size,
-        "逾期" to historyOverdue.size
+        stringResource(R.string.completed) to historyCompleted.size,
+        stringResource(R.string.incomplete) to historyIncomplete.size,
+        stringResource(R.string.overdue) to historyOverdue.size
     )
 
     // 完成时间段统计：针对所有完成的任务，按时间段统计
-    val completionTimeStats = historyCompleted.groupBy { extractTimeBucket(it.completeTime) }
+    val timeBucketOrder = buildTimeBucketOrder(context)
+
+    val completionTimeStats = historyCompleted.groupBy { extractTimeBucket(context, it.completeTime) }
         .mapValues { it.value.size }
         .toList()
         .sortedBy { timeBucketOrder[it.first] ?: Int.MAX_VALUE }
@@ -244,11 +251,15 @@ fun OverviewScreen(
 
     var showSettings by rememberSaveable { mutableStateOf(false) }
 
-    val tabs = listOf("概览统计", "趋势分析", "上月总结")
+    val tabs = listOf(
+        stringResource(R.string.tab_overview),
+        stringResource(R.string.tab_trend),
+        stringResource(R.string.tab_summary)
+    )
     val mapIcon = mapOf(
-        "概览统计" to painterResource(R.drawable.ic_analytics),
-        "趋势分析" to painterResource(R.drawable.ic_monitor),
-        "上月总结" to painterResource(R.drawable.ic_dashboard)
+        stringResource(R.string.tab_overview) to painterResource(R.drawable.ic_analytics),
+        stringResource(R.string.tab_trend) to painterResource(R.drawable.ic_monitor),
+        stringResource(R.string.tab_summary) to painterResource(R.drawable.ic_dashboard)
     )
     var selectedTab by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
 
@@ -259,7 +270,7 @@ fun OverviewScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(
-                    "概览",
+                    stringResource(R.string.title_activity_overview),
                     color = Color(colorScheme.onSurface),
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
                 ) },
@@ -269,7 +280,7 @@ fun OverviewScreen(
                     ) {
                         Icon(
                             painterResource(R.drawable.ic_back),
-                            contentDescription = "关闭",
+                            contentDescription = stringResource(R.string.close),
                             tint = Color(colorScheme.onSurface),
                             modifier = expressiveTypeModifier
                         )
@@ -282,7 +293,7 @@ fun OverviewScreen(
                         ) {
                             Icon(
                                 painterResource(R.drawable.ic_pref),
-                                contentDescription = "更多",
+                                contentDescription = stringResource(R.string.settings_more),
                                 tint = Color(colorScheme.onSurface),
                                 modifier = expressiveTypeModifier
                             )
@@ -351,7 +362,7 @@ fun OverviewScreen(
                 onDismissRequest = { showSettings = false },
                 confirmButton = {
                     TextButton(onClick = { showSettings = false }) {
-                        Text("确认")
+                        Text(stringResource(R.string.accept))
                     }
                 },
                 text = {
@@ -367,13 +378,13 @@ fun OverviewScreen(
 
                                     // 初始化控件状态
                                     seek.value = (GlobalUtils.OverviewSettings.monthlyCount).toFloat()
-                                    tv.text = "${GlobalUtils.OverviewSettings.monthlyCount} 个月"
+                                    tv.text = context.getString(R.string.xx_months, GlobalUtils.OverviewSettings.monthlyCount)
                                     sw.isChecked = GlobalUtils.OverviewSettings.showOverdueInDaily
 
                                     // 监听用户操作，实时更新 SharedPreferences
                                     seek.addOnChangeListener { _, _, _ ->
                                         GlobalUtils.OverviewSettings.monthlyCount = seek.value.toInt()
-                                        tv.text = "${GlobalUtils.OverviewSettings.monthlyCount} 个月"
+                                        tv.text = context.getString(R.string.xx_months, GlobalUtils.OverviewSettings.monthlyCount)
                                     }
                                     sw.setOnCheckedChangeListener { _, isChecked ->
                                         GlobalUtils.OverviewSettings.showOverdueInDaily = isChecked

@@ -18,6 +18,7 @@ import androidx.core.content.edit
 import androidx.fragment.app.FragmentManager
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
+import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
@@ -544,19 +545,23 @@ object GlobalUtils {
         return baseWikiUrl
     }
 
-    fun generateHabitNote(frequency: Int?, total: Int?, type: DeadlineFrequency): String {
+    fun generateHabitNote(context: Context, frequency: Int?, total: Int?, type: DeadlineFrequency): String {
         val typeString = when (type) {
-            DeadlineFrequency.DAILY -> "每天"
-            DeadlineFrequency.WEEKLY -> "每周"
-            DeadlineFrequency.MONTHLY -> "每月"
-            else -> "每天"
+            DeadlineFrequency.DAILY -> context.getString(R.string.frequency_daily)
+            DeadlineFrequency.WEEKLY -> context.getString(R.string.frequency_weekly)
+            DeadlineFrequency.MONTHLY -> context.getString(R.string.frequency_monthly)
+            else -> context.getString(R.string.frequency_daily)
         }
 
-        val frequencyString = (frequency?:1).toString()
+        val frequencyValue = frequency ?: 1
 
-        val totalString = if (total == null) "不计次数" else "共计 $total 次"
+        val totalString = if (total == null) {
+            context.getString(R.string.habit_total_unlimited)
+        } else {
+            context.getString(R.string.habit_total_count, total)
+        }
 
-        return typeString + "打卡 " + frequencyString + " 次，" + totalString
+        return context.getString(R.string.habit_checkin, typeString, frequencyValue, totalString)
     }
 
     fun canHabitBeDone(item: DDLItem, metaData: HabitMetaData): Boolean {
@@ -589,7 +594,7 @@ object GlobalUtils {
             .build()
 
         val picker = MaterialDatePicker.Builder.datePicker()
-            .setTitleText("选择补签日期")
+            .setTitleText(R.string.choose_retro_date_title)
             .setCalendarConstraints(constraints)
             .build()
 

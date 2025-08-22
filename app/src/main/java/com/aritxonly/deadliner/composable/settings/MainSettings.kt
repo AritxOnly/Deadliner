@@ -53,7 +53,7 @@ fun MainSettingsScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.ic_back),
-                    contentDescription = "关闭",
+                    contentDescription = stringResource(R.string.close),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )

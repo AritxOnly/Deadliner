@@ -191,7 +191,7 @@ class SettingsActivity : AppCompatActivity() {
                             handleImport = {
                                 DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
                                 GlobalUtils.NotificationStatusManager.clearAllNotified()
-                                Toast.makeText(this@SettingsActivity, "已成功销毁所有闹钟时间", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@SettingsActivity, getString(R.string.destroy_alarms), Toast.LENGTH_SHORT).show()
                                 openBackup()
                             }
                         ) { navController.navigateUp() }
@@ -219,26 +219,26 @@ class SettingsActivity : AppCompatActivity() {
                                     }
 
                                     MaterialAlertDialogBuilder(this@SettingsActivity)
-                                        .setTitle("请选择要显示的日历过滤器")
+                                        .setTitle(R.string.select_filter_calendar)
                                         .setMultiChoiceItems(itemsArray, checkedArray) { _, which, isChecked ->
                                             val item = itemsArray[which]
                                             if (isChecked) selectedItems.add(item)
                                             else selectedItems.remove(item)
                                         }
-                                        .setNeutralButton("添加项") { dialog, _ ->
+                                        .setNeutralButton(R.string.filter_add_one) { dialog, _ ->
                                             dialog.dismiss()
                                             // 弹出输入框，添加新选项
                                             val inputLayout = TextInputLayout(this@SettingsActivity).apply {
-                                                hint = "新过滤器名称"
+                                                hint = getString(R.string.new_filter_name)
                                                 setPadding(32, 0, 32, 0)
                                             }
                                             val editText = TextInputEditText(inputLayout.context)
                                             inputLayout.addView(editText)
 
                                             MaterialAlertDialogBuilder(this@SettingsActivity)
-                                                .setTitle("新增过滤器")
+                                                .setTitle(R.string.new_filter_title)
                                                 .setView(inputLayout)
-                                                .setPositiveButton("确定") { subDialog, _ ->
+                                                .setPositiveButton(R.string.accept) { subDialog, _ ->
                                                     val newItem = editText.text?.toString()?.trim()
                                                     if (!newItem.isNullOrEmpty() && !allItems.contains(newItem)) {
                                                         // 更新数据源和选中集
@@ -251,14 +251,14 @@ class SettingsActivity : AppCompatActivity() {
                                                     // 重新打开主多选框
                                                     showFilterDialog()
                                                 }
-                                                .setNegativeButton("取消", null)
+                                                .setNegativeButton(R.string.cancel, null)
                                                 .show()
                                         }
-                                        .setPositiveButton("确认") { dialog, _ ->
+                                        .setPositiveButton(R.string.accept) { dialog, _ ->
                                             GlobalUtils.customCalendarFilterListSelected = selectedItems.toSet()
                                             dialog.dismiss()
                                         }
-                                        .setNegativeButton("取消", null)
+                                        .setNegativeButton(R.string.cancel, null)
                                         .show()
                                 }
 
@@ -268,11 +268,11 @@ class SettingsActivity : AppCompatActivity() {
                             onClickCancelAll = {
                                 DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
                                 GlobalUtils.NotificationStatusManager.clearAllNotified()
-                                Toast.makeText(this@SettingsActivity, "已成功销毁所有闹钟时间", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@SettingsActivity, getString(R.string.destroy_alarms), Toast.LENGTH_SHORT).show()
                             },
                             onClickShowIntro = {
                                 GlobalUtils.showIntroPage = true
-                                Toast.makeText(this@SettingsActivity, "即将在下次打开Deadliner时显示欢迎页面", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@SettingsActivity, getString(R.string.show_intro_next_time), Toast.LENGTH_SHORT).show()
                             },
                         ) { navController.navigateUp() }
                     }
@@ -335,7 +335,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         // 兼容旧版本
-        val chooser = Intent.createChooser(intent, "选择数据库备份文件")
+        val chooser = Intent.createChooser(intent, getString(R.string.choose_backup))
         startActivityForResult(chooser, IMPORT_REQUEST_CODE)
     }
 
@@ -349,10 +349,10 @@ class SettingsActivity : AppCompatActivity() {
                             inputStream.copyTo(outputStream)
                         }
                     }
-                    showToast("✅ 导出成功")
+                    showToast(getString(R.string.export_success))
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    showToast("❌ 导出失败: ${e.localizedMessage}")
+                    showToast(getString(R.string.export_failed, e.localizedMessage))
                 }
             }
         }
@@ -362,12 +362,12 @@ class SettingsActivity : AppCompatActivity() {
         if (resultCode == Activity.RESULT_OK) {
             data?.data?.let { uri ->
                 MaterialAlertDialogBuilder(this)
-                    .setTitle("确认导入")
-                    .setMessage("将覆盖当前所有数据，请确认操作！")
-                    .setPositiveButton("确定") { _, _ ->
+                    .setTitle(R.string.confirm_import)
+                    .setMessage(R.string.confirm_import_message)
+                    .setPositiveButton(R.string.accept) { _, _ ->
                         performImport(uri)
                     }
-                    .setNegativeButton("取消", null)
+                    .setNegativeButton(R.string.cancel, null)
                     .show()
             }
         }
@@ -391,25 +391,25 @@ class SettingsActivity : AppCompatActivity() {
 
             // 提示需要重启应用
             MaterialAlertDialogBuilder(this)
-                .setMessage("导入成功，需要重启应用生效")
-                .setPositiveButton("立即重启") { _, _ ->
+                .setMessage(R.string.import_success)
+                .setPositiveButton(R.string.restart_now) { _, _ ->
                     restartApp()
                 }
-                .setNegativeButton("稍后", null)
+                .setNegativeButton(R.string.later, null)
                 .show()
         } catch (e: Exception) {
             e.printStackTrace()
-            showToast("❌ 导入失败: ${e.localizedMessage}")
+            showToast(getString(R.string.import_failed, e.localizedMessage))
         }
     }
 
     private fun showDialogRestartAppTablet() {
         MaterialAlertDialogBuilder(this)
-            .setMessage("平行窗口设置成功，需要重启应用生效")
-            .setPositiveButton("立即重启") { _, _ ->
+            .setMessage(R.string.embedded_activities_success)
+            .setPositiveButton(R.string.restart_now) { _, _ ->
                 restartApp()
             }
-            .setNegativeButton("稍后", null)
+            .setNegativeButton(R.string.later, null)
             .show()
     }
 

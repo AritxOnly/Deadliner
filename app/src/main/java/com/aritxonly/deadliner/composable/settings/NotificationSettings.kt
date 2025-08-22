@@ -36,13 +36,14 @@ import com.google.android.material.timepicker.TimeFormat
 fun NotificationSettingsScreen(
     navigateUp: () -> Unit
 ) {
+    val context = LocalContext.current
+
     fun formatDailyTime(hour: Int, minute: Int): String {
         val hh = hour.toString().padStart(2, '0')
         val mm = minute.toString().padStart(2, '0')
-        return "当前设定时间为: $hh:$mm (长按修改)"
+        return context.getString(R.string.settings_notification_formatter_set_time, hh, mm)
     }
 
-    val context = LocalContext.current
     val fragmentManager = remember(context) {
         (context as? FragmentActivity)?.supportFragmentManager
     }
@@ -100,7 +101,7 @@ fun NotificationSettingsScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )
@@ -111,7 +112,7 @@ fun NotificationSettingsScreen(
             .verticalScroll(rememberScrollState())) {
             SvgCard(R.drawable.svg_notifications, modifier = Modifier.padding(16.dp))
 
-            SettingsSection(topLabel = "通知推送") {
+            SettingsSection(topLabel = stringResource(R.string.settings_notification_push)) {
                 SettingsDetailSwitchItem(
                     headline = R.string.settings_nearby_notification,
                     supportingText = R.string.settings_support_nearby_notification,
@@ -144,7 +145,7 @@ private fun showDailyTimePicker(
         .setTimeFormat(TimeFormat.CLOCK_24H)
         .setHour(currentHour)
         .setMinute(currentMinute)
-        .setTitleText("选择每日通知时间")
+        .setTitleText(R.string.choose_daily_notifictaion_time)
         .build()
 
     picker.addOnPositiveButtonClickListener {

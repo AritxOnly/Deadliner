@@ -25,6 +25,7 @@ import com.google.android.material.textfield.TextInputLayout
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.*
 
 class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLItem) -> Unit) : DialogFragment() {
@@ -251,7 +252,9 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
      * 格式化 LocalDateTime 为字符串
      */
     private fun formatLocalDateTime(dateTime: LocalDateTime): String {
-        val formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm", Locale.CHINA)
+        val formatter = DateTimeFormatter
+            .ofLocalizedDateTime(FormatStyle.MEDIUM)
+            .withLocale(Locale.getDefault())
         return dateTime.format(formatter)
     }
 

@@ -20,8 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.R
@@ -38,12 +40,14 @@ fun TrendAnalysisScreen(
     modifier: Modifier = Modifier,
     colorScheme: AppColorScheme
 ) {
+    val context = LocalContext.current
+
     key(GlobalUtils.OverviewSettings.monthlyCount, GlobalUtils.OverviewSettings.showOverdueInDaily) {
 
         val dailyCompleted  = OverviewUtils.computeDailyCompletedCounts(items)
         val dailyOverdue    = OverviewUtils.computeDailyOverdueCounts(items)
         val monthlyStat     = OverviewUtils.computeMonthlyTaskStats(items, months = GlobalUtils.OverviewSettings.monthlyCount)
-        val weeklyCompleted = OverviewUtils.computeWeeklyCompletedCounts(items)
+        val weeklyCompleted = OverviewUtils.computeWeeklyCompletedCounts(context, items)
 
         val trendItems = listOf<@Composable () -> Unit>(
             { DailyCompletedCard(colorScheme, dailyCompleted) },
@@ -87,7 +91,7 @@ private fun PrevWeeksCard(
                 .background(Color(colorScheme.surfaceContainer))
         ) {
             Text(
-                text = "最近4周完成量",
+                text = stringResource(R.string.prev4weeks),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 color = Color(colorScheme.onSurface)
@@ -125,7 +129,7 @@ private fun MonthlyTrendCard(
                 .background(Color(colorScheme.surfaceContainer))
         ) {
             Text(
-                text = "月度趋势",
+                text = stringResource(R.string.monthly_trend),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 color = Color(colorScheme.onSurface)
@@ -165,7 +169,7 @@ private fun DailyCompletedCard(
                 .background(Color(colorScheme.surfaceContainer))
         ) {
             Text(
-                text = "周完成量",
+                text = stringResource(R.string.weekly_completed),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 color = Color(colorScheme.onSurface)
@@ -177,7 +181,7 @@ private fun DailyCompletedCard(
                     .fillMaxWidth()
                     .height(200.dp),
                 barColor = hashColor(""),
-                overdueColor = hashColor("逾期")
+                overdueColor = hashColor(stringResource(R.string.overdue))
             )
         }
     }

@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.CalendarContract
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.localutils.GlobalUtils
@@ -200,7 +201,7 @@ class CalendarHelper(private val context: Context) {
             while (cursor.moveToNext()) {
                 val id    = cursor.getLong(idxId)
                 // 下面几个字段都可能为 null，加一个默认值
-                val title = cursor.getString(idxTitle) ?: "(无标题)"
+                val title = cursor.getString(idxTitle) ?: context.getString(R.string.untitled)
                 val dtStart = cursor.getLong(idxStart)
                 val dtEnd   = cursor.getLong(idxEnd)
                 val desc    = cursor.getString(idxDesc)  ?: ""

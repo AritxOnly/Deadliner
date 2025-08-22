@@ -18,8 +18,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.provider.Settings
 import android.text.Editable
 import android.text.Spanned
@@ -73,15 +71,9 @@ import io.noties.markwon.Markwon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import nl.dionsegijn.konfetti.xml.KonfettiView
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
 import okhttp3.internal.toHexString
 import org.json.JSONObject
 import org.json.JSONArray
-import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
@@ -93,11 +85,8 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.ViewFlipper
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import com.aritxonly.deadliner.web.WebUtils
-import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.shape.MaterialShapeDrawable
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
@@ -110,7 +99,6 @@ import com.aritxonly.deadliner.composable.agent.DeepseekOverlay
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.data.MainViewModel
-import com.aritxonly.deadliner.data.SyncService
 import com.aritxonly.deadliner.data.ViewModelFactory
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.AppColorScheme
@@ -128,7 +116,6 @@ import com.aritxonly.deadliner.widgets.HabitMiniWidget
 import com.aritxonly.deadliner.widgets.LargeDeadlineWidget
 import com.aritxonly.deadliner.widgets.MultiDeadlineWidget
 import com.google.android.material.loadingindicator.LoadingIndicator
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.Period
@@ -219,9 +206,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         val snackbar = Snackbar.make(
             snackBarParent,
-            "检测到剪切板内容，使用 DeepSeek 快捷添加？",
+            getString(R.string.show_clipboard_deepseek_snackbar),
             Snackbar.LENGTH_LONG
-        ).setAction("添加") {
+        ).setAction(getString(R.string.add)) {
             showAgentOverlay(text)
         }.setAnchorView(bottomAppBar)
 
@@ -395,7 +382,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 showBottomBar()
                 switchAppBarStatus(selectedCount == 0)
                 if (selectedCount != 0) {
-                    excitementText.text = "已选中 $selectedCount 项 Deadline"
+                    excitementText.text = getString(R.string.selected_items, selectedCount)
                 } else {
                     updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                 }
@@ -429,8 +416,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         viewHolderWithAppBar
                     else viewHolderWithNoAppBar
 
-                val snackbar = Snackbar.make(snackBarParent, "打卡成功 🎉", Snackbar.LENGTH_LONG)
-                    .setAction("撤销") {
+                val snackbar = Snackbar.make(snackBarParent, getString(R.string.habit_success), Snackbar.LENGTH_LONG)
+                    .setAction(getString(R.string.undo)) {
                         val todayStr = LocalDate.now().toString()
                         // 解析 note JSON
                         val json = JSONObject(habitItem.note ?: "{}")
@@ -691,7 +678,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                                 GlobalUtils.filterSelection = selectedItem
                                 viewModel.loadData(currentType)
                             } else {
-                                Toast.makeText(this, "未选择任何项", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this, getString(R.string.none_selected), Toast.LENGTH_SHORT).show()
                             }
                         }
                         .setNegativeButton(R.string.cancel, null)
@@ -730,7 +717,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         decideShowEmptyNotice()
                         true
                     } else {
-                        Toast.makeText(this@MainActivity, "请先选择要删除的项目", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, getString(R.string.please_select_delete_first), Toast.LENGTH_SHORT).show()
                         false
                     }
                 }
@@ -778,7 +765,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                             true
                         }
                     } else {
-                        Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, getString(R.string.please_select_done_first), Toast.LENGTH_SHORT).show()
                         false
                     }
                 }
@@ -797,7 +784,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         viewModel.loadData(currentType)
                         Toast.makeText(
                             this@MainActivity,
-                            "$count 项" + resources.getString(R.string.toast_archived),
+                            resources.getString(R.string.toast_archived, count),
                             Toast.LENGTH_SHORT
                         ).show()
                         decideShowEmptyNotice()
@@ -807,7 +794,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                         true
                     } else {
-                        Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, getString(R.string.please_select_done_first), Toast.LENGTH_SHORT).show()
                         false
                     }
                 }
@@ -834,7 +821,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                         true
                     } else {
-                        Toast.makeText(this@MainActivity, "请先选择要标记为完成的项目", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, getString(R.string.please_select_done_first), Toast.LENGTH_SHORT).show()
                         false
                     }
                 }
@@ -1056,76 +1043,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             titleBar.textSize = 32f // 设置为默认大小
             excitementText.visibility = TextView.GONE
         }
-    }
-
-    /**
-     * 按 SemVer 规则比较版本号：
-     *   1) 先比较主、次、补丁号的数字；
-     *   2) 如果数字都相等，再比较 pre-release 后缀，
-     *      认为无后缀 > 有后缀（beta、rc 等等）。
-     *
-     * 返回值：>0 表示 v1>v2，0 表示相等，<0 表示 v1<v2
-     */
-    private fun compareSemVer(v1: String, v2: String): Int {
-        // 去掉前缀 'v'
-        val p1 = v1.removePrefix("v").split(".")
-        val p2 = v2.removePrefix("v").split(".")
-
-        val maxLen = maxOf(p1.size, p2.size)
-        for (i in 0 until maxLen) {
-            // 拿到这一段，可能是 "1"、"1-beta"、甚至 "1-beta2"
-            val seg1 = p1.getOrNull(i).orEmpty()
-            val seg2 = p2.getOrNull(i).orEmpty()
-
-            // 数字部分在 '-' 之前
-            val num1 = seg1.substringBefore('-').toIntOrNull() ?: 0
-            val num2 = seg2.substringBefore('-').toIntOrNull() ?: 0
-            if (num1 != num2) return num1 - num2
-
-            // 数字相同，继续比后缀：
-            val suffix1 = seg1.substringAfter('-', missingDelimiterValue = "")
-            val suffix2 = seg2.substringAfter('-', missingDelimiterValue = "")
-            if (suffix1.isEmpty() && suffix2.isNotEmpty()) {
-                // 1.2.3  > 1.2.3-beta
-                return 1
-            }
-            if (suffix1.isNotEmpty() && suffix2.isEmpty()) {
-                // 1.2.3-beta < 1.2.3
-                return -1
-            }
-            // 如果两边都有后缀，你也可以按字母序比较：
-            if (suffix1 != suffix2) {
-                return suffix1.compareTo(suffix2)
-            }
-            // 否则继续循环下一段
-        }
-        return 0
-    }
-
-    /** 判断 latestVersion 是否“更大” */
-    private fun isNewVersionAvailable(localVersion: String, latestVersion: String): Boolean {
-        return compareSemVer(localVersion, latestVersion) < 0
-    }
-
-    // 显示更新提示对话框
-    private fun showUpdateDialog(version: String, releaseNotes: Spanned, downloadUrl: String) {
-        val customTitleView = LayoutInflater.from(this).inflate(R.layout.custom_dialog_title, null)
-        customTitleView.findViewById<TextView>(R.id.dialogTitle).text = "发现新版本：$version"
-
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setCustomTitle(customTitleView)
-            .setMessage(releaseNotes)
-            .setPositiveButton("更新") { _, _ ->
-                val downloaderInstaller = ApkDownloaderInstaller(this)
-                downloaderInstaller.downloadAndInstall(downloadUrl)
-            }
-            .setNeutralButton("下载") { _, _ ->
-                // 打开浏览器下载最新版本
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
-                startActivity(intent)
-            }
-            .setNegativeButton("稍后再说", null)
-            .show()
     }
 
     @Deprecated("Deprecated in Java")
@@ -1403,7 +1320,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     }
                     editDialog.show(supportFragmentManager, "EditDDLFragment")
                 } else {
-                    Toast.makeText(this@MainActivity, "请先选择要修改的项目", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, getString(R.string.please_select_edit_first), Toast.LENGTH_SHORT).show()
                 }
                 pauseRefresh = false
             }
@@ -1488,8 +1405,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     @SuppressLint("ClickableViewAccessibility")
     private fun setupTabs() {
         val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
-        tabLayout.addTab(tabLayout.newTab().setText("任务"))
-        tabLayout.addTab(tabLayout.newTab().setText("习惯"))
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.task)))
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.habit)))
 
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
@@ -1735,9 +1652,9 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private fun showBatteryOptimizationDialog() {
         MaterialAlertDialogBuilder(this).apply {
-            setTitle("电池优化设置")
-            setMessage("请将Deadliner设为「不受电池优化限制」")
-            setPositiveButton("去设置") { _, _ ->
+            setTitle(getString(R.string.battery_optimization_title))
+            setMessage(getString(R.string.battery_optimization_message))
+            setPositiveButton(getString(R.string.goto_setting)) { _, _ ->
                 startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                     data = "package:$packageName".toUri()
                 })
@@ -1758,7 +1675,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     private fun onCalendarPermissionDenied() {
         // 提示用户权限被拒绝
-        Toast.makeText(this, "需要日历权限以同步事件", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, getString(R.string.permission_calendar_denied), Toast.LENGTH_LONG).show()
 
         // 可选：引导用户前往应用设置手动授权
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
@@ -1821,7 +1738,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         }
 
         dialogView.findViewById<Button>(R.id.btn_next3).setOnClickListener {
-            Toast.makeText(this, "正在加载指南页面，点击任意区域跳过", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.loading_wiki), Toast.LENGTH_LONG).show()
 
             val webViewView = layoutInflater.inflate(R.layout.dialog_webview, null)
             val webDialog = MaterialAlertDialogBuilder(this)
@@ -1898,8 +1815,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             viewHolderWithAppBar
         else viewHolderWithNoAppBar
 
-        val snackbar = Snackbar.make(snackBarParent, "补签成功 🎉", Snackbar.LENGTH_LONG)
-            .setAction("撤销") {
+        val snackbar = Snackbar.make(snackBarParent, getString(R.string.habit_success_retro), Snackbar.LENGTH_LONG)
+            .setAction(R.string.undo) {
                 val retroDateStr = retroDate.toString()
                 // 解析 note JSON
                 val json = JSONObject(habitItem.note ?: "{}")
@@ -1971,15 +1888,15 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val releaseNotes = markwon.toMarkdown(info.releaseNotes)
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("检测到新版本 ${info.latestVersion}")
+            .setTitle(getString(R.string.find_updates, info.latestVersion))
             .setMessage(releaseNotes)
-            .setPositiveButton("去更新") { _, _ ->
+            .setPositiveButton(R.string.goto_update) { _, _ ->
                 val intent = Intent(this, SettingsActivity::class.java).apply {
                     putExtra(EXTRA_INITIAL_ROUTE, SettingsRoute.Update.route)
                 }
                 startActivity(intent)
             }
-            .setNegativeButton("稍后再说", null)
+            .setNegativeButton(R.string.later, null)
             .show()
     }
 }

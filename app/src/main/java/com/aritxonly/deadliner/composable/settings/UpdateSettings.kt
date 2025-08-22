@@ -100,7 +100,7 @@ fun UpdateScreen(
             IconButton(onClick = navigateUp, modifier = Modifier.padding(start = 8.dp)) {
                 Icon(
                     painter            = painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint               = MaterialTheme.colorScheme.onSurface,
                     modifier           = expressiveTypeModifier
                 )
@@ -115,14 +115,14 @@ fun UpdateScreen(
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
                             Button(onClick = { ApkDownloaderInstaller(context).downloadAndInstall(s.downloadUrl) }) {
-                                Text("更新并安装")
+                                Text(stringResource(R.string.update_and_install))
                             }
                             FilledTonalButton(onClick = {
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, s.downloadUrl.toUri())
                                 )
                             }) {
-                                Text("浏览器下载")
+                                Text(stringResource(R.string.download_from_browser))
                             }
                         }
                         Spacer(modifier = Modifier.navigationBarsPadding())
@@ -151,7 +151,7 @@ fun UpdateScreen(
 
                     is UpdateState.Error -> {
                         Text(
-                            text = "检查更新失败：${state.message}",
+                            text = stringResource(R.string.check_for_updates_failed, state.message),
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier
                                 .align(Alignment.Center)
@@ -167,7 +167,7 @@ fun UpdateScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                "当前已是最新版本：${state.current}",
+                                stringResource(R.string.check_for_updates_new, state.current),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -180,12 +180,12 @@ fun UpdateScreen(
                                 .padding(16.dp)
                         ) {
                             Text(
-                                "检测到新版本：${state.latest}",
+                                stringResource(R.string.check_for_updates_found, state.latest),
                                 style = MaterialTheme.typography.headlineSmall
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "当前版本：${state.current}",
+                                stringResource(R.string.check_for_updates_current, state.current),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Spacer(Modifier.height(16.dp))

@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,8 +27,12 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
@@ -43,6 +48,12 @@ fun BarChartCompletionTimeStats(
 ) {
     // 找到最大值用于归一化
     val maxCount = data.maxOfOrNull { it.second } ?: 1
+
+    val textMeasurer = rememberTextMeasurer()
+    val maxLabelWidth = data.maxOf {
+        textMeasurer.measure(AnnotatedString(it.first)).size.width
+    }
+
     Column(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)) {
         data.forEach { (timeBucket, count) ->
             Row(modifier = Modifier
@@ -50,7 +61,15 @@ fun BarChartCompletionTimeStats(
                 .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = timeBucket, color = textColor)
+                Text(
+                    text = timeBucket,
+                    color = textColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Visible,
+                    modifier = Modifier
+                        .width(with(LocalDensity.current) { maxLabelWidth.toDp() })
+                        .basicMarquee()
+                )
                 Spacer(modifier = Modifier.width(16.dp))
                 Canvas(modifier = Modifier
                     .height(20.dp)

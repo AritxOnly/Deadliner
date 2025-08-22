@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.*
 
 @SuppressLint("SimpleDateFormat")
@@ -201,7 +202,7 @@ class AddDDLActivity : AppCompatActivity() {
         freqEditText.addTextChangedListener(
             afterTextChanged = { editable ->
                 frequency = editable?.toString()?.toIntOrNull()
-                val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+                val formattedNote = GlobalUtils.generateHabitNote(this@AddDDLActivity, frequency, total, frequencyType)
                 habitNoteHint.text = formattedNote
             }
         )
@@ -209,7 +210,7 @@ class AddDDLActivity : AppCompatActivity() {
         totalEditText.addTextChangedListener(
             afterTextChanged = { editable ->
                 total = editable?.toString()?.toIntOrNull()
-                val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+                val formattedNote = GlobalUtils.generateHabitNote(this@AddDDLActivity, frequency, total, frequencyType)
                 habitNoteHint.text = formattedNote
             }
         )
@@ -222,7 +223,7 @@ class AddDDLActivity : AppCompatActivity() {
                 R.id.btnYearly -> DeadlineFrequency.MONTHLY
                 else -> DeadlineFrequency.TOTAL
             }
-            val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+            val formattedNote = GlobalUtils.generateHabitNote(this@AddDDLActivity, frequency, total, frequencyType)
             habitNoteHint.text = formattedNote
         }
 
@@ -231,11 +232,11 @@ class AddDDLActivity : AppCompatActivity() {
                 loadCalendarEventsAndShowDialog()
             } catch (e: Exception) {
                 Log.e("Calendar", e.toString())
-                Toast.makeText(this, "请检查日历权限：${e.toString()}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.permission_calendar_error, e.toString()), Toast.LENGTH_SHORT).show()
             }
         }
 
-        val formattedNote = GlobalUtils.generateHabitNote(frequency, total, frequencyType)
+        val formattedNote = GlobalUtils.generateHabitNote(this, frequency, total, frequencyType)
         habitNoteHint.text = formattedNote
 
         ddlNameEditText.setText(generatedDDL?.name)
@@ -282,10 +283,10 @@ class AddDDLActivity : AppCompatActivity() {
                                 val eventId = calendarHelper.insertEvent(item)
                                 item.calendarEventId = eventId
                                 DDLRepository().updateDDL(item)
-                                Toast.makeText(this@AddDDLActivity, "已添加至日历", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@AddDDLActivity, getString(R.string.add_calendar_success), Toast.LENGTH_SHORT).show()
                             } catch (e: Exception) {
                                 Log.e("Calendar", e.toString())
-                                Toast.makeText(this@AddDDLActivity, "添加至日历失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@AddDDLActivity, getString(R.string.add_calendar_failed, e.toString()), Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
@@ -318,14 +319,14 @@ class AddDDLActivity : AppCompatActivity() {
         val calendarHelper = CalendarHelper(applicationContext)
         val calendarEvents = calendarHelper.queryAllCalendarEvents()
         if (calendarEvents.isEmpty()) {
-            Toast.makeText(this, "没有可导入的日历事件", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.no_task_add_calendar), Toast.LENGTH_SHORT).show()
             return
         }
 
         data class EventItem(val event: CalendarEvent) {
             val display: String get() {
                 val time = GlobalUtils.parseDateTime(event.startMillis.toDateTimeString())
-                return "${event.title} – ${time?.let(::formatLocalDateTime) ?: "解析失败"}"
+                return "${event.title} – ${time?.let(::formatLocalDateTime) ?: getString(R.string.parse_failed)}"
             }
             override fun toString() = display
         }
@@ -404,10 +405,10 @@ class AddDDLActivity : AppCompatActivity() {
 
         // 4. 弹窗
         MaterialAlertDialogBuilder(this)
-            .setTitle("选择要导入的事件")
+            .setTitle(R.string.select_calendar_to_import)
             .setView(dialogView)
-            .setNeutralButton("过滤账户") { _, _ -> showCalendarFilterDialog() }
-            .setPositiveButton("导入") { dialog, _ ->
+            .setNeutralButton(R.string.filter_calendar_account) { _, _ -> showCalendarFilterDialog() }
+            .setPositiveButton(R.string.settings_import) { dialog, _ ->
                 if (selectedPosition >= 0) {
                     val item = adapter.getItem(selectedPosition)!!
                     val event = item.event
@@ -418,11 +419,11 @@ class AddDDLActivity : AppCompatActivity() {
                         .text = formatLocalDateTime(endTime!!)
                     calendarEventId = event.id
                 } else {
-                    Toast.makeText(this, "请先选择一个事件", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.no_event_select), Toast.LENGTH_SHORT).show()
                 }
                 dialog.dismiss()
             }
-            .setNegativeButton("取消", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -432,7 +433,7 @@ class AddDDLActivity : AppCompatActivity() {
         val accounts = helper.getAllCalendarAccounts()
 
         if (accounts.isEmpty()) {
-            Toast.makeText(this, "当前没有可用的日历账户", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.no_valid_calendar_account, Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -442,11 +443,11 @@ class AddDDLActivity : AppCompatActivity() {
         val checked = names.map { savedSet.contains(it) }.toBooleanArray()
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("选择要隐藏的日历账户")
+            .setTitle(R.string.select_calendar_account_to_hide)
             .setMultiChoiceItems(names, checked) { _, which, isChecked ->
                 checked[which] = isChecked
             }
-            .setPositiveButton("确定") { _, _ ->
+            .setPositiveButton(R.string.accept) { _, _ ->
                 // 把勾选了的那些账户名存到 prefs 里
                 val newFiltered = names
                     .zip(checked.toList())
@@ -456,10 +457,10 @@ class AddDDLActivity : AppCompatActivity() {
 
                 GlobalUtils.filteredCalendars = newFiltered
 
-                Toast.makeText(this, "已保存日历过滤设置", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.calendar_filter_saved, Toast.LENGTH_SHORT).show()
                 loadCalendarEventsAndShowDialog()
             }
-            .setNegativeButton("取消", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -485,7 +486,9 @@ class AddDDLActivity : AppCompatActivity() {
 
     fun formatLocalDateTime(dateTime: LocalDateTime): String {
         // 定义格式化器
-        val formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm", Locale.CHINA)
+        val formatter = DateTimeFormatter
+            .ofLocalizedDateTime(FormatStyle.MEDIUM)  // SHORT / MEDIUM / LONG / FULL
+            .withLocale(Locale.getDefault())
         // 格式化 LocalDateTime
         return dateTime.format(formatter)
     }

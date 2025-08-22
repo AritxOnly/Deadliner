@@ -89,11 +89,16 @@ fun WebSettingsScreen(
         // 2) 异步检测可用性 & 触发一次同步
         scope.launch {
             try {
-                Toast.makeText(context, "正在检测 WebDAV…", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.webdav_checking),
+                    Toast.LENGTH_SHORT
+                ).show()
 
+                // MKCOL Deadliner
                 runCatching { AppSingletons.web.mkcol("Deadliner") }
 
-                // 检测：HEAD Deadliner/（不存在返回 404 也算可用，首次同步会创建）
+                // 检测：HEAD Deadliner/（404 也视为可用）
                 val (code, _, _) = AppSingletons.web.head("Deadliner/")
                 val usable = when (code) {
                     200, 204, 207, 404 -> true
@@ -101,20 +106,41 @@ fun WebSettingsScreen(
                 }
                 if (!usable) {
                     Log.e("WebDAV", code.toString())
-                    Toast.makeText(context, "WebDAV 连接失败（HTTP $code）", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.webdav_unusable, code),
+                        Toast.LENGTH_LONG
+                    ).show()
                     return@launch
                 }
 
-                Toast.makeText(context, "WebDAV 可用，开始同步…", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.webdav_available),
+                    Toast.LENGTH_SHORT
+                ).show()
 
                 val ok = AppSingletons.sync.syncOnce()
                 if (ok) {
-                    Toast.makeText(context, "同步完成 ✅", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.sync_done),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
-                    Toast.makeText(context, "同步发生并发冲突，已自动重试/下次再试", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.sync_conflict),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "同步失败：${e.message ?: "未知错误"}", Toast.LENGTH_LONG).show()
+                val msg = e.message ?: context.getString(R.string.unknown_error)
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.sync_failed_with_msg, msg),
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
@@ -131,7 +157,7 @@ fun WebSettingsScreen(
             IconButton(onClick = navigateUp, modifier = Modifier.padding(start = 8.dp)) {
                 Icon(
                     painter = painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )
@@ -194,7 +220,7 @@ fun WebSettingsScreen(
                                 .padding(top = 8.dp)
                                 .fillMaxWidth()
                         ) {
-                            Text("保存")
+                            Text(stringResource(R.string.save))
                         }
                     }
                 }

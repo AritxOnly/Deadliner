@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner.composable.overview
 
+import android.content.Context
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -26,8 +27,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.model.DDLItem
@@ -50,6 +53,8 @@ fun DashboardScreen(
     colorScheme: AppColorScheme,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     val now = LocalDateTime.now()
     // 计算上一个日历月的起始和结束时间
     val lastMonthYearMonth = YearMonth.from(now).minusMonths(1)
@@ -79,47 +84,47 @@ fun DashboardScreen(
     )
 
     val monthName = lastMonthYearMonth.month.getDisplayName(
-        TextStyle.FULL, Locale.CHINESE
+        TextStyle.FULL, Locale.getDefault()
     )
 
     val metrics = listOf(
         Metric(
-            label = "${lastMonthYearMonth.year}年",
+            label = stringResource(R.string.year_format, lastMonthYearMonth.year),
             value = "$monthName"
         ),
         Metric(
-            label = "任务总数",
+            label = stringResource(R.string.total_tasks_numbers),
             value = lastStats.total.toString(),
             change = totalChange,
             isDown = totalDown
         ),
         Metric(
-            label = "完成数",
+            label = stringResource(R.string.completed_number),
             value = lastStats.completed.toString(),
             change = completedChange,
             isDown = completedDown
         ),
         Metric(
-            label = "逾期数",
+            label = stringResource(R.string.overdue_number),
             value = lastStats.overdue.toString(),
             change = overdueChange,
             isDown = overdueDown
         ),
         Metric(
-            label = "完成率",
+            label = stringResource(R.string.complete_rate),
             value = formatRate(lastStats.completed, lastStats.total),
             change = rateChange,
             isDown = rateDown
         ),
         Metric(
-            label = "逾期率",
+            label = stringResource(R.string.overdue_rate),
             value = formatRate(lastStats.overdue, lastStats.total),
             change = overdueRateChange,
             isDown = overdueRateDown
         ),
         Metric(
-            label = "平均完成时长",
-            value = formatDuration(lastStats.avgCompletionTime)
+            label = stringResource(R.string.average_ddl_time),
+            value = formatDuration(lastStats.avgCompletionTime, context)
         )
     )
 
@@ -205,13 +210,13 @@ private fun formatRateChange(
     }
 }
 
-private fun formatDuration(duration: Duration): String {
+private fun formatDuration(duration: Duration, context: Context): String {
     val days = duration.toDaysPart()
     val hours = duration.toHoursPart()
     return when {
-        days > 0 -> "${days}天 ${hours}小时"
-        hours > 0 -> "${hours}小时"
-        else -> "<1小时"
+        days > 0 -> context.getString(R.string.duration_days_hours, days, hours)
+        hours > 0 -> context.getString(R.string.duration_hours, hours)
+        else -> context.getString(R.string.duration_less_than_hour)
     }
 }
 
@@ -244,10 +249,10 @@ private fun SummaryGrid(
                         R.drawable.dashboard_background,
                         tintColor = Color(colorScheme.primary),
                         modifier = Modifier.matchParentSize(),
-                        contentDescription = "背景"
+                        contentDescription = stringResource(R.string.background)
                     )
                     Text(
-                        text = "上月总结",
+                        text = stringResource(R.string.last_month_summary),
                         style = MaterialTheme.typography.headlineLargeEmphasized,
                         fontWeight = FontWeight.Black,
                         color = Color(colorScheme.onPrimary),

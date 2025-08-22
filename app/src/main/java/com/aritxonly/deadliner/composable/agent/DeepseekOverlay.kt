@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
@@ -52,6 +53,8 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -62,7 +65,7 @@ fun DeepseekOverlay(
     modifier: Modifier = Modifier.fillMaxSize(),
     borderThickness: Dp = 4.dp,
     glowColors: List<Color> = listOf(Color(0xFFA766E8), Color(0xFF4D6BFE)),
-    hintText: String = "输入你的问题…"
+    hintText: String = stringResource(R.string.deepseek_overlay_enter_questions)
 ) {
     // UI 状态
     var textState by remember { mutableStateOf(TextFieldValue(initialText)) }
@@ -97,7 +100,7 @@ fun DeepseekOverlay(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Text(
-                text = "针对屏幕所示建议提问",
+                text = stringResource(R.string.deepseek_overlay_hint_top),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -140,12 +143,16 @@ fun DeepseekOverlay(
                 val maxHeight = lineHeightDp * 2
 
                 val scrollState = rememberScrollState()
+                val parseFailedText = stringResource(R.string.parse_failed)
+                val unknownErrorText = stringResource(R.string.unknown_error)
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(max = maxHeight)
                         .verticalScroll(scrollState)
                 ) {
+
                     BasicTextField(
                         value = textState,
                         onValueChange = { textState = it },
@@ -167,15 +174,15 @@ fun DeepseekOverlay(
                                     scope.launch {
                                         isLoading = true
                                         try {
-                                            val raw = generateDeadline(textState.text)
+                                            val raw = generateDeadline(context, textState.text)
                                             val ddl = parseGeneratedDDL(raw)
                                             results = listOf(ddl)
                                         } catch (e: Exception) {
                                             results = listOf(
                                                 GeneratedDDL(
-                                                    name = "解析失败",
+                                                    name = parseFailedText,
                                                     dueTime = LocalDateTime.now(),
-                                                    note = e.message ?: "未知错误"
+                                                    note = e.message ?: unknownErrorText
                                                 )
                                             )
                                             failed = true
@@ -207,15 +214,15 @@ fun DeepseekOverlay(
                         scope.launch {
                             isLoading = true
                             try {
-                                val raw = generateDeadline(textState.text)
+                                val raw = generateDeadline(context, textState.text)
                                 val ddl = parseGeneratedDDL(raw)
                                 results = listOf(ddl)
                             } catch (e: Exception) {
                                 results = listOf(
                                     GeneratedDDL(
-                                        name = "解析失败",
+                                        name = parseFailedText,
                                         dueTime = LocalDateTime.now(),
-                                        note = e.message ?: "未知错误"
+                                        note = e.message ?: unknownErrorText
                                     )
                                 )
                                 failed = true
@@ -227,7 +234,7 @@ fun DeepseekOverlay(
                 }) {
                     Icon(
                         imageVector = Icons.Default.Send,
-                        contentDescription = "发送",
+                        contentDescription = stringResource(R.string.send),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -274,7 +281,9 @@ fun DeepseekOverlay(
                                 .text = ddl.name
                             view.findViewById<TextView>(R.id.remainingTimeTextAlt)
                                 .text =
-                                ddl.dueTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+                                ddl.dueTime.format(DateTimeFormatter
+                                        .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                                        .withLocale(Locale.getDefault()))
                             view.findViewById<TextView>(R.id.noteText)
                                 .text = ddl.note
                             view.findViewById<ImageView>(R.id.starIcon)
@@ -304,7 +313,7 @@ fun DeepseekOverlay(
                                 .height(48.dp),
                             shape = RoundedCornerShape(24.dp)  // 圆角按钮
                         ) {
-                            Text(text = "新建任务", style = MaterialTheme.typography.titleMedium)
+                            Text(text = stringResource(R.string.add_event), style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 }

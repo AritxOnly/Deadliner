@@ -65,7 +65,7 @@ fun PromptSettingsScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )
@@ -95,7 +95,7 @@ fun PromptSettingsScreen(
                         .padding(top = 8.dp)
                         .fillMaxWidth()
                 ) {
-                    Text("保存")
+                    Text(stringResource(R.string.save))
                 }
             }
 

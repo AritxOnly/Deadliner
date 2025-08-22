@@ -110,7 +110,7 @@ class HabitMiniWidget : AppWidgetProvider() {
                         item: com.aritxonly.deadliner.model.DDLItem,
                         meta: com.aritxonly.deadliner.model.HabitMetaData
                     ) {
-                        android.widget.Toast.makeText(ctx, "打卡成功 🎉", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(ctx, R.string.habit_success, android.widget.Toast.LENGTH_SHORT).show()
                         refreshOneWidget(ctx, widgetId)
                     }
                 }

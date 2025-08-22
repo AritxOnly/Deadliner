@@ -1,7 +1,6 @@
 <resources>
-    <string name="app_name">Deadliner</string>
-    <string name="add_event">Add Event</string>
-    <string name="expired">Expired</string>
+    <string name="app_name" translatable="false">Deadliner</string>
+    <string name="add_event">新建任务</string>
     <string name="add_ddl_name">添加待办的Deadline</string>
     <string name="add_title">添加Deadline</string>
     <string name="save">保存</string>
@@ -20,7 +19,7 @@
     <string name="alert_edit_definish">撤销完成</string>
     <string name="alert_edit_archive">归档</string>
     <string name="toast_definished">撤销完成Deadline...😭</string>
-    <string name="toast_archived">Deadline已归档！🗃️</string>
+    <string name="toast_archived">%1$d 项Deadline已归档！🗃️</string>
     <string name="toast_stared">已修改星标状态</string>
 
     <string name="settings_archive">归档</string>
@@ -30,12 +29,12 @@
     <string name="settings_interface_display">个性化</string>
     <string name="settings_widget">小组件</string>
     <string name="settings_notification">通知</string>
-    <string name="settings_deepseek">DeepSeek</string>
+    <string name="settings_deepseek" translatable="false">DeepSeek</string>
     <string name="settings_backup">备份</string>
     <string name="settings_developer">开发者</string>
-    <string name="settings_wiki">Wiki</string>
+    <string name="settings_wiki" translatable="false">Wiki</string>
     <string name="settings_feedback">帮助与反馈</string>
-    <string name="settings_webdav">WebDAV</string>
+    <string name="settings_webdav" translatable="false">WebDAV</string>
     <string name="settings_about">关于</string>
 
     <string name="settings_support_general">界面显示 · UI交互</string>
@@ -43,7 +42,7 @@
     <string name="settings_support_notification">DDL临近通知 · 每日定时通知</string>
     <string name="settings_support_backup">导入与导出用户数据库</string>
     <string name="settings_support_deepseek">DeepSeek API接入 · 自定义prompt</string>
-    <string name="settings_support_webdav">Deadliner-Web 云同步服务</string>
+    <string name="settings_support_webdav">WebDAV 云同步服务</string>
     <string name="settings_support_developer">调试选项与实验性内容</string>
     <string name="settings_support_widget">小组件配置 · 小组件界面与交互设置</string>
     <string name="settings_support_wiki">访问 Github Wiki 快速入门</string>
@@ -102,7 +101,7 @@
     <string name="settings_compile_date">编译时间</string>
     <string name="settings_legal">隐私与许可</string>
     <string name="settings_license">开源许可证</string>
-    <string name="settings_license_summary">MIT LISCENCE 开源许可</string>
+    <string name="settings_license_summary">MIT LICENCE 开源许可</string>
     <string name="settings_privacy_policy">隐私协议</string>
     <string name="settings_privacy_summary">了解您使用 Deadliner 的隐私权</string>
     <string name="settings_more">更多</string>
@@ -131,7 +130,7 @@
     <string name="settings_enable_deepseek">启用DeepSeek</string>
     <string name="settings_deepseek_description">Deadliner 接入 DeepSeek 为用户提供从长段文本中提取任务信息的能力，从而帮助用户快速添加任务。\n用户需要登录 https://platform.deepseek.com 获取自己的 API Key</string>
     <string name="settings_deepseek_api_key">API Key</string>
-    <string name="settings_deepseek_success">设置DeepSeek APIKey成功！</string>
+    <string name="settings_deepseek_success">设置DeepSeek API Key成功！</string>
     <string name="settings_deepseek_incomplete">请填写API Key！</string>
     <string name="settings_deepseek_custom_prompt">自定义提示词</string>
     <string name="settings_deepseek_custom_prompt_title">提示词</string>
@@ -187,9 +186,9 @@
 
     <string name="clear_all">全部清除</string>
 
-    <string name="debug_textView">1111111111111111111111111111111111111111111111111</string>
-    <string name="title_activity_deadline_detail_fragment">DeadlineDetailFragment</string>
-    <string name="title_activity_deadline_detail">DeadlineDetailActivity</string>
+    <string name="debug_textView" translatable="false">1111111111111111111111111111111111111111111111111</string>
+    <string name="title_activity_deadline_detail_fragment" translatable="false">DeadlineDetailFragment</string>
+    <string name="title_activity_deadline_detail" translatable="false">DeadlineDetailActivity</string>
 
     <string name="search_hint">搜索Deadline</string>
     <string name="back">返回</string>
@@ -201,7 +200,7 @@
     <string name="filter_dialog_start_time">开始时间</string>
     <string name="filter_dialog_end_time">结束时间</string>
     <string name="filter_dialog_elapse_time">项目进度</string>
-    <string name="title_activity_overview">任务概览</string>
+    <string name="title_activity_overview">概览</string>
 
     <string name="snackbar_already_checkin">今天已经打卡过了哦～明天再来吧！☺️</string>
     <string name="snackbar_done">任务已经完成啦～🎉️</string>
@@ -217,14 +216,228 @@
     <string name="settings_custom_filter_list">自定义日历导入黑名单</string>
     <string name="settings_support_custom_filter_list">用于添加任务时过滤日历中不重要的日历账户</string>
     <string name="alert_select_badge_type">选择角标类型</string>
-    <string name="configure">Configure</string>
+    <string name="configure">配置</string>
     <string name="settings_advance">高级设置</string>
     <string name="settings_support_deepseek_test">测试API Key可用性 · 测试自定义提示词</string>
     <string name="settings_deepseek_test">对话测试</string>
     <string name="settings_deepseek_custom_prompt_description">自定义用户提示词可以让用户自定义 DeepSeek 从文本中提取的信息密度、信息风格等。自定义的提示词将会被拼接到用户输入文本的前方，统一提供给 DeepSeek API 服务。</string>
-    <string name="appwidget_text">EXAMPLE</string>
-    <string name="app_widget_description">This is an app widget description</string>
     <string name="placeholder">欢迎使用Deadliner👏</string>
     <string name="settings_clipboard">自动从剪切板读取</string>
+    <string name="downloading_update">正在下载更新</string>
+    <string name="please_wait">请稍候...</string>
+    <string name="download_update">下载更新</string>
+    <string name="install">安装</string>
+    <string name="download_progress">"下载进度: %1$d%%"</string>
+    <string name="outdated">逾期</string>
+    <string name="progress_hours">%.1f小时 %d%%</string>
+    <string name="progress_days">%.1f天 %d%%</string>
+    <string name="untitled">(无标题)</string>
+    <string name="deepseek_overlay_enter_questions">输入你的问题…</string>
+    <string name="deepseek_overlay_hint_top">向 DeepSeek 提问，快速添加日程</string>
+    <string name="parse_failed">解析失败</string>
+    <string name="unknown_error">未知错误</string>
+    <string name="send">发送</string>
+    <string name="year_format">%1$d年</string>
+    <string name="total_tasks_numbers">任务总数</string>
+    <string name="completed_number">完成数</string>
+    <string name="overdue_number">逾期数</string>
+    <string name="complete_rate">完成率</string>
+    <string name="overdue_rate">逾期率</string>
+    <string name="average_ddl_time">平均完成时长</string>
+    <string name="background">背景</string>
+    <string name="last_month_summary">上月总结</string>
+
+    <string name="duration_days_hours">%1$d天 %2$d小时</string>
+    <string name="duration_hours">%1$d小时</string>
+    <string name="duration_less_than_hour">&lt;1小时</string>
+    <string name="show_clipboard_deepseek_snackbar">检测到剪切板内容，使用 DeepSeek 快捷添加？</string>
+    <string name="add">添加</string>
+    <string name="selected_items">已选中 %1$d 项 Deadline</string>
+    <string name="habit_success">打卡成功 🎉</string>
+    <string name="undo">撤销</string>
+    <string name="none_selected">未选择任何项</string>
+    <string name="please_select_delete_first">请先选择要删除的项目</string>
+    <string name="please_select_done_first">请先选择要标记为完成的项目</string>
+    <string name="please_select_edit_first">请先选择要修改的项目</string>
+    <string name="task">任务</string>
+    <string name="habit">习惯</string>
+    <string name="battery_optimization_title">电池优化设置</string>
+    <string name="battery_optimization_message">请将Deadliner设为「不受电池优化限制」</string>
+    <string name="goto_setting">去设置</string>
+    <string name="permission_calendar_denied">需要日历权限以同步事件</string>
+    <string name="loading_wiki">正在加载指南页面，点击任意区域跳过</string>
+    <string name="habit_success_retro">补签成功 🎉</string>
+    <string name="find_updates">检测到新版本 %s$1</string>
+    <string name="goto_update">去更新</string>
+    <string name="later">稍后再说</string>
+    <string name="task_status_summary">任务状态统计</string>
+    <string name="task_complete_time_summary">任务完成时间段统计</string>
+    <string name="today_task_summary">今日任务状态统计</string>
+    <string name="today_overdue">今日逾期</string>
+    <string name="prev4weeks">最近4周完成量</string>
+    <string name="monthly_trend">月度趋势</string>
+    <string name="weekly_completed">周完成量</string>
+    <string name="overdue">逾期</string>
+    <string name="today_completed">今日完成</string>
+    <string name="completed">已完成</string>
+    <string name="incomplete">未完成</string>
+    <string name="no_data_yet">暂无数据</string>
+    <string name="overdue_done">逾期完成</string>
+    <string name="total_tasks">总任务</string>
+    <string name="permission_calendar_error">请检查日历权限：%s$1</string>
+    <string name="add_calendar_success">已添加至日历</string>
+    <string name="add_calendar_failed">添加至日历失败: %s$1</string>
+    <string name="no_task_add_calendar">没有可导入的日历事件</string>
+    <string name="select_calendar_to_import">选择要导入的事件</string>
+    <string name="filter_calendar_account">过滤账户</string>
+    <string name="no_event_select">请先选择一个事件</string>
+    <string name="no_valid_calendar_account">当前没有可用的日历账户</string>
+    <string name="select_calendar_account_to_hide">选择要隐藏的日历账户</string>
+    <string name="calendar_filter_saved">已保存日历过滤设置</string>
+    <string name="clear_all_archive">清除所有已完成的Deadlines？</string>
+    <string name="delete_archived">删除已完成的 Deadline？</string>
+    <string name="close">关闭</string>
+    <string name="star">星标</string>
+    <string name="edit">编辑</string>
+    <string name="complete">完成</string>
+    <string name="mark_complete">标记完成</string>
+    <string name="undo_complete">撤销完成</string>
+    <string name="archive">归档</string>
+    <string name="delete">删除</string>
+    <string name="expand">展开</string>
+    <string name="retract">收起</string>
+    <string name="edit_menu">编辑菜单</string>
+    <string name="close_menu">关闭菜单</string>
+    <string name="duration_full">%1$d天 %2$d小时 %3$d分钟</string>
+    <string name="duration_hours_minutes">%1$d小时 %2$d分钟</string>
+    <string name="label_start_time">开始时间：%1$s</string>
+    <string name="label_end_time">结束时间：%1$s</string>
+    <string name="label_remaining_time">剩余时间：%1$s</string>
+
+    <string name="daily_frequency">每天%1$d次</string>
+    <string name="daily_frequency_with_total">每天%1$d次/共%2$d次</string>
+
+    <string name="weekly_frequency">每周%1$d次</string>
+    <string name="weekly_frequency_with_total">每周%1$d次/共%2$d次</string>
+
+    <string name="monthly_frequency">每月%1$d次</string>
+    <string name="monthly_frequency_with_total">每月%1$d次/共%2$d次</string>
+
+    <string name="total_frequency_persistent">持续坚持</string>
+    <string name="total_frequency_count">共计%1$d次</string>
+    <string name="remaining_days_arg">剩余%1$d天</string>
+    <string name="days_streak">%1$d天连击</string>
+    <string name="no_time_left">时间不足</string>
+
+    <string name="progress_daily">每日进度 %1$d/%2$d</string>
+    <string name="progress_weekly">每周进度 %1$d/%2$d</string>
+    <string name="progress_monthly">每月进度 %1$d/%2$d</string>
+    <string name="progress_total">总进度 %1$d/%2$d</string>
+    <string name="already_check_habit">今日已打卡</string>
+    <string name="check_habit">打卡</string>
+    <string name="completed_long">DDL已完成🎉</string>
+
+    <!-- 完整模式 -->
+    <string name="remaining_prefix">剩余 </string>
+    <string name="remaining_days">%1$d天</string>
+    <string name="remaining_hours">%1$d小时</string>
+    <string name="remaining_minutes">%1$d分钟</string>
+    <string name="remaining_compact_days">%.1f天</string>
+
+    <!-- 紧凑模式 -->
+    <string name="remaining_days_short">%1$dd</string>
+    <string name="remaining_hours_short">%1$dh</string>
+    <string name="remaining_minutes_short">%1$dm</string>
+    <string name="remaining_compact_days_short">%.1fd</string>
+
+    <!-- 逾期 -->
+    <string name="ddl_overdue_full">DDL逾期!!!</string>
+    <string name="ddl_overdue_short">已逾期</string>
+
+    <string name="time_bucket_late_night">凌晨</string>
+    <string name="time_bucket_morning">上午</string>
+    <string name="time_bucket_afternoon">下午</string>
+    <string name="time_bucket_evening">晚上</string>
+    <string name="time_bucket_unknown">未知</string>
+
+    <string name="tab_overview">概览统计</string>
+    <string name="tab_trend">趋势分析</string>
+    <string name="tab_summary">上月总结</string>
+    <string name="xx_months">%1$d 个月</string>
+    <string name="destroy_alarms">已成功销毁所有闹钟时间</string>
+    <string name="select_filter_calendar">请选择要显示的日历过滤器</string>
+    <string name="filter_add_one">添加项</string>
+    <string name="new_filter_name">新过滤器名称</string>
+    <string name="new_filter_title">新增过滤器</string>
+    <string name="show_intro_next_time">即将在下次打开Deadliner时显示欢迎页面</string>
+    <string name="choose_backup">选择数据库备份文件</string>
+    <string name="export_success">✅ 导出成功</string>
+    <string name="export_failed">❌ 导出失败: %1$s</string>
+    <string name="confirm_import">确认导入</string>
+    <string name="confirm_import_message">将覆盖当前所有数据，请确认操作！</string>
+    <string name="import_success">导入成功，需要重启应用生效</string>
+    <string name="restart_now">现在重启</string>
+    <string name="import_failed">❌ 导入失败: %1$s</string>
+    <string name="embedded_activities_success">平行窗口设置成功，需要重启应用生效</string>
+    <string name="test">测试</string>
+    <string name="settings_experimental">实验性功能</string>
+    <string name="settings_developer_options">开发者选项</string>
+    <string name="settings_donate_emotional">穷学生在线求投喂 🥹</string>
+    <string name="settings_donate_thanks">你的支持是对我最大的鼓励~</string>
+    <string name="settings_general_main">主要设置</string>
+    <string name="settings_general_others">杂项设置</string>
+    <string name="settings_interface_mainscreen">主界面</string>
+    <string name="settings_interface_design">设计</string>
+    <string name="update_and_install">更新并安装</string>
+    <string name="download_from_browser">浏览器下载</string>
+    <string name="check_for_updates_failed">检查更新失败：%1$s</string>
+    <string name="check_for_updates_new">当前已是最新版本：%1$s</string>
+    <string name="check_for_updates_found">检测到新版本：%1$s</string>
+    <string name="check_for_updates_current">当前版本：%1$s</string>
+    <string name="settings_notification_formatter_set_time">当前设定时间为: %1$s:%2$s (长按修改)</string>
+    <string name="settings_notification_push">通知推送</string>
+    <string name="choose_daily_notifictaion_time">选择每日通知时间</string>
+
+    <!-- WebDAV / 同步 -->
+    <string name="webdav_checking">正在检测 WebDAV…</string>
+    <string name="webdav_unusable">WebDAV 连接失败（HTTP %1$d）</string>
+    <string name="webdav_available">WebDAV 可用，开始同步…</string>
+    <string name="sync_done">同步完成 ✅</string>
+    <string name="sync_conflict">同步发生并发冲突，已自动重试/下次再试</string>
+    <string name="sync_failed_with_msg">同步失败：%1$s</string>
+    <string name="settings_widget_tasks">任务组件</string>
+
+    <string name="frequency_daily">每天</string>
+    <string name="frequency_weekly">每周</string>
+    <string name="frequency_monthly">每月</string>
+
+    <string name="habit_checkin">%1$s打卡 %2$d 次，%3$s</string>
+    <string name="habit_total_unlimited">不计次数</string>
+    <string name="habit_total_count">共计 %1$d 次</string>
+    <string name="choose_retro_date_title">选择补签日期</string>
+    <string name="xx_th_weeks">第%1$d周</string>
+    <string name="remind_in">将提前%1$d小时提醒你完成DDL☺️</string>
+
+    <!-- 通知渠道名称 -->
+    <string name="channel_deadline_name">Deadline临近通知</string>
+    <string name="channel_daily_name">Deadliner定时通知</string>
+    <string name="channel_important_name">Deadliner重要通知</string>
+
+    <!-- 通知渠道描述 -->
+    <string name="channel_deadline_desc">用于在Deadline到来前推送通知提醒，需要在设置中打开通知推送功能</string>
+    <string name="channel_daily_desc">每天定时向用户推送任务完成情况信息，需要在设置中打开通知推送功能</string>
+    <string name="channel_important_desc">ColorOS专用渠道</string>
+    <string name="remind_later">稍后提醒</string>
+    <string name="notification_near">即将到期提醒：%1$s</string>
+
+    <string name="title_today_overview">今日任务概览</string>
+    <string name="title_today_overview_with_due">今日任务概览 - %1$d个任务今日到期</string>
+
+    <string name="summary_status">🔥逾期 %1$d ｜ ⌛️进行中 %2$d</string>
+
+    <string name="remaining_hours_minutes">%1$d小时%2$d分钟</string>
+    <string name="remaining_due_soon">即将到期！</string>
+    <string name="add_task">添加任务</string>
+    <string name="frequency_none">不限</string>
 
 </resources>

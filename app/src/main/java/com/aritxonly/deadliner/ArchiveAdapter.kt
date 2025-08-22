@@ -13,6 +13,8 @@ import com.aritxonly.deadliner.model.DDLItem
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 class ArchiveAdapter(
     public var itemList: List<DDLItem>,
@@ -42,8 +44,14 @@ class ArchiveAdapter(
 
         val displayFullContent = holder.archiveNoteText.text.isEmpty()
 
-        val formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm")
-        val formatterAlt = DateTimeFormatter.ofPattern("MM月dd日 HH:mm")
+        val formatter = DateTimeFormatter
+            .ofLocalizedDateTime(FormatStyle.MEDIUM)   // 也可以用 SHORT/LONG/FULL
+            .withLocale(Locale.getDefault())
+
+        val formatterAlt = DateTimeFormatter
+            .ofLocalizedDateTime(FormatStyle.SHORT)
+            .withLocale(Locale.getDefault())
+
         holder.endingTimeText.text = if (displayFullContent) {
             endTime.format(formatter)
         } else {
@@ -54,14 +62,14 @@ class ArchiveAdapter(
 
         holder.archiveDeleteButton.setOnClickListener {
             MaterialAlertDialogBuilder(holder.itemView.context)
-                .setTitle("删除已完成的 Deadline？")
-                .setPositiveButton("确定") { _, _ ->
+                .setTitle(R.string.delete_archived)
+                .setPositiveButton(R.string.accept) { _, _ ->
                     DDLRepository().deleteDDL(item.id)
 
                     // 重新获取数据 & 过滤
                     updateData(databaseHelper.getAllDDLs(), context)
                 }
-                .setNegativeButton("取消", null)
+                .setNegativeButton(R.string.cancel, null)
                 .show()
         }
     }

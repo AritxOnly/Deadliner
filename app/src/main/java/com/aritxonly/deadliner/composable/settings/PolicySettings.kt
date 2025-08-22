@@ -57,7 +57,7 @@ fun PolicyScreen(
             IconButton(onClick = navigateUp, modifier = Modifier.padding(start = 8.dp)) {
                 Icon(
                     painter = painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )

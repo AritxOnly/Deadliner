@@ -176,7 +176,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="不限"
+            android:text="@string/frequency_none"
             style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
@@ -184,7 +184,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="每日"
+            android:text="@string/frequency_daily"
             style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
@@ -192,7 +192,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="每周"
+            android:text="@string/frequency_weekly"
             style="@style/Widget.Custom.ToggleButton" />
 
         <com.google.android.material.button.MaterialButton
@@ -200,7 +200,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="每月"
+            android:text="@string/frequency_monthly"
             style="@style/Widget.Custom.ToggleButton" />
 
     </com.google.android.material.button.MaterialButtonToggleGroup>

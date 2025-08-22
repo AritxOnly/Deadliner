@@ -83,7 +83,7 @@ fun GeneralSettingsScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.ic_back),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = expressiveTypeModifier
                 )
@@ -97,7 +97,7 @@ fun GeneralSettingsScreen(
         ) {
             SvgCard(R.drawable.svg_general, modifier = Modifier.padding(16.dp))
 
-            SettingsSection(topLabel = "主要设置") {
+            SettingsSection(topLabel = stringResource(R.string.settings_general_main)) {
                 SettingsRoute.generalThirdRoutes.forEachIndexed { index, route ->
                     SettingItem(
                         modifier = Modifier
@@ -115,7 +115,7 @@ fun GeneralSettingsScreen(
                 }
             }
 
-            SettingsSection(topLabel = "杂项设置") {
+            SettingsSection(topLabel = stringResource(R.string.settings_general_others)) {
                 SettingsDetailSwitchItem(
                     headline = R.string.settings_hide_from_recent,
                     supportingText = R.string.settings_support_hide_from_recent,
