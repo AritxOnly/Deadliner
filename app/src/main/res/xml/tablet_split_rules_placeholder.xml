@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:window="http://schemas.android.com/apk/res-auto">
+
+    <SplitPairRule
+        window:splitRatio="0.45"
+        window:splitLayoutDirection="locale"
+        window:splitMinWidthDp="840"
+        window:finishPrimaryWithSecondary="never"
+        window:finishSecondaryWithPrimary="always">
+        <!-- Main -> Detail -->
+        <SplitPairFilter
+            window:primaryActivityName="com.aritxonly.deadliner.MainActivity"
+            window:secondaryActivityName="com.aritxonly.deadliner.DeadlineDetailActivity" />
+        <SplitPairFilter
+            window:primaryActivityName="com.aritxonly.deadliner.MainActivity"
+            window:secondaryActivityName="com.aritxonly.deadliner.OverviewActivity" />
+        <SplitPairFilter
+            window:primaryActivityName="com.aritxonly.deadliner.MainActivity"
+            window:secondaryActivityName="com.aritxonly.deadliner.SettingsActivity" />
+    </SplitPairRule>
+
+    <SplitPlaceholderRule
+        window:placeholderActivityName="com.aritxonly.deadliner.PlaceholderActivity"
+        window:splitRatio="0.45"
+        window:splitLayoutDirection="locale"
+        window:splitMinWidthDp="840"
+        window:stickyPlaceholder="false">
+        <ActivityFilter window:activityName="com.aritxonly.deadliner.MainActivity"/>
+    </SplitPlaceholderRule>
+
+    <ActivityRule window:alwaysExpand="true">
+<!--        <ActivityFilter window:activityName="com.aritxonly.deadliner.SettingsActivity"/>-->
+<!--        <ActivityFilter window:activityName="com.aritxonly.deadliner.AddDDLActivity"/>-->
+        <ActivityFilter window:activityName="com.aritxonly.deadliner.IntroActivity"/>
+        <ActivityFilter window:activityName="com.aritxonly.deadliner.LauncherActivity"/>
+    </ActivityRule>
+</resources>

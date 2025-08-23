@@ -349,8 +349,8 @@ fun DeadlineDetailScreen(
                 onWaterLevelChange = { level -> waterLevel = level },
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
-                    .aspectRatio(0.6f)
-                    .padding(bottom = 32.dp)
+                    .aspectRatio(0.6f, matchHeightConstraintsFirst = true)
+                    .padding(top = 8.dp, bottom = 32.dp)
             )
             DeadlineDetailInfo(deadline, waterLevel)
 

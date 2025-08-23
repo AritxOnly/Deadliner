@@ -439,5 +439,11 @@
     <string name="remaining_due_soon">即将到期！</string>
     <string name="add_task">添加任务</string>
     <string name="frequency_none">不限</string>
+    <string name="settings_tablets_only">平板专区</string>
+    <string name="settings_split_placeholder">启动时分屏</string>
+    <string name="settings_support_split_placeholder">开启选项后，启动时主界面将默认以分屏状态显示</string>
+    <string name="settings_dynamic_split">动态分屏</string>
+    <string name="settings_support_dynamic_split">开启选项后，将会显示一个拖动按钮；通过拖动可以调节分屏比例</string>
+    <string name="settings_support_dynamic_split_not_avail">(您的设备不支持动态分屏)</string>
 
 </resources>

@@ -288,6 +288,24 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("embedded_activities", value) }
         }
 
+    var splitPlaceholderEnable: Boolean
+         get() = sharedPreferences.getBoolean("split_placeholder", true)
+         set(value) {
+             sharedPreferences.edit { putBoolean("split_placeholder", value) }
+         }
+
+    var splitTabletRatio: Float
+        get() = sharedPreferences.getFloat("split_ratio", 0.45f)
+        set(value) {
+            sharedPreferences.edit { putFloat("split_ratio", value) }
+        }
+
+    var dynamicSplit: Boolean
+        get() = sharedPreferences.getBoolean("dynamic_split", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("dynamic_split", value) }
+        }
+
     var webDavBaseUrl: String
         get() = sharedPreferences.getString("webdav_base", "")?:""
         set(value) {

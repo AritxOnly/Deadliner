@@ -383,4 +383,10 @@
     </string-array>
     <string name="add_task">Add Tasks</string>
     <string name="frequency_none">None</string>
+    <string name="settings_tablets_only">Tablets</string>
+    <string name="settings_split_placeholder">Launch split</string>
+    <string name="settings_support_split_placeholder">When enabled, the main screen will launch in split-screen mode by default</string>
+    <string name="settings_dynamic_split">Dynamic split</string>
+    <string name="settings_support_dynamic_split">When enabled, a drag handle will appear to adjust the split ratio</string>
+    <string name="settings_support_dynamic_split_not_avail">(Your device does not support dynamic split)</string>
 </resources>

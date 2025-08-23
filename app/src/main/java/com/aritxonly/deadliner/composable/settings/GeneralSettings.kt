@@ -1,6 +1,7 @@
 package com.aritxonly.deadliner.composable.settings
 
 import android.app.Activity
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -41,11 +42,13 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.window.WindowSdkExtensions
 import androidx.window.layout.WindowMetricsCalculator
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.SettingsRoute
 import com.aritxonly.deadliner.composable.SvgCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -61,10 +64,27 @@ fun GeneralSettingsScreen(
     }
 
     val isTablet = rememberIsLargeDeviceByMaxMetrics()
+    val isAboveAndroid12L = rememberAndroidVersionAbove12L()
+    val supportDynamicSplit = rememberSupportDynamicSplit()
+
     var embeddedActivities by remember { mutableStateOf(GlobalUtils.embeddedActivities) }
     val onEmbeddedActivitiesChange: (Boolean) -> Unit = {
         embeddedActivities = it
         GlobalUtils.embeddedActivities = it
+        handleRestart()
+    }
+
+    var splitPlaceholder by remember { mutableStateOf(GlobalUtils.splitPlaceholderEnable) }
+    val onPlaceholderChange: (Boolean) -> Unit = {
+        splitPlaceholder = it
+        GlobalUtils.splitPlaceholderEnable = it
+        handleRestart()
+    }
+
+    var dynamicSplit by remember { mutableStateOf(GlobalUtils.dynamicSplit) }
+    val onDynamicSplitChange: (Boolean) -> Unit = {
+        dynamicSplit = it
+        GlobalUtils.dynamicSplit = it
         handleRestart()
     }
 
@@ -122,16 +142,41 @@ fun GeneralSettingsScreen(
                     checked = hideFromRecent,
                     onCheckedChange = onHideFromRecentChange
                 )
+            }
 
-                if (isTablet) {
-                    SettingsSectionDivider()
-
+            if (isTablet && isAboveAndroid12L) {
+                SettingsSection(topLabel = stringResource(R.string.settings_tablets_only)) {
                     SettingsDetailSwitchItem(
                         headline = R.string.settings_embedded_activities,
                         supportingText = R.string.settings_support_embedded_activities,
                         checked = embeddedActivities,
                         onCheckedChange = onEmbeddedActivitiesChange
                     )
+
+                    if (embeddedActivities) {
+                        SettingsSectionDivider()
+
+                        SettingsDetailSwitchItem(
+                            headline = R.string.settings_split_placeholder,
+                            supportingText = R.string.settings_support_split_placeholder,
+                            checked = splitPlaceholder,
+                            onCheckedChange = onPlaceholderChange
+                        )
+                    }
+
+                    if (!splitPlaceholder) {
+                        SettingsSectionDivider()
+
+                        SettingsDetailSwitchItem(
+                            headline = R.string.settings_dynamic_split,
+                            supportingRawText =
+                                stringResource(R.string.settings_support_dynamic_split) +
+                                        stringResource(R.string.settings_support_dynamic_split_not_avail)
+                            ,
+                            checked = dynamicSplit,
+                            onCheckedChange = onDynamicSplitChange
+                        )
+                    }
                 }
             }
 
@@ -152,4 +197,17 @@ fun rememberIsLargeDeviceByMaxMetrics(): Boolean {
         val widthDp = with(density) { widthPx / density.density }     // px -> dp
         widthDp >= 840
     }
+}
+
+@Composable
+fun rememberAndroidVersionAbove12L(): Boolean {
+    return remember {
+        // Android 12L 对应 API 32
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2
+    }
+}
+
+@Composable
+fun rememberSupportDynamicSplit(): Boolean {
+    return remember { WindowSdkExtensions.getInstance().extensionVersion >= 6 }
 }

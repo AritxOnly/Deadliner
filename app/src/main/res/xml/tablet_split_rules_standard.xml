@@ -2,7 +2,7 @@
 <resources xmlns:window="http://schemas.android.com/apk/res-auto">
 
     <SplitPairRule
-        window:splitRatio="0.5"
+        window:splitRatio="0.45"
         window:splitLayoutDirection="locale"
         window:splitMinWidthDp="840"
         window:finishPrimaryWithSecondary="never"
@@ -19,14 +19,14 @@
             window:secondaryActivityName="com.aritxonly.deadliner.SettingsActivity" />
     </SplitPairRule>
 
-    <SplitPlaceholderRule
-        window:placeholderActivityName="com.aritxonly.deadliner.PlaceholderActivity"
-        window:splitRatio="0.5"
-        window:splitLayoutDirection="locale"
-        window:splitMinWidthDp="840"
-        window:stickyPlaceholder="false">
-        <ActivityFilter window:activityName="com.aritxonly.deadliner.MainActivity"/>
-    </SplitPlaceholderRule>
+<!--    <SplitPlaceholderRule-->
+<!--        window:placeholderActivityName="com.aritxonly.deadliner.PlaceholderActivity"-->
+<!--        window:splitRatio="0.45"-->
+<!--        window:splitLayoutDirection="locale"-->
+<!--        window:splitMinWidthDp="840"-->
+<!--        window:stickyPlaceholder="false">-->
+<!--        <ActivityFilter window:activityName="com.aritxonly.deadliner.MainActivity"/>-->
+<!--    </SplitPlaceholderRule>-->
 
     <ActivityRule window:alwaysExpand="true">
 <!--        <ActivityFilter window:activityName="com.aritxonly.deadliner.SettingsActivity"/>-->
