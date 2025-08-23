@@ -10,9 +10,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -27,10 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.model.DDLItem
@@ -309,7 +308,7 @@ private fun SummaryCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (isDown != null) {
                         val arrow =
-                            if (isDown) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward
+                            if (isDown) ImageVector.vectorResource(R.drawable.ic_arrow_down) else ImageVector.vectorResource(R.drawable.ic_arrow_up)
                         Icon(
                             imageVector = arrow,
                             contentDescription = null,
