@@ -1,6 +1,7 @@
 package com.aritxonly.deadliner.composable.settings
 
 import android.app.Activity
+import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,8 +42,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import androidx.window.WindowSdkExtensions
+import androidx.window.embedding.SplitController
 import androidx.window.layout.WindowMetricsCalculator
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.SettingsRoute
@@ -64,7 +67,7 @@ fun GeneralSettingsScreen(
     }
 
     val isTablet = rememberIsLargeDeviceByMaxMetrics()
-    val isAboveAndroid12L = rememberAndroidVersionAbove12L()
+    val supportSplit = rememberSupportSplit(LocalContext.current)
     val supportDynamicSplit = rememberSupportDynamicSplit()
 
     var embeddedActivities by remember { mutableStateOf(GlobalUtils.embeddedActivities) }
@@ -144,7 +147,7 @@ fun GeneralSettingsScreen(
                 )
             }
 
-            if (isTablet && isAboveAndroid12L) {
+            if (isTablet && supportSplit) {
                 SettingsSection(topLabel = stringResource(R.string.settings_tablets_only)) {
                     SettingsDetailSwitchItem(
                         headline = R.string.settings_embedded_activities,
@@ -169,9 +172,10 @@ fun GeneralSettingsScreen(
 
                         SettingsDetailSwitchItem(
                             headline = R.string.settings_dynamic_split,
-                            supportingRawText =
-                                stringResource(R.string.settings_support_dynamic_split) +
-                                        stringResource(R.string.settings_support_dynamic_split_not_avail)
+                            supportingRawText = stringResource(R.string.settings_support_dynamic_split) +
+                                if (!supportDynamicSplit)
+                                    stringResource(R.string.settings_support_dynamic_split_not_avail)
+                                else ""
                             ,
                             checked = dynamicSplit,
                             onCheckedChange = onDynamicSplitChange
@@ -200,11 +204,9 @@ fun rememberIsLargeDeviceByMaxMetrics(): Boolean {
 }
 
 @Composable
-fun rememberAndroidVersionAbove12L(): Boolean {
-    return remember {
-        // Android 12L 对应 API 32
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2
-    }
+fun rememberSupportSplit(context: Context): Boolean {
+    return remember { SplitController.getInstance(context).splitSupportStatus ==
+            SplitController.SplitSupportStatus.SPLIT_AVAILABLE }
 }
 
 @Composable

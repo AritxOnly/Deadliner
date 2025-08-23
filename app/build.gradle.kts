@@ -15,7 +15,7 @@ android {
     defaultConfig {
         applicationId = "com.aritxonly.deadliner"
         minSdk = 31
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 19
         versionName = "3.0.1-beta"
 
@@ -36,7 +36,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

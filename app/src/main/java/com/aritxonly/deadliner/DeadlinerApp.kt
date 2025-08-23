@@ -3,6 +3,14 @@ package com.aritxonly.deadliner
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.ComponentName
+import android.content.Context
+import android.content.res.Configuration
+import android.graphics.Color
+import android.util.Log
+import android.util.TypedValue
+import android.view.ContextThemeWrapper
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.toColor
 import androidx.window.WindowSdkExtensions
 import androidx.window.embedding.DividerAttributes
 import androidx.window.embedding.RuleController
@@ -13,6 +21,7 @@ import androidx.window.embedding.SplitPairRule
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
 import com.aritxonly.deadliner.web.DeepSeekUtils
+import okhttp3.internal.toHexString
 
 class DeadlinerApp : Application() {
     override fun onCreate() {
@@ -77,7 +86,8 @@ class DeadlinerApp : Application() {
                 ),
             )
         )
-            .setDefaultSplitAttributes(splitAttributes) // 👈 在这里应用
+            .setClearTop(true)
+            .setDefaultSplitAttributes(splitAttributes)
             .setMinWidthDp(840)
             .build()
 
