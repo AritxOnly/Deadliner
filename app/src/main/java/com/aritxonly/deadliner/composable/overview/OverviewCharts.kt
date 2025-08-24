@@ -31,11 +31,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.aritxonly.deadliner.R
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.PieChart
@@ -143,7 +145,8 @@ fun NewBarChartCompletionTimeStats(
             ),
             indicatorProperties = VerticalIndicatorProperties(
                 enabled = true,
-                contentBuilder = { it.toInt().toString() }
+                contentBuilder = { it.toInt().toString() },
+                textStyle = TextStyle.Default.copy(fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
             ),
             labelProperties = DefaultLabelProperties,
             gridProperties = GridProperties(enabled = false)

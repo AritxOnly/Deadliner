@@ -7,10 +7,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,9 +30,11 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -38,6 +43,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
@@ -55,7 +61,9 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
 fun DeepseekOverlay(
     initialText: String = "",
@@ -71,6 +79,7 @@ fun DeepseekOverlay(
     var isLoading by remember { mutableStateOf(false) }
     var results by remember { mutableStateOf<List<GeneratedDDL>>(emptyList()) }
     var failed by remember { mutableStateOf(false) }
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -80,7 +89,12 @@ fun DeepseekOverlay(
 
     Box(modifier = modifier
         .fillMaxSize()
-        .background(Color.Black.copy(alpha = 0.6f))
+        .background(brush = Brush.verticalGradient(
+            colors = listOf(
+                Color.Black.copy(alpha = 0f),   // 顶部透明
+                Color.Black.copy(alpha = 0.95f)  // 底部 0.8
+            )
+        ))
         .imePadding()
         .clickable {
             focusManager.clearFocus()
@@ -93,7 +107,7 @@ fun DeepseekOverlay(
                 .align(Alignment.TopCenter)
                 .padding(top = 80.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.surface,
+                    color = MaterialTheme.colorScheme.surfaceContainer,
                     shape = RoundedCornerShape(16.dp)
                 )
                 .padding(horizontal = 12.dp, vertical = 8.dp)
@@ -101,7 +115,7 @@ fun DeepseekOverlay(
             Text(
                 text = stringResource(R.string.deepseek_overlay_hint_top),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -150,6 +164,7 @@ fun DeepseekOverlay(
                         .weight(1f)
                         .heightIn(max = maxHeight)
                         .verticalScroll(scrollState)
+                        .bringIntoViewRequester(bringIntoViewRequester)
                 ) {
 
                     BasicTextField(
@@ -192,6 +207,7 @@ fun DeepseekOverlay(
                                 }
                             }
                         ),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                         decorationBox = { innerTextField ->
                             if (textState.text.isEmpty()) {
                                 Text(
