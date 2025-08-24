@@ -116,8 +116,8 @@ fun NewBarChartCompletionTimeStats(
                 values = listOf(
                     Bars.Data(
                         value = count.toDouble(),
-                        color = Brush.verticalGradient(
-                            listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
+                        color = Brush.horizontalGradient(
+                            listOf<Color>(barColor.copy(alpha = 0.5f), barColor)
                         )
                     )
                 )
@@ -140,7 +140,7 @@ fun NewBarChartCompletionTimeStats(
             labelHelperProperties = DefaultLabelHelperProperties.copy(enabled = false),
             popupProperties = DefaultPopupProperties.copy(
                 contentBuilder = { dataIndex, valueIndex, value ->
-                    "${data[valueIndex].first}: ${value.format(0)}"
+                    "${data[dataIndex].first}: ${value.format(0)}"
                 }
             ),
             indicatorProperties = VerticalIndicatorProperties(

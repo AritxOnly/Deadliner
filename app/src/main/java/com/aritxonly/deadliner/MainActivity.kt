@@ -98,6 +98,7 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import com.aritxonly.deadliner.SettingsActivity.Companion.EXTRA_INITIAL_ROUTE
 import com.aritxonly.deadliner.composable.agent.DeepseekOverlay
+import com.aritxonly.deadliner.composable.agent.DeepseekOverlayHost
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.data.MainViewModel
@@ -1866,19 +1867,17 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         composeOverlay.setViewCompositionStrategy(
             ViewCompositionStrategy.DisposeOnDetachedFromWindow
         )
-
         composeOverlay.visibility = View.VISIBLE
 
         composeOverlay.setContent {
             DeadlinerTheme {
-                DeepseekOverlay(
+                DeepseekOverlayHost(
                     initialText = initialText,
-                    onDismiss = {
+                    onAddDDL = { intent -> addDDLLauncher.launch(intent) },
+                    onRemoveFromWindow = {
+                        // 只有当退场动画播完才真正移除
                         composeOverlay.disposeComposition()
                         composeOverlay.visibility = View.GONE
-                    },
-                    onAddDDL = { intent ->
-                        addDDLLauncher.launch(intent)
                     }
                 )
             }
