@@ -78,12 +78,14 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import android.Manifest
 import android.content.ClipData
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.ViewFlipper
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
