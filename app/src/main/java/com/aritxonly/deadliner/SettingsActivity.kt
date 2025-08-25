@@ -48,6 +48,7 @@ import com.aritxonly.deadliner.composable.settings.WidgetSettingsScreen
 import com.aritxonly.deadliner.composable.settings.WikiScreen
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -132,8 +133,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
-        window.isNavigationBarContrastEnforced = false
+        enableEdgeToEdgeForAllDevices()
 
         super.onCreate(savedInstanceState)
 
@@ -428,11 +428,11 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        enableEdgeToEdge()
+        enableEdgeToEdgeForAllDevices()
     }
 
     override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
         super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
-        enableEdgeToEdge()
+        enableEdgeToEdgeForAllDevices()
     }
 }

@@ -88,6 +88,7 @@ import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.calendar.CalendarHelper
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
@@ -158,9 +159,7 @@ class DeadlineDetailActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
-
-        window.isNavigationBarContrastEnforced = false
+        enableEdgeToEdgeForAllDevices()
 
         super.onCreate(savedInstanceState)
 
@@ -211,12 +210,12 @@ class DeadlineDetailActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        enableEdgeToEdge()
+        enableEdgeToEdgeForAllDevices()
     }
 
     override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
         super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
-        enableEdgeToEdge()
+        enableEdgeToEdgeForAllDevices()
     }
 }
 

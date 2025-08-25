@@ -18,6 +18,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 
 /**
  * The configuration screen for the [HabitMiniWidget] AppWidget.
@@ -55,7 +56,7 @@ class HabitWidgetConfigureActivity : ComponentActivity() {
     private var selectedHabitId = -1L
 
     public override fun onCreate(icicle: Bundle?) {
-        enableEdgeToEdge()
+        enableEdgeToEdgeForAllDevices()
 
         super.onCreate(icicle)
 

@@ -37,6 +37,7 @@ import com.aritxonly.deadliner.calendar.CalendarHelper
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.CalendarEvent
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
@@ -507,13 +508,13 @@ class AddDDLActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        enableEdgeToEdge()
+        enableEdgeToEdgeForAllDevices()
         normalizeRootInsets()
     }
 
     override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
         super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
-        enableEdgeToEdge()
+        enableEdgeToEdgeForAllDevices()
         normalizeRootInsets()
     }
 }

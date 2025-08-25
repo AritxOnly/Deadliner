@@ -73,6 +73,7 @@ import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.data.MainViewModel
 import com.aritxonly.deadliner.data.ViewModelFactory
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
@@ -227,8 +228,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         setContentView(R.layout.activity_main)
 
         // 开启边到边沉浸
-        enableEdgeToEdge()
-        window.isNavigationBarContrastEnforced = false
+        enableEdgeToEdgeForAllDevices()
         normalizeRootInsets()
 
         DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
@@ -1772,13 +1772,13 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        enableEdgeToEdge()
+        enableEdgeToEdgeForAllDevices()
         normalizeRootInsets()
     }
 
     override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
         super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
-        enableEdgeToEdge()
+        enableEdgeToEdgeForAllDevices()
         normalizeRootInsets()
     }
 }
