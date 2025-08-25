@@ -9,7 +9,7 @@ import androidx.activity.enableEdgeToEdge
  *      并使用enableEdgeToEdge()开启edgeToEdge
  * @param: null
  */
-fun ComponentActivity.enableEdgeToEdgeForAllDevices() = {
+fun ComponentActivity.enableEdgeToEdgeForAllDevices() {
     enableEdgeToEdge()
 
     // For Xiaomi HyperOS: god knows why they need this to keep edgeToEdge in light mode.

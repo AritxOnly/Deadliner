@@ -267,7 +267,7 @@
     <string name="permission_calendar_denied">需要日历权限以同步事件</string>
     <string name="loading_wiki">正在加载指南页面，点击任意区域跳过</string>
     <string name="habit_success_retro">补签成功 🎉</string>
-    <string name="find_updates">检测到新版本 %s$1</string>
+    <string name="find_updates">检测到新版本 %1$s</string>
     <string name="goto_update">去更新</string>
     <string name="later">稍后再说</string>
     <string name="task_status_summary">任务状态统计</string>

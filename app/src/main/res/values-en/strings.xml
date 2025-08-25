@@ -212,7 +212,7 @@
     <string name="permission_calendar_denied">Calendar permission required to sync events</string>
     <string name="loading_wiki">Loading guide page, tap anywhere to skip</string>
     <string name="habit_success_retro">Check-in retroactively successful 🎉</string>
-    <string name="find_updates">New version detected: %s$1</string>
+    <string name="find_updates">New version detected: %1$s</string>
     <string name="goto_update">Update now</string>
     <string name="later">Remind me later</string>
     <string name="task_status_summary">Task status statistics</string>
@@ -389,4 +389,5 @@
     <string name="settings_dynamic_split">Dynamic split</string>
     <string name="settings_support_dynamic_split">When enabled, a drag handle will appear to adjust the split ratio</string>
     <string name="settings_support_dynamic_split_not_avail">(Your device does not support dynamic split)</string>
+    <string name="settings_from_webdav">Import from WebDAV</string>
 </resources>

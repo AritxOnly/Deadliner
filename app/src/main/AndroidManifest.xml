@@ -60,19 +60,19 @@
             android:label="@string/title_activity_overview"
             android:theme="@style/Theme.Deadliner"
             android:resizeableActivity="true"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode" />
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout" />
         <activity
             android:name=".DeadlineDetailActivity"
             android:exported="false"
             android:label="@string/title_activity_deadline_detail"
             android:theme="@style/Theme.Deadliner"
             android:resizeableActivity="true"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode" />
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout" />
         <activity
             android:name=".ArchiveActivity"
             android:exported="false"
             android:resizeableActivity="true"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode" />
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout" />
 
         <service
             android:name=".AddDDLTileService"
@@ -185,7 +185,7 @@
             android:name=".SettingsActivity"
             android:exported="false"
             android:resizeableActivity="true"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode" />
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout" />
         <activity
             android:name=".LauncherActivity"
             android:exported="true"
@@ -201,13 +201,13 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:resizeableActivity="true"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode"/>
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"/>
         <activity
             android:name=".AddDDLActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:resizeableActivity="true"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode">
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
             </intent-filter>
