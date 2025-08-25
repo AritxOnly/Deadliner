@@ -218,11 +218,10 @@ object GlobalUtils {
             sharedPreferences.edit { putString("cloud_sync_constant_token", value) }
         }
 
-    var experimentalEdgeToEdge: Boolean
-        get() = sharedPreferences.getBoolean("enable_edge_to_edge", true)
-        set(value) {
-            sharedPreferences.edit { putBoolean("enable_edge_to_edge", value) }
-        }
+    @Deprecated("Update to SDK 35; Edge to edge is forced to enable.")
+    var experimentalEdgeToEdge: Boolean = true
+        get() = true
+        private set
 
     var filteredCalendars: Set<String?>?
         get() = sharedPreferences.getStringSet("filtered_calendars", null)

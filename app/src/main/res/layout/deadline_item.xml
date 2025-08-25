@@ -6,7 +6,7 @@
     android:paddingHorizontal="16dp"
     android:layout_marginHorizontal="0dp"
     android:layout_marginBottom="8dp"
-    android:theme="@style/Theme.Material3.DynamicColors.DayNight">
+    android:theme="@style/Theme.Material3Expressive.DynamicColors.DayNight">
 
     <!-- 自定义进度条(类似电池条) -->
     <ProgressBar

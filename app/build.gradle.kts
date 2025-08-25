@@ -15,7 +15,7 @@ android {
     defaultConfig {
         applicationId = "com.aritxonly.deadliner"
         minSdk = 31
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 21
         versionName = "3.1.0-beta"
 
@@ -72,20 +72,18 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    buildToolsVersion = "34.0.0"
     ndkVersion = "26.1.10909125"
 }
 
 dependencies {
-    implementation("androidx.work:work-runtime-ktx:2.7.1")
-    implementation("nl.dionsegijn:konfetti-xml:2.0.4")
-    implementation("com.squareup.okhttp3:okhttp:4.10.0")
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("androidx.work:work-runtime-ktx:2.10.3")
+    implementation(libs.konfetti.xml)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.google.code.gson:gson:2.11.0")
     implementation("io.noties.markwon:core:4.6.2")
-    implementation("androidx.compose.material3:material3:1.4.0-alpha13")
-    implementation("androidx.compose.material3:material3-window-size-class:1.4.0-alpha13")
-    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0-alpha13")
-    implementation("com.google.android.material:material:1.13.0-alpha13")
+    implementation("androidx.compose.material3:material3:1.4.0-beta02")
+    implementation("androidx.compose.material3:material3-window-size-class:1.4.0-beta02")
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0-beta02")
     implementation("io.github.ehsannarmani:compose-charts:0.1.7")
     implementation("androidx.navigation:navigation-compose:2.9.1")
     implementation("com.github.jeziellago:compose-markdown:0.5.7")

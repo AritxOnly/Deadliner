@@ -1,6 +1,7 @@
 package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.transition.Fade
@@ -170,5 +171,15 @@ class ArchiveActivity : AppCompatActivity() {
             window.enterTransition = slide // 进入动画
             window.exitTransition = fade   // 退出动画
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        enableEdgeToEdge()
+    }
+
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        enableEdgeToEdge()
     }
 }

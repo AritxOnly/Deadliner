@@ -2,6 +2,7 @@ package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
@@ -23,9 +24,12 @@ import android.widget.ListView
 import android.widget.RadioButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import com.aritxonly.deadliner.localutils.GlobalUtils.toDateTimeString
@@ -96,18 +100,14 @@ class AddDDLActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_ddl)
 
+        normalizeRootInsets()
+
         val generatedDDL = intent.getParcelableExtra<GeneratedDDL>("EXTRA_GENERATE_DDL")
 
         DynamicColors.applyToActivitiesIfAvailable(this.application)
         DynamicColors.applyToActivityIfAvailable(this)
 
         GlobalUtils.decideHideFromRecent(this, this@AddDDLActivity)
-
-        // 获取主题中的 colorSurface 值
-        val colorSurface = getThemeColor(android.R.attr.colorBackground)
-
-        // 设置状态栏和导航栏颜色
-        setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
         selectedPage = intent.getIntExtra("EXTRA_CURRENT_TYPE", 0)
 
@@ -493,54 +493,27 @@ class AddDDLActivity : AppCompatActivity() {
         return dateTime.format(formatter)
     }
 
-    /**
-     * 设置状态栏和导航栏颜色及图标颜色
-     */
-    private fun setSystemBarColors(color: Int, lightIcons: Boolean) {
-        window.apply {
-            addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = color
-            navigationBarColor = color
+    private fun normalizeRootInsets() {
+        val root = findViewById<ViewGroup>(android.R.id.content).getChildAt(0) ?: return
+        ViewCompat.setOnApplyWindowInsetsListener(root, null)
 
-            // 设置状态栏图标颜色
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                )
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                decorView.systemUiVisibility = if (lightIcons) {
-                    decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                } else {
-                    decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-                }
-            }
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val status = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            val navigation = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            v.setPadding(v.paddingLeft, status.top, v.paddingRight, navigation.bottom)
+            insets
         }
     }
 
-    /**
-     * 获取主题颜色
-     * @param attributeId 主题属性 ID
-     * @return 颜色值
-     */
-    private fun getThemeColor(attributeId: Int): Int {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(attributeId, typedValue, true)
-        return typedValue.data
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        enableEdgeToEdge()
+        normalizeRootInsets()
     }
 
-    /**
-     * 判断颜色是否为浅色
-     */
-    private fun isLightColor(color: Int): Boolean {
-        val darkness = 1 - (0.299 * ((color shr 16 and 0xFF) / 255.0) +
-                0.587 * ((color shr 8 and 0xFF) / 255.0) +
-                0.114 * ((color and 0xFF) / 255.0))
-        return darkness < 0.5
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        enableEdgeToEdge()
+        normalizeRootInsets()
     }
 }

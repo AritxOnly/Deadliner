@@ -1,16 +1,17 @@
 package com.aritxonly.deadliner
 
-import ApkDownloaderInstaller
-import android.animation.AnimatorSet
-import android.animation.ValueAnimator
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.ActivityOptions
 import android.appwidget.AppWidgetManager
+import android.content.ClipData
 import android.content.ComponentName
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.content.res.Resources
 import android.graphics.*
 import android.net.Uri
 import android.os.Build
@@ -20,31 +21,41 @@ import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
 import android.text.Editable
-import android.text.Spanned
 import android.text.TextWatcher
 import android.util.Log
 import android.util.TypedValue
-import android.view.LayoutInflater
 import android.view.View
-import android.view.WindowInsetsController
-import android.view.WindowManager
-import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.ViewGroup
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.ViewFlipper
 import androidx.activity.addCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.toColorInt
+import androidx.core.net.toUri
+import androidx.core.view.OnApplyWindowInsetsListener
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.setPadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -54,50 +65,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
-import com.aritxonly.deadliner.notification.NotificationUtil
-import com.google.android.material.badge.BadgeDrawable
-import com.google.android.material.bottomappbar.BottomAppBar
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.color.DynamicColors
-import com.google.android.material.color.MaterialColors
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.progressindicator.CircularProgressIndicator
-import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
-import io.noties.markwon.Markwon
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import nl.dionsegijn.konfetti.xml.KonfettiView
-import okhttp3.internal.toHexString
-import org.json.JSONObject
-import org.json.JSONArray
-import java.time.LocalDate
-import java.time.LocalDateTime
-import android.Manifest
-import android.content.ClipData
-import android.content.res.Configuration
-import android.content.res.Resources
-import android.view.ViewGroup
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.widget.Button
-import android.widget.ViewFlipper
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
-import com.google.android.material.shape.MaterialShapeDrawable
-import androidx.core.graphics.toColorInt
-import androidx.core.net.toUri
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updateLayoutParams
-import androidx.core.view.updatePadding
+import androidx.window.layout.WindowInfoTracker
 import com.aritxonly.deadliner.SettingsActivity.Companion.EXTRA_INITIAL_ROUTE
-import com.aritxonly.deadliner.composable.agent.DeepseekOverlay
 import com.aritxonly.deadliner.composable.agent.DeepseekOverlayHost
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.DatabaseHelper
@@ -112,16 +81,38 @@ import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.PartyPresets
 import com.aritxonly.deadliner.model.updateNoteWithDate
+import com.aritxonly.deadliner.notification.NotificationUtil
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.aritxonly.deadliner.web.UpdateInfo
 import com.aritxonly.deadliner.web.UpdateManager
 import com.aritxonly.deadliner.widgets.HabitMiniWidget
 import com.aritxonly.deadliner.widgets.LargeDeadlineWidget
 import com.aritxonly.deadliner.widgets.MultiDeadlineWidget
+import com.google.android.material.badge.BadgeDrawable
+import com.google.android.material.bottomappbar.BottomAppBar
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.loadingindicator.LoadingIndicator
-import kotlinx.coroutines.coroutineScope
+import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import io.noties.markwon.Markwon
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import nl.dionsegijn.konfetti.xml.KonfettiView
+import okhttp3.internal.toHexString
+import org.json.JSONArray
+import org.json.JSONObject
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Period
 import java.time.ZoneId
 
@@ -235,35 +226,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        if (GlobalUtils.experimentalEdgeToEdge) {
-            // 开启边到边沉浸
-            enableEdgeToEdge()
-
-            window.isNavigationBarContrastEnforced = false
-
-            val rootView = findViewById<ConstraintLayout>(R.id.main)
-            ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
-                val statusBarInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-                val navBarInset    = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
-
-                view.updatePadding(top = statusBarInset)
-
-                bottomAppBar.updatePadding(bottom = navBarInset)
-
-                val TAG_ORIG_MARGIN = R.id.addEvent
-                if (addEventButton.getTag(TAG_ORIG_MARGIN) == null) {
-                    val lp = addEventButton.layoutParams as ViewGroup.MarginLayoutParams
-                    addEventButton.setTag(TAG_ORIG_MARGIN, lp.bottomMargin)
-                }
-
-                val originalMargin = addEventButton.getTag(TAG_ORIG_MARGIN) as Int
-                addEventButton.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                    bottomMargin = originalMargin + navBarInset / 2
-                }
-
-                WindowInsetsCompat.CONSUMED
-            }
-        }
+        // 开启边到边沉浸
+        enableEdgeToEdge()
+        window.isNavigationBarContrastEnforced = false
+        normalizeRootInsets()
 
         DeadlineAlarmScheduler.cancelAllAlarms(applicationContext)
         DeadlineAlarmScheduler.cancelDailyAlarm(applicationContext)
@@ -285,8 +251,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             onTertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorOnTertiaryContainer),
         )
 
-//        DynamicColors.applyToActivitiesIfAvailable(application)
-
         DynamicColors.applyToActivityIfAvailable(this)
 
         GlobalUtils.decideHideFromRecent(this, this@MainActivity)
@@ -296,8 +260,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         val colorContainer = materialColorScheme.surfaceContainer
 
         Log.d("MainActivity", "colorSurface ${colorSurface.toHexString()}")
-        // 设置状态栏和导航栏颜色
-        setSystemBarColors(colorSurface, isLightColor(colorSurface), colorContainer)
+
         val mainPage: ConstraintLayout = findViewById(R.id.main)
         mainPage.setBackgroundColor(colorSurface)
 
@@ -510,7 +473,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 dX: Float,
                 dY: Float,
                 actionState: Int,
-                isCurrentlyActive: Boolean
+                isCurrentlyActive: Boolean,
             ) {
                 if (adapter.isMultiSelectMode || currentType == DeadlineType.HABIT) {
                     return
@@ -1113,122 +1076,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     }
 
     /**
-     * 设置状态栏和导航栏颜色及图标颜色
-     */
-    private fun setSystemBarColors(color: Int, lightIcons: Boolean, colorNavigationBar: Int) {
-        if (GlobalUtils.experimentalEdgeToEdge) return
-
-        window.apply {
-            addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = color
-            navigationBarColor = colorNavigationBar
-
-            // 设置状态栏图标颜色
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                )
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                decorView.systemUiVisibility = if (lightIcons) {
-                    decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                } else {
-                    decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-                }
-            }
-        }
-    }
-
-    /**
-     * 带渐变动画的系统栏颜色设置
-     * @param duration 动画时长（默认300ms）
-     * @param interpolator 插值器（默认加速减速）
-     */
-    private fun setSystemBarColorsWithAnimation(
-        targetStatusColor: Int,
-        targetNavColor: Int,
-        lightIcons: Boolean,
-        duration: Long = 200
-    ) {
-        if (GlobalUtils.experimentalEdgeToEdge) return
-
-        val window = this.window ?: return
-
-        val interpolator = AccelerateDecelerateInterpolator()
-
-        // 设置图标颜色（动画期间保持不变）
-        setSystemBarIcons(lightIcons)
-
-        // 状态栏颜色动画
-        val statusAnimator = ValueAnimator.ofArgb(window.statusBarColor, targetStatusColor).apply {
-            addUpdateListener { animator ->
-                window.statusBarColor = animator.animatedValue as Int
-            }
-        }
-
-        // 导航栏颜色动画
-        val navAnimator = ValueAnimator.ofArgb(window.navigationBarColor, targetNavColor).apply {
-            addUpdateListener { animator ->
-                window.navigationBarColor = animator.animatedValue as Int
-            }
-        }
-
-        // 创建动画集合
-        AnimatorSet().apply {
-            this.duration = duration
-            this.interpolator = interpolator
-            playTogether(statusAnimator, navAnimator)
-            start()
-        }
-    }
-
-    private fun setSystemBarIcons(lightIcons: Boolean) {
-        if (GlobalUtils.experimentalEdgeToEdge) return
-
-        val window = this.window ?: return
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.let {
-                // 状态栏图标
-                it.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                )
-                // 导航栏图标
-                it.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                )
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = if (lightIcons) {
-                // 兼容旧版状态栏图标
-                window.decorView.systemUiVisibility or
-                        View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-            } else {
-                window.decorView.systemUiVisibility and
-                        View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-            }.let { visibility ->
-                // 兼容旧版导航栏图标（API 26+）
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    visibility or if (lightIcons)
-                        View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-                    else
-                        visibility and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
-                } else {
-                    visibility
-                }
-            }
-        }
-    }
-
-    /**
      * 获取主题颜色
      * @param attributeId 主题属性 ID
      * @return 颜色值
@@ -1541,12 +1388,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         handler.postDelayed({
             val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
             val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
-            setSystemBarColorsWithAnimation(
-                colorSurface,
-                colorSurface,
-                isLightColor(colorSurface),
-                duration = 100
-            )
         }, 200)
     }
 
@@ -1575,12 +1416,6 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         handler.postDelayed({
             val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
             val colorContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorSurfaceContainer)
-            setSystemBarColorsWithAnimation(
-                colorSurface,
-                colorContainer,
-                isLightColor(colorContainer),
-                duration = 100
-            )
         }, 0)
     }
 
@@ -1629,7 +1464,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
@@ -1921,6 +1756,30 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
             .setNegativeButton(R.string.later, null)
             .show()
+    }
+
+    private fun normalizeRootInsets() {
+        val root = findViewById<ViewGroup>(android.R.id.content).getChildAt(0) ?: return
+        ViewCompat.setOnApplyWindowInsetsListener(root, null)
+
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val status = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            // 只应用 top inset，忽略 bottom
+            v.setPadding(v.paddingLeft, status.top, v.paddingRight, 0)
+            insets // 不消费，让子控件能继续收到
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        enableEdgeToEdge()
+        normalizeRootInsets()
+    }
+
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        enableEdgeToEdge()
+        normalizeRootInsets()
     }
 }
 

@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.Deadliner" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.Deadliner" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <!-- enable window content transitions -->
         <item name="android:windowActivityTransitions">true</item>
         <item name="colorPrimary">?attr/colorPrimary</item>
@@ -13,12 +13,12 @@
 
     <item name="colorBorder" type="color">#50000000</item>
     <!-- Base application theme. -->
-    <style name="Base.Theme.Deadliner" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.Deadliner" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>
 
-    <style name="Theme.Deadliner.AppWidgetContainerParent" parent="Theme.Material3.DynamicColors.DayNight">
+    <style name="Theme.Deadliner.AppWidgetContainerParent" parent="Theme.Material3Expressive.DynamicColors.DayNight">
         <!-- Radius of the outer bound of widgets to make the rounded corners -->
         <item name="appWidgetRadius">16dp</item>
         <!--

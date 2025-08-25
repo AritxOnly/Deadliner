@@ -36,7 +36,7 @@ fun DeveloperSettingsScreen(
     var experimentalE2E by remember { mutableStateOf(GlobalUtils.experimentalEdgeToEdge) }
     val onExperimentalE2EChange: (Boolean) -> Unit = {
         experimentalE2E = it
-        GlobalUtils.experimentalEdgeToEdge = it
+//        GlobalUtils.experimentalEdgeToEdge = it
     }
 
     val expressiveTypeModifier = Modifier

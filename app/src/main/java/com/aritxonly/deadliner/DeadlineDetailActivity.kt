@@ -90,6 +90,7 @@ import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
@@ -171,14 +172,10 @@ class DeadlineDetailActivity : AppCompatActivity() {
 
         colorScheme = appColorScheme
 
-        setSystemBarColors(colorScheme.surface, isLightColor(colorScheme.surface), colorScheme.surface)
-
         val latestDeadline = DDLRepository().getDDLById(initialDeadline.id) ?: initialDeadline
 
         setContent {
-            CustomDeadlinerTheme(
-                appColorScheme = appColorScheme
-            ) {
+            DeadlinerTheme {
                 var currentDeadline by remember { mutableStateOf(latestDeadline) }
 
                 Scaffold(
@@ -212,44 +209,14 @@ class DeadlineDetailActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * 设置状态栏和导航栏颜色及图标颜色
-     */
-    private fun setSystemBarColors(color: Int, lightIcons: Boolean, colorNavigationBar: Int) {
-        window.apply {
-            addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = color
-            navigationBarColor = colorNavigationBar
-
-            // 设置状态栏图标颜色
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                )
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                decorView.systemUiVisibility = if (lightIcons) {
-                    decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                } else {
-                    decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-                }
-            }
-        }
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        enableEdgeToEdge()
     }
 
-    /**
-     * 判断颜色是否为浅色
-     */
-    private fun isLightColor(color: Int): Boolean {
-        val darkness = 1 - (0.299 * ((color shr 16 and 0xFF) / 255.0) +
-                0.587 * ((color shr 8 and 0xFF) / 255.0) +
-                0.114 * ((color and 0xFF) / 255.0))
-        return darkness < 0.5
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        enableEdgeToEdge()
     }
 }
 
