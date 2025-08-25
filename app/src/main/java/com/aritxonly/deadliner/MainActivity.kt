@@ -1737,7 +1737,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         } else {
             showBottomBar()
             bg.setRenderEffect(null)
-            bg.animate().scaleX(1f).scaleY(1f).setDuration(150).start()
+            bg.animate().scaleX(1f).scaleY(1f).setDuration(320).start()
         }
     }
 

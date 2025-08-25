@@ -7,12 +7,16 @@ import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.PartyPresets
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.DynamicColors
@@ -30,15 +34,13 @@ class IntroActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdgeForAllDevices()
+
         setContentView(R.layout.activity_intro)
 
+        normalizeRootInsets()
+
         DynamicColors.applyToActivityIfAvailable(this)
-
-        // 获取主题中的 colorSurface 值
-        val colorSurface = getThemeColor(com.google.android.material.R.attr.colorSurface)
-
-        // 设置状态栏和导航栏颜色
-        setSystemBarColors(colorSurface, isLightColor(colorSurface))
 
         pageIndicator = findViewById(R.id.pageIndicator)
 
@@ -107,54 +109,15 @@ class IntroActivity : AppCompatActivity() {
         }, 1000)
     }
 
-    /**
-     * 设置状态栏和导航栏颜色及图标颜色
-     */
-    private fun setSystemBarColors(color: Int, lightIcons: Boolean) {
-        window.apply {
-            addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = color
-            navigationBarColor = color
+    private fun normalizeRootInsets() {
+        val root = findViewById<ViewGroup>(android.R.id.content).getChildAt(0) ?: return
+        ViewCompat.setOnApplyWindowInsetsListener(root, null)
 
-            // 设置状态栏图标颜色
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                )
-                insetsController?.setSystemBarsAppearance(
-                    if (lightIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                decorView.systemUiVisibility = if (lightIcons) {
-                    decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                } else {
-                    decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-                }
-            }
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val status = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            val navigation = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            v.setPadding(v.paddingLeft, status.top, v.paddingRight, navigation.bottom)
+            insets
         }
-    }
-
-    /**
-     * 获取主题颜色
-     * @param attributeId 主题属性 ID
-     * @return 颜色值
-     */
-    private fun getThemeColor(attributeId: Int): Int {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(attributeId, typedValue, true)
-        return typedValue.data
-    }
-
-    /**
-     * 判断颜色是否为浅色
-     */
-    private fun isLightColor(color: Int): Boolean {
-        val darkness = 1 - (0.299 * ((color shr 16 and 0xFF) / 255.0) +
-                0.587 * ((color shr 8 and 0xFF) / 255.0) +
-                0.114 * ((color and 0xFF) / 255.0))
-        return darkness < 0.5
     }
 }

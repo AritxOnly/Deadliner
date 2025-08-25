@@ -194,7 +194,8 @@ class SettingsActivity : AppCompatActivity() {
                                 GlobalUtils.NotificationStatusManager.clearAllNotified()
                                 Toast.makeText(this@SettingsActivity, getString(R.string.destroy_alarms), Toast.LENGTH_SHORT).show()
                                 openBackup()
-                            }
+                            },
+                            handleWebSettings = { navController.navigate(SettingsRoute.WebDAV.route) }
                         ) { navController.navigateUp() }
                     }
 
