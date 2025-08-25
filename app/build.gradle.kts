@@ -16,8 +16,8 @@ android {
         applicationId = "com.aritxonly.deadliner"
         minSdk = 31
         targetSdk = 35
-        versionCode = 21
-        versionName = "3.1.0-beta"
+        versionCode = 22
+        versionName = "3.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -44,8 +44,6 @@ android {
             )
         }
         debug {
-//            isMinifyEnabled = true
-//            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
