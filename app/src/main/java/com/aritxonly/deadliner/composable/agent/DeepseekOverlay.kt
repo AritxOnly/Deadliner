@@ -11,8 +11,13 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -35,8 +40,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.FocusRequester
@@ -50,7 +57,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.dimensionResource
@@ -60,6 +69,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.AddDDLActivity
 import com.aritxonly.deadliner.model.GeneratedDDL
@@ -152,12 +162,20 @@ fun DeepseekOverlay(
             onDismiss()
         }
     ) {
+        val wobblePx = rememberScreenScaledWobbleDp(fractionOfMinSide = 0.2f)
+
         GlowScrim(
             modifier = Modifier
                 .align(Alignment.BottomCenter),
             height = 260.dp,
             blur = 60.dp,
-            opacity = glowAlpha.value
+            opacity = glowAlpha.value,
+            jitterEnabled = true,
+            jitterRadius = wobblePx,
+            freqBlue = 0.20f,   // 5s 周期
+            freqPink = 0.18f,   // ~5.5s 周期
+            freqAmber = 0.15f,  // ~6.7s 周期
+            freqBreathe = 0.125f // 8s 周期
         )
 
         // 顶部提示气泡
@@ -185,22 +203,16 @@ fun DeepseekOverlay(
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 24.dp, vertical = 40.dp)
                 .graphicsLayer {
-                    alpha = panelAlpha.value
+//                    alpha = panelAlpha.value
                     translationY = panelTranslate.value
                 }
-                .drawBehind {
-                    val stroke = borderThickness.toPx()
-                    // Load your dimen as Dp
-                    val cornerDp = itemCorner
-                    // Convert to pixels
-                    val cornerPx = cornerDp.toPx()
-                    drawRoundRect(
-                        brush = Brush.horizontalGradient(glowColors),
-                        size = size,
-                        cornerRadius = CornerRadius(cornerPx, cornerPx),
-                        style = Stroke(width = stroke)
-                    )
-                }
+                .glowingWobbleBorder(
+                    colors = glowColors,
+                    corner = itemCorner,
+                    stroke = borderThickness,
+                    wobblePx = wobblePx,
+                    breatheAmp = 0.10f
+                )
                 .background(
                     color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius))
@@ -406,14 +418,43 @@ fun DeepseekOverlay(
 }
 
 @Composable
+fun rememberScreenScaledWobbleDp(
+    fractionOfMinSide: Float = 0.012f, // 1.2% 的最短边
+    minDp: Dp = 16.dp,                  // 下限，避免太小看不见
+    maxDp: Dp = 48.dp                  // 上限，避免太大夸张
+): Dp {
+    val cfg = LocalConfiguration.current
+    val base = minOf(cfg.screenWidthDp, cfg.screenHeightDp)
+    val raw = (base * fractionOfMinSide).dp
+    return raw.coerceIn(minDp, maxDp)
+}
+
+@Composable
 fun GlowScrim(
     modifier: Modifier = Modifier,
     height: Dp = 260.dp,
     blur: Dp = 60.dp,
-    opacity: Float = 1f
+    opacity: Float = 1f,
+    jitterEnabled: Boolean = true,
+    jitterRadius: Dp = 6.dp,    // 可放到 64dp
+    freqBlue: Float = 1.00f,    // Hz
+    freqPink: Float = 0.95f,
+    freqAmber: Float = 1.10f,
+    freqBreathe: Float = 0.35f
 ) {
     val a = opacity.coerceIn(0f, 1f)
     val surfaceColor = MaterialTheme.colorScheme.surface
+    val density = LocalDensity.current
+    val jPx = with(density) { jitterRadius.toPx() }
+
+    // —— 连续时间（秒） ——
+    val timeSec by rememberTimeSeconds()
+
+    // 工具：连续正弦
+    fun s(freqHz: Float, phase: Float = 0f): Float {
+        val angle = (2f * Math.PI.toFloat()) * (timeSec * freqHz) + phase
+        return kotlin.math.sin(angle)
+    }
 
     Box(
         modifier = modifier
@@ -421,43 +462,71 @@ fun GlowScrim(
             .height(height)
             .blur(blur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
             .drawWithCache {
-                // 把 a 乘到每一层的颜色透明度上（注意别把 Transparent 乘出来发灰）
+                val w = size.width
+                val h = size.height
+
+                val refW = with(density) { 840.dp.toPx() }
+
+                // 0..1，屏幕越宽 -> 越接近 1；越窄 -> 越接近 0
+                val widthNorm = (w / refW).coerceIn(0f, 1f)
+
+                // 根据宽度计算自适应系数（可微调这些数）
+                val separationBoost = lerp(0.0f, 0.8f, 1f - widthNorm)  // 窄屏把中心再往左右推 ~9%
+                val radiusScale     = lerp(0.82f, 1.00f, widthNorm)      // 窄屏把半径降到 82%
+                val alphaScale      = lerp(0.85f, 1.00f, widthNorm)      // 窄屏整体稍微降亮度
+                val jitterScale     = lerp(0.70f, 1.00f, widthNorm)      // 窄屏减小抖动幅度
+
+                // 把你的 jPx 做个缩放，避免窄屏晃动导致重叠更严重
+                val j = jPx * jitterScale
+
+                // —— 计算动态中心：窄屏时增加左右分离度 ——
+                val blueCenter = Offset(
+                    w * (0.25f - separationBoost) + if (jitterEnabled) j * 0.9f * s(freqBlue, 0.13f) else 0f,
+                    h * 0.80f + if (jitterEnabled) j * 0.5f * s(freqBlue * 1.3f, 0.37f) else 0f
+                )
+                val pinkCenter = Offset(
+                    w * (0.78f + separationBoost) + if (jitterEnabled) j * 0.7f * s(freqPink, 0.51f) else 0f,
+                    h * 0.72f + if (jitterEnabled) j * 0.6f * s(freqPink * 1.4f, 0.11f) else 0f
+                )
+                val amberCenter = Offset(
+                    w * (0.55f) + if (jitterEnabled) j * 0.8f * s(freqAmber, 0.29f) else 0f,
+                    h * 0.95f + if (jitterEnabled) j * 0.4f * s(freqAmber * 0.8f, 0.73f) else 0f
+                )
+
+                // —— 半径按窄屏缩小：半径仍以高度为基准，但乘以 radiusScale ——
+                val blueRadius  = h * 1.10f * radiusScale * (1f + if (jitterEnabled) 0.015f * s(freqBlue * 1.1f, 0.2f) else 0f)
+                val pinkRadius  = h * 1.00f * radiusScale * (1f + if (jitterEnabled) 0.018f * s(freqPink * 0.95f, 0.4f) else 0f)
+                val amberRadius = h * 1.30f * radiusScale * (1f + if (jitterEnabled) 0.012f * s(freqAmber * 1.05f, 0.6f) else 0f)
+
+                val breathe = 0.90f + 0.10f * (if (jitterEnabled) (s(freqBreathe, 0.18f) * 0.5f + 0.5f) else 1f)
+
+                // —— 颜色强度按窄屏轻降，避免 Plus 混得太狠 ——
                 val blue = Brush.radialGradient(
-                    colors = listOf(
-                        Color(0xFF6AA9FF).copy(alpha = 0.85f * a),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width * 0.25f, size.height * 0.80f),
-                    radius = size.height * 1.10f
+                    colors = listOf(Color(0xFF6AA9FF).copy(alpha = 0.85f * alphaScale * a * breathe), Color.Transparent),
+                    center = blueCenter,
+                    radius = blueRadius
                 )
                 val pink = Brush.radialGradient(
-                    colors = listOf(
-                        Color(0xFFFF6AE6).copy(alpha = 0.80f * a),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width * 0.78f, size.height * 0.72f),
-                    radius = size.height * 1.00f
+                    colors = listOf(Color(0xFFFF6AE6).copy(alpha = 0.80f * alphaScale * a * breathe), Color.Transparent),
+                    center = pinkCenter,
+                    radius = pinkRadius
                 )
                 val amber = Brush.radialGradient(
-                    colors = listOf(
-                        Color(0xFFFFC36A).copy(alpha = 0.80f * a),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width * 0.55f, size.height * 0.95f),
-                    radius = size.height * 1.30f
+                    colors = listOf(Color(0xFFFFC36A).copy(alpha = 0.80f * alphaScale * a * breathe), Color.Transparent),
+                    center = amberCenter,
+                    radius = amberRadius
                 )
+
+                // 白雾与底部压暗保持不变（也可以按需加一点点 scale）
                 val whiteFog = Brush.radialGradient(
-                    colors = listOf(
-                        surfaceColor.copy(alpha = 0.55f * a),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width / 2f, size.height * 1.12f),
-                    radius = size.height * 1.25f
+                    colors = listOf(surfaceColor.copy(alpha = 0.55f * a), Color.Transparent),
+                    center = Offset(w / 2f, h * 1.12f),
+                    radius = h * 1.25f
                 )
                 val vertical = Brush.verticalGradient(
-                    0f    to Color.Transparent,                         // 顶部仍完全透明
+                    0f to Color.Transparent,
                     0.60f to Color.Transparent,
-                    1f    to Color.Black.copy(alpha = 0.35f * a)       // 底部压暗也跟随 a
+                    1f to Color.Black.copy(alpha = 0.35f * a)
                 )
 
                 onDrawBehind {
@@ -469,4 +538,63 @@ fun GlowScrim(
                 }
             }
     )
+}
+
+fun Modifier.glowingWobbleBorder(
+    colors: List<Color>,
+    corner: Dp,
+    stroke: Dp,
+    wobblePx: Dp = 4.dp,
+    freqHz: Float = 0.20f,      // 左右轻微晃动的频率（Hz）
+    breatheAmp: Float = 0.12f,  // alpha 呼吸幅度
+    breatheHz: Float = 0.10f
+): Modifier = composed {
+    val density = LocalDensity.current
+    val timeSec by rememberTimeSeconds()
+
+    val wobble = with(density) { wobblePx.toPx() } *
+            kotlin.math.sin(2f * Math.PI.toFloat() * (timeSec * freqHz))
+
+    val breathe = 1f + breatheAmp *
+            kotlin.math.sin(2f * Math.PI.toFloat() * (timeSec * breatheHz + 0.17f))
+
+    this.then(
+        Modifier.drawWithCache {
+            val strokePx = stroke.toPx()
+            val r = corner.toPx()
+
+            val brush = Brush.linearGradient(
+                colors = colors.map { it.copy(alpha = (it.alpha * breathe).coerceIn(0f, 1f)) },
+                start = Offset(-wobble, 0f),
+                end   = Offset(size.width + wobble, 0f)
+            )
+
+            onDrawBehind {
+                drawRoundRect(
+                    brush = brush,
+                    size = size,
+                    cornerRadius = CornerRadius(r, r),
+                    style = Stroke(width = strokePx)
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun rememberTimeSeconds(): State<Float> {
+    val time = remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        var last = 0L
+        while (true) {
+            withFrameNanos { now ->
+                if (last != 0L) {
+                    val dt = (now - last) / 1_000_000_000f
+                    time.floatValue += dt
+                }
+                last = now
+            }
+        }
+    }
+    return time
 }

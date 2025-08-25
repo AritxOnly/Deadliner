@@ -119,6 +119,7 @@ import com.aritxonly.deadliner.widgets.HabitMiniWidget
 import com.aritxonly.deadliner.widgets.LargeDeadlineWidget
 import com.aritxonly.deadliner.widgets.MultiDeadlineWidget
 import com.google.android.material.loadingindicator.LoadingIndicator
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.Period
@@ -1864,6 +1865,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private fun showAgentOverlay(initialText: String = "") {
         val composeOverlay = findViewById<ComposeView>(R.id.agentCompose)
 
+        applyBackgroundSeparation(true)
+
         composeOverlay.setViewCompositionStrategy(
             ViewCompositionStrategy.DisposeOnDetachedFromWindow
         )
@@ -1876,11 +1879,30 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                     onAddDDL = { intent -> addDDLLauncher.launch(intent) },
                     onRemoveFromWindow = {
                         // 只有当退场动画播完才真正移除
+                        applyBackgroundSeparation(false)
                         composeOverlay.disposeComposition()
                         composeOverlay.visibility = View.GONE
                     }
                 )
             }
+        }
+    }
+
+    private fun applyBackgroundSeparation(on: Boolean) {
+        val bg = findViewById<View>(R.id.backgroundHost) ?: return
+
+        if (on) {
+            hideBottomBar()
+            val blur = RenderEffect.createBlurEffect(24f, 24f, Shader.TileMode.CLAMP)
+            val cm = ColorMatrix().apply { setSaturation(0.5f) }
+            val cf = ColorMatrixColorFilter(cm)
+            val chained = RenderEffect.createChainEffect(blur, RenderEffect.createColorFilterEffect(cf))
+            bg.setRenderEffect(chained)
+            handler.postDelayed({ bg.animate().scaleX(0.98f).scaleY(0.98f).setDuration(280).start() }, 200)
+        } else {
+            showBottomBar()
+            bg.setRenderEffect(null)
+            bg.animate().scaleX(1f).scaleY(1f).setDuration(150).start()
         }
     }
 
