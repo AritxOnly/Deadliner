@@ -11,5 +11,5 @@
     android:resizeMode="none"
     android:targetCellWidth="2"
     android:targetCellHeight="1"
-    android:updatePeriodMillis="86400000"
+    android:updatePeriodMillis="@integer/widget_update_period_millis"
     android:widgetCategory="home_screen" />

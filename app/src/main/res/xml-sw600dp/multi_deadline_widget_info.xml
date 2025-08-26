@@ -6,10 +6,10 @@
     android:previewLayout="@layout/multi_deadline_widget"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
-    android:resizeMode="horizontal"
+    android:resizeMode="horizontal|vertical"
     android:minWidth="110dp"
-    android:minHeight="110dp"
+    android:minHeight="40dp"
     android:minResizeWidth="110dp"
-    android:minResizeHeight="110dp"
+    android:minResizeHeight="40dp"
     android:updatePeriodMillis="@integer/widget_update_period_millis"
     android:widgetCategory="home_screen|keyguard" />

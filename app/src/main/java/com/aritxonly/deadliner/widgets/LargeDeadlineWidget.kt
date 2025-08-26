@@ -94,9 +94,8 @@ internal fun updateLargeAppWidget(
     val minHeightPx = (minHeightDp * density).toInt()
 
     // 估算容器可用高度（减去添加按钮和其他元素的高度）
-    val buttonHeightPx = (60 * density).toInt()  // 添加按钮高度估算
     val marginsPx = (16 * density).toInt()       // 安全边距
-    val containerHeightPx = minHeightPx - buttonHeightPx - marginsPx
+    val containerHeightPx = minHeightPx - marginsPx
 
     val itemHeightPx = 36f.dpToPx()
 

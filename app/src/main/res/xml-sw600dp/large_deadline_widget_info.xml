@@ -7,9 +7,9 @@
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
     android:targetCellHeight="4"
-    android:minWidth="250dp"
-    android:minHeight="250dp"
-    android:minResizeWidth="250dp"
-    android:minResizeHeight="250dp"
+    android:minWidth="120dp"
+    android:minHeight="120dp"
+    android:minResizeWidth="120dp"
+    android:minResizeHeight="120dp"
     android:updatePeriodMillis="@integer/widget_update_period_millis"
     android:widgetCategory="home_screen" />
