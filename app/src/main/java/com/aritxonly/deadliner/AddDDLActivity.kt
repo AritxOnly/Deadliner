@@ -152,7 +152,9 @@ class AddDDLActivity : AppCompatActivity() {
 
         // 设置结束时间选择
         endTimeCard.setOnClickListener {
-            GlobalUtils.showDateTimePicker(supportFragmentManager) { selectedTime ->
+            GlobalUtils.showDateTimePicker(supportFragmentManager, startTime, {
+                Toast.makeText(this, getString(R.string.please_choose_the_time_after, it), Toast.LENGTH_SHORT).show()
+            }) { selectedTime ->
                 endTime = selectedTime
                 endTimeContent.text = formatLocalDateTime(endTime!!)
             }

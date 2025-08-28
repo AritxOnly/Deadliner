@@ -390,4 +390,5 @@
     <string name="settings_support_dynamic_split">When enabled, a drag handle will appear to adjust the split ratio</string>
     <string name="settings_support_dynamic_split_not_avail">(Your device does not support dynamic split)</string>
     <string name="settings_from_webdav">Import from WebDAV</string>
+    <string name="please_choose_the_time_after">Please select a time after %1$s</string>
 </resources>

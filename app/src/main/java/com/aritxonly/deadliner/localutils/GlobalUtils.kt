@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +28,7 @@ import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
+import com.google.android.material.datepicker.DateValidatorPointForward
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -36,6 +38,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -443,55 +446,105 @@ object GlobalUtils {
 
     /**
      * 显示日期和时间选择器
+     * @param afterDateTime 若不为 null，则限制只能选择该时间之后（含当天）的日期和时间
      */
-    fun showDateTimePicker(fragmentManager: FragmentManager, onDateTimeSelected: (LocalDateTime) -> Unit ) {
-        val calendar = Calendar.getInstance()
+    fun showDateTimePicker(
+        fragmentManager: FragmentManager,
+        afterDateTime: LocalDateTime? = null,
+        makeToast: (String) -> Unit = {},
+        onDateTimeSelected: (LocalDateTime) -> Unit
+    ) {
+        val zone = ZoneId.systemDefault()
 
-        // 创建日期选择器
-        val datePicker = MaterialDatePicker.Builder.datePicker()
-            .setSelection(MaterialDatePicker.todayInUtcMilliseconds())  // 设置默认日期
-            .build()
+        // 是否需要限制
+        val minDayStartMillisUtc: Long? = afterDateTime?.toLocalDate()
+            ?.atStartOfDay(zone)
+            ?.toInstant()
+            ?.toEpochMilli()
 
-        datePicker.addOnPositiveButtonClickListener { selectedDate ->
-            // 获取选择的日期（毫秒）
-            val selectedDateTime = LocalDateTime.ofInstant(
-                Date(selectedDate).toInstant(), ZoneId.systemDefault())
-
-            // 显示时间选择器
-            showTimePicker(fragmentManager, selectedDateTime, onDateTimeSelected)
+        val todayUtcMillis = MaterialDatePicker.todayInUtcMilliseconds()
+        val defaultSelection = if (minDayStartMillisUtc != null) {
+            maxOf(todayUtcMillis, minDayStartMillisUtc)
+        } else {
+            todayUtcMillis
         }
 
-        // 显示日期选择器
-        datePicker.show(fragmentManager, datePicker.toString())
+        val builder = MaterialDatePicker.Builder.datePicker()
+            .setSelection(defaultSelection)
+
+        if (minDayStartMillisUtc != null) {
+            val constraints = CalendarConstraints.Builder()
+                .setStart(minDayStartMillisUtc)
+                .setValidator(DateValidatorPointForward.from(minDayStartMillisUtc))
+                .build()
+            builder.setCalendarConstraints(constraints)
+        }
+
+        val datePicker = builder.build()
+
+        datePicker.addOnPositiveButtonClickListener { selectedDateUtcMillis ->
+            val selectedLocalDate = Instant.ofEpochMilli(selectedDateUtcMillis)
+                .atZone(zone)
+                .toLocalDate()
+
+            val baseDateTime = selectedLocalDate.atStartOfDay()
+            val minAllowedTime: LocalTime? =
+                if (afterDateTime != null && selectedLocalDate == afterDateTime.toLocalDate()) {
+                    afterDateTime.toLocalTime()
+                } else null
+
+            showTimePickerWithGuard(
+                fragmentManager = fragmentManager,
+                datePart = baseDateTime,
+                minAllowedTime = minAllowedTime,
+                makeToast = makeToast,
+                onDateTimeSelected = onDateTimeSelected
+            )
+        }
+
+        datePicker.show(fragmentManager, "datePicker_after_${minDayStartMillisUtc ?: "none"}")
     }
 
     /**
-     * 显示时间选择器
+     * 时间选择器，带可选的最小时间限制
      */
-    private fun showTimePicker(fragmentManager: FragmentManager, selectedDateTime: LocalDateTime, onDateTimeSelected: (LocalDateTime) -> Unit ) {
-        val currentTime = LocalDateTime.now()
-
-        val timePicker = MaterialTimePicker.Builder()
-            .setTimeFormat(TimeFormat.CLOCK_24H)
-            .setHour(currentTime.hour) // 设置当前时间的小时
-            .setMinute(currentTime.minute) // 设置当前时间的分钟
-            .setInputMode(MaterialTimePicker.INPUT_MODE_CLOCK)  // 设置默认为dial模式
-            .build()
-
-        timePicker.addOnPositiveButtonClickListener {
-            // 获取选择的时间
-            val hourOfDay = timePicker.hour
-            val minute = timePicker.minute
-
-            // 创建最终的 LocalDateTime
-            val finalDateTime = selectedDateTime.withHour(hourOfDay).withMinute(minute)
-
-            // 回调选中的日期时间
-            onDateTimeSelected(finalDateTime)
+    private fun showTimePickerWithGuard(
+        fragmentManager: FragmentManager,
+        datePart: LocalDateTime,
+        minAllowedTime: LocalTime?,
+        makeToast: (String) -> Unit = {},
+        onDateTimeSelected: (LocalDateTime) -> Unit
+    ) {
+        val now = LocalTime.now()
+        val initialTime = when (minAllowedTime) {
+            null -> now
+            else -> if (now.isBefore(minAllowedTime)) minAllowedTime else now
         }
 
-        // 显示时间选择器
-        timePicker.show(fragmentManager, timePicker.toString())
+        fun buildAndShow(hour: Int, minute: Int) {
+            val timePicker = MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormat.CLOCK_24H)
+                .setHour(hour)
+                .setMinute(minute)
+                .setInputMode(MaterialTimePicker.INPUT_MODE_CLOCK)
+                .build()
+
+            timePicker.addOnPositiveButtonClickListener {
+                val picked = LocalTime.of(timePicker.hour, timePicker.minute)
+
+                if (minAllowedTime != null && picked.isBefore(minAllowedTime)) {
+                    makeToast("${minAllowedTime.hour.toString().padStart(2, '0')}:${minAllowedTime.minute.toString().padStart(2, '0')}")
+                    buildAndShow(minAllowedTime.hour, minAllowedTime.minute)
+                    return@addOnPositiveButtonClickListener
+                }
+
+                onDateTimeSelected(datePart.withHour(picked.hour).withMinute(picked.minute))
+            }
+
+            timePicker.show(fragmentManager, "timePicker_${datePart.toLocalDate()}_$hour:$minute")
+        }
+
+        buildAndShow(initialTime.hour, initialTime.minute)
     }
 
     /**

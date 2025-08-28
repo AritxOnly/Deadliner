@@ -446,5 +446,6 @@
     <string name="settings_support_dynamic_split">开启选项后，将会显示一个拖动按钮；通过拖动可以调节分屏比例</string>
     <string name="settings_support_dynamic_split_not_avail">(您的设备不支持动态分屏)</string>
     <string name="settings_from_webdav">从 WebDAV 导入</string>
+    <string name="please_choose_the_time_after">请选择 %1$s 之后的时间</string>
 
 </resources>
