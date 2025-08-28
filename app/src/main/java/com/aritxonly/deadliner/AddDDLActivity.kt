@@ -323,6 +323,12 @@ class AddDDLActivity : AppCompatActivity() {
         val calendarEvents = calendarHelper.queryAllCalendarEvents()
         if (calendarEvents.isEmpty()) {
             Toast.makeText(this, getString(R.string.no_task_add_calendar), Toast.LENGTH_SHORT).show()
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.select_calendar_to_import)
+                .setMessage(getString(R.string.no_task_add_calendar))
+                .setNeutralButton(R.string.filter_calendar_account) { _, _ -> showCalendarFilterDialog() }
+                .setNegativeButton(R.string.close, null)
+                .show()
             return
         }
 
