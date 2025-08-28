@@ -101,6 +101,8 @@ class AddDDLActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_ddl)
 
+        enableEdgeToEdgeForAllDevices()
+
         normalizeRootInsets()
 
         val generatedDDL = intent.getParcelableExtra<GeneratedDDL>("EXTRA_GENERATE_DDL")
