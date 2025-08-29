@@ -430,14 +430,14 @@ class CustomAdapter(
         val direction = GlobalUtils.progressDir
 
         val item = itemList[position]
-        val currentTime = LocalDateTime.now()
+        val now = LocalDateTime.now()
 
         // 将字符串时间转换为 LocalDateTime
         val startTime = GlobalUtils.safeParseDateTime(item.startTime)
         val endTime = GlobalUtils.safeParseDateTime(item.endTime)
 
         // 计算剩余时间
-        val remainingDuration = Duration.between(currentTime, endTime)
+        val remainingDuration = Duration.between(now, endTime)
         val remainingMinutes = remainingDuration.toMinutes().toInt()
 
         // 计算总时长（以分钟为单位）
@@ -460,41 +460,76 @@ class CustomAdapter(
             remainingTimeText
         }
 
-        // 计算天、小时、分钟
-        val days = remainingMinutes / (24 * 60)
-        val hours = (remainingMinutes % (24 * 60)) / 60
-        val minutesPart = remainingMinutes % 60
+        // 三种状态
+        val beforeStart = now.isBefore(startTime)
+        val afterEnd = now.isAfter(endTime)
 
-        val compactDays = remainingMinutes.toFloat() / (24 * 60).toFloat()
-
-        remainingTimeTextView.text = if (remainingMinutes >= 0) {
-            if (displayFullContent) {
-                if (GlobalUtils.detailDisplayMode) {
-                    buildString {
-                        append(context.getString(R.string.remaining_prefix))
-                        if (days != 0) append(context.getString(R.string.remaining_days, days))
-                        if (hours != 0) append(context.getString(R.string.remaining_hours, hours))
-                        append(context.getString(R.string.remaining_minutes, minutesPart))
-                    }
-                } else {
-                    context.getString(R.string.remaining_compact_days, compactDays)
-                }
-            } else {
-                if (GlobalUtils.detailDisplayMode) {
-                    buildString {
-                        if (days != 0) append(context.getString(R.string.remaining_days_short, days))
-                        if (hours != 0) append(context.getString(R.string.remaining_hours_short, hours))
-                        append(context.getString(R.string.remaining_minutes_short, minutesPart))
-                    }
-                } else {
-                    context.getString(R.string.remaining_compact_days_short, compactDays)
-                }
-            }
-        } else {
-            if (displayFullContent)
+        // —— 构造展示文本 —— //
+        if (afterEnd) {
+            // 已过期
+            remainingTimeTextView.text = if (displayFullContent)
                 context.getString(R.string.ddl_overdue_full)
             else
                 context.getString(R.string.ddl_overdue_short)
+        } else {
+            // 需要展示正向的“还有多久”（到开始 或 到结束）
+            val target = if (beforeStart) startTime else endTime
+            val remainMin = Duration.between(now, target).toMinutes().coerceAtLeast(0).toInt()
+
+            val days = remainMin / (24 * 60)
+            val hours = (remainMin % (24 * 60)) / 60
+            val minutesPart = remainMin % 60
+            val compactDays = remainMin.toFloat() / (24f * 60f)
+
+            remainingTimeTextView.text = if (beforeStart) {
+                if (displayFullContent) {
+                    if (GlobalUtils.detailDisplayMode) {
+                        buildString {
+                            append(context.getString(R.string.starts_in_prefix))
+                            if (days != 0) append(context.getString(R.string.remaining_days, days))
+                            if (hours != 0) append(context.getString(R.string.remaining_hours, hours))
+                            append(context.getString(R.string.remaining_minutes, minutesPart))
+                        }
+                    } else {
+                        context.getString(R.string.starts_in_compact_days, compactDays)
+                    }
+                } else {
+                    if (GlobalUtils.detailDisplayMode) {
+                        buildString {
+                            append(context.getString(R.string.starts_in_prefix))
+                            if (days != 0) append(context.getString(R.string.remaining_days_short, days))
+                            if (hours != 0) append(context.getString(R.string.remaining_hours_short, hours))
+                            if (days == 0) append(context.getString(R.string.remaining_minutes_short, minutesPart))
+                        }
+                    } else {
+                        context.getString(R.string.starts_in_compact_days_short, compactDays)
+                    }
+                }
+            } else {
+                // —— 到结束（原逻辑）—— //
+                if (displayFullContent) {
+                    if (GlobalUtils.detailDisplayMode) {
+                        buildString {
+                            append(context.getString(R.string.remaining_prefix))
+                            if (days != 0) append(context.getString(R.string.remaining_days, days))
+                            if (hours != 0) append(context.getString(R.string.remaining_hours, hours))
+                            append(context.getString(R.string.remaining_minutes, minutesPart))
+                        }
+                    } else {
+                        context.getString(R.string.remaining_compact_days, compactDays)
+                    }
+                } else {
+                    if (GlobalUtils.detailDisplayMode) {
+                        buildString {
+                            if (days != 0) append(context.getString(R.string.remaining_days_short, days))
+                            if (hours != 0) append(context.getString(R.string.remaining_hours_short, hours))
+                            if (days == 0) append(context.getString(R.string.remaining_minutes_short, minutesPart))
+                        }
+                    } else {
+                        context.getString(R.string.remaining_compact_days_short, compactDays)
+                    }
+                }
+            }
         }
 
         // 计算并设置进度条进度，确保至少为 1
