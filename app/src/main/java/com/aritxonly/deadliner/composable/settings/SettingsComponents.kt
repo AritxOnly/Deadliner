@@ -395,7 +395,7 @@ fun SettingsDetailSwitchItem(
                     )
                     Text(
                         text = supportingRawText,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

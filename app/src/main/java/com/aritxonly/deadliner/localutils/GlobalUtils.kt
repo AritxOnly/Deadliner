@@ -326,6 +326,24 @@ object GlobalUtils {
             sharedPreferences.edit { putString("webdav_pass", value) }
         }
 
+    var syncIntervalMinutes: Int
+        get() = sharedPreferences.getInt("sync_interval", 0)
+        set(value) {
+            sharedPreferences.edit { putInt("sync_interval", value) }
+        }
+
+    var syncWifiOnly: Boolean
+        get() = sharedPreferences.getBoolean("sync_wifi_only", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("sync_wifi_only", value) }
+        }
+
+    var syncChargingOnly: Boolean
+        get() = sharedPreferences.getBoolean("sync_charging_only", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("sync_charging_only", value) }
+        }
+
     var clipboardEnable: Boolean
         get() = sharedPreferences.getBoolean("clipboard", true)
         set(value) {

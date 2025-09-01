@@ -394,4 +394,12 @@
     <string name="starts_in_prefix">Starts in </string>
     <string name="starts_in_compact_days">Starts in %.1f days</string>
     <string name="starts_in_compact_days_short">%.1fd to start</string>
+
+    <string name="settings_web_auto_sync">Sync Settings</string>
+    <string name="settings_support_web_auto_sync">Tap to set sync frequency and conditions</string>
+    <string name="settings_web_wifi_only">Wi-Fi Only</string>
+    <string name="settings_web_charging_only">Only While Charging</string>
+    <string name="settings_support_web_wifi_only">Automatically sync only when connected to Wi-Fi (saves mobile data)</string>
+    <string name="settings_support_web_charging_only">Automatically sync while the device is charging (reduces battery drain)</string>
+    <string name="settings_web_auto_sync_time">Scheduled Sync Settings</string>
 </resources>

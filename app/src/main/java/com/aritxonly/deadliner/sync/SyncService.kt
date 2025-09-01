@@ -1,9 +1,14 @@
-package com.aritxonly.deadliner.data
+package com.aritxonly.deadliner.sync
 
 import android.content.ContentValues
 import android.util.Log
+import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.web.WebUtils
-import com.google.gson.*
+import com.google.gson.Gson
+import com.google.gson.JsonArray
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.charset.StandardCharsets
@@ -260,7 +265,7 @@ class SyncService(
         // 1) 探测远端（某些 WebDAV 把“文件不存在”也回 409）
         val (code, _, _) = runCatching { web.head(path) }
             .getOrElse {
-                Log.e("WebDAV","HEAD failed: ${it.message}"); return@withContext false
+                Log.e("WebDAV", "HEAD failed: ${it.message}"); return@withContext false
             }
 
         // === 关键改动：把 404/409/410 都当成“文件不存在” ===
@@ -277,7 +282,7 @@ class SyncService(
         }
 
         if (code in 500..599) {
-            Log.w("WebDAV","HEAD $path -> $code (server unavailable)")
+            Log.w("WebDAV", "HEAD $path -> $code (server unavailable)")
             return@withContext false
         }
 
@@ -288,16 +293,23 @@ class SyncService(
                 // 把远端当“空快照”
                 val remoteEmpty = JsonObject().apply {
                     add("version", JsonObject().apply {
-                        addProperty("ts","1970-01-01T00:00:00Z"); addProperty("dev","unknown")
+                        addProperty("ts", "1970-01-01T00:00:00Z"); addProperty("dev", "unknown")
                     })
                     add("items", JsonArray())
                 }
                 val merged = mergeSnapshots(localSnap, remoteEmpty)
                 val mergedBytes = gson.toJson(merged).toByteArray(StandardCharsets.UTF_8)
-                runCatching { web.putBytes(path, mergedBytes, ifMatch = null, ifNoneMatchStar = true) }
+                runCatching {
+                    web.putBytes(
+                        path,
+                        mergedBytes,
+                        ifMatch = null,
+                        ifNoneMatchStar = true
+                    )
+                }
                     .isSuccess
             } else {
-                Log.e("WebDAV","GET $path failed: ${e.message}"); false
+                Log.e("WebDAV", "GET $path failed: ${e.message}"); false
             }
         }
 
@@ -307,7 +319,7 @@ class SyncService(
         } catch (_: Exception) {
             JsonObject().apply {
                 add("version", JsonObject().apply {
-                    addProperty("ts","1970-01-01T00:00:00Z"); addProperty("dev","unknown")
+                    addProperty("ts", "1970-01-01T00:00:00Z"); addProperty("dev", "unknown")
                 })
                 add("items", JsonArray())
             }
@@ -324,7 +336,12 @@ class SyncService(
                 merged,
                 JsonParser.parseString(rb2.toString(StandardCharsets.UTF_8)).asJsonObject
             )
-            web.putBytes(path, gson.toJson(merged2).toByteArray(StandardCharsets.UTF_8), ifMatch = et2, ifNoneMatchStar = false)
+            web.putBytes(
+                path,
+                gson.toJson(merged2).toByteArray(StandardCharsets.UTF_8),
+                ifMatch = et2,
+                ifNoneMatchStar = false
+            )
         }
 
         applySnapshotToLocal(merged)

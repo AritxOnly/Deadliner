@@ -450,5 +450,12 @@
     <string name="starts_in_prefix">开始于 </string>
     <string name="starts_in_compact_days">%.1f 天开始</string>
     <string name="starts_in_compact_days_short">%.1fd 开始</string>
+    <string name="settings_web_auto_sync">同步设置</string>
+    <string name="settings_support_web_auto_sync">点击设置同步频率和同步时机</string>
+    <string name="settings_web_wifi_only">仅Wi-Fi</string>
+    <string name="settings_web_charging_only">仅充电时</string>
+    <string name="settings_support_web_wifi_only">仅在连接 Wi-Fi 时进行自动同步（可节省流量）</string>
+    <string name="settings_support_web_charging_only">在设备充电时进行自动同步（可降低耗电）</string>
+    <string name="settings_web_auto_sync_time">定时同步设置</string>
 
 </resources>

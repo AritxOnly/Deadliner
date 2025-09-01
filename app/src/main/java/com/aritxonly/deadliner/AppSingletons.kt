@@ -2,7 +2,7 @@ package com.aritxonly.deadliner
 
 import android.app.Application
 import com.aritxonly.deadliner.data.DatabaseHelper
-import com.aritxonly.deadliner.data.SyncService
+import com.aritxonly.deadliner.sync.SyncService
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.web.WebUtils
 
@@ -17,7 +17,6 @@ object AppSingletons {
     fun init(app: Application) {
         db = DatabaseHelper.getInstance(app)
 
-        // 这里用你的配置来源（GlobalUtils 或设置页）
         web = WebUtils(
             baseUrl = GlobalUtils.webDavBaseUrl,
             username = GlobalUtils.webDavUser,

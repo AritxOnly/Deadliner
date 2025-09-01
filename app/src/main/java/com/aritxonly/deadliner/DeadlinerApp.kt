@@ -20,6 +20,7 @@ import androidx.window.embedding.SplitPairFilter
 import androidx.window.embedding.SplitPairRule
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
+import com.aritxonly.deadliner.sync.SyncScheduler
 import com.aritxonly.deadliner.web.DeepSeekUtils
 import okhttp3.internal.toHexString
 
@@ -30,6 +31,12 @@ class DeadlinerApp : Application() {
         KeystorePreferenceManager.createKeyIfNeeded()
         DeepSeekUtils.init(this)
         AppSingletons.init(this)
+
+        if (GlobalUtils.cloudSyncEnable) {
+            SyncScheduler.enqueuePeriodic(this)
+        } else {
+            SyncScheduler.cancelAll(this)
+        }
 
         if (GlobalUtils.embeddedActivities) {
             if (GlobalUtils.dynamicSplit) {
