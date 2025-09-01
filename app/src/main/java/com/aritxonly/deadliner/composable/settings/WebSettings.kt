@@ -307,8 +307,6 @@ fun WebSettingsScreen(
                 } else {
                     SyncScheduler.cancelPeriodic(context)
                 }
-
-                showSheet = false
             }
         )
     }
@@ -333,20 +331,22 @@ fun SyncIntervalBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val scope = rememberCoroutineScope()
 
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         runCatching { sheetState.partialExpand() }
     }
 
     val intervalOptions = remember {
         listOf(
-            0    to "仅手动",
-            15   to "每 15 分钟",
-            30   to "每 30 分钟",
-            60   to "每 1 小时",
-            180  to "每 3 小时",
-            360  to "每 6 小时",
-            720  to "每 12 小时",
-            1440 to "每 24 小时",
+            0    to R.string.sync_interval_manual,
+            15   to R.string.sync_interval_15min,
+            30   to R.string.sync_interval_30min,
+            60   to R.string.sync_interval_1h,
+            180  to R.string.sync_interval_3h,
+            360  to R.string.sync_interval_6h,
+            720  to R.string.sync_interval_12h,
+            1440 to R.string.sync_interval_24h,
         )
     }
 
@@ -422,9 +422,12 @@ fun SyncIntervalBottomSheet(
                     val value = opt.first
                     val label = opt.second
                     RadioRow(
-                        text = label,
+                        text = stringResource(label),
                         selected = (intervalMin == value),
-                        onClick = { onIntervalChange(value) },
+                        onClick = {
+                            onIntervalChange(value)
+                            GlobalUtils.triggerVibration(context, 10L)
+                        },
                         modifier = Modifier
                             .padding(horizontal = 12.dp, vertical = 4.dp)
                     )
@@ -432,23 +435,54 @@ fun SyncIntervalBottomSheet(
             }
 
             // ====== 固定在底部的操作按钮 ======
-            SheetDivider(modifier = Modifier.fillMaxWidth()) // 顶部分隔与上面保持一致
+            SheetDivider(modifier = Modifier.fillMaxWidth())
+
+            var closing by remember { mutableStateOf(false) }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.End
             ) {
-                TextButton(onClick = {
-                    scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
-                }) {
+                TextButton(
+                    enabled = !closing,
+                    onClick = {
+                        scope.launch {
+                            closing = true
+                            // 直接收起，带过渡动画
+                            sheetState.hide()        // suspend 直到动画完成
+                            onDismiss()              // 动画结束后真正移除
+                            closing = false
+                        }
+                    }
+                ) {
                     Text(stringResource(R.string.cancel))
                 }
+
                 Spacer(Modifier.width(8.dp))
-                Button(onClick = {
-                    onSave()
-                    scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
-                }) {
+
+                Button(
+                    enabled = !closing,
+                    onClick = {
+                        scope.launch {
+                            closing = true
+                            onSave()                 // 先执行业务保存
+                            sheetState.hide()        // 平滑收起
+                            onDismiss()              // 动画结束再关闭
+                            closing = false
+                        }
+                    }
+                ) {
+                    if (closing) {
+                        // 简单的反馈：保存/收起动画时显示一个小 Loading
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(18.dp)
+                                .padding(end = 8.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
                     Text(stringResource(R.string.save))
                 }
             }
@@ -465,7 +499,7 @@ private fun RadioRow(
 ) {
     // 圆角背景 + 轻微高亮
     val bg = if (selected)
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+        MaterialTheme.colorScheme.primaryContainer
     else
         MaterialTheme.colorScheme.surfaceContainer
 
@@ -498,7 +532,6 @@ private fun SheetDivider(modifier: Modifier = Modifier, onContainer: Boolean = t
     if (!GlobalUtils.hideDividerUi) {
         HorizontalDivider(
             modifier = modifier,
-            thickness = 2.dp,
             color = MaterialTheme.colorScheme.outlineVariant
         )
     } else {

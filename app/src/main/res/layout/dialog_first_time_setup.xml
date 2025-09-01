@@ -24,14 +24,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/TextAppearance.Material3.HeadlineSmall"
-                android:text="开启通知权限" />
+                android:text="@string/setup_notification" />
 
             <TextView
                 android:id="@+id/tv_desc1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/TextAppearance.Material3.BodyMedium"
-                android:text="我们需要推送DDL提醒和每日计划提示。" />
+                android:text="@string/setup_notification_desc" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -45,7 +45,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     style="@style/Widget.Material3.Button.TonalButton"
-                    android:text="跳过" />
+                    android:text="@string/skip" />
 
                 <Space
                     android:layout_width="16dp"
@@ -56,7 +56,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     style="@style/Widget.Material3.Button"
-                    android:text="去授权" />
+                    android:text="@string/authorize" />
             </LinearLayout>
         </LinearLayout>
 
@@ -71,14 +71,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/TextAppearance.Material3.HeadlineSmall"
-                android:text="授予日历权限" />
+                android:text="@string/setup_calendar" />
 
             <TextView
                 android:id="@+id/tv_desc2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/TextAppearance.Material3.BodyMedium"
-                android:text="以便我们可以同步DDL至系统日历。" />
+                android:text="@string/setup_calendar_desc" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -92,7 +92,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     style="@style/Widget.Material3.Button.TonalButton"
-                    android:text="跳过" />
+                    android:text="@string/skip" />
 
                 <Space
                     android:layout_width="16dp"
@@ -103,7 +103,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     style="@style/Widget.Material3.Button"
-                    android:text="去授权" />
+                    android:text="@string/authorize" />
             </LinearLayout>
         </LinearLayout>
 
@@ -118,14 +118,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/TextAppearance.Material3.HeadlineSmall"
-                android:text="自启动 &amp; 电池白名单" />
+                android:text="@string/setup_battery" />
 
             <TextView
                 android:id="@+id/tv_desc3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/TextAppearance.Material3.BodyMedium"
-                android:text="确保后台闹钟与通知功能不被系统杀死。" />
+                android:text="@string/setup_battery_desc" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -139,7 +139,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     style="@style/Widget.Material3.Button.TonalButton"
-                    android:text="跳过" />
+                    android:text="@string/skip" />
 
                 <Space
                     android:layout_width="16dp"
@@ -150,7 +150,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     style="@style/Widget.Material3.Button"
-                    android:text="查看指南" />
+                    android:text="@string/check_manual" />
             </LinearLayout>
         </LinearLayout>
 
@@ -166,14 +166,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/TextAppearance.Material3.HeadlineSmall"
-                android:text="初始化完成" />
+                android:text="@string/setup_finish" />
 
             <TextView
                 android:id="@+id/tv_desc4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/TextAppearance.Material3.BodyMedium"
-                android:text="感谢你完成引导，现在可以愉快使用Deadliner啦。" />
+                android:text="@string/setup_finish_desc" />
 
             <Button
                 android:id="@+id/btn_done"
@@ -181,7 +181,7 @@
                 android:layout_height="wrap_content"
                 style="@style/Widget.Material3.Button"
                 android:layout_marginTop="24dp"
-                android:text="开始使用" />
+                android:text="@string/start_to_use" />
         </LinearLayout>
 
     </ViewFlipper>

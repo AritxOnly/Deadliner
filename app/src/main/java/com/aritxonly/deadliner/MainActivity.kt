@@ -1109,7 +1109,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         viewModel.loadData(currentType)
         decideShowEmptyNotice()
 
-//        GlobalUtils.setAlarms(databaseHelper, applicationContext)
+        lifecycleScope.launch(Dispatchers.IO) {
+            DDLRepository().syncNow()
+            refreshData()
+        }
 
         if (searchOverlay.visibility == View.VISIBLE) {
             val s = searchEditText.text

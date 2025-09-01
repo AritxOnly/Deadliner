@@ -402,4 +402,29 @@
     <string name="settings_support_web_wifi_only">Automatically sync only when connected to Wi-Fi (saves mobile data)</string>
     <string name="settings_support_web_charging_only">Automatically sync while the device is charging (reduces battery drain)</string>
     <string name="settings_web_auto_sync_time">Scheduled Sync Settings</string>
+
+    <string name="sync_interval_manual">Manual only</string>
+    <string name="sync_interval_15min">Every 15 minutes</string>
+    <string name="sync_interval_30min">Every 30 minutes</string>
+    <string name="sync_interval_1h">Every 1 hour</string>
+    <string name="sync_interval_3h">Every 3 hours</string>
+    <string name="sync_interval_6h">Every 6 hours</string>
+    <string name="sync_interval_12h">Every 12 hours</string>
+    <string name="sync_interval_24h">Every 24 hours</string>
+
+    <string name="setup_notification">Enable notification permission</string>
+    <string name="setup_notification_desc">We need this to push DDL reminders and daily plan prompts.</string>
+    <string name="skip">Skip</string>
+    <string name="authorize">Authorize</string>
+    <string name="setup_calendar">Grant calendar permission</string>
+    <string name="setup_calendar_desc">So we can sync DDLs to the system calendar.</string>
+    <string name="setup_battery">Auto-start &amp; battery whitelist</string>
+    <string name="setup_battery_desc">Ensure background alarms and notifications are not killed by the system.</string>
+    <string name="check_manual">View guide</string>
+    <string name="setup_finish">Setup complete</string>
+    <string name="setup_finish_desc">Thanks for completing the setup. You can now enjoy using Deadliner!</string>
+    <string name="start_to_use">Get started</string>
+    <string name="search_events">Search events</string>
+    <string name="overview_settings_month">Number of months to display</string>
+    <string name="overview_settings_weekly_show_overdue_complete">Show overdue completed tasks in weekly view</string>
 </resources>

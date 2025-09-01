@@ -458,4 +458,28 @@
     <string name="settings_support_web_charging_only">在设备充电时进行自动同步（可降低耗电）</string>
     <string name="settings_web_auto_sync_time">定时同步设置</string>
 
+    <string name="sync_interval_manual">仅手动</string>
+    <string name="sync_interval_15min">每 15 分钟</string>
+    <string name="sync_interval_30min">每 30 分钟</string>
+    <string name="sync_interval_1h">每 1 小时</string>
+    <string name="sync_interval_3h">每 3 小时</string>
+    <string name="sync_interval_6h">每 6 小时</string>
+    <string name="sync_interval_12h">每 12 小时</string>
+    <string name="sync_interval_24h">每 24 小时</string>
+    <string name="setup_notification">开启通知权限</string>
+    <string name="setup_notification_desc">我们需要推送DDL提醒和每日计划提示。</string>
+    <string name="skip">跳过</string>
+    <string name="authorize">去授权</string>
+    <string name="setup_calendar">授予日历权限</string>
+    <string name="setup_calendar_desc">以便我们可以同步DDL至系统日历。</string>
+    <string name="setup_battery">自启动 &amp; 电池白名单</string>
+    <string name="setup_battery_desc">确保后台闹钟与通知功能不被系统杀死。</string>
+    <string name="check_manual">查看指南</string>
+    <string name="setup_finish">初始化完成</string>
+    <string name="setup_finish_desc">感谢你完成引导，现在可以愉快使用Deadliner啦。</string>
+    <string name="start_to_use">开始使用</string>
+    <string name="search_events">搜索事件</string>
+    <string name="overview_settings_month">查看的月度数</string>
+    <string name="overview_settings_weekly_show_overdue_complete">每周视图显示逾期完成</string>
+
 </resources>

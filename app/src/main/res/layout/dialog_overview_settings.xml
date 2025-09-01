@@ -10,7 +10,7 @@
         android:id="@+id/label_monthly"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="查看的月度数"
+        android:text="@string/overview_settings_month"
         android:textStyle="bold"
         android:paddingBottom="8dp"/>
 
@@ -39,7 +39,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:thumbIcon="@drawable/switch_thumb_icon"
-        android:text="每周视图显示逾期完成"
+        android:text="@string/overview_settings_weekly_show_overdue_complete"
         android:textSize="18sp"
         android:layout_margin="8dp"/>
 </LinearLayout>

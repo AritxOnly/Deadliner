@@ -325,7 +325,7 @@
         app:layout_constraintBottom_toBottomOf="parent">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/saveToCalendarButton"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/Widget.Material3Expressive.Button.TonalButton"
             android:layout_width="0dp"
             android:layout_height="54dp"
             android:layout_weight="1"
