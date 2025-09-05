@@ -21,7 +21,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-object DeepSeekUtils {
+object AIUtils {
     private const val BASE_URL = "https://api.deepseek.com/v1/chat/completions"
     private const val MEDIA_TYPE_JSON = "application/json; charset=utf-8"
 

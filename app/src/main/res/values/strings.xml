@@ -29,7 +29,7 @@
     <string name="settings_interface_display">个性化</string>
     <string name="settings_widget">小组件</string>
     <string name="settings_notification">通知</string>
-    <string name="settings_deepseek" translatable="false">DeepSeek</string>
+    <string name="settings_deadliner_ai" translatable="false">Deadliner AI</string>
     <string name="settings_backup">备份</string>
     <string name="settings_developer">开发者</string>
     <string name="settings_wiki" translatable="false">Wiki</string>
@@ -41,7 +41,7 @@
     <string name="settings_support_interface_display">个性化你的 Deadliner</string>
     <string name="settings_support_notification">DDL临近通知 · 每日定时通知</string>
     <string name="settings_support_backup">导入与导出用户数据库</string>
-    <string name="settings_support_deepseek">DeepSeek API接入 · 自定义prompt</string>
+    <string name="settings_support_deadliner_ai">Deadliner AI · API接入 · 自定义prompt</string>
     <string name="settings_support_webdav">WebDAV 云同步服务</string>
     <string name="settings_support_developer">调试选项与实验性内容</string>
     <string name="settings_support_widget">小组件配置 · 小组件界面与交互设置</string>
@@ -127,15 +127,15 @@
     <string name="settings_web_user">用户名</string>
     <string name="settings_web_pass">密码</string>
 
-    <string name="settings_enable_deepseek">启用DeepSeek</string>
-    <string name="settings_deepseek_description">Deadliner 接入 DeepSeek 为用户提供从长段文本中提取任务信息的能力，从而帮助用户快速添加任务。\n用户需要登录 https://platform.deepseek.com 获取自己的 API Key</string>
-    <string name="settings_deepseek_api_key">API Key</string>
-    <string name="settings_deepseek_success">设置DeepSeek API Key成功！</string>
-    <string name="settings_deepseek_incomplete">请填写API Key！</string>
-    <string name="settings_deepseek_custom_prompt">自定义提示词</string>
-    <string name="settings_deepseek_custom_prompt_title">提示词</string>
-    <string name="settings_support_deepseek_custom_prompt">自定义用户提示词 (不建议初级用户修改)</string>
-    <string name="settings_deepseek_custom_prompt_success">提示词已保存</string>
+    <string name="settings_enable_ai">启用DeepSeek</string>
+    <string name="settings_ai_description">Deadliner 接入 DeepSeek 为用户提供从长段文本中提取任务信息的能力，从而帮助用户快速添加任务。\n用户需要登录 https://platform.deepseek.com 获取自己的 API Key</string>
+    <string name="settings_ai_api_key">API Key</string>
+    <string name="settings_ai_success">设置DeepSeek API Key成功！</string>
+    <string name="settings_ai_incomplete">请填写API Key！</string>
+    <string name="settings_ai_custom_prompt">自定义提示词</string>
+    <string name="settings_ai_custom_prompt_title">提示词</string>
+    <string name="settings_support_ai_custom_prompt">自定义用户提示词 (不建议初级用户修改)</string>
+    <string name="settings_ai_custom_prompt_success">提示词已保存</string>
 
     <string name="settings_issues">提交错误报告</string>
 
@@ -218,9 +218,9 @@
     <string name="alert_select_badge_type">选择角标类型</string>
     <string name="configure">配置</string>
     <string name="settings_advance">高级设置</string>
-    <string name="settings_support_deepseek_test">测试API Key可用性 · 测试自定义提示词</string>
-    <string name="settings_deepseek_test">对话测试</string>
-    <string name="settings_deepseek_custom_prompt_description">自定义用户提示词可以让用户自定义 DeepSeek 从文本中提取的信息密度、信息风格等。自定义的提示词将会被拼接到用户输入文本的前方，统一提供给 DeepSeek API 服务。</string>
+    <string name="settings_support_ai_test">测试API Key可用性 · 测试自定义提示词</string>
+    <string name="settings_ai_test">对话测试</string>
+    <string name="settings_ai_custom_prompt_description">自定义用户提示词可以让用户自定义 DeepSeek 从文本中提取的信息密度、信息风格等。自定义的提示词将会被拼接到用户输入文本的前方，统一提供给 DeepSeek API 服务。</string>
     <string name="placeholder">欢迎使用Deadliner👏</string>
     <string name="settings_clipboard">自动从剪切板读取</string>
     <string name="downloading_update">正在下载更新</string>
@@ -232,8 +232,8 @@
     <string name="progress_hours">%.1f小时 %d%%</string>
     <string name="progress_days">%.1f天 %d%%</string>
     <string name="untitled">(无标题)</string>
-    <string name="deepseek_overlay_enter_questions">输入你的问题…</string>
-    <string name="deepseek_overlay_hint_top">向 DeepSeek 提问，快速添加日程</string>
+    <string name="ai_overlay_enter_questions">输入你的问题…</string>
+    <string name="ai_overlay_hint_top">向 DeepSeek 提问，快速添加日程</string>
     <string name="parse_failed">解析失败</string>
     <string name="unknown_error">未知错误</string>
     <string name="send">发送</string>
@@ -250,7 +250,7 @@
     <string name="duration_days_hours">%1$d天 %2$d小时</string>
     <string name="duration_hours">%1$d小时</string>
     <string name="duration_less_than_hour">&lt;1小时</string>
-    <string name="show_clipboard_deepseek_snackbar">检测到剪切板内容，使用 DeepSeek 快捷添加？</string>
+    <string name="show_clipboard_ai_snackbar">检测到剪切板内容，使用 DeepSeek 快捷添加？</string>
     <string name="add">添加</string>
     <string name="selected_items">已选中 %1$d 项 Deadline</string>
     <string name="habit_success">打卡成功 🎉</string>

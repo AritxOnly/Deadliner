@@ -2,7 +2,6 @@ package com.aritxonly.deadliner.composable.settings
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -43,12 +42,11 @@ import com.aritxonly.deadliner.SettingsRoute
 import com.aritxonly.deadliner.composable.PreviewCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
-import com.aritxonly.deadliner.web.DeepSeekUtils
-import com.aritxonly.deadliner.web.DeepSeekUtils.generateDeadline
+import com.aritxonly.deadliner.web.AIUtils.generateDeadline
 import kotlinx.coroutines.launch
 
 @Composable
-fun DeepSeekSettingsScreen(
+fun AISettingsScreen(
     nav: NavHostController,
     navigateUp: () -> Unit
 ) {
@@ -78,8 +76,8 @@ fun DeepSeekSettingsScreen(
     }
     val scope = rememberCoroutineScope()
 
-    val successText = stringResource(R.string.settings_deepseek_success)
-    val incompleteText = stringResource(R.string.settings_deepseek_incomplete)
+    val successText = stringResource(R.string.settings_ai_success)
+    val incompleteText = stringResource(R.string.settings_ai_incomplete)
     val onSaveButtonClick: () -> Unit = {
         if (apiKey.isNullOrEmpty()) {
             Toast.makeText(context, incompleteText, Toast.LENGTH_SHORT).show()
@@ -98,7 +96,7 @@ fun DeepSeekSettingsScreen(
         .padding(8.dp)
 
     CollapsingTopBarScaffold(
-        title = stringResource(R.string.settings_deepseek),
+        title = stringResource(R.string.settings_deadliner_ai),
         navigationIcon = {
             IconButton(
                 onClick = navigateUp,
@@ -121,7 +119,7 @@ fun DeepSeekSettingsScreen(
                 enabled = masterEnable
             ) {
                 SettingsSwitchItem(
-                    label = R.string.settings_enable_deepseek,
+                    label = R.string.settings_enable_ai,
                     checked = masterEnable,
                     onCheckedChange = onMasterChange,
                     mainSwitch = true
@@ -138,7 +136,7 @@ fun DeepSeekSettingsScreen(
             }
 
             Text(
-                stringResource(R.string.settings_deepseek_description),
+                stringResource(R.string.settings_ai_description),
                 modifier = Modifier.padding(horizontal = 24.dp),
                 style = MaterialTheme.typography.bodySmall
             )
@@ -148,7 +146,7 @@ fun DeepSeekSettingsScreen(
                     RoundedTextField(
                         value = apiKey ?: "",
                         onValueChange = onApiKeyChange,
-                        hint = stringResource(R.string.settings_deepseek_api_key),
+                        hint = stringResource(R.string.settings_ai_api_key),
                         keyboardType = KeyboardType.Password,
                         isPassword = true
                     )
@@ -175,8 +173,8 @@ fun DeepSeekSettingsScreen(
                     topLabel = stringResource(R.string.settings_advance),
                 ) {
                     SettingsDetailTextButtonItem(
-                        headline = R.string.settings_deepseek_custom_prompt,
-                        supporting = R.string.settings_support_deepseek_custom_prompt
+                        headline = R.string.settings_ai_custom_prompt,
+                        supporting = R.string.settings_support_ai_custom_prompt
                     ) {
                         nav.navigate(SettingsRoute.Prompt.route)
                     }
@@ -184,8 +182,8 @@ fun DeepSeekSettingsScreen(
                     SettingsSectionDivider()
 
                     SettingsDetailTextButtonItem(
-                        headline = R.string.settings_deepseek_test,
-                        supporting = R.string.settings_support_deepseek_test
+                        headline = R.string.settings_ai_test,
+                        supporting = R.string.settings_support_ai_test
                     ) {
                         showTestDialog = true
                     }

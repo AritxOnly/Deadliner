@@ -11,13 +11,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -43,8 +38,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -73,8 +66,8 @@ import androidx.compose.ui.util.lerp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.AddDDLActivity
 import com.aritxonly.deadliner.model.GeneratedDDL
-import com.aritxonly.deadliner.web.DeepSeekUtils.generateDeadline
-import com.aritxonly.deadliner.web.DeepSeekUtils.parseGeneratedDDL
+import com.aritxonly.deadliner.web.AIUtils.generateDeadline
+import com.aritxonly.deadliner.web.AIUtils.parseGeneratedDDL
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -83,7 +76,7 @@ import java.time.format.FormatStyle
 import java.util.Locale
 
 @Composable
-fun DeepseekOverlayHost(
+fun AIOverlayHost(
     initialText: String,
     onAddDDL: (Intent) -> Unit,
     onRemoveFromWindow: () -> Unit   // 退场动画播放完后回调
@@ -98,7 +91,7 @@ fun DeepseekOverlayHost(
         enter = fadeIn(tween(200)) + slideInVertically(tween(260)) { it / 8 },
         exit  = fadeOut(tween(180)) + slideOutVertically(tween(240)) { it / 6 }
     ) {
-        DeepseekOverlay(
+        AIOverlay(
             initialText = initialText,
             onDismiss = { visibleState.targetState = false },  // 先触发退场
             onAddDDL = onAddDDL
@@ -117,14 +110,14 @@ fun DeepseekOverlayHost(
     ExperimentalFoundationApi::class
 )
 @Composable
-fun DeepseekOverlay(
+fun AIOverlay(
     initialText: String = "",
     onDismiss: () -> Unit,
     onAddDDL: (Intent) -> Unit,
     modifier: Modifier = Modifier.fillMaxSize(),
     borderThickness: Dp = 4.dp,
     glowColors: List<Color> = listOf(Color(0xFF6AA9FF), Color(0xFFFFC36A), Color(0xFFFF6AE6)),
-    hintText: String = stringResource(R.string.deepseek_overlay_enter_questions)
+    hintText: String = stringResource(R.string.ai_overlay_enter_questions)
 ) {
     // UI 状态
     var textState by remember { mutableStateOf(TextFieldValue(initialText)) }
@@ -191,7 +184,7 @@ fun DeepseekOverlay(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Text(
-                text = stringResource(R.string.deepseek_overlay_hint_top),
+                text = stringResource(R.string.ai_overlay_hint_top),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
