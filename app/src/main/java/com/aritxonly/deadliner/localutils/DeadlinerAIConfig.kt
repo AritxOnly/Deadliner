@@ -1,15 +1,22 @@
 package com.aritxonly.deadliner.localutils
 
+import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.drawable.Drawable
+import androidx.annotation.DrawableRes
+import androidx.appcompat.content.res.AppCompatResources
 import com.aritxonly.deadliner.model.LlmPreset
 import com.google.gson.Gson
 import androidx.core.content.edit
+import com.aritxonly.deadliner.R
 
 class DeadlinerAIConfig(private val sp: SharedPreferences) {
 
     private val gson = Gson()
     private val KEY_PRESETS = "llm_presets_v1"
     private val KEY_CURRENT_ID = "llm_current_id"
+
+    private val KEY_CURRENT_LOGO = "llm_current_logo"
 
     /** 读取全部预设（无则给默认） */
     fun getPresets(): List<LlmPreset> {
@@ -90,6 +97,31 @@ class DeadlinerAIConfig(private val sp: SharedPreferences) {
                 model = "qwen-plus",
                 endpoint = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
             )
+        )
+    }
+
+    fun getCurrentLogo(): Int {
+        return sp.getInt(KEY_CURRENT_LOGO, R.drawable.ic_orbit)
+    }
+
+    fun setCurrentLogo(res: Int) {
+        sp.edit { putInt(KEY_CURRENT_LOGO, res) }
+    }
+
+    fun getCurrentLogoDrawable(context: Context): Drawable? {
+        return AppCompatResources.getDrawable(context, getCurrentLogo())
+    }
+
+    fun getLogoList(): List<Int> {
+        return listOf(
+            R.drawable.ic_orbit,
+            R.drawable.ic_wand_stars,
+            R.drawable.ic_psycho,
+            R.drawable.ic_stars_2,
+            R.drawable.ic_deepseek,
+            R.drawable.ic_qwen,
+            R.drawable.ic_gemini_color,
+            R.drawable.ic_openai,
         )
     }
 }

@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
-import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
@@ -71,7 +70,9 @@ sealed class SettingsRoute(
     object Interface : SettingsRoute("interface", R.string.settings_interface_display, R.string.settings_support_interface_display, R.drawable.ic_palette)
     object Notification : SettingsRoute("notification", R.string.settings_notification, R.string.settings_support_notification, R.drawable.ic_notification_settings)
     object Backup : SettingsRoute("backup", R.string.settings_backup, R.string.settings_support_backup, R.drawable.ic_backup_settings)
-    object AI : SettingsRoute("ai", R.string.settings_deadliner_ai, R.string.settings_support_deadliner_ai, R.drawable.ic_deadliner_ai)
+    object AI : SettingsRoute("ai", R.string.settings_deadliner_ai, R.string.settings_support_deadliner_ai,
+        GlobalUtils.getDeadlinerAIConfig().getCurrentLogo()
+    )
     object WebDAV : SettingsRoute("webdav", R.string.settings_webdav, R.string.settings_support_webdav, R.drawable.ic_cloud)
     object Lab : SettingsRoute("lab", R.string.settings_lab, R.string.settings_support_lab, R.drawable.ic_lab)
     object Widget : SettingsRoute("widget", R.string.settings_widget, R.string.settings_support_widget, R.drawable.ic_widgets_settings)

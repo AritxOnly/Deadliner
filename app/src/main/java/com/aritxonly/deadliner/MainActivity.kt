@@ -576,7 +576,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         searchEditText = findViewById(R.id.searchEditText)
 
         bottomAppBar.navigationIcon = if (GlobalUtils.deadlinerAIEnable)
-            ContextCompat.getDrawable(this, R.drawable.ic_deadliner_ai)
+            GlobalUtils.getDeadlinerAIConfig().getCurrentLogoDrawable(this)
         else null
         bottomAppBar.setNavigationOnClickListener {
             showAgentOverlay()
@@ -1214,7 +1214,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
             }
         } else {
             bottomAppBar.navigationIcon = if (GlobalUtils.deadlinerAIEnable)
-                ContextCompat.getDrawable(this, R.drawable.ic_deadliner_ai)
+                GlobalUtils.getDeadlinerAIConfig().getCurrentLogoDrawable(this)
             else null
             bottomAppBar.setNavigationOnClickListener {
                 showAgentOverlay()
