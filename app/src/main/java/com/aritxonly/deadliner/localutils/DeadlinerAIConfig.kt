@@ -116,8 +116,11 @@ class DeadlinerAIConfig(private val sp: SharedPreferences) {
         return listOf(
             R.drawable.ic_orbit,
             R.drawable.ic_wand_stars,
+            R.drawable.ic_wand_shine,
+            R.drawable.ic_lightbulb,
             R.drawable.ic_psycho,
             R.drawable.ic_stars_2,
+            R.drawable.ic_star_shine,
             R.drawable.ic_deepseek,
             R.drawable.ic_qwen,
             R.drawable.ic_gemini_color,
