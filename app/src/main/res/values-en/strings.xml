@@ -445,4 +445,7 @@
     <string name="preset_delete_title">Delete Preset</string>
     <string name="preset_delete_msg">Are you sure you want to delete “%1$s”?</string>
     <string name="edit_model">Edit Model</string>
+    <string name="settings_ai_icon">Set Deadliner AI Icon</string>
+    <string name="settings_support_clipboard">When enabled, Deadliner will notify you to add a task with Deadliner AI whenever the clipboard changes.</string>
+    <string name="toast_ai_logo_requires_reboot">Icon set successfully. Please restart Deadliner to apply the changes.</string>
 </resources>

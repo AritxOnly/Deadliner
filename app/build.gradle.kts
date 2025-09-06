@@ -16,8 +16,8 @@ android {
         applicationId = "com.aritxonly.deadliner"
         minSdk = 31
         targetSdk = 35
-        versionCode = 25
-        versionName = "3.1.3-beta"
+        versionCode = 26
+        versionName = "3.1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

@@ -2,6 +2,15 @@ package com.aritxonly.deadliner.composable.settings
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +46,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
@@ -45,6 +56,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardOptions
@@ -70,6 +85,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.material3.ripple
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,12 +94,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -234,7 +253,7 @@ fun CollapsingTopBarScaffold(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsSwitchItem(
     @StringRes label: Int,
@@ -265,7 +284,7 @@ fun SettingsSwitchItem(
             Text(
                 text = stringResource(label),
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLargeEmphasized,
                 color = if (!mainSwitch || !checked)
                     MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.onPrimaryContainer
@@ -851,17 +870,11 @@ fun InfoCardCentered(
     headlineText: String,
     supportingText: String,
     modifier: Modifier = Modifier,
-    leading: @Composable (() -> Unit)? = {
-        Icon(
-            imageVector = ImageVector.vectorResource(R.drawable.ic_info),
-            contentDescription = stringResource(R.string.info),
-            tint = MaterialTheme.colorScheme.onPrimaryContainer
-        )
-    },
     colors: ListItemColors = ListItemDefaults.colors(containerColor = Color.Transparent),
     tonalElevation: Dp = ListItemDefaults.Elevation,
     shadowElevation: Dp = ListItemDefaults.Elevation,
-    textColor: Color? = null
+    textColor: Color? = null,
+    iconColor: Color? = null
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -876,12 +889,14 @@ fun InfoCardCentered(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (leading != null) {
-                Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
-                    leading()
-                }
-                Spacer(Modifier.width(16.dp))
+            Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_info),
+                    contentDescription = stringResource(R.string.info),
+                    tint = iconColor?: MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
+            Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     text = headlineText,
@@ -894,6 +909,119 @@ fun InfoCardCentered(
                     style = MaterialTheme.typography.bodyMedium,
                     color = textColor ?: LocalContentColor.current
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun IconPickerRow(
+    @DrawableRes icons: List<Int>,
+    @DrawableRes selectedIconRes: Int?,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    itemSize: Dp = 64.dp,
+    itemPadding: Dp = 12.dp,
+    contentPadding: Dp = 16.dp,
+    snapToItems: Boolean = true,
+) {
+    val context = LocalContext.current
+    val listState = rememberLazyListState()
+    val fling = if (snapToItems) rememberSnapFlingBehavior(listState) else null
+
+    // 初次进入时把选中项滚到可见位置
+    LaunchedEffect(selectedIconRes, icons) {
+        val idx = selectedIconRes?.let { icons.indexOf(it) } ?: -1
+        if (idx >= 0) listState.animateScrollToItem(idx)
+    }
+
+    fling?.let {
+        LazyRow(
+            state = listState,
+            flingBehavior = it,
+            contentPadding = PaddingValues(horizontal = contentPadding),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = modifier.fillMaxWidth()
+        ) {
+            items(icons, key = { it }) { resId ->
+                val selected = resId == selectedIconRes
+
+                // 交互源：拿到按压态
+                val interactionSource = remember { MutableInteractionSource() }
+                val pressed by interactionSource.collectIsPressedAsState()
+
+                // 动画参数
+                val baseScale = if (selected) 1.12f else 1.0f     // 选中基础放大
+                val pressBoost = if (pressed) 1.06f else 1.0f     // 按压叠加放大
+                val targetScale = baseScale * pressBoost
+
+                val scale by animateFloatAsState(
+                    targetValue = targetScale,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy, // 弹一点
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "iconScale"
+                )
+
+                val borderWidth by animateDpAsState(
+                    targetValue = if (selected) 2.dp else 1.dp,
+                    animationSpec = tween(120, easing = FastOutSlowInEasing),
+                    label = "borderWidth"
+                )
+                val elevation by animateDpAsState(
+                    targetValue = if (selected) 4.dp else 0.dp,
+                    animationSpec = tween(120, easing = FastOutSlowInEasing),
+                    label = "elevation"
+                )
+                val borderColor by animateColorAsState(
+                    targetValue = if (selected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.outlineVariant,
+                    animationSpec = tween(120),
+                    label = "borderColor"
+                )
+                val tintColor by animateColorAsState(
+                    targetValue = if (selected) MaterialTheme.colorScheme.primary
+                    else LocalContentColor.current,
+                    animationSpec = tween(120),
+                    label = "tintColor"
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    tonalElevation = elevation,
+                    border = BorderStroke(borderWidth, borderColor),
+                    modifier = Modifier
+                        .size(itemSize)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                        .selectable(
+                            selected = selected,
+                            role = Role.RadioButton,
+                            interactionSource = interactionSource,
+                            indication = ripple(bounded = true),
+                            onClick = {
+                                GlobalUtils.triggerVibration(context, 10L)
+                                onSelect(resId)
+                            }
+                        )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(itemPadding),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(resId),
+                            contentDescription = null,
+                            tint = tintColor
+                        )
+                    }
+                }
             }
         }
     }
