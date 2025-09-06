@@ -34,12 +34,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
@@ -52,6 +55,7 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
@@ -843,11 +847,11 @@ private fun PreviewSettingsRadioGroupItem() {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun InfoCard(
+fun InfoCardCentered(
     headlineText: String,
     supportingText: String,
     modifier: Modifier = Modifier,
-    leadingContent: @Composable (() -> Unit)? = {
+    leading: @Composable (() -> Unit)? = {
         Icon(
             imageVector = ImageVector.vectorResource(R.drawable.ic_info),
             contentDescription = stringResource(R.string.info),
@@ -858,36 +862,39 @@ fun InfoCard(
     tonalElevation: Dp = ListItemDefaults.Elevation,
     shadowElevation: Dp = ListItemDefaults.Elevation,
     textColor: Color? = null
-) = ListItem(
-    modifier = modifier,
-    headlineContent = {
-        if (textColor == null) {
-            Text(
-                text = headlineText,
-                style = MaterialTheme.typography.titleMediumEmphasized
-            )
-        } else {
-            Text(
-                text = headlineText,
-                style = MaterialTheme.typography.titleMediumEmphasized,
-                color = textColor
-            )
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = shadowElevation),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 72.dp) // 常见两行 ListItem 高度
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (leading != null) {
+                Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                    leading()
+                }
+                Spacer(Modifier.width(16.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = headlineText,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    color = textColor ?: LocalContentColor.current
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = supportingText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor ?: LocalContentColor.current
+                )
+            }
         }
-    },
-    supportingContent = {
-        if (textColor == null) {
-            Text(
-                text = supportingText
-            )
-        } else {
-            Text(
-                text = supportingText,
-                color = textColor
-            )
-        }
-    },
-    leadingContent = leadingContent,
-    colors = colors,
-    tonalElevation = tonalElevation,
-    shadowElevation = shadowElevation
-)
+    }
+}

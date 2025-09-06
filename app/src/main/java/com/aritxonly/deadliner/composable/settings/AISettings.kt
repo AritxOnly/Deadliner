@@ -144,7 +144,7 @@ fun AISettingsScreen(
                 SettingsSection(
                     customColor = MaterialTheme.colorScheme.primaryContainer
                 ) {
-                    InfoCard(
+                    InfoCardCentered(
                         headlineText = stringResource(R.string.settings_current_model, preset.name),
                         supportingText = stringResource(
                             R.string.settings_current_endpoint,
