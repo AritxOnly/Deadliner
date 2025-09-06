@@ -1,6 +1,5 @@
 package com.aritxonly.deadliner.composable.settings
 
-import android.widget.Space
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -27,7 +26,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.composable.SvgCard
@@ -44,7 +42,7 @@ fun PromptSettingsScreen(
         customPrompt = it
     }
 
-    val successText = stringResource(R.string.settings_deepseek_custom_prompt_success)
+    val successText = stringResource(R.string.settings_ai_custom_prompt_success)
     val onSaveButtonClick: () -> Unit = {
         GlobalUtils.customPrompt = customPrompt
         Toast.makeText(context, successText, Toast.LENGTH_SHORT).show()
@@ -57,7 +55,7 @@ fun PromptSettingsScreen(
         .padding(8.dp)
 
     CollapsingTopBarScaffold(
-        title = stringResource(R.string.settings_deepseek_custom_prompt),
+        title = stringResource(R.string.settings_ai_custom_prompt),
         navigationIcon = {
             IconButton(
                 onClick = navigateUp,
@@ -76,7 +74,7 @@ fun PromptSettingsScreen(
             SvgCard(R.drawable.svg_prompt, modifier = Modifier.padding(16.dp))
 
             Text(
-                stringResource(R.string.settings_deepseek_custom_prompt_description),
+                stringResource(R.string.settings_ai_custom_prompt_description),
                 modifier = Modifier.padding(horizontal = 24.dp),
                 style = MaterialTheme.typography.bodySmall
             )
@@ -85,7 +83,7 @@ fun PromptSettingsScreen(
                 RoundedTextField(
                     value = customPrompt?:"",
                     onValueChange = onPromptChange,
-                    hint = stringResource(R.string.settings_deepseek_custom_prompt_title),
+                    hint = stringResource(R.string.settings_ai_custom_prompt_title),
                     metrics = RoundedTextFieldMetricsDefaults.copy(singleLine = false, minHeight = 196.dp)
                 )
 

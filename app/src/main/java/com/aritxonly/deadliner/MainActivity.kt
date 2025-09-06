@@ -38,7 +38,6 @@ import android.widget.TextView
 import android.widget.Toast
 import android.widget.ViewFlipper
 import androidx.activity.addCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -51,11 +50,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
-import androidx.core.view.OnApplyWindowInsetsListener
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.setPadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -65,9 +61,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
-import androidx.window.layout.WindowInfoTracker
 import com.aritxonly.deadliner.SettingsActivity.Companion.EXTRA_INITIAL_ROUTE
-import com.aritxonly.deadliner.composable.agent.DeepseekOverlayHost
+import com.aritxonly.deadliner.composable.agent.AIOverlayHost
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.data.MainViewModel
@@ -202,7 +197,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         val snackbar = Snackbar.make(
             snackBarParent,
-            getString(R.string.show_clipboard_deepseek_snackbar),
+            getString(R.string.show_clipboard_ai_snackbar),
             Snackbar.LENGTH_LONG
         ).setAction(getString(R.string.add)) {
             showAgentOverlay(text)
@@ -580,8 +575,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         searchInputLayout = findViewById(R.id.searchInputLayout)
         searchEditText = findViewById(R.id.searchEditText)
 
-        bottomAppBar.navigationIcon = if (GlobalUtils.deepSeekEnable)
-            ContextCompat.getDrawable(this, R.drawable.ic_deepseek)
+        bottomAppBar.navigationIcon = if (GlobalUtils.deadlinerAIEnable)
+            ContextCompat.getDrawable(this, R.drawable.ic_deadliner_ai)
         else null
         bottomAppBar.setNavigationOnClickListener {
             showAgentOverlay()
@@ -1218,8 +1213,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
             }
         } else {
-            bottomAppBar.navigationIcon = if (GlobalUtils.deepSeekEnable)
-                ContextCompat.getDrawable(this, R.drawable.ic_deepseek)
+            bottomAppBar.navigationIcon = if (GlobalUtils.deadlinerAIEnable)
+                ContextCompat.getDrawable(this, R.drawable.ic_deadliner_ai)
             else null
             bottomAppBar.setNavigationOnClickListener {
                 showAgentOverlay()
@@ -1712,7 +1707,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         composeOverlay.setContent {
             DeadlinerTheme {
-                DeepseekOverlayHost(
+                AIOverlayHost(
                     initialText = initialText,
                     onAddDDL = { intent -> addDDLLauncher.launch(intent) },
                     onRemoveFromWindow = {

@@ -28,7 +28,7 @@
     <string name="settings_widget">Widgets</string>
     <string name="settings_notification">Notifications</string>
     <string name="settings_backup">Backup</string>
-    <string name="settings_developer">Developer</string>
+    <string name="settings_lab">Lab</string>
     <string name="settings_feedback">Help &amp; feedback</string>
     <string name="settings_about">About</string>
 
@@ -36,9 +36,9 @@
     <string name="settings_support_interface_display">Personalize your Deadliner</string>
     <string name="settings_support_notification">Deadline reminder · Daily scheduled notification</string>
     <string name="settings_support_backup">Import &amp; export user database</string>
-    <string name="settings_support_deepseek">DeepSeek API integration · Custom prompt</string>
+    <string name="settings_support_deadliner_ai">Deadliner AI · API integration · Custom prompt</string>
     <string name="settings_support_webdav">WebDAV cloud sync service</string>
-    <string name="settings_support_developer">Debug options &amp; experimental features</string>
+    <string name="settings_support_lab">Debug options &amp; experimental features</string>
     <string name="settings_support_widget">Widget configuration · Widget UI &amp; interaction settings</string>
     <string name="settings_support_wiki">Visit GitHub Wiki · Quick start guide</string>
     <string name="settings_support_feedback">Send feedback or report a bug</string>
@@ -113,15 +113,15 @@
     <string name="settings_web_host_incomplete">Please fill in all fields!</string>
     <string name="settings_web_user">Username</string>
     <string name="settings_web_pass">Password</string>
-    <string name="settings_enable_deepseek">Enable DeepSeek</string>
-    <string name="settings_deepseek_description">Deadliner integrates with DeepSeek to extract task information from long text, helping you quickly add tasks.\nYou need to log in at https://platform.deepseek.com to get your own API key</string>
-    <string name="settings_deepseek_api_key">API key</string>
-    <string name="settings_deepseek_success">DeepSeek API key set successfully!</string>
-    <string name="settings_deepseek_incomplete">Please enter your API key!</string>
-    <string name="settings_deepseek_custom_prompt">Custom prompt</string>
-    <string name="settings_deepseek_custom_prompt_title">Prompt</string>
-    <string name="settings_support_deepseek_custom_prompt">Custom user prompt (not recommended for beginners)</string>
-    <string name="settings_deepseek_custom_prompt_success">Prompt saved</string>
+    <string name="settings_enable_ai">Enable Deadliner AI</string>
+    <string name="settings_ai_description">Deadliner integrates with your AI provider to extract task information from long text, helping you quickly add tasks.</string>
+    <string name="settings_ai_api_key">API key</string>
+    <string name="settings_ai_success">API key set successfully!</string>
+    <string name="settings_ai_incomplete">Please enter your API key!</string>
+    <string name="settings_ai_custom_prompt">Custom prompt</string>
+    <string name="settings_ai_custom_prompt_title">Prompt</string>
+    <string name="settings_support_ai_custom_prompt">Custom user prompt (not recommended for beginners)</string>
+    <string name="settings_ai_custom_prompt_success">Prompt saved</string>
     <string name="settings_issues">Submit error report</string>
     <string name="add_widget">Add widget</string>
     <string name="app_md_widget_description">Task small widget</string>
@@ -164,9 +164,9 @@
     <string name="alert_select_badge_type">Choose badge type</string>
     <string name="configure">Configure</string>
     <string name="settings_advance">Advanced settings</string>
-    <string name="settings_support_deepseek_test">Test API key availability · Test custom prompt</string>
-    <string name="settings_deepseek_test">Conversation test</string>
-    <string name="settings_deepseek_custom_prompt_description">Custom user prompts let you define the density and style of information extracted by DeepSeek. Your custom prompt will be prepended to the input text and sent to the DeepSeek API service.</string>
+    <string name="settings_support_ai_test">Test API key availability · Test custom prompt</string>
+    <string name="settings_ai_test">Conversation test</string>
+    <string name="settings_ai_custom_prompt_description">Custom user prompts let you define the density and style of information extracted by AI. Your custom prompt will be prepended to the input text and sent AI provider\'s API service.</string>
     <string name="placeholder">Welcome to Deadliner 👏</string>
     <string name="settings_clipboard">Auto-read from clipboard</string>
     <string name="downloading_update">Downloading update</string>
@@ -178,8 +178,8 @@
     <string name="progress_hours">%.1f hours %d%%</string>
     <string name="progress_days">%.1f days %d%%</string>
     <string name="untitled">(Untitled)</string>
-    <string name="deepseek_overlay_enter_questions">Enter your question…</string>
-    <string name="deepseek_overlay_hint_top">Ask DeepSeek to quickly add a schedule</string>
+    <string name="ai_overlay_enter_questions">Enter your question…</string>
+    <string name="ai_overlay_hint_top">Ask Deadliner AI to quickly add a schedule</string>
     <string name="parse_failed">Parse failed</string>
     <string name="unknown_error">Unknown error</string>
     <string name="send">Send</string>
@@ -195,7 +195,7 @@
     <string name="duration_days_hours">%1$d days %2$d hours</string>
     <string name="duration_hours">%1$d hours</string>
     <string name="duration_less_than_hour">&lt;1 hour</string>
-    <string name="show_clipboard_deepseek_snackbar">Clipboard content detected. Use DeepSeek to quickly add?</string>
+    <string name="show_clipboard_ai_snackbar">Clipboard content detected. Use Deadliner AI to quickly add?</string>
     <string name="add">Add</string>
     <string name="selected_items">%1$d deadlines selected</string>
     <string name="habit_success">Check-in successful 🎉</string>
@@ -427,4 +427,22 @@
     <string name="search_events">Search events</string>
     <string name="overview_settings_month">Number of months to display</string>
     <string name="overview_settings_weekly_show_overdue_complete">Show overdue completed tasks in weekly view</string>
+
+    <string name="settings_model">Model Settings</string>
+    <string name="settings_model_endpoint">Model Endpoint Settings</string>
+    <string name="settings_support_model_endpoint">Select a preset model for Deadliner AI</string>
+    <string name="settings_support_model_endpoint_advance">Custom model endpoint</string>
+    <string name="settings_current_model">Current model: %1$s</string>
+    <string name="settings_current_endpoint">Endpoint: %1$s</string>
+    <string name="settings_endpoint_description">An API key works only with its specific model provider. When you switch the endpoint, remember to update your API key so everything runs smoothly.</string>
+    <string name="add_model">Add Model</string>
+    <string name="model_display_name">Display Name</string>
+    <string name="model_internal_name">Model Name (API)</string>
+    <string name="model_endpoint">Endpoint URL</string>
+    <string name="info">Information</string>
+    <string name="manage_presets">Manage Presets</string>
+    <string name="current_in_use">Currently in use</string>
+    <string name="preset_delete_title">Delete Preset</string>
+    <string name="preset_delete_msg">Are you sure you want to delete “%1$s”?</string>
+    <string name="edit_model">Edit Model</string>
 </resources>

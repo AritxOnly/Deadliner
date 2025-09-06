@@ -1,6 +1,5 @@
 package com.aritxonly.deadliner.composable.settings
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -18,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -27,17 +25,12 @@ import com.aritxonly.deadliner.composable.SvgCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
 
 @Composable
-fun DeveloperSettingsScreen(
+fun LabSettingsScreen(
     onClickCustomFilter: () -> Unit,
     onClickCancelAll: () -> Unit,
     onClickShowIntro: () -> Unit,
     navigateUp: () -> Unit
 ) {
-    var experimentalE2E by remember { mutableStateOf(GlobalUtils.experimentalEdgeToEdge) }
-    val onExperimentalE2EChange: (Boolean) -> Unit = {
-        experimentalE2E = it
-//        GlobalUtils.experimentalEdgeToEdge = it
-    }
 
     val expressiveTypeModifier = Modifier
         .size(40.dp)
@@ -46,7 +39,7 @@ fun DeveloperSettingsScreen(
         .padding(8.dp)
 
     CollapsingTopBarScaffold(
-        title = stringResource(R.string.settings_developer),
+        title = stringResource(R.string.settings_lab),
         navigationIcon = {
             IconButton(
                 onClick = navigateUp,
@@ -65,19 +58,18 @@ fun DeveloperSettingsScreen(
             .verticalScroll(rememberScrollState())) {
             SvgCard(R.drawable.svg_developer_avatar, modifier = Modifier.padding(16.dp))
 
+            SettingsSection(topLabel = stringResource(R.string.settings_advance)) {
+                SettingsDetailTextButtonItem(
+                    headline = R.string.settings_model_endpoint,
+                    supporting = R.string.settings_support_model_endpoint_advance
+                ) {  }
+            }
+
             SettingsSection(topLabel = stringResource(R.string.settings_experimental)) {
                 SettingsDetailTextButtonItem(
                     headline = R.string.settings_custom_filter_list,
                     supporting = R.string.settings_support_custom_filter_list
                 ) { onClickCustomFilter() }
-
-                SettingsSectionDivider()
-
-                SettingsSwitchItem(
-                    label = R.string.settings_experimental_e2e,
-                    checked = experimentalE2E,
-                    onCheckedChange = onExperimentalE2EChange
-                )
             }
 
             SettingsSection(topLabel = stringResource(R.string.settings_developer_options)) {

@@ -65,7 +65,7 @@ fun MainSettingsScreen(
                 .padding(innerPadding),
         ) {
             SettingsRoute.allSubRoutes.forEach { group ->
-                if (!(group.contains(SettingsRoute.Developer) && !GlobalUtils.developerMode)) {
+                if (!(group.contains(SettingsRoute.Lab) && !GlobalUtils.developerMode)) {
                     item {
                         SettingsSection {
                             group.forEachIndexed { index, route ->

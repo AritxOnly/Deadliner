@@ -19,7 +19,7 @@
     <string-array name="intro_descriptions">
         <item>✨ 全新 v3，界面与交互全面升级，任务与习惯管理更加顺滑贴心。</item>
         <item>还是熟悉的配方：右滑完成 ✅ 左滑删除 ❌，置顶与倒计时轻松掌控。</item>
-        <item>🤖 接入 DeepSeek，只需一句话，就能快速生成任务与提醒。</item>
+        <item>🤖 Deadliner AI，只需一句话，就能快速生成任务与提醒。</item>
         <item>☁️ WebDAV 云同步，跨设备无缝衔接，数据安全更放心。</item>
         <item>🔔 全新小组件与升级通知，让信息更直观，操作更人性化。</item>
     </string-array>

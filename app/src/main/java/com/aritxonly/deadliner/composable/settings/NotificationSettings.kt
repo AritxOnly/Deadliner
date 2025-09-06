@@ -28,6 +28,7 @@ import androidx.fragment.app.FragmentManager
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.composable.SvgCard
+import com.aritxonly.deadliner.composable.expressiveTypeModifier
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -85,12 +86,6 @@ fun NotificationSettingsScreen(
             defaultText
         else formatDailyTime(dailyHour, dailyMinute)
     }
-
-    val expressiveTypeModifier = Modifier
-        .size(40.dp)
-        .clip(CircleShape)
-        .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
-        .padding(8.dp)
 
     CollapsingTopBarScaffold(
         title = stringResource(R.string.settings_notification),
