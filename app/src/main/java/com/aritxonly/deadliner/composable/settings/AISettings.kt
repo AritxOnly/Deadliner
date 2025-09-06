@@ -2,6 +2,7 @@ package com.aritxonly.deadliner.composable.settings
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -30,9 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -40,8 +43,12 @@ import androidx.navigation.NavHostController
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.SettingsRoute
 import com.aritxonly.deadliner.composable.PreviewCard
+import com.aritxonly.deadliner.composable.SvgCard
+import com.aritxonly.deadliner.composable.expressiveTypeModifier
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
+import com.aritxonly.deadliner.model.LlmPreset
+import com.aritxonly.deadliner.model.defaultLlmPreset
 import com.aritxonly.deadliner.web.AIUtils.generateDeadline
 import kotlinx.coroutines.launch
 
@@ -52,9 +59,9 @@ fun AISettingsScreen(
 ) {
     val context = LocalContext.current
 
-    var masterEnable by remember { mutableStateOf(GlobalUtils.deepSeekEnable) }
+    var masterEnable by remember { mutableStateOf(GlobalUtils.deadlinerAIEnable) }
     val onMasterChange: (Boolean) -> Unit = {
-        GlobalUtils.deepSeekEnable = it
+        GlobalUtils.deadlinerAIEnable = it
         masterEnable = it
     }
 
@@ -89,12 +96,6 @@ fun AISettingsScreen(
 
     var showTestDialog by remember { mutableStateOf(false) }
 
-    val expressiveTypeModifier = Modifier
-        .size(40.dp)
-        .clip(CircleShape)
-        .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
-        .padding(8.dp)
-
     CollapsingTopBarScaffold(
         title = stringResource(R.string.settings_deadliner_ai),
         navigationIcon = {
@@ -126,14 +127,10 @@ fun AISettingsScreen(
                 )
             }
 
-            PreviewCard(modifier = Modifier.padding(16.dp)) {
-                DeepSeekLogo(
-                    modifier = Modifier.fillMaxSize(),
-                    iconSize = 64.dp,
-                    wordmarkHeight = 48.dp,
-                    enabled = masterEnable
-                )
-            }
+            SvgCard(
+                svgRes = R.drawable.svg_deadliner_ai,
+                modifier = Modifier.padding(16.dp)
+            )
 
             Text(
                 stringResource(R.string.settings_ai_description),
@@ -142,6 +139,30 @@ fun AISettingsScreen(
             )
 
             if (masterEnable) {
+
+                val preset = GlobalUtils.getDeadlinerAIConfig().getCurrentPreset()?: defaultLlmPreset
+                SettingsSection(
+                    customColor = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    InfoCard(
+                        headlineText = stringResource(R.string.settings_current_model, preset.name),
+                        supportingText = stringResource(
+                            R.string.settings_current_endpoint,
+                            preset.endpoint
+                        ),
+                        textColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+
+                SettingsSection(topLabel = stringResource(R.string.settings_model)) {
+                    SettingsDetailTextButtonItem(
+                        headline = R.string.settings_model_endpoint,
+                        supporting = R.string.settings_support_model_endpoint
+                    ) {
+                        nav.navigate(SettingsRoute.Model.route)
+                    }
+                }
+
                 SettingsSection(customColor = MaterialTheme.colorScheme.surface) {
                     RoundedTextField(
                         value = apiKey ?: "",
@@ -221,39 +242,6 @@ fun AISettingsScreen(
                     Text(text = testResp)
                 }
             }
-        )
-    }
-}
-
-@Composable
-fun DeepSeekLogo(
-    modifier: Modifier = Modifier,
-    iconSize: Dp = 48.dp,
-    wordmarkHeight: Dp = 24.dp,
-    spacing: Dp = 4.dp,
-    enabled: Boolean = true
-) {
-    val tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_deepseek),
-            contentDescription = "DeepSeek Icon",
-            tint = tint,
-            modifier = Modifier.size(iconSize)
-        )
-        Spacer(modifier = Modifier.height(spacing))
-        Icon(
-            painter = painterResource(R.drawable.ic_deepseek_text),
-            contentDescription = "DeepSeek Wordmark",
-            tint = tint,
-            modifier = Modifier
-                .height(wordmarkHeight)
-                .wrapContentWidth()
         )
     }
 }

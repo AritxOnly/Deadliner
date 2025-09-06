@@ -10,7 +10,6 @@ import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import com.google.gson.annotations.SerializedName
 import kotlinx.parcelize.Parcelize
-import kotlinx.serialization.Serializable
 import java.lang.reflect.Type
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -28,15 +27,18 @@ data class ChatRequest(
 
 data class ChatResponse(
     val choices: List<Choice>,
-    val usage: Usage
+    val usage: Usage?
 )
 data class Choice(
     val message: Message
 )
 data class Usage(
-    @SerializedName("prompt_cache_hit_tokens") val promptCacheHitTokens: Int,
-    @SerializedName("prompt_cache_miss_tokens") val promptCacheMissTokens: Int,
-    @SerializedName("total_tokens") val totalTokens: Int
+    @SerializedName("prompt_tokens") val promptTokens: Int? = null,
+    @SerializedName("completion_tokens") val completionTokens: Int? = null,
+    @SerializedName("total_tokens") val totalTokens: Int? = null,
+
+    @SerializedName("prompt_cache_hit_tokens") val promptCacheHitTokens: Int? = null,
+    @SerializedName("prompt_cache_miss_tokens") val promptCacheMissTokens: Int? = null
 )
 
 @Parcelize
@@ -69,3 +71,17 @@ class LocalDateTimeAdapter : JsonSerializer<LocalDateTime>, JsonDeserializer<Loc
         return LocalDateTime.parse(str, formatter)
     }
 }
+
+data class LlmPreset(
+    val id: String,          // 唯一标识（建议 UUID 或稳定的 slug）
+    val name: String,        // 展示名：如 "DeepSeek（官方）"
+    val model: String,       // 传参用的模型名：如 "deepseek-chat"
+    val endpoint: String     // API 接入点：如 "https://api.deepseek.com/v1/chat/completions"
+)
+
+val defaultLlmPreset = LlmPreset(
+    id = "deepseek_official",
+    name = "DeepSeek",
+    model = "deepseek-chat",
+    endpoint = "https://api.deepseek.com/v1/chat/completions"
+)

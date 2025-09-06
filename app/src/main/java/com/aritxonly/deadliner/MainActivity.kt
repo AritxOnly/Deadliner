@@ -575,8 +575,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         searchInputLayout = findViewById(R.id.searchInputLayout)
         searchEditText = findViewById(R.id.searchEditText)
 
-        bottomAppBar.navigationIcon = if (GlobalUtils.deepSeekEnable)
-            ContextCompat.getDrawable(this, R.drawable.ic_deepseek)
+        bottomAppBar.navigationIcon = if (GlobalUtils.deadlinerAIEnable)
+            ContextCompat.getDrawable(this, R.drawable.ic_deadliner_ai)
         else null
         bottomAppBar.setNavigationOnClickListener {
             showAgentOverlay()
@@ -1213,8 +1213,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
             }
         } else {
-            bottomAppBar.navigationIcon = if (GlobalUtils.deepSeekEnable)
-                ContextCompat.getDrawable(this, R.drawable.ic_deepseek)
+            bottomAppBar.navigationIcon = if (GlobalUtils.deadlinerAIEnable)
+                ContextCompat.getDrawable(this, R.drawable.ic_deadliner_ai)
             else null
             bottomAppBar.setNavigationOnClickListener {
                 showAgentOverlay()

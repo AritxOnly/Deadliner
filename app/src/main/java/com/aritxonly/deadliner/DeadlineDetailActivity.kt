@@ -86,6 +86,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.calendar.CalendarHelper
+import com.aritxonly.deadliner.composable.expressiveTypeModifier
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
@@ -235,12 +236,6 @@ fun DeadlineDetailScreen(
     var isCompleted by remember { mutableStateOf(deadline.isCompleted) }
 
     Log.d("DetailPage", "DeadlineDetailScreen: $isStared")
-
-    val expressiveTypeModifier = Modifier
-        .size(40.dp)
-        .clip(CircleShape)
-        .background(Color(colorScheme.surfaceContainer), CircleShape)
-        .padding(8.dp)
 
     val coroutineScope = rememberCoroutineScope()
 

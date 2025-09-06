@@ -7,6 +7,7 @@ import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
 import com.aritxonly.deadliner.model.ChatRequest
 import com.aritxonly.deadliner.model.ChatResponse
 import com.aritxonly.deadliner.model.GeneratedDDL
+import com.aritxonly.deadliner.model.LlmPreset
 import com.aritxonly.deadliner.model.LocalDateTimeAdapter
 import com.aritxonly.deadliner.model.Message
 import com.google.gson.Gson
@@ -22,7 +23,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 object AIUtils {
-    private const val BASE_URL = "https://api.deepseek.com/v1/chat/completions"
+    private var BASE_URL = "https://api.deepseek.com/v1/chat/completions"
+    private var MODEL = "deepseek-chat"
     private const val MEDIA_TYPE_JSON = "application/json; charset=utf-8"
 
     private lateinit var apiKey: String
@@ -31,7 +33,20 @@ object AIUtils {
 
     /** 初始化：在 Application 或首次使用时调用 */
     fun init(context: Context) {
+        val config = GlobalUtils.getDeadlinerAIConfig()
+        val preset = config.getCurrentPreset()
+
+        preset?.let {
+            BASE_URL = it.endpoint
+            MODEL = it.model
+        }
+
         apiKey = KeystorePreferenceManager.retrieveAndDecrypt(context)?:""
+    }
+
+    fun setPreset(preset: LlmPreset) {
+        BASE_URL = preset.endpoint
+        MODEL = preset.model
     }
 
     /**
@@ -42,6 +57,7 @@ object AIUtils {
         if (apiKey.isEmpty() || apiKey.isBlank()) return@withContext ""
 
         val requestObj = ChatRequest(
+            model = MODEL,
             messages = messages
         )
         val jsonBody = gson.toJson(requestObj)
@@ -50,21 +66,22 @@ object AIUtils {
         val request = Request.Builder()
             .url(BASE_URL)
             .addHeader("Authorization", "Bearer $apiKey")
+            .addHeader("Content-Type", MEDIA_TYPE_JSON)
             .post(body)
             .build()
 
         client.newCall(request).execute().use { resp ->
             if (!resp.isSuccessful) {
-                throw RuntimeException("DeepSeek API 调用失败：${resp.code} ${resp.message}")
+                throw RuntimeException("API 调用失败：${resp.code} ${resp.message}")
             }
             val respJson = resp.body?.string()
-                ?: throw RuntimeException("DeepSeek API 返回空")
+                ?: throw RuntimeException("API 返回空")
             val chatResp = gson.fromJson(respJson, ChatResponse::class.java)
             chatResp.choices
                 .firstOrNull()
                 ?.message
                 ?.content
-                ?: throw RuntimeException("DeepSeek API 没有返回消息")
+                ?: throw RuntimeException("API 没有返回消息")
         }
     }
 
@@ -72,13 +89,13 @@ object AIUtils {
         if (apiKey.isEmpty() || apiKey.isBlank()) return@withContext ""
 
         val langTag = currentLangTag(context) // 当前设备语言
-        val timeFormatSpec = "yyyy-MM-dd HH:mm（24小时制，零填充，不带时区）"
+        val timeFormatSpec = "yyyy-MM-dd HH:mm"
 
         val tzId = java.util.TimeZone.getDefault().id
         val nowLocal = LocalDateTime.now().toString()
 
         val systemPrompt = """
-        你是一个任务管理助手。用户会输入一段自然语言文本，请你从中提取任务，并以**纯 JSON**返回，结构如下：
+        你是Deadliner AI，一个任务管理助手。用户会输入一段自然语言文本，请你从中提取任务，并以**纯 JSON**返回，结构如下：
         {
           "name": "任务名称（≤16字符）",
           "dueTime": "截止时间，$timeFormatSpec",
@@ -88,7 +105,7 @@ object AIUtils {
         规则要求：
         1) 仅返回 JSON，**不要**额外说明、代码块（```）、尾逗号。
         2) "name" 和 "note" 必须使用与设备语言一致的语言（当前语言：$langTag）。
-        3) "dueTime" 必须严格用 $timeFormatSpec。
+        3) "dueTime" 必须严格用 $timeFormatSpec（24小时制，零填充，不带时区）。
         4) 如果出现“今天/明天/本周五/下周一/今晚”等相对时间，请基于设备时区 $tzId、当前时间 $nowLocal 推断，最终输出 $timeFormatSpec。
         5) 如果无法精确分钟，可保守推断（如“晚上”=20:00），但**必须给出具体可解析的时间**。
         6) JSON 键固定为 name/dueTime/note，不要新增。
@@ -108,8 +125,6 @@ object AIUtils {
     }
 
     fun extractJsonFromMarkdown(raw: String): String {
-        Log.d("DeepSeek", raw)
-
         val jsonFenceRegex = Regex("```json\\s*([\\s\\S]*?)```", RegexOption.IGNORE_CASE)
         jsonFenceRegex.find(raw)?.let { return it.groups[1]!!.value.trim() }
 

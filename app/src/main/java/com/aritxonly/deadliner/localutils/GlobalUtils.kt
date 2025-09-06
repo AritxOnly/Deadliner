@@ -3,13 +3,11 @@ package com.aritxonly.deadliner.localutils
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
-import android.content.Context.VIBRATOR_SERVICE
 import android.content.SharedPreferences
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,8 +39,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 object GlobalUtils {
@@ -51,17 +47,13 @@ object GlobalUtils {
 
     private lateinit var sharedPreferences: SharedPreferences
 
-    class NotificationBefore {
-        companion object {
-            const val ONE_DAY = 0b100
-            const val HALF_DAY = 0b10
-            const val TWO_HOURS = 0b1
-        }
-    }
-
     fun init(context: Context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, AppCompatActivity.MODE_PRIVATE)
         loadSettings()  // 初始化时加载设置
+    }
+
+    fun getDeadlinerAIConfig(): DeadlinerAIConfig {
+        return DeadlinerAIConfig(sharedPreferences)
     }
 
     var vibration: Boolean
@@ -272,7 +264,7 @@ object GlobalUtils {
     var hideDividerUi by mutableStateOf(false)
         private set
 
-    var deepSeekEnable: Boolean
+    var deadlinerAIEnable: Boolean
         get() = sharedPreferences.getBoolean("deepseek_master", false)
         set(value) {
             sharedPreferences.edit { putBoolean("deepseek_master", value) }

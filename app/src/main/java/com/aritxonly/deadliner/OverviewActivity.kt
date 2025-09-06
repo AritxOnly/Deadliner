@@ -53,6 +53,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.aritxonly.deadliner.composable.expressiveTypeModifier
 import com.aritxonly.deadliner.composable.overview.DashboardScreen
 import com.aritxonly.deadliner.composable.overview.OverviewStatsScreen
 import com.aritxonly.deadliner.composable.overview.TrendAnalysisScreen
@@ -255,12 +256,6 @@ fun OverviewScreen(
 
 
     // UI准备
-    val expressiveTypeModifier = Modifier
-        .size(40.dp)
-        .clip(CircleShape)
-        .background(Color(colorScheme.surfaceContainer), CircleShape)
-        .padding(8.dp)
-
     var showSettings by rememberSaveable { mutableStateOf(false) }
 
     val tabs = listOf(

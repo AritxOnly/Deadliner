@@ -592,6 +592,51 @@ fun SettingsDetailTextButtonItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsDetailTextButtonItem(
+    modifier: Modifier = Modifier,
+    headlineText: String,
+    supportingText: String,
+    @DrawableRes iconRes: Int? = null,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = headlineText,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = supportingText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (iconRes != null) {
+                Icon(
+                    painter = painterResource(iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
 data class RoundedTextFieldMetrics(
     val singleLine: Boolean,
     val minHeight: Dp? = null,
@@ -604,6 +649,7 @@ val RoundedTextFieldMetricsDefaults = RoundedTextFieldMetrics(
     cornerSize = 12.dp
 )
 
+@JvmName("SettingsRadioGroupItemRes")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoundedTextField(
@@ -667,6 +713,7 @@ data class RadioOption<T>(
     @StringRes val labelRes: Int
 )
 
+@JvmName("SettingsRadioGroupItemText")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> SettingsRadioGroupItem(
@@ -723,6 +770,61 @@ fun <T> SettingsRadioGroupItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+data class RadioOptionText<T>(
+    val key: T,
+    val label: String
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T> SettingsRadioGroupItem(
+    options: List<RadioOptionText<T>>,
+    selectedKey: T,
+    onOptionSelected: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    showDivider: Boolean = true,
+    divider: @Composable () -> Unit = { SettingsSectionDivider() }
+) {
+    val context = LocalContext.current
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            options.forEachIndexed { index, option ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            GlobalUtils.triggerVibration(context, 10L)
+                            onOptionSelected(option.key)
+                        }
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(option.label, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.width(8.dp))
+                    RadioButton(
+                        selected = option.key == selectedKey,
+                        onClick = {
+                            GlobalUtils.triggerVibration(context, 10L)
+                            onOptionSelected(option.key)
+                        },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+                if (showDivider && index < options.lastIndex) divider()
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun PreviewSettingsRadioGroupItem() {
@@ -738,3 +840,54 @@ private fun PreviewSettingsRadioGroupItem() {
         onOptionSelected = { selected = it }
     )
 }
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun InfoCard(
+    headlineText: String,
+    supportingText: String,
+    modifier: Modifier = Modifier,
+    leadingContent: @Composable (() -> Unit)? = {
+        Icon(
+            imageVector = ImageVector.vectorResource(R.drawable.ic_info),
+            contentDescription = stringResource(R.string.info),
+            tint = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    },
+    colors: ListItemColors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    tonalElevation: Dp = ListItemDefaults.Elevation,
+    shadowElevation: Dp = ListItemDefaults.Elevation,
+    textColor: Color? = null
+) = ListItem(
+    modifier = modifier,
+    headlineContent = {
+        if (textColor == null) {
+            Text(
+                text = headlineText,
+                style = MaterialTheme.typography.titleMediumEmphasized
+            )
+        } else {
+            Text(
+                text = headlineText,
+                style = MaterialTheme.typography.titleMediumEmphasized,
+                color = textColor
+            )
+        }
+    },
+    supportingContent = {
+        if (textColor == null) {
+            Text(
+                text = supportingText
+            )
+        } else {
+            Text(
+                text = supportingText,
+                color = textColor
+            )
+        }
+    },
+    leadingContent = leadingContent,
+    colors = colors,
+    tonalElevation = tonalElevation,
+    shadowElevation = shadowElevation
+)
