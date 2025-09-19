@@ -100,17 +100,16 @@ class DeadlinerApp : Application() {
 
             val placeholderRule = SplitPlaceholderRule.Builder(
                 setOf(mainFilter),
-                // 你也可以用 ComponentName(...) 的重载；此处用 Intent 以便传 extras
                 Intent().setComponent(
                     ComponentName(this, "com.aritxonly.deadliner.PlaceholderActivity")
                 )
             )
                 .setDefaultSplitAttributes(splitAttributes)
-                .setMinWidthDp(840)                // 只在大屏/分屏足够宽时生效
+                .setMinWidthDp(840)
                 .setFinishPrimaryWithPlaceholder(SplitRule.FinishBehavior.ALWAYS)
                 .build()
 
-            RuleController.getInstance(this).setRules(setOf(pairRule, placeholderRule))
+            RuleController.getInstance(this).setRules(setOf(placeholderRule))
         } else {
             RuleController.getInstance(this).setRules(setOf(pairRule))
         }
