@@ -166,20 +166,18 @@ fun GeneralSettingsScreen(
                         )
                     }
 
-                    if (!splitPlaceholder) {
-                        SettingsSectionDivider()
+                    SettingsSectionDivider()
 
-                        SettingsDetailSwitchItem(
-                            headline = R.string.settings_dynamic_split,
-                            supportingRawText = stringResource(R.string.settings_support_dynamic_split) +
+                    SettingsDetailSwitchItem(
+                        headline = R.string.settings_dynamic_split,
+                        supportingRawText = stringResource(R.string.settings_support_dynamic_split) +
                                 if (!supportDynamicSplit)
                                     stringResource(R.string.settings_support_dynamic_split_not_avail)
                                 else ""
-                            ,
-                            checked = dynamicSplit,
-                            onCheckedChange = onDynamicSplitChange
-                        )
-                    }
+                        ,
+                        checked = dynamicSplit,
+                        onCheckedChange = onDynamicSplitChange
+                    )
                 }
             }
 

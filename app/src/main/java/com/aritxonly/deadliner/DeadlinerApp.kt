@@ -3,12 +3,16 @@ package com.aritxonly.deadliner
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.ComponentName
+import android.content.Intent
 import androidx.window.WindowSdkExtensions
+import androidx.window.embedding.ActivityFilter
 import androidx.window.embedding.DividerAttributes
 import androidx.window.embedding.RuleController
 import androidx.window.embedding.SplitAttributes
 import androidx.window.embedding.SplitPairFilter
 import androidx.window.embedding.SplitPairRule
+import androidx.window.embedding.SplitPlaceholderRule
+import androidx.window.embedding.SplitRule
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
 import com.aritxonly.deadliner.sync.SyncScheduler
@@ -30,7 +34,7 @@ class DeadlinerApp : Application() {
 
         if (GlobalUtils.embeddedActivities) {
             if (GlobalUtils.dynamicSplit) {
-                if (installSplitAttributesTest()) return
+                if (installSplitAttributes(GlobalUtils.splitPlaceholderEnable)) return
             }
 
             GlobalUtils.dynamicSplit = false
@@ -46,7 +50,7 @@ class DeadlinerApp : Application() {
     }
 
     @SuppressLint("RequiresWindowSdk")
-    private fun installSplitAttributesTest(): Boolean {
+    private fun installSplitAttributes(placeholder: Boolean = false): Boolean {
         val splitAttributesBuilder: SplitAttributes.Builder = SplitAttributes.Builder()
             .setSplitType(SplitAttributes.SplitType.ratio(0.45f))
             .setLayoutDirection(SplitAttributes.LayoutDirection.LEFT_TO_RIGHT)
@@ -88,7 +92,28 @@ class DeadlinerApp : Application() {
             .setMinWidthDp(840)
             .build()
 
-        RuleController.getInstance(this).setRules(setOf(pairRule))
+        if (placeholder) {
+            val mainFilter = ActivityFilter(
+                ComponentName(this, "com.aritxonly.deadliner.MainActivity"),
+                /* intentAction = */ null
+            )
+
+            val placeholderRule = SplitPlaceholderRule.Builder(
+                setOf(mainFilter),
+                // 你也可以用 ComponentName(...) 的重载；此处用 Intent 以便传 extras
+                Intent().setComponent(
+                    ComponentName(this, "com.aritxonly.deadliner.PlaceholderActivity")
+                )
+            )
+                .setDefaultSplitAttributes(splitAttributes)
+                .setMinWidthDp(840)                // 只在大屏/分屏足够宽时生效
+                .setFinishPrimaryWithPlaceholder(SplitRule.FinishBehavior.ALWAYS)
+                .build()
+
+            RuleController.getInstance(this).setRules(setOf(pairRule, placeholderRule))
+        } else {
+            RuleController.getInstance(this).setRules(setOf(pairRule))
+        }
 
         return true
     }
