@@ -56,21 +56,26 @@
                 <TextView
                     android:id="@+id/item_title_1"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
+                    android:layout_weight="2"
                     android:layout_height="wrap_content"
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textStyle="bold"
                     android:textSize="14sp"
                     android:textAlignment="gravity"
-                    android:gravity="center_vertical" />
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
                 <TextView
                     android:id="@+id/item_progress_text_1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textSize="14sp"
-                    android:gravity="center_vertical" />
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:ellipsize="start" />
             </LinearLayout>
         </FrameLayout>
 
@@ -115,20 +120,25 @@
                 <TextView
                     android:id="@+id/item_title_2"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
+                    android:layout_weight="2"
                     android:layout_height="wrap_content"
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textStyle="bold"
                     android:textSize="14sp"
-                    android:gravity="center_vertical" />
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
                 <TextView
                     android:id="@+id/item_progress_text_2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textSize="14sp"
-                    android:gravity="center_vertical" />
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:ellipsize="start" />
             </LinearLayout>
         </FrameLayout>
 
@@ -172,21 +182,26 @@
                 <TextView
                     android:id="@+id/item_title_3"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
+                    android:layout_weight="2"
                     android:layout_height="wrap_content"
                     android:textAlignment="gravity"
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textStyle="bold"
                     android:textSize="14sp"
-                    android:gravity="center_vertical" />
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
                 <TextView
                     android:id="@+id/item_progress_text_3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textSize="14sp"
-                    android:gravity="center_vertical" />
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:ellipsize="start" />
             </LinearLayout>
         </FrameLayout>
 
