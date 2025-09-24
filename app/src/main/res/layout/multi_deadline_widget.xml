@@ -62,7 +62,7 @@
                     android:textStyle="bold"
                     android:textSize="14sp"
                     android:textAlignment="gravity"
-                    android:gravity="center_vertical"
+                    android:gravity="start"
                     android:maxLines="1"
                     android:ellipsize="end" />
 
@@ -73,7 +73,7 @@
                     android:layout_weight="1"
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textSize="14sp"
-                    android:gravity="center_vertical"
+                    android:gravity="end"
                     android:maxLines="1"
                     android:ellipsize="start" />
             </LinearLayout>
@@ -125,7 +125,7 @@
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textStyle="bold"
                     android:textSize="14sp"
-                    android:gravity="center_vertical"
+                    android:gravity="start"
                     android:maxLines="1"
                     android:ellipsize="end" />
 
@@ -136,7 +136,7 @@
                     android:layout_weight="1"
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textSize="14sp"
-                    android:gravity="center_vertical"
+                    android:gravity="end"
                     android:maxLines="1"
                     android:ellipsize="start" />
             </LinearLayout>
@@ -188,7 +188,7 @@
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textStyle="bold"
                     android:textSize="14sp"
-                    android:gravity="center_vertical"
+                    android:gravity="start"
                     android:maxLines="1"
                     android:ellipsize="end" />
 
@@ -199,7 +199,7 @@
                     android:layout_weight="1"
                     android:textColor="?android:attr/textColorPrimaryInverse"
                     android:textSize="14sp"
-                    android:gravity="center_vertical"
+                    android:gravity="end"
                     android:maxLines="1"
                     android:ellipsize="start" />
             </LinearLayout>

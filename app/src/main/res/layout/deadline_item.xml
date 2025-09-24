@@ -50,7 +50,7 @@
             android:text="0%"
             android:textColor="?android:attr/textColorPrimaryInverse"
             android:textSize="14sp"
-            android:gravity="center_vertical"
+            android:gravity="end"
             android:maxLines="1"
             android:ellipsize="start"/>
     </LinearLayout>
