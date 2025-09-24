@@ -19,7 +19,7 @@ import java.util.Date
 import kotlin.math.abs
 
 object DeadlineAlarmScheduler {
-    fun scheduleExactAlarm(context: Context, ddl: DDLItem, hours: Long = 12L) {
+    fun scheduleExactAlarm(context: Context, ddl: DDLItem, hours: Long = GlobalUtils.deadlineNotificationBefore) {
         if (ddl.type == DeadlineType.HABIT || ddl.isCompleted || ddl.isArchived ||
             GlobalUtils.NotificationStatusManager.hasBeenNotified(ddl.id)) return
 

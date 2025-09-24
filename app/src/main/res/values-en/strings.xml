@@ -327,7 +327,9 @@
     <string name="check_for_updates_found">New version detected: %1$s</string>
     <string name="check_for_updates_current">Current version: %1$s</string>
     <string name="settings_notification_formatter_set_time">Current set time: %1$s:%2$s (long press to change)</string>
-    <string name="settings_notification_push">Notifications</string>
+    <string name="settings_nearby_notification_push">Nearby notifications</string>
+    <string name="settings_nearby_notification_before">Notify me before (hours)</string>
+    <string name="settings_daily_notification_push">Daily notification</string>
     <string name="choose_daily_notifictaion_time">Choose daily notification time</string>
     <string name="webdav_checking">Checking WebDAV…</string>
     <string name="webdav_unusable">WebDAV connection failed (HTTP %1$d)</string>

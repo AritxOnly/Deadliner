@@ -29,6 +29,7 @@ import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.composable.SvgCard
 import com.aritxonly.deadliner.composable.expressiveTypeModifier
+import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -54,6 +55,14 @@ fun NotificationSettingsScreen(
 
     var dailyMinute by remember { mutableStateOf(GlobalUtils.dailyNotificationMinute) }
     var dailyHour by remember { mutableStateOf(GlobalUtils.dailyNotificationHour) }
+
+    var notifyBefore by remember { mutableStateOf(GlobalUtils.deadlineNotificationBefore) }
+    val onNotifyBeforeChange: (Float) -> Unit = {
+        notifyBefore = it.toLong()
+        GlobalUtils.deadlineNotificationBefore = notifyBefore
+        DeadlineAlarmScheduler.cancelAllAlarms(context)
+        GlobalUtils.setAlarms(DatabaseHelper.getInstance(context), context)
+    }
 
     val defaultText = stringResource(R.string.settings_support_daily_notification)
     val initialTextDailyNotification = if (!dailyNotification)
@@ -103,11 +112,12 @@ fun NotificationSettingsScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)
+        Column(modifier = Modifier
+            .padding(padding)
             .verticalScroll(rememberScrollState())) {
             SvgCard(R.drawable.svg_notifications, modifier = Modifier.padding(16.dp))
 
-            SettingsSection(topLabel = stringResource(R.string.settings_notification_push)) {
+            SettingsSection(topLabel = stringResource(R.string.settings_nearby_notification_push)) {
                 SettingsDetailSwitchItem(
                     headline = R.string.settings_nearby_notification,
                     supportingText = R.string.settings_support_nearby_notification,
@@ -115,8 +125,20 @@ fun NotificationSettingsScreen(
                     onCheckedChange = onDeadlineNotificationChange,
                 )
 
-                SettingsSectionDivider()
+                if (deadlineNotification) {
+                    SettingsSectionDivider()
 
+                    SettingsSliderItemWithLabel(
+                        label = R.string.settings_nearby_notification_before,
+                        value = notifyBefore.toFloat(),
+                        valueRange = 6f..72f,
+                        onValueChange = onNotifyBeforeChange,
+                        steps = 10
+                    )
+                }
+            }
+
+            SettingsSection(topLabel = stringResource(R.string.settings_daily_notification_push)) {
                 SettingsDetailSwitchItem(
                     headline = R.string.settings_everyday_notification,
                     supportingRawText = supportingTextDailyNotification,

@@ -395,7 +395,9 @@
     <string name="check_for_updates_found">检测到新版本：%1$s</string>
     <string name="check_for_updates_current">当前版本：%1$s</string>
     <string name="settings_notification_formatter_set_time">当前设定时间为: %1$s:%2$s (长按修改)</string>
-    <string name="settings_notification_push">通知推送</string>
+    <string name="settings_nearby_notification_push">临近通知</string>
+    <string name="settings_nearby_notification_before">临近前通知时间 (小时)</string>
+    <string name="settings_daily_notification_push">每日通知</string>
     <string name="choose_daily_notifictaion_time">选择每日通知时间</string>
 
     <!-- WebDAV / 同步 -->

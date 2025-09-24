@@ -86,6 +86,12 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("deadline_notification", value) }
         }
 
+    var deadlineNotificationBefore: Long
+        get() = sharedPreferences.getLong("deadline_notify_before", 12L)
+        set(value) {
+            sharedPreferences.edit { putLong("deadline_notify_before", value) }
+        }
+
     var dailyStatsNotification: Boolean
         get() = sharedPreferences.getBoolean("daily_stats_notification", false)
         set(value) {
@@ -157,12 +163,6 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("nearby_detailed_badge", value) }
         }
 
-    var notificationBefore: Int
-        get() = sharedPreferences.getInt("notification_before", 0b111)
-        set(value) {
-            sharedPreferences.edit { putInt("notification_before", value) }
-        }
-
     private var notifiedSet: MutableSet<String>
         get() = sharedPreferences.getStringSet("notified_set", emptySet())?.toMutableSet()?: mutableSetOf()
         set(value) {
@@ -193,24 +193,6 @@ object GlobalUtils {
         get() = sharedPreferences.getBoolean("cloud_sync_enable", false)
         set(value) {
             sharedPreferences.edit { putBoolean("cloud_sync_enable", value) }
-        }
-
-    var cloudSyncServer: String?
-        get() = sharedPreferences.getString("cloud_sync_server", null)
-        set(value) {
-            sharedPreferences.edit { putString("cloud_sync_server", value) }
-        }
-
-    var cloudSyncPort: Int
-        get() = sharedPreferences.getInt("cloud_sync_port", 5000)
-        set(value) {
-            sharedPreferences.edit { putInt("cloud_sync_port", value) }
-        }
-
-    var cloudSyncConstantToken: String?
-        get() = sharedPreferences.getString("cloud_sync_constant_token", null)
-        set(value) {
-            sharedPreferences.edit { putString("cloud_sync_constant_token", value) }
         }
 
     @Deprecated("Update to SDK 35; Edge to edge is forced to enable.")
@@ -287,12 +269,6 @@ object GlobalUtils {
          set(value) {
              sharedPreferences.edit { putBoolean("split_placeholder", value) }
          }
-
-    var splitTabletRatio: Float
-        get() = sharedPreferences.getFloat("split_ratio", 0.45f)
-        set(value) {
-            sharedPreferences.edit { putFloat("split_ratio", value) }
-        }
 
     var dynamicSplit: Boolean
         get() = sharedPreferences.getBoolean("dynamic_split", false)
@@ -399,7 +375,7 @@ object GlobalUtils {
     var filterSelection: Int
         get() = sharedPreferences.getInt("filter_selection", 0)
         set(value) {
-            sharedPreferences.edit().putInt("filter_selection", value).apply()
+            sharedPreferences.edit { putInt("filter_selection", value) }
         }
 
     // null pointer对应的safe解析时间：第一次启动时间
@@ -462,7 +438,7 @@ object GlobalUtils {
         fragmentManager: FragmentManager,
         afterDateTime: LocalDateTime? = null,
         makeToast: (String) -> Unit = {},
-        onDateTimeSelected: (LocalDateTime) -> Unit
+        onDateTimeSelected: (LocalDateTime) -> Unit,
     ) {
         val zone = ZoneId.systemDefault()
 
@@ -523,7 +499,7 @@ object GlobalUtils {
         datePart: LocalDateTime,
         minAllowedTime: LocalTime?,
         makeToast: (String) -> Unit = {},
-        onDateTimeSelected: (LocalDateTime) -> Unit
+        onDateTimeSelected: (LocalDateTime) -> Unit,
     ) {
         val now = LocalTime.now()
         val initialTime = when (minAllowedTime) {
