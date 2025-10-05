@@ -2,6 +2,10 @@
 
 Deadliner，一款简洁高效的Deadline记录管理软件，灵感来自于作者女朋友的真实需求。
 
+### Related works 相关工作 
+
+- [**Deadliner-Client**](https://github.com/XiaoChennnng/Deadliner-Client)
+
 > [!IMPORTANT]
 > Since this is my first Android project, I may have used hardcoded strings in some places, which could make translation into other languages more difficult. If you’re interested in localizing this app, feel free to contact me at aritxonly@qq.com for further support.
 
