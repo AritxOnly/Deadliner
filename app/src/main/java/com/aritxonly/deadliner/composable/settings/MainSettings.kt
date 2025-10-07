@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner.composable.settings
 
+import ShapeShowcase
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.compose.foundation.background
@@ -64,6 +65,8 @@ fun MainSettingsScreen(
             modifier = Modifier
                 .padding(innerPadding),
         ) {
+//            item { ShapeShowcase() }
+
             SettingsRoute.allSubRoutes.forEach { group ->
                 if (!(group.contains(SettingsRoute.Lab) && !GlobalUtils.developerMode)) {
                     item {

@@ -318,6 +318,12 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("clipboard", value) }
         }
 
+    var style: String
+        get() = sharedPreferences.getString("style", "classic")?: "classic"
+        set(value) {
+            sharedPreferences.edit { putString("style", value) }
+        }
+
     object OverviewSettings {
         var monthlyCount: Int
             get() = sharedPreferences.getInt("monthly_count(overview)", 12)

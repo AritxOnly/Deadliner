@@ -40,6 +40,7 @@ fun InterfaceSettingsScreen(
     var fireworksOnFinishEnabled by remember { mutableStateOf(GlobalUtils.fireworksOnFinish) }
     var detailDisplayEnabled by remember { mutableStateOf(GlobalUtils.detailDisplayMode) }
     var hideDividerEnabled by remember { mutableStateOf(GlobalUtils.hideDivider) }
+    var simplifiedEnabled by remember { mutableStateOf(GlobalUtils.style == "simplified") }
 
     val onProgressDirChange: (Boolean) -> Unit = {
         GlobalUtils.progressDir = it
@@ -60,6 +61,10 @@ fun InterfaceSettingsScreen(
     val onHideDividerChange: (Boolean) -> Unit = {
         GlobalUtils.hideDivider = it
         hideDividerEnabled = it
+    }
+    val onSimplifiedChange: (Boolean) -> Unit = {
+        GlobalUtils.style = if (it) "simplified" else "classic"
+        simplifiedEnabled = it
     }
 
     val expressiveTypeModifier = Modifier
@@ -90,6 +95,24 @@ fun InterfaceSettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             SvgCard(R.drawable.svg_interface, modifier = Modifier.padding(16.dp))
+
+            SettingsSection(topLabel = stringResource(R.string.settings_interface_design)) {
+                SettingsDetailSwitchItem(
+                    headline = R.string.settings_hide_divider,
+                    supportingText = R.string.settings_support_hide_divider,
+                    checked = hideDividerEnabled,
+                    onCheckedChange = onHideDividerChange
+                )
+
+                SettingsSectionDivider()
+
+                SettingsDetailSwitchItem(
+                    headline = R.string.settings_simplified,
+                    supportingText = R.string.settings_support_simplified,
+                    checked = simplifiedEnabled,
+                    onCheckedChange = onSimplifiedChange
+                )
+            }
 
             SettingsSection(topLabel = stringResource(R.string.settings_interface_mainscreen)) {
                 SettingsDetailSwitchItem(
@@ -123,15 +146,6 @@ fun InterfaceSettingsScreen(
                     onCheckedChange = onDetailDisplayChange
                 )
 
-            }
-
-            SettingsSection(topLabel = stringResource(R.string.settings_interface_design)) {
-                SettingsDetailSwitchItem(
-                    headline = R.string.settings_hide_divider,
-                    supportingText = R.string.settings_support_hide_divider,
-                    checked = hideDividerEnabled,
-                    onCheckedChange = onHideDividerChange
-                )
             }
 
             Spacer(Modifier.navigationBarsPadding())

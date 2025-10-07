@@ -504,4 +504,6 @@
     <string name="settings_ai_icon">设置Deadliner AI图标</string>
     <string name="settings_support_clipboard">开启选项后，Deadliner将在剪切板变化时提示你使用Deadliner AI添加任务。</string>
     <string name="toast_ai_logo_requires_reboot">图标设置成功，请重启Deadliner以应用效果</string>
+    <string name="settings_simplified">简洁模式主界面</string>
+    <string name="settings_support_simplified">开启后，主界面将变成全新的简洁设计，带来不一样的待办管理体验</string>
 </resources>
