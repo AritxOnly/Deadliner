@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 package com.aritxonly.deadliner.ui.main.simplified
 
-import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.util.Log
@@ -10,7 +9,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Image
@@ -24,27 +22,23 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
@@ -65,24 +59,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toAndroidRect
-import androidx.compose.ui.graphics.toAndroidRectF
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
@@ -91,17 +84,13 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -110,7 +99,6 @@ import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.DeadlineDetailActivity
 import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.R
-import com.aritxonly.deadliner.SettingsActivity
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.localutils.SearchFilter
 import com.aritxonly.deadliner.data.MainViewModel
@@ -119,29 +107,25 @@ import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DDLStatus
 import com.aritxonly.deadliner.model.DeadlineType
-import com.aritxonly.deadliner.model.PartyPresets
 import com.aritxonly.deadliner.model.UserProfile
 import com.aritxonly.deadliner.ui.main.DDLItemCardSimplified
-import com.aritxonly.deadliner.ui.main.DDLItemCardSwipeable
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.io.File
 import java.time.Duration
 import java.time.LocalDateTime
-import kotlin.math.max
-import kotlin.toString
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, FlowPreview::class)
 @Composable
 fun MainDisplay(
     ddlList: List<DDLItem>,
     dueSoonCounts: Map<DeadlineType, Int>,
     refreshState: MainViewModel.RefreshState,
     selectedPage: DeadlineType,
-    onSearch: (String) -> Unit,
     activity: MainActivity,
+    onSearchBarExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     vm: MainViewModel,
     listState: LazyListState,
@@ -149,7 +133,6 @@ fun MainDisplay(
     onCelebrate: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
-    val density = LocalDensity.current
 
     val scope = rememberCoroutineScope()
     var pendingDelete by remember { mutableStateOf<DDLItem?>(null) }
@@ -192,15 +175,39 @@ fun MainDisplay(
 
     Column(modifier) {
         val textFieldState = rememberTextFieldState()
+        var suggestions by rememberSaveable { mutableStateOf(emptyList<DDLItem>()) }
+        var base by remember { mutableStateOf<List<DDLItem>>(emptyList()) }
+        LaunchedEffect(selectedPage) {
+            base = vm.getBaseList(selectedPage)
+        }
+        LaunchedEffect(textFieldState) {
+            snapshotFlow { textFieldState.text.toString() }
+                .distinctUntilChanged()
+                .debounce(250)
+                .collect { q ->
+                    val f = SearchFilter.parse(q)
+                    suggestions = if (q.isBlank()) emptyList()
+                    else base.asSequence()
+                        .filter { f.matches(it) }
+                        .toList()
+                }
+        }
 
         MainSearchBar(
             textFieldState = textFieldState,
-            onSearch = onSearch,
-            searchResults = emptyList(),
+            searchResults = suggestions,
+            onQueryChanged = { q ->
+                val f = SearchFilter.parse(q)
+                suggestions = if (q.isBlank()) emptyList()
+                else base.filter { f.matches(it) }.toList()
+            },
             onMoreClick = { moreExpanded = true },
             onMoreAnchorChange = { rect -> moreAnchorRect = rect },
             useAvatar = useAvatar,
-            avatarPainter = avatarPainter
+            avatarPainter = avatarPainter,
+            activity = activity,
+            onExpandedChangeExternal = onSearchBarExpandedChange,
+            onItemDelete = { pendingDelete = it }
         )
 
         PullToRefreshBox(
@@ -218,92 +225,48 @@ fun MainDisplay(
                 )
             }
         ) {
-            LazyColumn(
-                contentPadding = PaddingValues(
-                    top = 16.dp,
-                    bottom = 96.dp,
-                    start = 16.dp,
-                    end = 16.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxSize()
-                    .fadingTopEdge(height = 16.dp),
-                state = listState
-            ) {
-                items(
-                    items = ddlList,
-                    key = { it.id }
-                ) { item ->
-                    when (selectedPage) {
-                        DeadlineType.TASK -> {
-                            val startTime = GlobalUtils.parseDateTime(item.startTime)
-                            val endTime = GlobalUtils.parseDateTime(item.endTime)
-                            val now = LocalDateTime.now()
-
-                            val remainingTimeText =
-                                if (!item.isCompleted)
-                                    GlobalUtils.buildRemainingTime(
-                                        context,
-                                        startTime,
-                                        endTime,
-                                        true,
-                                        now
-                                    )
-                                else stringResource(R.string.completed)
-
-                            val progress = computeProgress(startTime, endTime, now)
-                            val status =
-                                DDLStatus.calculateStatus(startTime, endTime, now, item.isCompleted)
-
-                            DDLItemCardSwipeable(
-                                title = item.name,
-                                remainingTimeAlt = remainingTimeText,
-                                note = item.note,
-                                progress = progress,
-                                isStarred = item.isStared,
-                                status = status,
-                                onClick = {
-                                    val intent = DeadlineDetailActivity.newIntent(context, item)
-                                    activity.startActivity(intent)
-                                },
-                                onComplete = {
-                                    GlobalUtils.triggerVibration(activity, 100)
-
-                                    val realItem = DDLRepository().getDDLById(item.id)
-                                        ?: return@DDLItemCardSwipeable
-                                    val newItem = realItem.copy(
-                                        isCompleted = !realItem.isCompleted,
-                                        completeTime = if (!realItem.isCompleted) LocalDateTime.now()
-                                            .toString() else ""
-                                    )
-                                    DDLRepository().updateDDL(newItem)
-                                    vm.loadData(selectedPage)
-                                    if (newItem.isCompleted) {
+            when (selectedPage) {
+                DeadlineType.TASK -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(
+                            top = 16.dp,
+                            bottom = 96.dp,
+                            start = 16.dp,
+                            end = 16.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxSize()
+                            .fadingTopEdge(height = 16.dp),
+                        state = listState
+                    ) {
+                        itemsIndexed(
+                            items = ddlList,
+                            key = { _, it -> it.id }
+                        ) { index, item ->
+                            AnimatedItem(
+                                item = item,
+                                index = index
+                            ) {
+                                TaskItem(
+                                    item = item,
+                                    activity = activity,
+                                    updateDDL = { newItem ->
+                                        DDLRepository().updateDDL(newItem)
+                                        vm.loadData(selectedPage)
+                                    },
+                                    celebrate = {
                                         if (GlobalUtils.fireworksOnFinish) onCelebrate?.invoke()
-                                        Toast.makeText(
-                                            activity,
-                                            R.string.toast_finished,
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    } else {
-                                        Toast.makeText(
-                                            activity,
-                                            R.string.toast_definished,
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                },
-                                onDelete = {
-                                    GlobalUtils.triggerVibration(activity, 200)
-                                    pendingDelete = item
-                                }
-                            )
-                        }
-
-                        DeadlineType.HABIT -> {
-                            Text(item.name)
+                                    },
+                                    onDelete = {
+                                        pendingDelete = item
+                                    },
+                                )
+                            }
                         }
                     }
+                }
+                DeadlineType.HABIT -> {
+
                 }
             }
         }
@@ -375,14 +338,19 @@ fun computeProgress(
 @Composable
 fun MainSearchBar(
     textFieldState: TextFieldState,
-    onSearch: (String) -> Unit,
-    searchResults: List<String>,
+    onQueryChanged: (String) -> Unit,
+    searchResults: List<DDLItem>,
     modifier: Modifier = Modifier,
     onMoreClick: () -> Unit = {},
     onMoreAnchorChange: (androidx.compose.ui.geometry.Rect) -> Unit = {},
     useAvatar: Boolean = false,
     avatarPainter: Painter? = null,
+    activity: MainActivity,
+    onExpandedChangeExternal: (Boolean) -> Unit = {},
+    onItemDelete: (DDLItem) -> Unit = {}
 ) {
+    val context = LocalContext.current
+
     var expanded by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
@@ -394,6 +362,8 @@ fun MainSearchBar(
             if (excitementArray.isNotEmpty()) (0 until excitementArray.size).random() else 0
         )
     }
+
+    LaunchedEffect(expanded) { onExpandedChangeExternal(expanded) }
 
     LaunchedEffect(isEnabled, excitementArray) {
         if (!isEnabled || excitementArray.isEmpty()) return@LaunchedEffect
@@ -421,9 +391,12 @@ fun MainSearchBar(
             inputField = {
                 SearchBarDefaults.InputField(
                     query = textFieldState.text.toString(),
-                    onQueryChange = { textFieldState.edit { replace(0, length, it) } },
+                    onQueryChange = {
+                        onQueryChanged(it)
+                        textFieldState.edit { replace(0, length, it) }
+                    },
                     onSearch = {
-                        onSearch(textFieldState.text.toString())
+                        textFieldState.clearText()
                         expanded = false
                         focusManager.clearFocus()
                     },
@@ -459,7 +432,7 @@ fun MainSearchBar(
                         } else {
                             Icon(
                                 imageVector = ImageVector.vectorResource(R.drawable.ic_search),
-                                contentDescription = "搜索"
+                                contentDescription = stringResource(R.string.search_events)
                             )
                         }
                     },
@@ -475,7 +448,7 @@ fun MainSearchBar(
                                 IconButton(onClick = onMoreClick, modifier = iconModifier.size(32.dp)) {
                                     Image(
                                         painter = avatarPainter,
-                                        contentDescription = "用户",
+                                        contentDescription = stringResource(R.string.user),
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier.fillMaxSize()
                                     )
@@ -488,6 +461,13 @@ fun MainSearchBar(
                                     )
                                 }
                             }
+                        } else {
+                            IconButton(onClick = { textFieldState.clearText() }) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(R.drawable.ic_close),
+                                    contentDescription = stringResource(R.string.close)
+                                )
+                            }
                         }
                     }
                 )
@@ -495,18 +475,60 @@ fun MainSearchBar(
             expanded = expanded,
             onExpandedChange = { expanded = it },
         ) {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                searchResults.forEach { result ->
-                    ListItem(
-                        headlineContent = { Text(result) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                textFieldState.edit { replace(0, length, result) }
-                                expanded = false
-                                focusManager.clearFocus()
-                            }
-                    )
+            LazyColumn(
+                contentPadding = PaddingValues(
+                    top = 16.dp,
+                    bottom = 96.dp,
+                    start = 16.dp,
+                    end = 16.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .fadingTopEdge(height = 16.dp),
+            ) {
+                items(
+                    items = searchResults,
+                    key = { it.id }
+                ) { item ->
+                    when (item.type) {
+                        DeadlineType.TASK -> {
+                            val startTime = GlobalUtils.parseDateTime(item.startTime)
+                            val endTime = GlobalUtils.parseDateTime(item.endTime)
+                            val now = LocalDateTime.now()
+
+                            val remainingTimeText =
+                                if (!item.isCompleted)
+                                    GlobalUtils.buildRemainingTime(
+                                        context,
+                                        startTime,
+                                        endTime,
+                                        true,
+                                        now
+                                    )
+                                else stringResource(R.string.completed)
+
+                            val progress = computeProgress(startTime, endTime, now)
+                            val status =
+                                DDLStatus.calculateStatus(startTime, endTime, now, item.isCompleted)
+
+                            DDLItemCardSimplified(
+                                title = item.name,
+                                remainingTimeAlt = remainingTimeText,
+                                note = item.note,
+                                progress = progress,
+                                isStarred = item.isStared,
+                                status = status,
+                                onClick = {
+                                    val intent = DeadlineDetailActivity.newIntent(context, item)
+                                    activity.startActivity(intent)
+                                }
+                            )
+                        }
+                        DeadlineType.HABIT -> {
+
+                        }
+                    }
                 }
             }
         }
@@ -659,7 +681,7 @@ fun Modifier.fadingTopEdge(
         if (!inverted) {
             drawRect(
                 color = Color.Black,
-                topLeft = androidx.compose.ui.geometry.Offset(0f, h),
+                topLeft = Offset(0f, h),
                 size = size.copy(height = size.height - h),
                 blendMode = BlendMode.DstIn
             )
@@ -667,7 +689,7 @@ fun Modifier.fadingTopEdge(
             // 做底部渐隐时，上方整块要保持不透明
             drawRect(
                 color = Color.Black,
-                topLeft = androidx.compose.ui.geometry.Offset(0f, 0f),
+                topLeft = Offset(0f, 0f),
                 size = size.copy(height = size.height - h),
                 blendMode = BlendMode.DstIn
             )

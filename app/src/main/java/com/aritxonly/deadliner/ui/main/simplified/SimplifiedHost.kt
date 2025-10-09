@@ -8,12 +8,17 @@ import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import com.aritxonly.deadliner.R
@@ -25,9 +30,11 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -43,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -159,6 +167,8 @@ fun SimplifiedHost(
         vm.loadData(selectedPage)
     }
 
+    var searchExpanded by rememberSaveable { mutableStateOf(false) }
+
     var showOverlay by remember { mutableStateOf(false) }
     var childRequestsBlur by remember { mutableStateOf(false) }
     val shouldBlur = showOverlay || childRequestsBlur
@@ -224,8 +234,6 @@ fun SimplifiedHost(
                             android.graphics.Shader.TileMode.CLAMP
                         )
                     }
-                    // 如果你希望在无模糊时也保持去饱和，就保留下面这段；
-                    // 若不需要，改成：if (blurRadius >= EPS) { ...createColorFilter... }
                     if (saturation < 1f - 1e-3f) {
                         val cm = android.graphics.ColorMatrix().apply { setSaturation(saturation) }
                         effects += android.graphics.RenderEffect.createColorFilterEffect(
@@ -236,10 +244,12 @@ fun SimplifiedHost(
                     renderEffect = when (effects.size) {
                         0 -> null
                         1 -> effects[0].asComposeRenderEffect()
-                        else -> android.graphics.RenderEffect.createChainEffect(effects[0], effects[1]).asComposeRenderEffect()
+                        else -> android.graphics.RenderEffect.createChainEffect(
+                            effects[0],
+                            effects[1]
+                        ).asComposeRenderEffect()
                     }
 
-                    // 你已有的缩放动画
                     scaleX = scale
                     scaleY = scale
                 }
@@ -249,10 +259,8 @@ fun SimplifiedHost(
                 dueSoonCounts = dueSoonCounts,
                 refreshState = refreshState,
                 selectedPage = selectedPage,
-                onSearch = { query ->
-                    vm.filterData(SearchFilter(query = query), vm.currentType)
-                },
                 activity = activity,
+                onSearchBarExpandedChange = { searchExpanded = it },
                 modifier = Modifier
                     .fillMaxSize(),
                 vm = vm,
@@ -270,47 +278,52 @@ fun SimplifiedHost(
                 }
             }
 
-            HorizontalFloatingToolbar(
-                expanded = toolbarExpanded,
+            AnimatedVisibility(
+                visible = !searchExpanded,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = jumpAnim.value.dp, start = 16.dp, end = 16.dp),
-                colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
-                leadingContent = {
-                    Box(modifier = Modifier.padding(start = 4.dp, end = 12.dp)) {
-                        TextPageIndicator(
-                            text = stringResource(R.string.task),
-                            onClick = { selectedPage = DeadlineType.TASK },
-                            selected = selectedPage.toString(),
-                            tag = DeadlineType.TASK.toString()
-                        )
-                    }
-                },
-                trailingContent = {
-                    Box(modifier = Modifier.padding(start = 12.dp, end = 4.dp)) {
-                        TextPageIndicator(
-                            text = stringResource(R.string.habit),
-                            onClick = { selectedPage = DeadlineType.HABIT },
-                            selected = selectedPage.toString(),
-                            tag = DeadlineType.HABIT.toString()
-                        )
-                    }
-                }
+                enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight }) + fadeIn(),
+                exit  = slideOutVertically(targetOffsetY  = { fullHeight -> fullHeight }) + fadeOut()
             ) {
-
-                FilledIconButton(
-                    onClick = {
-                        val intent = Intent(context, AddDDLActivity::class.java)
-                        launcher.launch(intent)
-                    },
-                    modifier = Modifier
-                        .width(56.dp)
-                        .detectSwipeUp {
-                            Log.d("SwipeUp", "Triggered")
-                            showOverlay = true
+                HorizontalFloatingToolbar(
+                    expanded = toolbarExpanded,
+                    colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
+                    leadingContent = {
+                        Box(modifier = Modifier.padding(start = 4.dp, end = 12.dp)) {
+                            TextPageIndicator(
+                                text = stringResource(R.string.task),
+                                onClick = { selectedPage = DeadlineType.TASK },
+                                selected = selectedPage.toString(),
+                                tag = DeadlineType.TASK.toString()
+                            )
                         }
+                    },
+                    trailingContent = {
+                        Box(modifier = Modifier.padding(start = 12.dp, end = 4.dp)) {
+                            TextPageIndicator(
+                                text = stringResource(R.string.habit),
+                                onClick = { selectedPage = DeadlineType.HABIT },
+                                selected = selectedPage.toString(),
+                                tag = DeadlineType.HABIT.toString()
+                            )
+                        }
+                    }
                 ) {
-                    Icon(ImageVector.vectorResource(R.drawable.ic_add), "")
+                    FilledIconButton(
+                        onClick = {
+                            val intent = Intent(context, AddDDLActivity::class.java)
+                            launcher.launch(intent)
+                        },
+                        modifier = Modifier
+                            .width(56.dp)
+                            .detectSwipeUp {
+                                Log.d("SwipeUp", "Triggered")
+                                showOverlay = true
+                            }
+                    ) {
+                        Icon(ImageVector.vectorResource(R.drawable.ic_add), "")
+                    }
                 }
             }
         }

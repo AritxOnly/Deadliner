@@ -139,50 +139,18 @@ class MainViewModel(
     // 2. 如果提供了时间过滤条件，则要求对应的开始时间或完成时间符合条件
     fun filterData(filter: SearchFilter, type: DeadlineType) {
         viewModelScope.launch(Dispatchers.IO) {
-            val filteredList = filterDataByList(repo.getDDLsByType(type)).filter { ddlItem ->
-                // 文本匹配：检查 name 和 note 是否包含查询关键字
-                val matchesText = ddlItem.name.contains(filter.query, ignoreCase = true) ||
-                        ddlItem.note.contains(filter.query, ignoreCase = true)
-                if (!matchesText) return@filter false
-
-                // 尝试解析时间，解析失败时认为该条件不满足
-                val startTime = try { GlobalUtils.safeParseDateTime(ddlItem.startTime) } catch (e: Exception) { null }
-                val completeTime = try { GlobalUtils.safeParseDateTime(ddlItem.completeTime) } catch (e: Exception) { null }
-
-                var timeMatch = true
-
-                filter.year?.let { year ->
-                    timeMatch = timeMatch && ((startTime?.year == year) || (completeTime?.year == year))
-                }
-                filter.month?.let { month ->
-                    timeMatch = timeMatch && ((startTime?.monthValue == month) || (completeTime?.monthValue == month))
-                }
-                filter.day?.let { day ->
-                    timeMatch = timeMatch && ((startTime?.dayOfMonth == day) || (completeTime?.dayOfMonth == day))
-                }
-                filter.hour?.let { hour ->
-                    timeMatch = timeMatch && ((startTime?.hour == hour) || (completeTime?.hour == hour))
-                }
-
-                matchesText && timeMatch
+            val base = repo.getDDLsByType(type)                         // IO
+            val filtered = withContext(Dispatchers.Default) {           // 纯 CPU
+                base.filter { filter.matches(it) }
             }
-
-            val map = DeadlineType.entries.associateWith { computeDueSoonCount(it) }
-            _dueSoonCounts.value = map
-
-            _ddlList.value = filteredList
+            val counts = DeadlineType.entries.associateWith { computeDueSoonCount(it) }
+            _dueSoonCounts.value = counts
+            _ddlList.value = filtered
         }
     }
 
-    fun toggleStar(itemId: Long) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repo.getDDLById(itemId)?.let { item ->
-                repo.updateDDL(item.copy(isStared = !item.isStared))
-                // 刷新当前列表
-                loadData(currentType)
-            }
-        }
-    }
+    suspend fun getBaseList(type: DeadlineType): List<DDLItem> =
+        withContext(Dispatchers.IO) { repo.getDDLsByType(type) }
 
     /**
      * 手动下拉刷新专用：
