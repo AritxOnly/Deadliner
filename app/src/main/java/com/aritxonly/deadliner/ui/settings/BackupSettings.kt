@@ -20,7 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.AppSingletons
 import com.aritxonly.deadliner.R
-import com.aritxonly.deadliner.composable.SvgCard
+import com.aritxonly.deadliner.ui.SvgCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import kotlinx.coroutines.launch
 

@@ -34,7 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
-import com.aritxonly.deadliner.composable.expressiveTypeModifier
+import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.LlmPreset
 import com.aritxonly.deadliner.web.AIUtils

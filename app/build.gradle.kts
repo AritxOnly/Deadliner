@@ -5,6 +5,7 @@ import java.util.Locale
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
     id("kotlin-parcelize")
 }
 
@@ -62,9 +63,9 @@ android {
         compose = true
         buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
+//    composeOptions {
+//        kotlinCompilerExtensionVersion = "1.5.1"
+//    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -90,6 +91,8 @@ dependencies {
     implementation("com.airbnb.android:lottie:6.6.6")
     implementation("androidx.databinding:viewbinding:8.10.1")
     implementation("androidx.compose.runtime:runtime-livedata:1.9.1")
+    implementation("androidx.datastore:datastore-preferences-android:1.1.7")
+    implementation("io.github.rroohit:ImageCropView:3.1.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

@@ -36,8 +36,8 @@ import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.R
-import com.aritxonly.deadliner.composable.AnimatedItem
-import com.aritxonly.deadliner.composable.TintedGradientImage
+import com.aritxonly.deadliner.ui.AnimatedItem
+import com.aritxonly.deadliner.ui.TintedGradientImage
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.YearMonth

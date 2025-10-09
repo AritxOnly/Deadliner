@@ -506,4 +506,56 @@
     <string name="toast_ai_logo_requires_reboot">图标设置成功，请重启Deadliner以应用效果</string>
     <string name="settings_simplified">简洁模式主界面</string>
     <string name="settings_support_simplified">开启后，主界面将变成全新的简洁设计，带来不一样的待办管理体验</string>
+    <string name="overview">概览</string>
+    <string name="edit_profile">编辑资料</string>
+
+    <!-- 早晨 -->
+    <string-array name="panel_greeting_morning">
+        <item>早上好，%s</item>
+        <item>新的一天开始啦，%s</item>
+        <item>愿你今天充满能量，%s</item>
+    </string-array>
+
+    <!-- 中午 -->
+    <string-array name="panel_greeting_noon">
+        <item>中午好，%s</item>
+        <item>该休息一下啦，%s</item>
+        <item>补充点能量吧，%s</item>
+    </string-array>
+
+    <!-- 下午 -->
+    <string-array name="panel_greeting_afternoon">
+        <item>下午好，%s</item>
+        <item>继续加油，%s</item>
+        <item>别忘了活动一下，%s</item>
+    </string-array>
+
+    <!-- 晚上 -->
+    <string-array name="panel_greeting_evening">
+        <item>晚上好，%s</item>
+        <item>忙碌的一天结束啦，%s</item>
+        <item>放松一下吧，%s</item>
+    </string-array>
+
+    <!-- 深夜 -->
+    <string-array name="panel_greeting_midnight">
+        <item>夜深了，%s</item>
+        <item>早点休息，%s</item>
+        <item>别太熬夜哦，%s</item>
+    </string-array>
+
+    <!-- 凌晨 -->
+    <string-array name="panel_greeting_dawn">
+        <item>凌晨好，%s</item>
+        <item>还没睡呀，%s</item>
+        <item>深夜也要注意身体，%s</item>
+    </string-array>
+
+    <!-- 默认 -->
+    <string-array name="panel_greeting_default">
+        <item>你好，%s</item>
+    </string-array>
+
+    <string name="panel_greeting_deadliner">欢迎使用Deadliner，你的个性化任务管理助手</string>
+    <string name="user">用户</string>
 </resources>

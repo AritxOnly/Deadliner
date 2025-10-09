@@ -36,7 +36,7 @@ import androidx.window.embedding.SplitController
 import androidx.window.layout.WindowMetricsCalculator
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.SettingsRoute
-import com.aritxonly.deadliner.composable.SvgCard
+import com.aritxonly.deadliner.ui.SvgCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
 
 

@@ -52,7 +52,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.AppSingletons
 import com.aritxonly.deadliner.R
-import com.aritxonly.deadliner.composable.SvgCard
+import com.aritxonly.deadliner.ui.SvgCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.sync.SyncScheduler
 import kotlinx.coroutines.Dispatchers

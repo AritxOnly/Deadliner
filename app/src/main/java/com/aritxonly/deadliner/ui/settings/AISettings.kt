@@ -31,8 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.SettingsRoute
-import com.aritxonly.deadliner.composable.SvgCard
-import com.aritxonly.deadliner.composable.expressiveTypeModifier
+import com.aritxonly.deadliner.ui.SvgCard
+import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
 import com.aritxonly.deadliner.model.defaultLlmPreset

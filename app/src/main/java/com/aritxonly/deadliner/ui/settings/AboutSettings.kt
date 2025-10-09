@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.aritxonly.deadliner.BuildConfig
 import com.aritxonly.deadliner.R
-import com.aritxonly.deadliner.composable.PreviewCard
+import com.aritxonly.deadliner.ui.PreviewCard
 import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

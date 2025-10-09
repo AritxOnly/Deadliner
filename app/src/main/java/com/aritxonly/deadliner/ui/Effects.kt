@@ -1,4 +1,4 @@
-package com.aritxonly.deadliner.composable
+package com.aritxonly.deadliner.ui
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Animatable
@@ -37,17 +37,17 @@ import kotlinx.coroutines.launch
 fun TintedGradientImage(
     @DrawableRes drawableId: Int,
     tintColor: Color,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.Companion,
     contentDescription: String? = null
 ) {
     Image(
         painter = painterResource(drawableId),
         contentDescription = contentDescription,
         modifier = modifier,
-        contentScale = ContentScale.Crop,
-        colorFilter = ColorFilter.tint(
+        contentScale = ContentScale.Companion.Crop,
+        colorFilter = ColorFilter.Companion.tint(
             tintColor,
-            blendMode = BlendMode.Multiply
+            blendMode = BlendMode.Companion.Multiply
         )
     )
 }
@@ -56,7 +56,7 @@ fun TintedGradientImage(
 @Composable
 fun SvgCard(
     @DrawableRes svgRes: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier.Companion
 ) {
     Box(
         modifier = modifier
@@ -69,7 +69,7 @@ fun SvgCard(
         Image(
             painter = painterResource(id = svgRes),
             contentDescription = null,
-            modifier = Modifier
+            modifier = Modifier.Companion
                 .fillMaxSize(),
         )
     }
@@ -78,14 +78,14 @@ fun SvgCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreviewCard(
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.Companion,
     content: @Composable () -> Unit
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(192.dp)
-            .clip(RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius)))
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius)))
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(horizontal = 24.dp)
     ) {
@@ -112,7 +112,7 @@ fun AnimatedItem(
     }
 
     Box(
-        modifier = Modifier.graphicsLayer {
+        modifier = Modifier.Companion.graphicsLayer {
             translationY = offsetY.value
             this.alpha = alpha.value
         }
@@ -122,7 +122,7 @@ fun AnimatedItem(
 }
 
 val expressiveTypeModifier: Modifier
-    @Composable get() = Modifier
+    @Composable get() = Modifier.Companion
         .size(40.dp)
         .clip(CircleShape)
         .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)

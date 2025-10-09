@@ -27,7 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.R
-import com.aritxonly.deadliner.composable.AnimatedItem
+import com.aritxonly.deadliner.ui.AnimatedItem
 import com.aritxonly.deadliner.hashColor
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.OverviewUtils

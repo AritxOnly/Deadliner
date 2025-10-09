@@ -450,4 +450,51 @@
     <string name="settings_ai_icon">Set Deadliner AI Icon</string>
     <string name="settings_support_clipboard">When enabled, Deadliner will notify you to add a task with Deadliner AI whenever the clipboard changes.</string>
     <string name="toast_ai_logo_requires_reboot">Icon set successfully. Please restart Deadliner to apply the changes.</string>
+
+    <!-- Morning -->
+    <string-array name="panel_greeting_morning">
+        <item>Good morning, %s</item>
+        <item>A new day begins, %s</item>
+        <item>Wish you an energetic day, %s</item>
+    </string-array>
+
+    <!-- Noon -->
+    <string-array name="panel_greeting_noon">
+        <item>Good noon, %s</item>
+        <item>Time for a short break, %s</item>
+        <item>Recharge yourself, %s</item>
+    </string-array>
+
+    <!-- Afternoon -->
+    <string-array name="panel_greeting_afternoon">
+        <item>Good afternoon, %s</item>
+        <item>Keep going, %s</item>
+        <item>Take a short stretch, %s</item>
+    </string-array>
+
+    <!-- Evening -->
+    <string-array name="panel_greeting_evening">
+        <item>Good evening, %s</item>
+        <item>The busy day is over, %s</item>
+        <item>Relax and unwind, %s</item>
+    </string-array>
+
+    <!-- Midnight -->
+    <string-array name="panel_greeting_midnight">
+        <item>It’s late, %s</item>
+        <item>Time to rest, %s</item>
+        <item>Don’t stay up too late, %s</item>
+    </string-array>
+
+    <!-- Dawn -->
+    <string-array name="panel_greeting_dawn">
+        <item>Good early morning, %s</item>
+        <item>Still awake, %s?</item>
+        <item>Take care even at this hour, %s</item>
+    </string-array>
+
+    <!-- Default -->
+    <string-array name="panel_greeting_default">
+        <item>Hello, %s</item>
+    </string-array>
 </resources>

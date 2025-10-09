@@ -86,7 +86,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.calendar.CalendarHelper
-import com.aritxonly.deadliner.composable.expressiveTypeModifier
+import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices

@@ -22,8 +22,8 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.R
-import com.aritxonly.deadliner.composable.SvgCard
-import com.aritxonly.deadliner.composable.expressiveTypeModifier
+import com.aritxonly.deadliner.ui.SvgCard
+import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.google.android.material.timepicker.MaterialTimePicker

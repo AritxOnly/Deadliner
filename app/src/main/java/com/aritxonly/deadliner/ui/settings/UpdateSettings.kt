@@ -37,7 +37,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
-import com.aritxonly.deadliner.composable.SvgCard
+import com.aritxonly.deadliner.ui.SvgCard
 import androidx.core.net.toUri
 import com.aritxonly.deadliner.web.UpdateManager
 import dev.jeziellago.compose.markdowntext.MarkdownText
