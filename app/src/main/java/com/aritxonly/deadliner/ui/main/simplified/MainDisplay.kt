@@ -69,14 +69,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toAndroidRect
+import androidx.compose.ui.graphics.toAndroidRectF
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
@@ -220,7 +226,8 @@ fun MainDisplay(
                     end = 16.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize()
+                    .fadingTopEdge(height = 16.dp),
                 state = listState
             ) {
                 items(
@@ -331,10 +338,10 @@ fun MainDisplay(
         )
     }
 
-    if (moreAnchorRect != null) {
+    moreAnchorRect?.let {
         MorePanelFromAnchor(
             moreExpanded = moreExpanded,
-            anchorRect = moreAnchorRect,
+            anchorRect = it.toAndroidRect(),
             useAvatar = useAvatar,
             avatarPainter = avatarPainter,
             nickname = nickname,
@@ -509,7 +516,7 @@ fun MainSearchBar(
 @Composable
 fun MorePanelFromAnchor(
     moreExpanded: Boolean,
-    anchorRect: androidx.compose.ui.geometry.Rect?,
+    anchorRect: Rect?,
     useAvatar: Boolean,
     avatarPainter: Painter?,
     nickname: String,
@@ -518,16 +525,16 @@ fun MorePanelFromAnchor(
 ) {
     if (anchorRect == null) return
 
-    // 可见性过渡：允许退场动画期间继续挂载
+    val density = LocalDensity.current
     val visibleState = remember { MutableTransitionState(false) }
+
+    // 控制动画进入 / 退出
     LaunchedEffect(moreExpanded) { visibleState.targetState = moreExpanded }
     if (!(visibleState.currentState || visibleState.targetState)) return
 
+    // Popup 以 window 坐标为原点
     Popup(
         alignment = Alignment.TopStart,
-        offset = with(LocalDensity.current) {
-            IntOffset(anchorRect.left.toInt(), anchorRect.bottom.toInt())
-        },
         properties = PopupProperties(
             focusable = true,
             dismissOnBackPress = true,
@@ -535,35 +542,38 @@ fun MorePanelFromAnchor(
         ),
         onDismissRequest = onDismiss
     ) {
-        val density = LocalDensity.current
-
-        // 起点（像素）
-        val startXpx = anchorRect.left
-        val startYpx = anchorRect.top
-
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val parentWpx = with(density) { maxWidth.toPx() }
             val parentHpx = with(density) { maxHeight.toPx() }
-            val marginPx  = with(density) { 16.dp.toPx() }
 
             var cardSize by remember { mutableStateOf(IntSize.Zero) }
-            val cardWpx = cardSize.width.toFloat()
-            val cardHpx = cardSize.height.toFloat()
+            val cardW = cardSize.width.toFloat()
+            val cardH = cardSize.height.toFloat()
 
-            // 目标点：贴近锚点且不越界（安全处理避免空区间）
-            val safeRight  = max(marginPx, parentWpx - cardWpx - marginPx)
-            val safeBottom = max(marginPx, parentHpx - cardHpx - marginPx)
-            val targetXpx  = (startXpx - with(density) { 12.dp.toPx() }).coerceIn(marginPx, safeRight)
-            val targetYpx  = (startYpx + with(density) { 8.dp.toPx()  }).coerceIn(marginPx, safeBottom)
+            // 锚点（右上角）
+            val anchorX = anchorRect.right.toFloat()
+            val anchorY = anchorRect.top.toFloat()
 
-            // 统一过渡：progress 0→1（入场），1→0（退场）
+            Log.d("Anchor", "$anchorX, $anchorY")
+
+            // 目标位置（居中）
+            val bias = 0.8f
+            val centerX = parentWpx / 2f - cardW / 2f
+            val centerY = lerp(parentHpx / 2f - cardH / 2f, anchorY, bias)
+
+            // 动画进度
             val transition = updateTransition(visibleState, label = "more-panel-popup")
             val progress by transition.animateFloat(
-                transitionSpec = { tween(durationMillis = 280, easing = FastOutSlowInEasing) },
+                transitionSpec = { tween(durationMillis = 360, easing = FastOutSlowInEasing) },
                 label = "progress"
             ) { if (it) 1f else 0f }
 
-            // 遮罩（半透明即可；真正的背景模糊放在 SimplifiedHost 统一做）
+            // 动画插值：右上角 → 中央
+            val curX = lerp(anchorX, centerX, progress)
+            val curY = lerp(anchorY, centerY, progress)
+            val scale = lerp(0.6f, 1f, progress)
+            val alpha = progress
+
             Box(
                 Modifier
                     .matchParentSize()
@@ -574,23 +584,18 @@ fun MorePanelFromAnchor(
                     ) { onDismiss() }
             )
 
-            // 位移/缩放/透明度/圆角随 progress 插值（像素插值更稳定）
-            val curX   = lerp(startXpx, targetXpx, progress)
-            val curY   = lerp(startYpx, targetYpx, progress)
-            val scale  = lerp(0.6f, 1f, progress)
-            val alpha  = progress
-            val radius = lerpDp(16.dp, 24.dp, progress)
-
+            // 卡片
             Box(
                 Modifier
                     .graphicsLayer {
                         translationX = curX
                         translationY = curY
-                        transformOrigin = TransformOrigin(0f, 0f)
+                        transformOrigin = TransformOrigin(1f, 0f)
                         scaleX = scale
                         scaleY = scale
                         this.alpha = alpha
                     }
+                    .onSizeChanged { cardSize = it }
             ) {
                 MorePanelCard(
                     onDismiss = onDismiss,
@@ -598,10 +603,10 @@ fun MorePanelFromAnchor(
                     nickname = nickname,
                     activity = activity,
                     modifier = Modifier
-                        .onSizeChanged { cardSize = it }
+                        .padding(16.dp)
                         .widthIn(max = 360.dp)
-                        .shadow(16.dp, RoundedCornerShape(radius))
-                        .clip(RoundedCornerShape(radius))
+                        .shadow(16.dp, RoundedCornerShape(24.dp))
+                        .clip(RoundedCornerShape(24.dp))
                         .background(MaterialTheme.colorScheme.surface)
                 )
             }
@@ -613,5 +618,58 @@ fun MorePanelFromAnchor(
 private fun lerp(start: Float, stop: Float, fraction: Float): Float =
     start + (stop - start) * fraction
 
-private fun lerpDp(start: Dp, stop: Dp, fraction: Float): Dp =
-    start + (stop - start) * fraction
+/**
+ * 给可滚动容器的「可视区域顶部」添加原生式渐隐（fading edge）。
+ * 无覆盖层、无 RenderEffect，仅对自身内容做 Alpha 遮罩。
+ *
+ * @param height 渐隐高度（像素越大，过渡越长）
+ * @param inverted 当需要做“底部渐隐”时可设 true；默认做顶部
+ */
+fun Modifier.fadingTopEdge(
+    height: Dp = 32.dp,
+    inverted: Boolean = false
+): Modifier = this
+    // 关键：开启离屏合成，才能让后续的 DstIn 作为整块内容的 Alpha 遮罩生效
+    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+    .drawWithContent {
+        // 先正常画内容
+        drawContent()
+
+        val h = height.toPx().coerceAtLeast(1f)
+
+        // 目标：用 DstIn 画一层“遮罩”：
+        // - 遮罩在渐隐带内：从 0→1 的 Alpha 梯度（顶部透明、向下变实）
+        // - 渐隐带下方：全 1（不影响内容）
+        // 这样内容在顶部就会被“吃掉”一段，越靠近顶边越透明，形成原生式 fading edge。
+        // 注意：DstIn 保留 destination（内容）与 source（遮罩）交集，且按 source 的 Alpha 调整内容不透明度。
+
+        // 1) 渐隐带
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = if (!inverted) listOf(Color.Transparent, Color.Black)
+                else listOf(Color.Black, Color.Transparent),
+                startY = 0f,
+                endY = h
+            ),
+            size = size.copy(height = h),
+            blendMode = BlendMode.DstIn
+        )
+
+        // 2) 渐隐带之外全部填充为不透明遮罩，确保其余区域不被影响
+        if (!inverted) {
+            drawRect(
+                color = Color.Black,
+                topLeft = androidx.compose.ui.geometry.Offset(0f, h),
+                size = size.copy(height = size.height - h),
+                blendMode = BlendMode.DstIn
+            )
+        } else {
+            // 做底部渐隐时，上方整块要保持不透明
+            drawRect(
+                color = Color.Black,
+                topLeft = androidx.compose.ui.geometry.Offset(0f, 0f),
+                size = size.copy(height = size.height - h),
+                blendMode = BlendMode.DstIn
+            )
+        }
+    }

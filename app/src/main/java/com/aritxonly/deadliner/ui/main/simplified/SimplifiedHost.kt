@@ -56,8 +56,11 @@ import com.aritxonly.deadliner.data.MainViewModel
 import com.aritxonly.deadliner.data.ViewModelFactory
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.PartyPresets
 import com.aritxonly.deadliner.ui.agent.AIOverlayHost
 import com.aritxonly.deadliner.ui.main.TextPageIndicator
+import nl.dionsegijn.konfetti.compose.KonfettiView
+import nl.dionsegijn.konfetti.core.Party
 
 @Composable
 fun SimplifiedHost(
@@ -191,6 +194,19 @@ fun SimplifiedHost(
         )
     }
 
+    var parties by remember { mutableStateOf<List<Party>>(emptyList()) }
+    var fireKey by remember { mutableIntStateOf(0) }
+    fun celebrate() {
+        parties = PartyPresets.festive()
+        fireKey++
+    }
+    LaunchedEffect(parties) {
+        if (parties.isNotEmpty()) {
+            kotlinx.coroutines.delay(3500)
+            parties = emptyList()
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0)
@@ -241,8 +257,18 @@ fun SimplifiedHost(
                     .fillMaxSize(),
                 vm = vm,
                 listState = listState,
-                onRequestBackdropBlur = { enable -> childRequestsBlur = enable }
+                onRequestBackdropBlur = { enable -> childRequestsBlur = enable },
+                onCelebrate = { celebrate() }
             )
+
+            key(fireKey) {
+                Box(Modifier.fillMaxSize()) {
+                    KonfettiView(
+                        modifier = Modifier.fillMaxSize(),
+                        parties = parties
+                    )
+                }
+            }
 
             HorizontalFloatingToolbar(
                 expanded = toolbarExpanded,
@@ -292,7 +318,9 @@ fun SimplifiedHost(
         if (showOverlay) {
             AIOverlayHost(
                 initialText = "",
-                onAddDDL = {},
+                onAddDDL = {
+
+                },
                 onRemoveFromWindow = {
                     showOverlay = false
                 },

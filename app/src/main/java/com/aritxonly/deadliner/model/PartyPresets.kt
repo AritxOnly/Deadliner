@@ -20,7 +20,7 @@ class PartyPresets {
                 angle = Angle.Companion.TOP,
                 spread = 45,
                 size = listOf(Size.Companion.SMALL, Size.Companion.LARGE, Size.Companion.LARGE),
-                shapes = listOf(Shape.Square, Shape.Circle, drawable).filterNotNull(),
+                shapes = listOfNotNull(Shape.Square, Shape.Circle, drawable),
                 timeToLive = 3000L,
                 rotation = Rotation(),
                 colors = listOf(0xfce18a, 0xff726d, 0xf4306d, 0xb48def),

@@ -13,6 +13,7 @@ import androidx.window.embedding.SplitPairFilter
 import androidx.window.embedding.SplitPairRule
 import androidx.window.embedding.SplitPlaceholderRule
 import androidx.window.embedding.SplitRule
+import com.aritxonly.deadliner.data.UserProfileRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
 import com.aritxonly.deadliner.sync.SyncScheduler
@@ -25,6 +26,7 @@ class DeadlinerApp : Application() {
         KeystorePreferenceManager.createKeyIfNeeded()
         AIUtils.init(this)
         AppSingletons.init(this)
+        UserProfileRepository.init(this)
 
         if (GlobalUtils.cloudSyncEnable) {
             SyncScheduler.enqueuePeriodic(this)
