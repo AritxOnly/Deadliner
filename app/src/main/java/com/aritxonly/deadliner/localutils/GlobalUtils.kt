@@ -23,6 +23,7 @@ import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.UiStyle
 import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
@@ -32,6 +33,9 @@ import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -49,7 +53,7 @@ object GlobalUtils {
 
     fun init(context: Context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, AppCompatActivity.MODE_PRIVATE)
-        loadSettings()  // 初始化时加载设置
+        loadSettings(context)  // 初始化时加载设置
     }
 
     fun getDeadlinerAIConfig(): DeadlinerAIConfig {
@@ -318,11 +322,26 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("clipboard", value) }
         }
 
-    var style: String
-        get() = sharedPreferences.getString("style", "classic")?: "classic"
-        set(value) {
-            sharedPreferences.edit { putString("style", value) }
+    private var _styleFlow: MutableStateFlow<UiStyle>? = null
+    val styleFlow: StateFlow<UiStyle>
+        get() = _styleFlow ?: MutableStateFlow(UiStyle.Classic).also {
+            _styleFlow = it
         }
+
+    var style: String
+        get() = if (::sharedPreferences.isInitialized)
+            sharedPreferences.getString("style", UiStyle.Classic.key) ?: UiStyle.Classic.key
+        else
+            UiStyle.Classic.key
+        set(value) {
+            check(::sharedPreferences.isInitialized) { "GlobalUtils not initialized" }
+            sharedPreferences.edit().putString("style", value).apply()
+        }
+
+    fun setStyle(newStyle: UiStyle) {
+        style = newStyle.key
+        _styleFlow?.value = newStyle
+    }
 
     object OverviewSettings {
         var monthlyCount: Int
@@ -391,9 +410,16 @@ object GlobalUtils {
             sharedPreferences.edit().putString("time_null", value.toString()).apply()
         }
 
-    private fun loadSettings() {
+    private fun loadSettings(context: Context) {
         Log.d("GlobalUtils", "Settings loaded from SharedPreferences")
         hideDividerUi = hideDivider
+
+        val current = UiStyle.fromKey(style)
+        if (_styleFlow == null) {
+            _styleFlow = MutableStateFlow(current)
+        } else {
+            _styleFlow!!.value = current
+        }
     }
 
     fun dpToPx(dp: Float, context: Context): Float {
@@ -704,5 +730,96 @@ object GlobalUtils {
                 vibrationAmplitude
             )
         )
+    }
+
+    /**
+     * 生成展示用的“剩余/开始于/已过期”文案。
+     * - startTimeStr / endTimeStr：你的字符串时间（与 GlobalUtils.safeParseDateTime 同源）
+     * - displayFullContent：对应旧逻辑中的 full/short 文案选择
+     *
+     * 依赖的 string 资源需与旧版保持一致：
+     *  - R.string.ddl_overdue_full / ddl_overdue_short
+     *  - R.string.starts_in_prefix / remaining_prefix
+     *  - R.string.remaining_days / _hours / _minutes
+     *  - R.string.remaining_days_short / _hours_short / _minutes_short
+     *  - R.string.starts_in_compact_days / _short
+     *  - R.string.remaining_compact_days / _short
+     */
+    fun buildRemainingTime(
+        context: Context,
+        startTime: LocalDateTime?,
+        endTime: LocalDateTime?,
+        displayFullContent: Boolean,
+        now: LocalDateTime = LocalDateTime.now()
+    ): String {
+        val afterEnd = endTime?.isBefore(now) == true              // 已过结束
+        val beforeStart = startTime?.isAfter(now) == true          // 尚未开始
+
+        if (afterEnd) {
+            return if (displayFullContent)
+                context.getString(R.string.ddl_overdue_full)
+            else
+                context.getString(R.string.ddl_overdue_short)
+        }
+
+        // 需要展示正向“还有多久”（到开始 或 到结束）
+        val target = if (beforeStart && startTime != null) startTime else (endTime ?: now)
+        val remainMin = Duration.between(now, target).toMinutes().coerceAtLeast(0).toInt()
+
+        val days = remainMin / (24 * 60)
+        val hours = (remainMin % (24 * 60)) / 60
+        val minutesPart = remainMin % 60
+        val compactDays = remainMin.toFloat() / (24f * 60f)
+
+        return if (beforeStart) {
+            // —— 到开始 —— //
+            if (displayFullContent) {
+                if (GlobalUtils.detailDisplayMode) {
+                    buildString {
+                        append(context.getString(R.string.starts_in_prefix))
+                        if (days != 0) append(context.getString(R.string.remaining_days, days))
+                        if (hours != 0) append(context.getString(R.string.remaining_hours, hours))
+                        append(context.getString(R.string.remaining_minutes, minutesPart))
+                    }
+                } else {
+                    context.getString(R.string.starts_in_compact_days, compactDays)
+                }
+            } else {
+                if (GlobalUtils.detailDisplayMode) {
+                    buildString {
+                        append(context.getString(R.string.starts_in_prefix))
+                        if (days != 0) append(context.getString(R.string.remaining_days_short, days))
+                        if (hours != 0) append(context.getString(R.string.remaining_hours_short, hours))
+                        if (days == 0) append(context.getString(R.string.remaining_minutes_short, minutesPart))
+                    }
+                } else {
+                    context.getString(R.string.starts_in_compact_days_short, compactDays)
+                }
+            }
+        } else {
+            // —— 到结束 —— //
+            if (displayFullContent) {
+                if (GlobalUtils.detailDisplayMode) {
+                    buildString {
+                        append(context.getString(R.string.remaining_prefix))
+                        if (days != 0) append(context.getString(R.string.remaining_days, days))
+                        if (hours != 0) append(context.getString(R.string.remaining_hours, hours))
+                        append(context.getString(R.string.remaining_minutes, minutesPart))
+                    }
+                } else {
+                    context.getString(R.string.remaining_compact_days, compactDays)
+                }
+            } else {
+                if (GlobalUtils.detailDisplayMode) {
+                    buildString {
+                        if (days != 0) append(context.getString(R.string.remaining_days_short, days))
+                        if (hours != 0) append(context.getString(R.string.remaining_hours_short, hours))
+                        if (days == 0) append(context.getString(R.string.remaining_minutes_short, minutesPart))
+                    }
+                } else {
+                    context.getString(R.string.remaining_compact_days_short, compactDays)
+                }
+            }
+        }
     }
 }

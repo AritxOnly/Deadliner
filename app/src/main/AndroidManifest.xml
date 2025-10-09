@@ -201,6 +201,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:resizeableActivity="true"
+            android:windowSoftInputMode="adjustNothing|stateHidden"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"/>
         <activity
             android:name=".AddDDLActivity"

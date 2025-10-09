@@ -1,18 +1,23 @@
 package com.aritxonly.deadliner.data
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.aritxonly.deadliner.SearchFilter
+import com.aritxonly.deadliner.DeadlineAlarmScheduler
+import com.aritxonly.deadliner.localutils.SearchFilter
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -23,12 +28,13 @@ class MainViewModel(
     val refreshState: StateFlow<RefreshState> = _refreshState
 
     // 用于存储经过筛选、排序后的数据
-    private val _ddlList = MutableLiveData<List<DDLItem>>()
-    val ddlList: LiveData<List<DDLItem>> = _ddlList
+    private val _ddlList = MutableStateFlow<List<DDLItem>>(emptyList())
+    val ddlList: LiveData<List<DDLItem>> = _ddlList.asLiveData()
+    val ddlListFlow: StateFlow<List<DDLItem>> = _ddlList
 
     // 用于存储即将到的DDL
-    private val _dueSoonCounts = MutableLiveData<Map<DeadlineType, Int>>()
-    val dueSoonCounts: LiveData<Map<DeadlineType, Int>> = _dueSoonCounts
+    private val _dueSoonCounts = MutableStateFlow<Map<DeadlineType, Int>>(emptyMap())
+    val dueSoonCounts: LiveData<Map<DeadlineType, Int>> = _dueSoonCounts.asLiveData()
 
     // 当前筛选的 DeadlineType
     var currentType: DeadlineType = DeadlineType.TASK
@@ -71,7 +77,7 @@ class MainViewModel(
                 repo.updateDDL(item)
                 !item.isArchived
             } else {
-                true // 如果 completeTime 为空，保留该项目
+                true
             }
         }.sortedWith(
             compareBy<DDLItem> { it.isCompleted }
@@ -117,12 +123,14 @@ class MainViewModel(
         currentType = type
         _refreshState.value = RefreshState.Loading(silent)
         viewModelScope.launch(Dispatchers.IO) {
-            _ddlList.postValue(filterDataByList(repo.getDDLsByType(type)))
+            _ddlList.value = filterDataByList(repo.getDDLsByType(type))
 
             val map = DeadlineType.entries.associateWith { computeDueSoonCount(it) }
-            _dueSoonCounts.postValue(map)
+            _dueSoonCounts.value = map
 
             _refreshState.value = RefreshState.Success
+
+            Log.d("Loading", "I reached here, ${_refreshState.value}")
         }
     }
 
@@ -160,9 +168,9 @@ class MainViewModel(
             }
 
             val map = DeadlineType.entries.associateWith { computeDueSoonCount(it) }
-            _dueSoonCounts.postValue(map)
+            _dueSoonCounts.value = map
 
-            _ddlList.postValue(filteredList)
+            _ddlList.value = filteredList
         }
     }
 
@@ -173,6 +181,39 @@ class MainViewModel(
                 // 刷新当前列表
                 loadData(currentType)
             }
+        }
+    }
+
+    /**
+     * 手动下拉刷新专用：
+     * - 先显式显示菊花（Loading(silent=false)）
+     * - 同步（syncNow）
+     * - 直接加载列表 + dueSoon（不再调用 loadData 避免二次 Loading/早退）
+     * - 结束后 Success（菊花关闭）
+     */
+    fun refreshFromPull(type: DeadlineType) {
+        viewModelScope.launch {
+            _refreshState.value = RefreshState.Loading(silent = false)
+
+            val start = System.currentTimeMillis()
+
+            withContext(Dispatchers.IO) {
+                repo.syncNow()
+
+                // 同步完成后直接拉取 + 过滤 + 统计
+                val data = filterDataByList(repo.getDDLsByType(type))
+                val map = DeadlineType.entries.associateWith { computeDueSoonCount(it) }
+
+                _ddlList.value = data
+                _dueSoonCounts.value = map
+            }
+
+            val elapsed = System.currentTimeMillis() - start
+            if (elapsed < 500) {
+                delay(500 - elapsed)
+            }
+
+            _refreshState.value = RefreshState.Success
         }
     }
 
