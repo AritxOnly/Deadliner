@@ -4,7 +4,6 @@ package com.aritxonly.deadliner.ui.main.simplified
 
 import android.app.Activity
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,25 +18,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import com.aritxonly.deadliner.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -46,11 +37,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -58,8 +47,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aritxonly.deadliner.AddDDLActivity
 import com.aritxonly.deadliner.MainActivity
-import com.aritxonly.deadliner.localutils.SearchFilter
-import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.MainViewModel
 import com.aritxonly.deadliner.data.ViewModelFactory
 import com.aritxonly.deadliner.localutils.GlobalUtils
@@ -72,6 +59,8 @@ import nl.dionsegijn.konfetti.core.Party
 
 @Composable
 fun SimplifiedHost(
+    searchActive: Boolean,
+    onSearchActiveChange: (Boolean) -> Unit,
     activity: MainActivity,
     modifier: Modifier = Modifier,
 ) {
@@ -167,8 +156,6 @@ fun SimplifiedHost(
         vm.loadData(selectedPage)
     }
 
-    var searchExpanded by rememberSaveable { mutableStateOf(false) }
-
     var showOverlay by remember { mutableStateOf(false) }
     var childRequestsBlur by remember { mutableStateOf(false) }
     val shouldBlur = showOverlay || childRequestsBlur
@@ -260,7 +247,8 @@ fun SimplifiedHost(
                 refreshState = refreshState,
                 selectedPage = selectedPage,
                 activity = activity,
-                onSearchBarExpandedChange = { searchExpanded = it },
+                searchActive = searchActive,
+                onSearchActiveChange = onSearchActiveChange,
                 modifier = Modifier
                     .fillMaxSize(),
                 vm = vm,
@@ -279,7 +267,7 @@ fun SimplifiedHost(
             }
 
             AnimatedVisibility(
-                visible = !searchExpanded,
+                visible = !searchActive,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = jumpAnim.value.dp, start = 16.dp, end = 16.dp),
@@ -331,8 +319,8 @@ fun SimplifiedHost(
         if (showOverlay) {
             AIOverlayHost(
                 initialText = "",
-                onAddDDL = {
-
+                onAddDDL = { intent ->
+                    launcher.launch(intent)
                 },
                 onRemoveFromWindow = {
                     showOverlay = false

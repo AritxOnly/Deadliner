@@ -77,6 +77,7 @@ object AIUtils {
             val respJson = resp.body?.string()
                 ?: throw RuntimeException("API 返回空")
             val chatResp = gson.fromJson(respJson, ChatResponse::class.java)
+            Log.d("AI Tokens", "${chatResp.usage}")
             chatResp.choices
                 .firstOrNull()
                 ?.message

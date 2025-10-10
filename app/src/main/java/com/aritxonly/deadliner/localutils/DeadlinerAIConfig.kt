@@ -16,7 +16,7 @@ class DeadlinerAIConfig(private val sp: SharedPreferences) {
     private val KEY_PRESETS = "llm_presets_v1"
     private val KEY_CURRENT_ID = "llm_current_id"
 
-    private val KEY_CURRENT_LOGO = "llm_current_logo"
+    private val KEY_CURRENT_LOGO_INDEX = "llm_current_logo_INDEX"
 
     /** 读取全部预设（无则给默认） */
     fun getPresets(): List<LlmPreset> {
@@ -101,11 +101,17 @@ class DeadlinerAIConfig(private val sp: SharedPreferences) {
     }
 
     fun getCurrentLogo(): Int {
-        return sp.getInt(KEY_CURRENT_LOGO, R.drawable.ic_orbit)
+        return getLogoList()[sp.getInt(KEY_CURRENT_LOGO_INDEX, 0)]
     }
 
     fun setCurrentLogo(res: Int) {
-        sp.edit { putInt(KEY_CURRENT_LOGO, res) }
+        getLogoList().forEachIndexed { index, logo ->
+            if (res == logo) {
+                sp.edit { putInt(KEY_CURRENT_LOGO_INDEX, index) }
+                return
+            }
+        }
+        sp.edit { putInt(KEY_CURRENT_LOGO_INDEX, 0) }
     }
 
     fun getCurrentLogoDrawable(context: Context): Drawable? {

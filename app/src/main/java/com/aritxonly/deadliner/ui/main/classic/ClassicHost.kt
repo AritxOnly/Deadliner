@@ -49,7 +49,6 @@ fun ClassicHost(
         val obs = LifecycleEventObserver { _, e ->
             when (e) {
                 Lifecycle.Event.ON_RESUME  -> controller.onResume()
-                Lifecycle.Event.ON_STOP    -> controller.onStop()
                 Lifecycle.Event.ON_DESTROY -> controller.onDestroy()
                 else -> Unit
             }

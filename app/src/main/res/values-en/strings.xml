@@ -497,4 +497,19 @@
     <string-array name="panel_greeting_default">
         <item>Hello, %s</item>
     </string-array>
+
+    <string name="search_no_result_title">No matching items</string>
+    <string name="search_no_result_suggestion_prefix">Try these examples:</string>
+
+    <string name="search_example_y">Tasks in year 2025</string>
+    <string name="search_example_m">Tasks in October</string>
+    <string name="search_example_d">Tasks on the 15th</string>
+    <string name="search_example_h">Tasks at 8 PM</string>
+
+    <string name="panel_greeting_deadliner">Welcome to Deadliner, your personalized task management assistant</string>
+    <string name="user">User</string>
+    <string name="settings_simplified">Simplified Main Interface</string>
+    <string name="settings_support_simplified">When enabled, the main interface will switch to a brand-new simplified design, bringing you a different task management experience</string>
+    <string name="overview">Overview</string>
+    <string name="edit_profile">Edit Profile</string>
 </resources>

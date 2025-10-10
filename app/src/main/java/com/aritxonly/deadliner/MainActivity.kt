@@ -5,11 +5,15 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.UiStyle
@@ -20,6 +24,8 @@ import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.aritxonly.deadliner.widgets.HabitMiniWidget
 import com.aritxonly.deadliner.widgets.LargeDeadlineWidget
 import com.aritxonly.deadliner.widgets.MultiDeadlineWidget
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private var classicController: ClassicController? = null
@@ -41,6 +47,10 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         classicController?.dialogFlipperNext()
     }
 
+
+    private val _showSearch = MutableStateFlow(false)
+    val showSearch: StateFlow<Boolean> = _showSearch
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -52,7 +62,11 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
 
         enableEdgeToEdgeForAllDevices()
 
+        _showSearch.value = intent.getBooleanExtra("EXTRA_SHOW_SEARCH", false)
+
         setContent {
+            val searchActive by showSearch.collectAsState()
+
             DeadlinerTheme {
                 val style = remember { UiStyle.fromKey(GlobalUtils.style) }
                 when (style) {
@@ -63,6 +77,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
                         calendarPermissionLauncher = calendarLauncher
                     )
                     UiStyle.Simplified  -> SimplifiedHost(
+                        searchActive = searchActive,
+                        onSearchActiveChange = { _showSearch.value = it },
                         activity = this
                     )
                 }
@@ -70,11 +86,32 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        updateWidget()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        updateWidget()
+    }
+
     // —— 某些系统回调需要从 Activity 转发到 classicController —— //
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        classicController?.onNewIntent(intent)
+
+        val style = UiStyle.fromKey(GlobalUtils.style)
+
+        when (style) {
+            UiStyle.Classic ->
+                classicController?.onNewIntent(intent)
+            UiStyle.Simplified ->
+                _showSearch.value = intent.getBooleanExtra("EXTRA_SHOW_SEARCH", false)
+        }
+
+        Log.d("Search", _showSearch.value.toString())
     }
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         classicController?.onConfigurationChanged(newConfig)

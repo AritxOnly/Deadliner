@@ -5,6 +5,8 @@ package com.aritxonly.deadliner.ui.main.simplified
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -13,7 +15,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 import com.aritxonly.deadliner.R
@@ -75,5 +78,39 @@ fun RotatingGreeting(name: String, fadeMillis: Int = 250) {
         label = "greeting-anim"
     ) { text ->
         Text(text = String.format(text, name))
+    }
+}
+
+@Composable
+fun AnimatedHintPlaceholder(
+    expanded: Boolean,
+    isEnabled: Boolean,
+    excitement: List<String>,
+    idx: Int,
+    fadeMillis: Int = 250
+) {
+    val defaultHint = stringResource(R.string.search_hint)
+
+    // 目标 hint
+    val targetHint = when {
+        expanded -> defaultHint
+        isEnabled && excitement.isNotEmpty() -> excitement[idx % excitement.size]
+        else -> defaultHint
+    }
+
+    AnimatedContent(
+        targetState = targetHint,
+        transitionSpec = {
+            (fadeIn(animationSpec = tween(fadeMillis))) with
+                    (fadeOut(animationSpec = tween(fadeMillis))) using
+                    SizeTransform(clip = false)
+        },
+        label = "search-placeholder-anim"
+    ) { hint ->
+        Text(
+            text = hint,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1
+        )
     }
 }

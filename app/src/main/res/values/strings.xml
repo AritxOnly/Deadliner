@@ -558,4 +558,13 @@
 
     <string name="panel_greeting_deadliner">欢迎使用Deadliner，你的个性化任务管理助手</string>
     <string name="user">用户</string>
+
+    <string name="search_no_result_title">没有匹配的项</string>
+    <string name="search_no_result_suggestion_prefix">试试以下搜索示例：</string>
+
+    <!-- 示例语义与正则逻辑匹配 -->
+    <string name="search_example_y">搜索年份为 2025 的任务</string>
+    <string name="search_example_m">搜索 10 月的任务</string>
+    <string name="search_example_d">搜索 15 日相关任务</string>
+    <string name="search_example_h">搜索 20 点（晚 8 点）相关任务</string>
 </resources>

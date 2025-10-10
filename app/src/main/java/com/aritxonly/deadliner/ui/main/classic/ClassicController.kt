@@ -984,11 +984,6 @@ class ClassicController(
         clipboardManager.removePrimaryClipChangedListener(clipListener)
     }
 
-    fun onStop() {
-        // 触发小组件更新
-        activity.updateWidget()
-    }
-
     fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus && !hasCheckedInitialClipboard) {
             hasCheckedInitialClipboard = true

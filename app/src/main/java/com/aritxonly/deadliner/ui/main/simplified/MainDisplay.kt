@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateDpAsState
@@ -20,8 +21,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -62,6 +65,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
@@ -84,12 +88,18 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -125,7 +135,8 @@ fun MainDisplay(
     refreshState: MainViewModel.RefreshState,
     selectedPage: DeadlineType,
     activity: MainActivity,
-    onSearchBarExpandedChange: (Boolean) -> Unit,
+    searchActive: Boolean,
+    onSearchActiveChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     vm: MainViewModel,
     listState: LazyListState,
@@ -206,7 +217,8 @@ fun MainDisplay(
             useAvatar = useAvatar,
             avatarPainter = avatarPainter,
             activity = activity,
-            onExpandedChangeExternal = onSearchBarExpandedChange,
+            expanded = searchActive,
+            onExpandedChangeExternal = onSearchActiveChange,
             onItemDelete = { pendingDelete = it }
         )
 
@@ -235,7 +247,8 @@ fun MainDisplay(
                             end = 16.dp
                         ),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
                             .fadingTopEdge(height = 16.dp),
                         state = listState
                     ) {
@@ -346,12 +359,12 @@ fun MainSearchBar(
     useAvatar: Boolean = false,
     avatarPainter: Painter? = null,
     activity: MainActivity,
+    expanded: Boolean,
     onExpandedChangeExternal: (Boolean) -> Unit = {},
     onItemDelete: (DDLItem) -> Unit = {}
 ) {
     val context = LocalContext.current
 
-    var expanded by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
     val isEnabled = GlobalUtils.motivationalQuotes
@@ -397,36 +410,33 @@ fun MainSearchBar(
                     },
                     onSearch = {
                         textFieldState.clearText()
-                        expanded = false
+                        onExpandedChangeExternal(false)
                         focusManager.clearFocus()
                     },
                     expanded = expanded,
-                    onExpandedChange = { expanded = it },
+                    onExpandedChange = onExpandedChangeExternal,
 
                     placeholder = {
-                        val hint = if (expanded) {
-                            stringResource(R.string.search_hint)
-                        } else {
-                            if (isEnabled && excitementArray.isNotEmpty())
-                                excitementArray[idx]
-                            else stringResource(R.string.search_hint)
-                        }
-                        val style = if (expanded) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium
-
-                        Text(hint, style = style, maxLines = 1)
+                        AnimatedHintPlaceholder(
+                            expanded = expanded,
+                            isEnabled = isEnabled,
+                            excitement = excitementArray,
+                            idx = idx
+                        )
                     },
 
                     leadingIcon = {
                         if (expanded) {
                             IconButton(
                                 onClick = {
-                                    expanded = false
+                                    onExpandedChangeExternal(false)
+                                    textFieldState.clearText()
                                     focusManager.clearFocus()
                                 }
                             ) {
                                 Icon(
                                     imageVector = ImageVector.vectorResource(R.drawable.ic_back),
-                                    contentDescription = "返回"
+                                    contentDescription = stringResource(R.string.back)
                                 )
                             }
                         } else {
@@ -462,18 +472,23 @@ fun MainSearchBar(
                                 }
                             }
                         } else {
-                            IconButton(onClick = { textFieldState.clearText() }) {
-                                Icon(
-                                    imageVector = ImageVector.vectorResource(R.drawable.ic_close),
-                                    contentDescription = stringResource(R.string.close)
-                                )
+                            if (textFieldState.text.isNotEmpty()) {
+                                IconButton(onClick = { textFieldState.clearText() }) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_close),
+                                        contentDescription = stringResource(R.string.close)
+                                    )
+                                }
                             }
                         }
                     }
                 )
             },
             expanded = expanded,
-            onExpandedChange = { expanded = it },
+            onExpandedChange = { exp ->
+                if (!exp) textFieldState.clearText()
+                onExpandedChangeExternal(exp)
+            },
         ) {
             LazyColumn(
                 contentPadding = PaddingValues(
@@ -483,47 +498,105 @@ fun MainSearchBar(
                     end = 16.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface)
                     .fadingTopEdge(height = 16.dp),
             ) {
-                items(
+                if (searchResults.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp, horizontal = 24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = stringResource(R.string.search_no_result_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = buildAnnotatedString {
+                                    append(stringResource(R.string.search_no_result_suggestion_prefix))
+                                    append("\n")
+                                    appendExample("y2025", R.string.search_example_y)
+                                    append("\n")
+                                    appendExample("m10", R.string.search_example_m)
+                                    append("\n")
+                                    appendExample("d15", R.string.search_example_d)
+                                    append("\n")
+                                    appendExample("h20", R.string.search_example_h)
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Icon(
+                                painter = painterResource(R.drawable.ic_search),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .alpha(0.6f)
+                            )
+                        }
+                    }
+                }
+
+                itemsIndexed(
                     items = searchResults,
-                    key = { it.id }
-                ) { item ->
+                    key = { _, it -> it.id }
+                ) { index, item ->
                     when (item.type) {
                         DeadlineType.TASK -> {
-                            val startTime = GlobalUtils.parseDateTime(item.startTime)
-                            val endTime = GlobalUtils.parseDateTime(item.endTime)
-                            val now = LocalDateTime.now()
+                            AnimatedItem(
+                                item = item,
+                                index = index
+                            ) {
+                                val startTime = GlobalUtils.parseDateTime(item.startTime)
+                                val endTime = GlobalUtils.parseDateTime(item.endTime)
+                                val now = LocalDateTime.now()
 
-                            val remainingTimeText =
-                                if (!item.isCompleted)
-                                    GlobalUtils.buildRemainingTime(
-                                        context,
+                                val remainingTimeText =
+                                    if (!item.isCompleted)
+                                        GlobalUtils.buildRemainingTime(
+                                            context,
+                                            startTime,
+                                            endTime,
+                                            true,
+                                            now
+                                        )
+                                    else stringResource(R.string.completed)
+
+                                val progress = computeProgress(startTime, endTime, now)
+                                val status =
+                                    DDLStatus.calculateStatus(
                                         startTime,
                                         endTime,
-                                        true,
-                                        now
+                                        now,
+                                        item.isCompleted
                                     )
-                                else stringResource(R.string.completed)
 
-                            val progress = computeProgress(startTime, endTime, now)
-                            val status =
-                                DDLStatus.calculateStatus(startTime, endTime, now, item.isCompleted)
-
-                            DDLItemCardSimplified(
-                                title = item.name,
-                                remainingTimeAlt = remainingTimeText,
-                                note = item.note,
-                                progress = progress,
-                                isStarred = item.isStared,
-                                status = status,
-                                onClick = {
-                                    val intent = DeadlineDetailActivity.newIntent(context, item)
-                                    activity.startActivity(intent)
-                                }
-                            )
+                                DDLItemCardSimplified(
+                                    title = item.name,
+                                    remainingTimeAlt = remainingTimeText,
+                                    note = item.note,
+                                    progress = progress,
+                                    isStarred = item.isStared,
+                                    status = status,
+                                    onClick = {
+                                        val intent = DeadlineDetailActivity.newIntent(context, item)
+                                        activity.startActivity(intent)
+                                    }
+                                )
+                            }
                         }
                         DeadlineType.HABIT -> {
 
@@ -659,13 +732,6 @@ fun Modifier.fadingTopEdge(
 
         val h = height.toPx().coerceAtLeast(1f)
 
-        // 目标：用 DstIn 画一层“遮罩”：
-        // - 遮罩在渐隐带内：从 0→1 的 Alpha 梯度（顶部透明、向下变实）
-        // - 渐隐带下方：全 1（不影响内容）
-        // 这样内容在顶部就会被“吃掉”一段，越靠近顶边越透明，形成原生式 fading edge。
-        // 注意：DstIn 保留 destination（内容）与 source（遮罩）交集，且按 source 的 Alpha 调整内容不透明度。
-
-        // 1) 渐隐带
         drawRect(
             brush = Brush.verticalGradient(
                 colors = if (!inverted) listOf(Color.Transparent, Color.Black)
@@ -677,7 +743,6 @@ fun Modifier.fadingTopEdge(
             blendMode = BlendMode.DstIn
         )
 
-        // 2) 渐隐带之外全部填充为不透明遮罩，确保其余区域不被影响
         if (!inverted) {
             drawRect(
                 color = Color.Black,
@@ -695,3 +760,12 @@ fun Modifier.fadingTopEdge(
             )
         }
     }
+
+@Composable
+private fun AnnotatedString.Builder.appendExample(code: String, @StringRes descRes: Int) {
+    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+        append(code)
+    }
+    append(" → ")
+    append(stringResource(descRes))
+}
