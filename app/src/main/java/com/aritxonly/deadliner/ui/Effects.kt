@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner.ui
 
+import android.annotation.SuppressLint
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutCubic
@@ -25,9 +26,11 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
 import kotlinx.coroutines.delay
@@ -127,3 +130,9 @@ val expressiveTypeModifier: Modifier
         .clip(CircleShape)
         .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
         .padding(8.dp)
+
+@SuppressLint("ComposableNaming")
+@Composable
+fun iconResource(@DrawableRes id: Int): ImageVector {
+    return ImageVector.vectorResource(id)
+}

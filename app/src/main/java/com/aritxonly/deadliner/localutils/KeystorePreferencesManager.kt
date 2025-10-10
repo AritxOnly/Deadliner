@@ -96,4 +96,13 @@ object KeystorePreferenceManager {
         val plainBytes = cipher.doFinal(ciphertext)
         return String(plainBytes, Charsets.UTF_8)
     }
+
+    fun reset(context: Context) {
+        try {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit { remove(PREFS_KEY_CIPHERTEXT) }
+            val ks = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+            if (ks.containsAlias(KEY_ALIAS)) ks.deleteEntry(KEY_ALIAS)
+        } catch (_: Throwable) {}
+    }
 }

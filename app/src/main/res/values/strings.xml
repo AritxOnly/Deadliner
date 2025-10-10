@@ -567,4 +567,24 @@
     <string name="search_example_m">搜索 10 月的任务</string>
     <string name="search_example_d">搜索 15 日相关任务</string>
     <string name="search_example_h">搜索 20 点（晚 8 点）相关任务</string>
+    <string name="settings_model_settings_advance">开启后，可以自定义模型接入点与自己的API Key</string>
+    <string name="settings_model_settings">模型高级设置</string>
+    <string name="settings_ai_function">功能设置</string>
+
+    <string name="quota_title">当前配额</string>
+    <string name="quota_identity_vip">VIP</string>
+    <string name="quota_identity_free">FREE</string>
+    <string name="quota_identity_unknown">身份</string>
+    <string name="quota_action_refresh">刷新</string>
+    <string name="quota_action_refreshing">刷新中…</string>
+    <string name="quota_action_refresh_cd">刷新</string>
+    <string name="quota_action_retry">重试</string>
+    <string name="quota_error_text">获取失败：%s</string>
+    <string name="quota_error_unknown">未知错误</string>
+    <string name="quota_device_label">设备</string>
+    <string name="quota_month_label">结算月</string>
+    <string name="quota_used_label">已用</string>
+    <string name="quota_remaining_label">剩余</string>
+    <string name="quota_reset_label">重置时间</string>
+    <string name="quota_endpoint_label">服务节点</string>
 </resources>

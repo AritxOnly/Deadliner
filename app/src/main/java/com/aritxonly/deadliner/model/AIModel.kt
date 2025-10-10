@@ -1,6 +1,9 @@
 package com.aritxonly.deadliner.model
 
 import android.os.Parcelable
+import com.aritxonly.deadliner.web.DeadlinerProxyTransport
+import com.aritxonly.deadliner.web.DirectBearerTransport
+import com.aritxonly.deadliner.web.LlmTransport
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
@@ -80,8 +83,32 @@ data class LlmPreset(
 )
 
 val defaultLlmPreset = LlmPreset(
-    id = "deepseek_official",
-    name = "DeepSeek",
+    id = "deadliner_official",
+    name = "Deadliner AI",
     model = "deepseek-chat",
-    endpoint = "https://api.deepseek.com/v1/chat/completions"
+    endpoint = "https://deadliner.aritxonly.top/api"
 )
+
+/** 后端类型：保持可扩展（将来可加 HMAC） */
+enum class BackendType { DirectBearer, DeadlinerProxy }
+
+/** 你的 LlmPreset 可以增加这几个字段（或用已有字段映射） */
+data class BackendPreset(
+    val type: BackendType,
+    val endpoint: String,
+    val model: String,
+)
+
+object LlmTransportFactory {
+    fun create(
+        preset: BackendPreset,
+        bearerKey: String,     // Direct 模式下使用
+        appSecret: String,     // Proxy 模式下使用
+        deviceId: String       // Proxy 模式下使用
+    ): LlmTransport = when (preset.type) {
+        BackendType.DirectBearer ->
+            DirectBearerTransport(preset.endpoint, bearerKey)
+        BackendType.DeadlinerProxy ->
+            DeadlinerProxyTransport(preset.endpoint, appSecret, deviceId)
+    }
+}

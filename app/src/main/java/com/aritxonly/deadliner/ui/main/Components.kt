@@ -1,5 +1,7 @@
 package com.aritxonly.deadliner.ui.main
 
+import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,11 +15,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
@@ -26,6 +35,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -39,37 +49,69 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.toColor
 import androidx.core.graphics.toColorInt
+import com.aritxonly.deadliner.AddDDLActivity
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.model.DDLStatus
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.PartyPresets
+import com.aritxonly.deadliner.ui.main.simplified.detectSwipeUp
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import nl.dionsegijn.konfetti.xml.KonfettiView
+import kotlin.math.abs
 
 @Composable
 fun TextPageIndicator(
     text: String,
     onClick: () -> Unit,
     selected: String,
-    tag: String
+    tag: String,
+    badgeConfig: Triple<Boolean, Int, Boolean>
 ) {
     val containerColor = if (selected == tag) MaterialTheme.colorScheme.primaryContainer else Color.Companion.Transparent
+    val (enabled, num, detail) = badgeConfig
 
     Button(
         onClick = onClick,
         colors = ButtonDefaults.textButtonColors(containerColor = containerColor)
     ) {
-        Text(text, color = MaterialTheme.colorScheme.onPrimaryContainer, textAlign = TextAlign.Companion.Center)
+        BadgedBox(
+            badge = {
+                if (num != 0 && enabled) {
+                    if (detail) {
+                        Badge(
+                            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
+                        ) {
+                            Text(text = num.toString())
+                        }
+                    } else {
+                        Badge(modifier = Modifier.padding(start = 12.dp, bottom = 8.dp))
+                    }
+                }
+            }
+        ) {
+            Text(
+                text,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                textAlign = TextAlign.Companion.Center
+            )
+        }
     }
 }
 
@@ -332,13 +374,13 @@ fun DDLItemCardSwipeable(
 
     var widthPx by remember { mutableIntStateOf(1) }
     val rawOffset = runCatching { dismissState.requireOffset() }.getOrElse { 0f }
-    val fraction = (kotlin.math.abs(rawOffset) / widthPx.toFloat()).coerceIn(0f, 1f)
+    val fraction = (abs(rawOffset) / widthPx.toFloat()).coerceIn(0f, 1f)
 
     LaunchedEffect(dismissState) {
         snapshotFlow {
             // 读取偏移和状态
             val off = runCatching { dismissState.requireOffset() }.getOrElse { 0f }
-            val atRest = kotlin.math.abs(off) < 0.5f &&
+            val atRest = abs(off) < 0.5f &&
                     dismissState.currentValue == SwipeToDismissBoxValue.Settled &&
                     dismissState.targetValue  == SwipeToDismissBoxValue.Settled
             atRest
@@ -387,9 +429,9 @@ fun DDLItemCardSwipeable(
             }
 
             val base = MaterialTheme.colorScheme.surfaceVariant
-            val bg = androidx.compose.ui.graphics.lerp(base, actionColor.copy(alpha = 0.80f), fraction)
+            val bg = lerp(base, actionColor.copy(alpha = 0.80f), fraction)
 
-            val iconTint = androidx.compose.ui.graphics.lerp(
+            val iconTint = lerp(
                 actionColor.copy(alpha = 0.65f),
                 actionColor,
                 fraction.coerceIn(0f, 1f)
@@ -426,6 +468,50 @@ fun DDLItemCardSwipeable(
             )
         }
     )
+}
+
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+@Preview(showBackground = true)
+private fun PreviewPageIndicator() {
+    var selectedPage = DeadlineType.TASK
+    MaterialTheme {
+        HorizontalFloatingToolbar(
+            expanded = true,
+            colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
+            leadingContent = {
+                Box(modifier = Modifier.padding(start = 4.dp, end = 12.dp)) {
+                    TextPageIndicator(
+                        text = stringResource(R.string.task),
+                        onClick = { selectedPage = DeadlineType.TASK },
+                        selected = selectedPage.toString(),
+                        tag = DeadlineType.TASK.toString(),
+                        badgeConfig = Triple(true, 2, true)
+                    )
+                }
+            },
+            trailingContent = {
+                Box(modifier = Modifier.padding(start = 12.dp, end = 4.dp)) {
+                    TextPageIndicator(
+                        text = stringResource(R.string.habit),
+                        onClick = { selectedPage = DeadlineType.HABIT },
+                        selected = selectedPage.toString(),
+                        tag = DeadlineType.HABIT.toString(),
+                        badgeConfig = Triple(true, 1, false)
+                    )
+                }
+            }
+        ) {
+            FilledIconButton(
+                modifier = Modifier
+                    .width(56.dp),
+                onClick = {},
+            ) {
+                Icon(ImageVector.vectorResource(R.drawable.ic_add), "")
+            }
+        }
+    }
 }
 
 @Composable

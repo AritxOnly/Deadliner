@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -44,6 +45,8 @@ import java.util.UUID
 fun ModelSettingsScreen(
     navigateUp: () -> Unit
 ) {
+    val context = LocalContext.current
+
     val cfg = remember { GlobalUtils.getDeadlinerAIConfig() }
     // 初始数据
     var modelPresets by remember { mutableStateOf(cfg.getPresets()) }
@@ -125,7 +128,7 @@ fun ModelSettingsScreen(
 
                         // 立即让全局 AIUtils 生效（切端点 + 模型名）
                         updated?.let { p ->
-                            AIUtils.setPreset(p)
+                            AIUtils.setPreset(p, context)
                         }
                     }
                 )
@@ -149,7 +152,7 @@ fun ModelSettingsScreen(
                 modelPresets = cfg.getPresets()
                 currentModel = newPreset
                 cfg.setCurrentPresetId(newPreset.id)
-                AIUtils.setPreset(newPreset)
+                AIUtils.setPreset(newPreset, context)
 
                 showAddDialog = false
             }

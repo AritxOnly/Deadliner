@@ -7,6 +7,7 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.Settings
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
@@ -15,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.fragment.app.FragmentManager
+import com.aritxonly.deadliner.BuildConfig
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.R
@@ -44,6 +46,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.util.UUID
 
 object GlobalUtils {
 
@@ -250,11 +253,10 @@ object GlobalUtils {
     var hideDividerUi by mutableStateOf(false)
         private set
 
+    @Deprecated("Deadliner AI is enable by default. This api would always return TRUE.")
     var deadlinerAIEnable: Boolean
-        get() = sharedPreferences.getBoolean("deepseek_master", false)
-        set(value) {
-            sharedPreferences.edit { putBoolean("deepseek_master", value) }
-        }
+        get() = true
+        set(_) {  }
 
     var customPrompt: String?
         get() = sharedPreferences.getString("custom_prompt", null)
@@ -335,13 +337,19 @@ object GlobalUtils {
             UiStyle.Classic.key
         set(value) {
             check(::sharedPreferences.isInitialized) { "GlobalUtils not initialized" }
-            sharedPreferences.edit().putString("style", value).apply()
+            sharedPreferences.edit { putString("style", value) }
         }
 
     fun setStyle(newStyle: UiStyle) {
         style = newStyle.key
         _styleFlow?.value = newStyle
     }
+
+    var advancedAISettings: Boolean
+        get() = sharedPreferences.getBoolean("advanced_ai_settings", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("advanced_ai_settings", value) }
+        }
 
     object OverviewSettings {
         var monthlyCount: Int
@@ -407,8 +415,22 @@ object GlobalUtils {
     var timeNull: LocalDateTime
         get() = parseDateTime(sharedPreferences.getString("time_null", LocalDateTime.now().toString())?: LocalDateTime.now().toString())!!
         set(value) {
-            sharedPreferences.edit().putString("time_null", value.toString()).apply()
+            sharedPreferences.edit { putString("time_null", value.toString()) }
         }
+
+    fun getOrCreateDeviceId(context: Context): String {
+        sharedPreferences.getString("device_id", null)?.let { return it }
+
+        val newId = UUID.randomUUID().toString()
+
+        sharedPreferences.edit { putString("device_id", newId) }
+        return newId
+    }
+
+    fun getDeadlinerAppSecret(context: Context): String {
+        return BuildConfig.DEADLINER_APP_SECRET
+    }
+
 
     private fun loadSettings(context: Context) {
         Log.d("GlobalUtils", "Settings loaded from SharedPreferences")
@@ -750,7 +772,7 @@ object GlobalUtils {
         startTime: LocalDateTime?,
         endTime: LocalDateTime?,
         displayFullContent: Boolean,
-        now: LocalDateTime = LocalDateTime.now()
+        now: LocalDateTime = LocalDateTime.now(),
     ): String {
         val afterEnd = endTime?.isBefore(now) == true              // 已过结束
         val beforeStart = startTime?.isAfter(now) == true          // 尚未开始

@@ -283,7 +283,8 @@ fun SimplifiedHost(
                                 text = stringResource(R.string.task),
                                 onClick = { selectedPage = DeadlineType.TASK },
                                 selected = selectedPage.toString(),
-                                tag = DeadlineType.TASK.toString()
+                                tag = DeadlineType.TASK.toString(),
+                                badgeConfig = Triple(GlobalUtils.nearbyTasksBadge, dueSoonCounts[DeadlineType.TASK]?:0, GlobalUtils.nearbyDetailedBadge)
                             )
                         }
                     },
@@ -293,7 +294,8 @@ fun SimplifiedHost(
                                 text = stringResource(R.string.habit),
                                 onClick = { selectedPage = DeadlineType.HABIT },
                                 selected = selectedPage.toString(),
-                                tag = DeadlineType.HABIT.toString()
+                                tag = DeadlineType.HABIT.toString(),
+                                badgeConfig = Triple(GlobalUtils.nearbyTasksBadge, dueSoonCounts[DeadlineType.HABIT]?:0, GlobalUtils.nearbyDetailedBadge)
                             )
                         }
                     }

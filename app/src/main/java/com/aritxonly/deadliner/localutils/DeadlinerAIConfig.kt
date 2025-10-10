@@ -9,6 +9,7 @@ import com.aritxonly.deadliner.model.LlmPreset
 import com.google.gson.Gson
 import androidx.core.content.edit
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.model.defaultLlmPreset
 
 class DeadlinerAIConfig(private val sp: SharedPreferences) {
 
@@ -52,6 +53,7 @@ class DeadlinerAIConfig(private val sp: SharedPreferences) {
 
     /** 获取当前选中的完整预设 */
     fun getCurrentPreset(): LlmPreset? {
+        if (!GlobalUtils.advancedAISettings) return defaultLlmPreset
         val id = getCurrentPresetId() ?: return getPresets().firstOrNull()
         return getPresets().firstOrNull { it.id == id } ?: getPresets().firstOrNull()
     }

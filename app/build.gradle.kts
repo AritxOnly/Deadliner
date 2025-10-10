@@ -30,6 +30,13 @@ android {
             Locale.getDefault()
         ).format(Date())
         buildConfigField("String", "BUILD_TIME", "\"$timeStamp\"")
+
+        val secret: String =
+            env.fetchOrNull("DEADLINER_APP_SECRET")              // .env
+                ?: System.getenv("DEADLINER_APP_SECRET")           // CI 环境变量兜底
+                ?: System.getProperty("DEADLINER_APP_SECRET")      // -D 注入兜底
+                ?: ""
+        buildConfigField("String", "DEADLINER_APP_SECRET", "\"$secret\"")
     }
     lint {
         disable += "NullSafeMutableLiveData"
@@ -63,9 +70,6 @@ android {
         compose = true
         buildConfig = true
     }
-//    composeOptions {
-//        kotlinCompilerExtensionVersion = "1.5.1"
-//    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -76,8 +80,8 @@ android {
 
 dependencies {
     implementation("androidx.work:work-runtime-ktx:2.10.3")
-    implementation(libs.konfetti.xml)
-    implementation("nl.dionsegijn:konfetti-compose:2.0.5")
+    implementation("nl.dionsegijn:konfetti-xml:2.0.4")
+    implementation("nl.dionsegijn:konfetti-compose:2.0.4")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.code.gson:gson:2.11.0")
     implementation("io.noties.markwon:core:4.6.2")
