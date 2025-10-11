@@ -587,4 +587,21 @@
     <string name="quota_remaining_label">剩余</string>
     <string name="quota_reset_label">重置时间</string>
     <string name="quota_endpoint_label">服务节点</string>
+    <string name="share">分享</string>
+    <string name="summary_with_text">%s总结</string>
+    <string name="saved_to_gallery">图片已保存进相册</string>
+    <string name="export_settings">导出设置</string>
+    <string name="light_text">浅色文字</string>
+    <string name="dark_text">深色文字</string>
+    <string name="text_tone">文字明暗</string>
+    <string name="background_img">背景图片</string>
+    <string name="pick_from_gallery">从相册选择</string>
+    <string name="clear">清除</string>
+    <string name="preview">预览</string>
+    <string name="change_avatar">更换头像</string>
+    <string name="nickname">昵称</string>
+    <string name="enter_nickname">输入昵称</string>
+    <string name="save_change">保存更改</string>
+    <string name="remove_avatar">移除头像</string>
+    <string name="crop_avatar">裁剪头像</string>
 </resources>

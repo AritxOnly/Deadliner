@@ -111,16 +111,19 @@ fun QuotaPanelSimple(
                     enabled = !refreshing,
                     shape = shape
                 ) {
-                    Icon(
-                        iconResource(R.drawable.ic_autorenew),
-                        contentDescription = stringResource(R.string.quota_action_refresh_cd)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        if (refreshing) stringResource(R.string.quota_action_refreshing)
-                        else stringResource(R.string.quota_action_refresh),
-                        modifier = Modifier.align(Alignment.CenterVertically)
-                    )
+                    Row {
+                        Icon(
+                            iconResource(R.drawable.ic_autorenew),
+                            contentDescription = stringResource(R.string.quota_action_refresh_cd),
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (refreshing) stringResource(R.string.quota_action_refreshing)
+                            else stringResource(R.string.quota_action_refresh),
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        )
+                    }
                 }
             }
 

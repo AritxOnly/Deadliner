@@ -32,6 +32,7 @@ import com.aritxonly.deadliner.hashColor
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.OverviewUtils
 import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.ui.main.simplified.fadingTopEdge
 import java.time.LocalDate
 
 @Composable
@@ -56,7 +57,7 @@ fun TrendAnalysisScreen(
         )
 
         LazyColumn(
-            modifier = modifier,
+            modifier = modifier.fadingTopEdge(height = 4.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             itemsIndexed(trendItems) { index, itemComposable ->

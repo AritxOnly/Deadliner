@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -153,7 +154,7 @@ fun ProfileEditor(
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.ic_camera),
-                    contentDescription = "更换头像"
+                    contentDescription = stringResource(R.string.change_avatar)
                 )
             }
         }
@@ -163,14 +164,14 @@ fun ProfileEditor(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("昵称", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.nickname), style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = nickname,
                 onValueChange = { nickname = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                placeholder = { Text("输入昵称") }
+                placeholder = { Text(stringResource(R.string.enter_nickname)) }
             )
         }
 
@@ -184,7 +185,7 @@ fun ProfileEditor(
             enabled = nickname.text.trim() != profile.nickname,
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("保存更改")
+            Text(stringResource(R.string.save_change))
         }
 
         // 🗑️ 移除头像
@@ -195,7 +196,7 @@ fun ProfileEditor(
                     contentDescription = null
                 )
                 Spacer(Modifier.width(6.dp))
-                Text("移除头像")
+                Text(stringResource(R.string.remove_avatar))
             }
         }
     }
@@ -240,11 +241,11 @@ fun AvatarCropperDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("裁剪头像", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.crop_avatar), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                     IconButton(onClick = onCancel) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_close),
-                            contentDescription = "关闭"
+                            contentDescription = stringResource(R.string.close)
                         )
                     }
                 }
@@ -272,7 +273,7 @@ fun AvatarCropperDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onCancel) { Text("取消") }
+                    TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
                     Spacer(Modifier.width(12.dp))
                     Button(onClick = {
                         val cropped = imageCrop.onCrop() // 库已按视图裁好
@@ -283,7 +284,7 @@ fun AvatarCropperDialog(
                         val square = Bitmap.createBitmap(cropped, x, y, size, size)
                         val final = Bitmap.createScaledBitmap(square, 512, 512, true)
                         onDone(final)
-                    }) { Text("确定") }
+                    }) { Text(stringResource(R.string.accept)) }
                 }
             }
         }
