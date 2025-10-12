@@ -26,6 +26,7 @@ import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.UiStyle
+import com.aritxonly.deadliner.model.toJson
 import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
@@ -43,8 +44,10 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 import java.util.UUID
 
@@ -842,6 +845,38 @@ object GlobalUtils {
                     context.getString(R.string.remaining_compact_days_short, compactDays)
                 }
             }
+        }
+    }
+
+
+
+    /**
+     * 辅助函数：自动清零
+     */
+    fun refreshCount(habitItem: DDLItem, habitMeta: HabitMetaData, onRefresh: () -> Unit) {
+        val month = YearMonth.now()
+        val presetDuration = when (habitMeta.frequencyType) {
+            DeadlineFrequency.DAILY -> 1    // 1天清空一次
+            DeadlineFrequency.WEEKLY -> 7
+            DeadlineFrequency.MONTHLY -> month.lengthOfMonth()
+            DeadlineFrequency.TOTAL -> return
+        }
+
+        val duration = ChronoUnit.DAYS.between(LocalDate.parse(habitMeta.refreshDate), LocalDate.now())
+        if (duration >= presetDuration) {
+            // refresh
+            val updatedNote = habitMeta.copy(
+                refreshDate = LocalDate.now().toString()
+            ).toJson()
+
+            val updatedHabit = habitItem.copy(
+                note = updatedNote,
+                habitCount = 0
+            )
+
+            DDLRepository().updateDDL(updatedHabit)
+
+            onRefresh()
         }
     }
 }

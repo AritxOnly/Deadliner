@@ -2,21 +2,30 @@ package com.aritxonly.deadliner.ui.main
 
 import android.content.Intent
 import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -253,6 +262,7 @@ fun DDLItemCardSimplified(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .clip(shape)
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         shape = shape
     ) {
@@ -311,7 +321,7 @@ fun DDLItemCardSimplified(
                         Icon(
                             ImageVector.vectorResource(R.drawable.ic_star_filled),
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = indicatorColor.copy(alpha = 1f)
                         )
                     }
                 }
@@ -470,6 +480,175 @@ fun DDLItemCardSwipeable(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun HabitItemCardSimplified(
+    title: String,
+    habitCount: Int,
+    habitTotalCount: Int,
+    freqAndTotalText: String,
+    remainingText: String,
+    isStarred: Boolean,
+    progressTime: Float?,
+    modifier: Modifier = Modifier,
+    onCheckIn: (() -> Unit)? = null,
+    status: DDLStatus = DDLStatus.UNDERGO
+) {
+    val shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius))
+
+    val indicatorColor: Color
+    val bgColor: Color
+    when (status) {
+        DDLStatus.UNDERGO -> {
+            indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+            bgColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.30f)
+        }
+        DDLStatus.NEAR -> {
+            indicatorColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.55f)
+            bgColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.30f)
+        }
+        DDLStatus.PASSED -> {
+            indicatorColor = MaterialTheme.colorScheme.error.copy(alpha = 0.55f)
+            bgColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.30f)
+        }
+        DDLStatus.COMPLETED -> {
+            indicatorColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.55f)
+            bgColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.30f)
+        }
+    }
+
+    // 进度计算
+    val safeTotal = habitTotalCount.coerceAtLeast(0)
+    val safeCount = habitCount.coerceIn(0, maxOf(0, safeTotal))
+    val progress = if (safeTotal == 0) 0f else safeCount.toFloat() / safeTotal.toFloat()
+    val progressClamped = progress.coerceIn(0f, 1f)
+    val progressTime = progressTime?.coerceIn(0f, 1f)?:1f
+
+    Card(
+        onClick = {
+            if (onCheckIn != null) onCheckIn()
+        },
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f),
+        shape = shape
+    ) {
+        Box(
+            modifier = Modifier
+                .background(bgColor)
+                .fillMaxSize()
+        ) {
+
+
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth()
+                    .padding(end = 8.dp)
+                    .align(Alignment.CenterEnd)
+                    .background(bgColor)
+            ) {
+                if (progressClamped > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(progressClamped)
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(indicatorColor.copy(alpha = 0.40f), indicatorColor)
+                                )
+                            )
+                    )
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(8.dp)
+                    .align(Alignment.CenterEnd)
+                    .background(indicatorColor.copy(alpha = 0.18f))
+            ) {
+                if (progressTime > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(progressTime)
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(indicatorColor, indicatorColor.copy(alpha = 0.7f))
+                                )
+                            )
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)
+            ) {
+                // 顶部：标题 + 文字进度 + 星标
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 4.dp)
+                            .basicMarquee()
+                    )
+                    if (isStarred) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_star_filled),
+                            contentDescription = null,
+                            tint = indicatorColor.copy(alpha = 1f)
+                        )
+                    }
+                }
+
+                // 中间留白，保证底部信息贴靠左下
+                Spacer(modifier = Modifier.weight(1f))
+
+                // 左下角两行小字：每周/总计、剩余时间
+                if (remainingText.isNotBlank()) {
+                    Text(
+                        text = remainingText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 12.dp)
+                    )
+                }
+
+                if (freqAndTotalText.isNotBlank()) {
+                    Text(
+                        text = freqAndTotalText,
+                        style = MaterialTheme.typography.bodySmallEmphasized,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 12.dp)
+                    )
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -518,7 +697,7 @@ private fun PreviewPageIndicator() {
 @Preview(showBackground = true)
 private fun PreviewDDLItemCard() {
     MaterialTheme {
-        Column {
+        Column(modifier = Modifier.padding(16.dp)) {
             DDLItemCard(
                 title = "DDL Sample",
                 remainingTimeAlt = "1:00 截止",
@@ -539,6 +718,57 @@ private fun PreviewDDLItemCard() {
                 isStarred = true,
                 onClick = {}
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Preview(
+    name = "Habit Waterfall 2-Columns (Phone)",
+    showBackground = true
+)
+@Composable
+fun PreviewHabitWaterfallTwoColumns() {
+    MaterialTheme() {
+        val samples = listOf(
+            Triple("每日阅读 30 分钟", "每周 5 次 / 共计 30 次", "剩余 7 天"),
+            Triple("晨跑 3km", "每周 3 次 / 共计 20 次", "剩余 2 天"),
+            Triple("多喝水", "每天 8 杯 / 共计 240 杯", "已过期"),
+            Triple("学习 Kotlin", "每周 7 次 / 共计 10 次", "已完成"),
+            Triple("晚间拉伸", "每周 4 次 / 共计 14 次", "剩余 14 天"),
+            Triple("英文单词 50 个", "每周 6 次 / 共计 30 次", "剩余 5 天"),
+            Triple("冥想 10 分钟", "每周 5 次 / 共计 21 次", "剩余 20 天"),
+            Triple("背肌弹力带", "每周 5 次 / 共计 10 次", "剩余 1 天"),
+        )
+
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Fixed(2), // 👉 手机上固定两列
+            verticalItemSpacing = 10.dp,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(16.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(samples.size) { i ->
+                val (title, freqTotal, remain) = samples[i]
+                val count = (5..25).random()
+                val total = (count + 5..count + 20).random()
+                val starred = (0..1).random() == 0
+                val status = listOf(
+                    DDLStatus.UNDERGO, DDLStatus.NEAR, DDLStatus.PASSED, DDLStatus.COMPLETED
+                ).random()
+
+                HabitItemCardSimplified(
+                    title = title,
+                    habitCount = count,
+                    habitTotalCount = total,
+                    freqAndTotalText = freqTotal,
+                    remainingText = remain,
+                    isStarred = starred,
+                    status = status,
+                    progressTime = null,
+                    onCheckIn = {} // 预览中留空
+                )
+            }
         }
     }
 }

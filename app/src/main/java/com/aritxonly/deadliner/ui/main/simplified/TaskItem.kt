@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -19,11 +20,19 @@ import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.GlobalUtils.refreshCount
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DDLStatus
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.aritxonly.deadliner.ui.main.DDLItemCardSwipeable
+import com.aritxonly.deadliner.ui.main.HabitItemCardSimplified
 import kotlinx.coroutines.delay
+import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.math.max
 
 @Composable
 fun AnimatedItem(
@@ -122,6 +131,143 @@ fun TaskItem(
         onDelete = {
             GlobalUtils.triggerVibration(activity, 200)
             onDelete()
+        }
+    )
+}
+
+@Composable
+fun HabitItem(
+    item: DDLItem,
+    onRefresh: () -> Unit,
+    updateDDL: (DDLItem) -> Unit,
+    onCheckInFailed: () -> Unit = {},
+    onCheckInSuccess: (DDLItem, HabitMetaData) -> Unit = { i, m -> }
+) {
+    val now = LocalDateTime.now()
+    val habitMeta = remember(item.note) { GlobalUtils.parseHabitMetaData(item.note) }
+
+    LaunchedEffect(item.id, habitMeta.refreshDate) {
+        refreshCount(item, habitMeta) {
+            onRefresh()
+        }
+    }
+
+    val startTime = GlobalUtils.safeParseDateTime(item.startTime)
+    val endTime = GlobalUtils.safeParseDateTime(item.endTime)
+
+    // —— 频率/总计描述 —— //
+    val freqAndTotalText = when (habitMeta.frequencyType) {
+        DeadlineFrequency.DAILY ->
+            if (habitMeta.total == 0)
+                stringResource(R.string.daily_frequency, habitMeta.frequency)
+            else
+                stringResource(
+                    R.string.daily_frequency_with_total,
+                    habitMeta.frequency,
+                    habitMeta.total
+                )
+
+        DeadlineFrequency.WEEKLY ->
+            if (habitMeta.total == 0)
+                stringResource(R.string.weekly_frequency, habitMeta.frequency)
+            else
+                stringResource(
+                    R.string.weekly_frequency_with_total,
+                    habitMeta.frequency,
+                    habitMeta.total
+                )
+
+        DeadlineFrequency.MONTHLY ->
+            if (habitMeta.total == 0)
+                stringResource(R.string.monthly_frequency, habitMeta.frequency)
+            else
+                stringResource(
+                    R.string.monthly_frequency_with_total,
+                    habitMeta.frequency,
+                    habitMeta.total
+                )
+
+        DeadlineFrequency.TOTAL ->
+            if (habitMeta.total == 0)
+                stringResource(R.string.total_frequency_persistent)
+            else
+                stringResource(R.string.total_frequency_count, habitMeta.total)
+    }
+
+    val remainingText = if (endTime != GlobalUtils.timeNull) {
+        val duration = Duration.between(now, endTime)
+        val days = duration.toDays()
+        if (days < 0)
+            stringResource(R.string.ddl_overdue_short)
+        else
+            stringResource(R.string.remaining_days_arg, days)
+    } else ""
+
+    val (count, total) =
+        if (habitMeta.total > 0) {
+            item.habitTotalCount to habitMeta.total
+        } else {
+            val denom = max(1, habitMeta.frequency)
+            item.habitCount to denom
+        }
+
+    val status = remember(startTime, endTime, now, item.isCompleted) {
+        DDLStatus.calculateStatus(
+            startTime = startTime,
+            endTime = if (endTime == GlobalUtils.timeNull) null else endTime,
+            now = now,
+            isCompleted = item.isCompleted || // 已完成或累计达到总次数都算完成
+                    (habitMeta.total != 0 && item.habitTotalCount >= habitMeta.total)
+        )
+    }
+
+    val progress = computeProgress(startTime, endTime, now)
+
+    HabitItemCardSimplified(
+        title = item.name,
+        habitCount = count,
+        habitTotalCount = total,
+        freqAndTotalText = freqAndTotalText,
+        remainingText = remainingText,
+        isStarred = item.isStared,
+        status = status,
+        progressTime = progress,
+        onCheckIn = {
+            val completedDates: Set<LocalDate> =
+                habitMeta.completedDates.map { LocalDate.parse(it) }.toSet()
+
+            val canCheckIn = (habitMeta.total != 0 && (
+                    if (habitMeta.frequencyType != DeadlineFrequency.TOTAL) {
+                        (item.habitCount < habitMeta.frequency) && (completedDates.size < habitMeta.total)
+                    } else true
+                    ) && (item.habitTotalCount < habitMeta.total)) || (habitMeta.total == 0)
+
+            val alreadyChecked = when (habitMeta.frequencyType) {
+                DeadlineFrequency.TOTAL -> false
+                else -> habitMeta.frequency <= item.habitCount
+            }
+            val canPerformClick = canCheckIn && !alreadyChecked
+
+            if (!canPerformClick) {
+                onCheckInFailed()
+                return@HabitItemCardSimplified
+            }
+
+            // 2) 更新 note：把今天加入已打卡集合
+            val today = LocalDate.now()
+            val updatedNote = updateNoteWithDate(item, today)
+
+            // 3) 自增当期与累计计数
+            val updatedHabit = item.copy(
+                note = updatedNote,
+                habitCount = item.habitCount + 1,
+                habitTotalCount = item.habitTotalCount + 1
+            )
+
+            // 4) 全局回调（成功）
+            onCheckInSuccess(item, habitMeta)
+
+            updateDDL(updatedHabit)
         }
     )
 }

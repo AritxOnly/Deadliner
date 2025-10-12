@@ -23,6 +23,7 @@ import android.content.res.Resources
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.MainViewModel
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.GlobalUtils.refreshCount
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
@@ -182,7 +183,9 @@ class CustomAdapter(
         val completedDates: Set<LocalDate> = habitMeta.completedDates.map { LocalDate.parse(it) }.toSet()
 
         // 0. 判断是否需要清零
-        refreshCount(context, habitItem, habitMeta)
+        refreshCount(habitItem, habitMeta) {
+            viewModel.loadData(currentType)
+        }
 
         // 1. 绑定标题与连击天数（使用辅助函数计算当前连击）
         holder.titleText.text = habitItem.name
@@ -374,36 +377,6 @@ class CustomAdapter(
         DDLRepository().updateDDL(updatedHabit)
 
         viewModel.loadData(viewModel.currentType)
-    }
-
-    /**
-     * 辅助函数：自动清零
-     */
-    private fun refreshCount(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData) {
-        val month = YearMonth.now()
-        val presetDuration = when (habitMeta.frequencyType) {
-            DeadlineFrequency.DAILY -> 1    // 1天清空一次
-            DeadlineFrequency.WEEKLY -> 7
-            DeadlineFrequency.MONTHLY -> month.lengthOfMonth()
-            DeadlineFrequency.TOTAL -> return
-        }
-
-        val duration = ChronoUnit.DAYS.between(LocalDate.parse(habitMeta.refreshDate), LocalDate.now())
-        if (duration >= presetDuration) {
-            // refresh
-            val updatedNote = habitMeta.copy(
-                refreshDate = LocalDate.now().toString()
-            ).toJson()
-
-            val updatedHabit = habitItem.copy(
-                note = updatedNote,
-                habitCount = 0
-            )
-
-            DDLRepository().updateDDL(updatedHabit)
-
-            viewModel.loadData(viewModel.currentType)
-        }
     }
 
     /**

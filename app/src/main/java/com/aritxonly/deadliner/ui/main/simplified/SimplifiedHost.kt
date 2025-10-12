@@ -23,12 +23,15 @@ import com.aritxonly.deadliner.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -47,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aritxonly.deadliner.AddDDLActivity
 import com.aritxonly.deadliner.MainActivity
+import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.MainViewModel
 import com.aritxonly.deadliner.data.ViewModelFactory
 import com.aritxonly.deadliner.localutils.GlobalUtils
@@ -54,8 +58,12 @@ import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.PartyPresets
 import com.aritxonly.deadliner.ui.agent.AIOverlayHost
 import com.aritxonly.deadliner.ui.main.TextPageIndicator
+import kotlinx.coroutines.launch
 import nl.dionsegijn.konfetti.compose.KonfettiView
 import nl.dionsegijn.konfetti.core.Party
+import org.json.JSONArray
+import org.json.JSONObject
+import java.time.LocalDate
 
 @Composable
 fun SimplifiedHost(
@@ -66,6 +74,7 @@ fun SimplifiedHost(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
     val vm: MainViewModel = viewModel(factory = ViewModelFactory(context))
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -204,9 +213,27 @@ fun SimplifiedHost(
         }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        contentWindowInsets = WindowInsets(0)
+        contentWindowInsets = WindowInsets(0),
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    shape = RoundedCornerShape(16.dp),
+                    containerColor = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                    actionColor = MaterialTheme.colorScheme.inversePrimary,
+                    actionContentColor = MaterialTheme.colorScheme.inversePrimary,
+                    dismissActionContentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                )
+            }
+        }
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -254,6 +281,34 @@ fun SimplifiedHost(
                 vm = vm,
                 listState = listState,
                 onRequestBackdropBlur = { enable -> childRequestsBlur = enable },
+                onShowUndoSnackbar = { updatedHabit ->
+                    scope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = context.getString(R.string.habit_success),
+                            actionLabel = context.getString(R.string.undo),
+                            duration = SnackbarDuration.Long,
+                            withDismissAction = true
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            val todayStr = LocalDate.now().toString()
+                            val json = JSONObject(updatedHabit.note)
+                            val datesArray = json.optJSONArray("completedDates") ?: JSONArray()
+                            for (i in datesArray.length() - 1 downTo 0) {
+                                if (datesArray.optString(i) == todayStr) {
+                                    datesArray.remove(i)
+                                }
+                            }
+                            json.put("completedDates", datesArray)
+                            val revertedNoteJson = json.toString()
+                            val revertedHabit = updatedHabit.copy(
+                                note = revertedNoteJson,
+                                habitCount = updatedHabit.habitCount - 1
+                            )
+                            DDLRepository().updateDDL(revertedHabit)
+                            vm.loadData(selectedPage)
+                        }
+                    }
+                },
                 onCelebrate = { celebrate() }
             )
 
