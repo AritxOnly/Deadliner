@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,7 +37,9 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.ui.iconResource
@@ -51,10 +55,11 @@ fun ShareDashboardPoster(
     widthPx: Int = 1080
 ) {
     val textColor = if (textTone == TextTone.Light) Color.White else Color.Black
+    val posterWidthDp = with(LocalDensity.current) { widthPx.toDp() }
 
     Box(
         modifier = modifier
-            .width(widthPx.dp / 3.0f)
+            .width(posterWidthDp)
             .clip(RoundedCornerShape(24.dp))
     ) {
         if (backgroundBitmap != null) {
@@ -73,56 +78,64 @@ fun ShareDashboardPoster(
             )
         }
 
-        Box (
+        Column (
             modifier = Modifier.padding(24.dp)
         ) {
-            // 顶部头图 + 标题
-            Column {
-                Text(
-                    text = data.brand,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = textColor.copy(alpha = 0.85f)
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = data.monthText,
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = textColor
-                )
-            }
 
-            // 中部网格卡片（两列）
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 120.dp, bottom = 80.dp)
-            ) {
-                BoxWithConstraints {
-                    val cellWidth = (maxWidth - 12.dp) / 2   // 两列 & 12dp列间距
-                    FlowRow(
-                        maxItemsInEachRow = 2,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        data.metrics.forEach { m ->
-                            PosterMetricCard(
-                                m,
-                                modifier = Modifier.width(cellWidth) // 统一单元宽度
-                            )
-                        }
-                    }
-                }
-            }
+            Text(
+                text = data.brand,
+                style = MaterialTheme.typography.titleMedium,
+                color = textColor.copy(alpha = 0.85f)
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = data.monthText,
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = textColor
+            )
 
+            // 中部网格
+            Spacer(Modifier.height(64.dp))
+            MetricsGridWrap(data.metrics)
+
+            Spacer(Modifier.height(24.dp))
             // 底部水印
             Text(
                 text = data.generatedAt,
                 style = MaterialTheme.typography.labelMedium,
                 color = textColor.copy(alpha = 0.75f),
-                modifier = Modifier.align(Alignment.BottomStart)
+//                modifier = Modifier.align(Alignment.BottomStart)
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MetricsGridWrap(
+    metrics: List<Metric>,
+    spacing: Dp = 12.dp
+) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val columns = 2
+        val cell = (maxWidth - spacing * (columns - 1)) / columns
+
+        FlowRow(
+            maxItemsInEachRow = columns,
+            horizontalArrangement = Arrangement.spacedBy(spacing),
+            verticalArrangement = Arrangement.spacedBy(spacing),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            metrics.forEach { m ->
+                PosterMetricCard(
+                    m = m,
+                    modifier = Modifier
+                        .requiredWidth(cell)     // 关键：强约束列宽
+                        .fillMaxWidth()          // 卡片内部可以填满这列
+                        .heightIn(min = 120.dp)
+                )
+            }
         }
     }
 }
@@ -140,8 +153,6 @@ private fun PosterMetricCard(
         ),
         border = CardDefaults.outlinedCardBorder(),
         modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 120.dp)
             .graphicsLayer {
                 renderEffect = RenderEffect.createBlurEffect(
                     /* radiusX = */ 25f,
