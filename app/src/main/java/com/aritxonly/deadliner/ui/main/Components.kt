@@ -6,6 +6,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,10 +21,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Badge
@@ -39,6 +42,7 @@ import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -57,9 +61,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -79,6 +85,7 @@ import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.model.DDLStatus
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.PartyPresets
+import com.aritxonly.deadliner.ui.iconResource
 import com.aritxonly.deadliner.ui.main.simplified.detectSwipeUp
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -270,7 +277,7 @@ fun DDLItemCardSimplified(
             modifier = Modifier
                 .background(bgColor)
                 .fillMaxWidth()
-                .height(76.dp) // 👈 固定高度
+                .height(76.dp)
         ) {
             if (progressClamped > 0f) {
                 Box(
@@ -356,11 +363,18 @@ fun DDLItemCardSwipeable(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onComplete: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    selectionMode: Boolean = false,
+    selected: Boolean = false,
+    onLongPressSelect: (() -> Unit)? = null,
+    onToggleSelect: (() -> Unit)? = null
 ) {
+    val swipeEnabled = !selectionMode
+
     var hasTriggered by remember { mutableStateOf(false) }
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { v ->
+            if (!swipeEnabled) return@rememberSwipeToDismissBoxState false
             when (v) {
                 SwipeToDismissBoxValue.EndToStart -> {
                     if (!hasTriggered) {
@@ -408,7 +422,16 @@ fun DDLItemCardSwipeable(
         enableDismissFromStartToEnd = true,
         enableDismissFromEndToStart = true,
         backgroundContent = {
-            // 当前方向（可能为 null，表示未开始滑）
+            if (!swipeEnabled) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .onSizeChanged { widthPx = it.width }
+                        .clip(shape)
+                )
+                return@SwipeToDismissBox
+            }
+
             val dir = dismissState.dismissDirection
 
             // 动作色（红=删除；绿=完成）与对齐位置
@@ -464,18 +487,42 @@ fun DDLItemCardSwipeable(
             }
         },
         content = {
-            DDLItemCardSimplified(
-                title = title,
-                remainingTimeAlt = remainingTimeAlt,
-                note = note,
-                progress = progress,
-                isStarred = isStarred,
+            Box(
                 modifier = modifier
                     .clip(shape)
-                    .onSizeChanged { widthPx = it.width },
-                onClick = onClick,
-                status = status
-            )
+                    .combinedClickable(
+                        onClick = {
+                            if (selectionMode) {
+                                onToggleSelect?.invoke()
+                            } else {
+                                onClick?.invoke()
+                            }
+                        },
+                        onLongClick = {
+                            onLongPressSelect?.invoke()
+                        }
+                    )
+            ) {
+                DDLItemCardSimplified(
+                    title = title,
+                    remainingTimeAlt = remainingTimeAlt,
+                    note = note,
+                    progress = progress,
+                    isStarred = isStarred,
+                    modifier = modifier
+                        .clip(shape)
+                        .onSizeChanged { widthPx = it.width },
+                    onClick = null,
+                    status = status
+                )
+
+                if (selectionMode && selected) {
+                    SelectionOverlay(
+                        shape, Modifier
+                        .height(76.dp)
+                    )
+                }
+            }
         }
     )
 }
@@ -492,7 +539,11 @@ fun HabitItemCardSimplified(
     progressTime: Float?,
     modifier: Modifier = Modifier,
     onCheckIn: (() -> Unit)? = null,
-    status: DDLStatus = DDLStatus.UNDERGO
+    status: DDLStatus = DDLStatus.UNDERGO,
+    selectionMode: Boolean = false,
+    selected: Boolean = false,
+    onLongPressSelect: (() -> Unit)? = null,
+    onToggleSelect: (() -> Unit)? = null
 ) {
     val shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius))
 
@@ -524,131 +575,208 @@ fun HabitItemCardSimplified(
     val progressClamped = progress.coerceIn(0f, 1f)
     val progressTime = progressTime?.coerceIn(0f, 1f)?:1f
 
-    Card(
-        onClick = {
-            if (onCheckIn != null) onCheckIn()
-        },
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1f),
-        shape = shape
+            .aspectRatio(1f)
+            .clip(shape)
+            .combinedClickable(
+                onClick = {
+                    if (selectionMode) {
+                        onToggleSelect?.invoke()
+                    } else {
+                        onCheckIn?.invoke()
+                    }
+                },
+                onLongClick = { onLongPressSelect?.invoke() }
+            )
     ) {
-        Box(
-            modifier = Modifier
-                .background(bgColor)
-                .fillMaxSize()
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .aspectRatio(1f),
+            shape = shape
         ) {
-
-
             Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth()
-                    .padding(end = 8.dp)
-                    .align(Alignment.CenterEnd)
                     .background(bgColor)
-            ) {
-                if (progressClamped > 0f) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(progressClamped)
-                            .align(Alignment.BottomCenter)
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(indicatorColor.copy(alpha = 0.40f), indicatorColor)
-                                )
-                            )
-                    )
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(8.dp)
-                    .align(Alignment.CenterEnd)
-                    .background(indicatorColor.copy(alpha = 0.18f))
-            ) {
-                if (progressTime > 0f) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(progressTime)
-                            .align(Alignment.BottomCenter)
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(indicatorColor, indicatorColor.copy(alpha = 0.7f))
-                                )
-                            )
-                    )
-                }
-            }
-
-            Column(
-                modifier = Modifier
                     .fillMaxSize()
-                    .padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)
             ) {
-                // 顶部：标题 + 文字进度 + 星标
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth()
+                        .padding(end = 8.dp)
+                        .align(Alignment.CenterEnd)
+                        .background(bgColor)
                 ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 4.dp)
-                            .basicMarquee()
-                    )
-                    if (isStarred) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_star_filled),
-                            contentDescription = null,
-                            tint = indicatorColor.copy(alpha = 1f)
+                    if (progressClamped > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(progressClamped)
+                                .align(Alignment.BottomCenter)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(indicatorColor.copy(alpha = 0.40f), indicatorColor)
+                                    )
+                                )
                         )
                     }
                 }
 
-                // 中间留白，保证底部信息贴靠左下
-                Spacer(modifier = Modifier.weight(1f))
-
-                // 左下角两行小字：每周/总计、剩余时间
-                if (remainingText.isNotBlank()) {
-                    Text(
-                        text = remainingText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 12.dp)
-                    )
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(8.dp)
+                        .align(Alignment.CenterEnd)
+                        .background(indicatorColor.copy(alpha = 0.18f))
+                ) {
+                    if (progressTime > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(progressTime)
+                                .align(Alignment.BottomCenter)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(indicatorColor, indicatorColor.copy(alpha = 0.7f))
+                                    )
+                                )
+                        )
+                    }
                 }
 
-                if (freqAndTotalText.isNotBlank()) {
-                    Text(
-                        text = freqAndTotalText,
-                        style = MaterialTheme.typography.bodySmallEmphasized,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 12.dp)
-                    )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)
+                ) {
+                    // 顶部：标题 + 文字进度 + 星标
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 4.dp)
+                                .basicMarquee()
+                        )
+                        if (isStarred) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.ic_star_filled),
+                                contentDescription = null,
+                                tint = indicatorColor.copy(alpha = 1f)
+                            )
+                        }
+                    }
+
+                    // 中间留白，保证底部信息贴靠左下
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    // 左下角两行小字：每周/总计、剩余时间
+                    if (remainingText.isNotBlank()) {
+                        Text(
+                            text = remainingText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 12.dp)
+                        )
+                    }
+
+                    if (freqAndTotalText.isNotBlank()) {
+                        Text(
+                            text = freqAndTotalText,
+                            style = MaterialTheme.typography.bodySmallEmphasized,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 12.dp)
+                        )
+                    }
                 }
             }
         }
+
+        if (selectionMode && selected) {
+            SelectionOverlay(shape)
+        }
     }
 }
+
+@Composable
+fun SelectionOverlay(
+    shape: Shape,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .clip(shape)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f))
+        )
+
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            shadowElevation = 2.dp,
+            modifier = Modifier
+                .padding(8.dp)
+                .size(24.dp)
+                .align(Alignment.TopStart)
+        ) {
+            Icon(
+                imageVector = iconResource(R.drawable.ic_ok),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(4.dp)
+            )
+        }
+    }
+}
+
+// 小工具：把任意子 Box 放到父布局左上角
+private fun Modifier.align(alignment: Alignment) = this.then(
+    Modifier.layout { measurable, constraints ->
+        val p = measurable.measure(constraints)
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            val x = when (alignment) {
+                Alignment.TopStart -> 0
+                Alignment.TopEnd -> constraints.maxWidth - p.width
+                Alignment.BottomStart -> 0
+                Alignment.BottomEnd -> constraints.maxWidth - p.width
+                else -> 0
+            }
+            val y = when (alignment) {
+                Alignment.TopStart, Alignment.TopEnd -> 0
+                Alignment.BottomStart, Alignment.BottomEnd -> constraints.maxHeight - p.height
+                else -> 0
+            }
+            p.place(x, y)
+        }
+    }
+)
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -717,6 +845,22 @@ private fun PreviewDDLItemCard() {
                 progress = 0.9f,
                 isStarred = true,
                 onClick = {}
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            DDLItemCardSwipeable(
+                title = "DDL Sample",
+                remainingTimeAlt = "1:00 截止",
+                note = "备注：这里是一段可选的补充说明……",
+                progress = 0.9f,
+                isStarred = true,
+                onClick = {},
+                status = DDLStatus.NEAR,
+                onComplete = {},
+                onDelete = {},
+                selectionMode = true,
+                selected = true
             )
         }
     }

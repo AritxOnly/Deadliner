@@ -67,6 +67,10 @@ fun TaskItem(
     updateDDL: (DDLItem) -> Unit,
     celebrate: () -> Unit,
     onDelete: () -> Unit,
+    selectionMode: Boolean = false,
+    selected: Boolean = false,
+    onLongPressSelect: (() -> Unit)? = null,
+    onToggleSelect: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
 
@@ -131,7 +135,11 @@ fun TaskItem(
         onDelete = {
             GlobalUtils.triggerVibration(activity, 200)
             onDelete()
-        }
+        },
+        selectionMode = selectionMode,
+        selected = selected,
+        onLongPressSelect = onLongPressSelect,
+        onToggleSelect = onToggleSelect,
     )
 }
 
@@ -141,7 +149,11 @@ fun HabitItem(
     onRefresh: () -> Unit,
     updateDDL: (DDLItem) -> Unit,
     onCheckInFailed: () -> Unit = {},
-    onCheckInSuccess: (DDLItem, HabitMetaData) -> Unit = { i, m -> }
+    onCheckInSuccess: (DDLItem, HabitMetaData) -> Unit = { i, m -> },
+    selectionMode: Boolean = false,
+    selected: Boolean = false,
+    onLongPressSelect: (() -> Unit)? = null,
+    onToggleSelect: (() -> Unit)? = null
 ) {
     val now = LocalDateTime.now()
     val habitMeta = remember(item.note) { GlobalUtils.parseHabitMetaData(item.note) }
@@ -253,21 +265,22 @@ fun HabitItem(
                 return@HabitItemCardSimplified
             }
 
-            // 2) 更新 note：把今天加入已打卡集合
             val today = LocalDate.now()
             val updatedNote = updateNoteWithDate(item, today)
 
-            // 3) 自增当期与累计计数
             val updatedHabit = item.copy(
                 note = updatedNote,
                 habitCount = item.habitCount + 1,
                 habitTotalCount = item.habitTotalCount + 1
             )
 
-            // 4) 全局回调（成功）
             onCheckInSuccess(item, habitMeta)
 
             updateDDL(updatedHabit)
-        }
+        },
+        selectionMode = selectionMode,
+        selected = selected,
+        onLongPressSelect = onLongPressSelect,
+        onToggleSelect = onToggleSelect,
     )
 }

@@ -19,6 +19,7 @@ import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.UiStyle
 import com.aritxonly.deadliner.ui.main.classic.ClassicController
 import com.aritxonly.deadliner.ui.main.classic.ClassicHost
+import com.aritxonly.deadliner.ui.main.classic.CustomAdapter
 import com.aritxonly.deadliner.ui.main.simplified.SimplifiedHost
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.aritxonly.deadliner.widgets.HabitMiniWidget

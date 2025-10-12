@@ -71,7 +71,7 @@ import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
 import com.aritxonly.deadliner.AddDDLActivity
 import com.aritxonly.deadliner.ArchiveActivity
-import com.aritxonly.deadliner.CustomAdapter
+import com.aritxonly.deadliner.ui.main.classic.CustomAdapter
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.DeadlineDetailActivity
 import com.aritxonly.deadliner.EditDDLFragment

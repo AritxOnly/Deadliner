@@ -197,7 +197,7 @@
     <string name="duration_less_than_hour">&lt;1 hour</string>
     <string name="show_clipboard_ai_snackbar">Clipboard content detected. Use Deadliner AI to quickly add?</string>
     <string name="add">Add</string>
-    <string name="selected_items">%1$d deadlines selected</string>
+    <string name="selected_items">%1$d selected</string>
     <string name="habit_success">Check-in successful 🎉</string>
     <string name="undo">Undo</string>
     <string name="none_selected">No items selected</string>

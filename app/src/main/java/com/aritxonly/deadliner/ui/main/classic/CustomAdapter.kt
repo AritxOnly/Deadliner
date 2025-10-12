@@ -1,7 +1,8 @@
-package com.aritxonly.deadliner
+package com.aritxonly.deadliner.ui.main.classic
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Resources
 import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -13,24 +14,20 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.data.DDLRepository
+import com.aritxonly.deadliner.data.MainViewModel
+import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.DeadlineFrequency
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.YearMonth
-import android.content.res.Resources
-import com.aritxonly.deadliner.data.DDLRepository
-import com.aritxonly.deadliner.data.MainViewModel
-import com.aritxonly.deadliner.localutils.GlobalUtils
-import com.aritxonly.deadliner.localutils.GlobalUtils.refreshCount
-import com.aritxonly.deadliner.model.DDLItem
-import com.aritxonly.deadliner.model.DeadlineFrequency
-import com.aritxonly.deadliner.model.DeadlineType
-import com.aritxonly.deadliner.model.HabitMetaData
-import com.aritxonly.deadliner.model.toJson
-import com.aritxonly.deadliner.model.updateNoteWithDate
-import java.time.temporal.ChronoUnit
 
 val Int.dp: Int
     get() = (this * Resources.getSystem().displayMetrics.density).toInt()
@@ -183,7 +180,7 @@ class CustomAdapter(
         val completedDates: Set<LocalDate> = habitMeta.completedDates.map { LocalDate.parse(it) }.toSet()
 
         // 0. 判断是否需要清零
-        refreshCount(habitItem, habitMeta) {
+        GlobalUtils.refreshCount(habitItem, habitMeta) {
             viewModel.loadData(currentType)
         }
 

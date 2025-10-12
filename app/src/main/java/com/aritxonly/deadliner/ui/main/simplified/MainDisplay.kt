@@ -140,15 +140,22 @@ import kotlin.math.max
 @Composable
 fun MainDisplay(
     ddlList: List<DDLItem>,
-    dueSoonCounts: Map<DeadlineType, Int>,
     refreshState: MainViewModel.RefreshState,
     selectedPage: DeadlineType,
     activity: MainActivity,
-    searchActive: Boolean,
-    onSearchActiveChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     vm: MainViewModel,
     listState: LazyListState,
+    moreExpanded: Boolean,
+    moreAnchorRect: androidx.compose.ui.geometry.Rect?,
+    useAvatar: Boolean,
+    nickname: String,
+    avatarPainter: Painter?,
+    onCloseMorePanel: () -> Unit,
+    selectionMode: Boolean,
+    isSelected: (Long) -> Boolean,
+    onItemLongPress: (Long) -> Unit,
+    onItemClickInSelection: (Long) -> Unit,
     onRequestBackdropBlur: (Boolean) -> Unit = {},
     onShowUndoSnackbar: (DDLItem) -> Unit = {},
     onCelebrate: (() -> Unit)? = null
@@ -160,32 +167,8 @@ fun MainDisplay(
     val pullToRefreshState = rememberPullToRefreshState()
     val isRefreshing = refreshState is MainViewModel.RefreshState.Loading && !refreshState.silent
 
-    var moreExpanded by remember { mutableStateOf(false) }
-    var moreAnchorRect by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
-
-    val profile by UserProfileRepository.profile.collectAsState(initial = UserProfile())
-    var nickname by remember(profile.nickname) { mutableStateOf(profile.nickname) }
-
-    val avatarPainter: Painter? by remember(profile.avatarFileName) {
-        mutableStateOf<Painter?>(
-            if (profile.avatarFileName != null) {
-                val file = File(context.filesDir, "avatars/${profile.avatarFileName}")
-                if (file.exists()) {
-                    // 读取文件并转为 Painter
-                    val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-                    if (bitmap != null) BitmapPainter(bitmap.asImageBitmap()) else null
-                } else {
-                    null
-                }
-            } else {
-                null
-            }
-        )
-    }
-    val useAvatar = avatarPainter != null
-
     val needsBlur by remember {
-        derivedStateOf { pendingDelete != null || moreExpanded }
+        derivedStateOf { pendingDelete != null }
     }
     LaunchedEffect(needsBlur) {
         onRequestBackdropBlur(needsBlur)
@@ -195,43 +178,6 @@ fun MainDisplay(
     }
 
     Column(modifier) {
-        val textFieldState = rememberTextFieldState()
-        var suggestions by rememberSaveable { mutableStateOf(emptyList<DDLItem>()) }
-        var base by remember { mutableStateOf<List<DDLItem>>(emptyList()) }
-        LaunchedEffect(selectedPage) {
-            base = vm.getBaseList(selectedPage)
-        }
-        LaunchedEffect(textFieldState) {
-            snapshotFlow { textFieldState.text.toString() }
-                .distinctUntilChanged()
-                .debounce(250)
-                .collect { q ->
-                    val f = SearchFilter.parse(q)
-                    suggestions = if (q.isBlank()) emptyList()
-                    else base.asSequence()
-                        .filter { f.matches(it) }
-                        .toList()
-                }
-        }
-
-        MainSearchBar(
-            textFieldState = textFieldState,
-            searchResults = suggestions,
-            onQueryChanged = { q ->
-                val f = SearchFilter.parse(q)
-                suggestions = if (q.isBlank()) emptyList()
-                else base.filter { f.matches(it) }.toList()
-            },
-            onMoreClick = { moreExpanded = true },
-            onMoreAnchorChange = { rect -> moreAnchorRect = rect },
-            useAvatar = useAvatar,
-            avatarPainter = avatarPainter,
-            activity = activity,
-            expanded = searchActive,
-            onExpandedChangeExternal = onSearchActiveChange,
-            onItemDelete = { pendingDelete = it }
-        )
-
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             state = pullToRefreshState,
@@ -283,6 +229,10 @@ fun MainDisplay(
                                     onDelete = {
                                         pendingDelete = item
                                     },
+                                    selectionMode = selectionMode,
+                                    selected = isSelected(item.id),
+                                    onLongPressSelect = { onItemLongPress(item.id) },
+                                    onToggleSelect = { onItemClickInSelection(item.id) }
                                 )
                             }
                         }
@@ -331,7 +281,11 @@ fun MainDisplay(
                                             }
                                         }
                                         onShowUndoSnackbar(updatedHabit)
-                                    }
+                                    },
+                                    selectionMode = selectionMode,
+                                    selected = isSelected(item.id),
+                                    onLongPressSelect = { onItemLongPress(item.id) },
+                                    onToggleSelect = { onItemClickInSelection(item.id) }
                                 )
                             }
                         }
@@ -379,7 +333,7 @@ fun MainDisplay(
             nickname = nickname,
             activity = activity,
         ) {
-            moreExpanded = false
+            onCloseMorePanel()
         }
     }
 }

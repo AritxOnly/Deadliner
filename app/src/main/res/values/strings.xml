@@ -252,7 +252,7 @@
     <string name="duration_less_than_hour">&lt;1小时</string>
     <string name="show_clipboard_ai_snackbar">检测到剪切板内容，使用 Deadliner AI 快捷添加？</string>
     <string name="add">添加</string>
-    <string name="selected_items">已选中 %1$d 项 Deadline</string>
+    <string name="selected_items">已选中 %1$d 项</string>
     <string name="habit_success">打卡成功 🎉</string>
     <string name="undo">撤销</string>
     <string name="none_selected">未选择任何项</string>
