@@ -414,7 +414,7 @@ fun SimplifiedHost(
                         activity = activity,
                         expanded = searchActive,
                         onExpandedChangeExternal = onSearchActiveChange,
-                        onItemDelete = { }
+                        selectedPage = selectedPage
                     )
                 }
             }

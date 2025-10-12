@@ -371,7 +371,7 @@ fun MainSearchBar(
     activity: MainActivity,
     expanded: Boolean,
     onExpandedChangeExternal: (Boolean) -> Unit = {},
-    onItemDelete: (DDLItem) -> Unit = {}
+    selectedPage: DeadlineType
 ) {
     val context = LocalContext.current
 
@@ -500,72 +500,71 @@ fun MainSearchBar(
                 onExpandedChangeExternal(exp)
             },
         ) {
-            LazyColumn(
-                contentPadding = PaddingValues(
-                    top = 16.dp,
-                    bottom = 96.dp,
-                    start = 16.dp,
-                    end = 16.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .fadingTopEdge(height = 16.dp),
-            ) {
-                if (searchResults.isEmpty()) {
-                    item {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 48.dp, horizontal = 24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = stringResource(R.string.search_no_result_title),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
 
-                            Spacer(modifier = Modifier.height(8.dp))
+            if (searchResults.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp, horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.search_no_result_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                            Text(
-                                text = buildAnnotatedString {
-                                    append(stringResource(R.string.search_no_result_suggestion_prefix))
-                                    append("\n")
-                                    appendExample("y2025", R.string.search_example_y)
-                                    append("\n")
-                                    appendExample("m10", R.string.search_example_m)
-                                    append("\n")
-                                    appendExample("d15", R.string.search_example_d)
-                                    append("\n")
-                                    appendExample("h20", R.string.search_example_h)
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = buildAnnotatedString {
+                            append(stringResource(R.string.search_no_result_suggestion_prefix))
+                            append("\n")
+                            appendExample("y2025", R.string.search_example_y)
+                            append("\n")
+                            appendExample("m10", R.string.search_example_m)
+                            append("\n")
+                            appendExample("d15", R.string.search_example_d)
+                            append("\n")
+                            appendExample("h20", R.string.search_example_h)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                            Icon(
-                                painter = painterResource(R.drawable.ic_search),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .alpha(0.6f)
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Icon(
+                        painter = painterResource(R.drawable.ic_search),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .alpha(0.6f)
+                    )
                 }
+            }
 
-                itemsIndexed(
-                    items = searchResults,
-                    key = { _, it -> it.id }
-                ) { index, item ->
-                    when (item.type) {
-                        DeadlineType.TASK -> {
+            when (selectedPage) {
+                DeadlineType.TASK -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(
+                            top = 16.dp,
+                            bottom = 96.dp,
+                            start = 16.dp,
+                            end = 16.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .fadingTopEdge(height = 16.dp),
+                    ) {
+                        itemsIndexed(
+                            items = searchResults,
+                            key = { _, it -> it.id }
+                        ) { index, item ->
                             AnimatedItem(
                                 item = item,
                                 index = index
@@ -602,13 +601,40 @@ fun MainSearchBar(
                                     isStarred = item.isStared,
                                     status = status,
                                     onClick = {
-                                        val intent = DeadlineDetailActivity.newIntent(context, item)
+                                        val intent =
+                                            DeadlineDetailActivity.newIntent(context, item)
                                         activity.startActivity(intent)
                                     }
                                 )
                             }
                         }
-                        DeadlineType.HABIT -> {
+                    }
+                }
+
+                DeadlineType.HABIT -> {
+                    LazyVerticalStaggeredGrid(
+                        columns = StaggeredGridCells.Fixed(2), // 👉 手机上固定两列
+                        verticalItemSpacing = 10.dp,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        itemsIndexed(
+                            items = searchResults,
+                            key = { _, it -> it.id }
+                        ) { index, item ->
+                            AnimatedItem(
+                                item = item,
+                                index = index
+                            ) {
+                                HabitItem(
+                                    item = item,
+                                    onRefresh = {  },
+                                    updateDDL = {  },
+                                    onCheckInFailed = {  },
+                                    onCheckInSuccess = { _, _ -> },
+                                )
+                            }
                         }
                     }
                 }

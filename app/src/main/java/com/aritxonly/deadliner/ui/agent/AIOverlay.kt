@@ -46,8 +46,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -83,7 +87,6 @@ fun AIOverlayHost(
     onRemoveFromWindow: () -> Unit,
     respondIme: Boolean = true
 ) {
-    // 初始不可见 -> 目标可见：触发入场
     val visibleState = remember {
         MutableTransitionState(false).apply { targetState = true }
     }
@@ -118,7 +121,7 @@ fun AIOverlay(
     onDismiss: () -> Unit,
     onAddDDL: (Intent) -> Unit,
     modifier: Modifier = Modifier.fillMaxSize(),
-    borderThickness: Dp = 4.dp,
+    borderThickness: Dp = 2.dp,
     glowColors: List<Color> = listOf(Color(0xFF6AA9FF), Color(0xFFFFC36A), Color(0xFFFF6AE6)),
     hintText: String = stringResource(R.string.ai_overlay_enter_questions),
     respondIme: Boolean = true
@@ -199,106 +202,29 @@ fun AIOverlay(
             )
         }
 
-        val itemCorner = dimensionResource(R.dimen.item_corner_radius)
-        Box(
+        val toolbarShape = RoundedCornerShape(percent = 50)
+        val parseFailedText = stringResource(R.string.parse_failed)
+        val unknownErrorText = stringResource(R.string.unknown_error)
+
+        HorizontalFloatingToolbar(
+            expanded = true,
+            colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
             modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 24.dp, vertical = 40.dp)
                 .graphicsLayer {
-//                    alpha = panelAlpha.value
                     translationY = panelTranslate.value
                 }
                 .glowingWobbleBorder(
+                    shape = toolbarShape,
                     colors = glowColors,
-                    corner = itemCorner,
                     stroke = borderThickness,
                     wobblePx = wobblePx,
                     breatheAmp = 0.10f
-                )
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius))
-                )
-                .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        focusRequester.requestFocus()
-                        keyboardController?.show()
-                    }
-            ) {
-                val lineHeightDp = 24.dp
-                val maxHeight = lineHeightDp * 2
-
-                val scrollState = rememberScrollState()
-                val parseFailedText = stringResource(R.string.parse_failed)
-                val unknownErrorText = stringResource(R.string.unknown_error)
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(max = maxHeight)
-                        .verticalScroll(scrollState)
-                        .bringIntoViewRequester(bringIntoViewRequester)
-                ) {
-
-                    BasicTextField(
-                        value = textState,
-                        onValueChange = { textState = it },
-                        textStyle = LocalTextStyle.current.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = MaterialTheme.typography.bodyMedium.fontSize
-                        ),
-                        modifier = Modifier
-                            .focusRequester(focusRequester),
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            imeAction = ImeAction.Send
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onSend = {
-                                focusManager.clearFocus()
-                                if (textState.text.isNotBlank()) {
-                                    results = emptyList()
-                                    failed = false
-                                    scope.launch {
-                                        isLoading = true
-                                        try {
-                                            val raw = generateDeadline(context, textState.text)
-                                            val ddl = parseGeneratedDDL(raw)
-                                            results = listOf(ddl)
-                                        } catch (e: Exception) {
-                                            results = listOf(
-                                                GeneratedDDL(
-                                                    name = parseFailedText,
-                                                    dueTime = LocalDateTime.now(),
-                                                    note = e.message ?: unknownErrorText
-                                                )
-                                            )
-                                            failed = true
-                                        } finally {
-                                            isLoading = false
-                                        }
-                                    }
-                                }
-                            }
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-                        decorationBox = { innerTextField ->
-                            if (textState.text.isEmpty()) {
-                                Text(
-                                    text = hintText,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                )
-                            }
-                            innerTextField()
-                        }
-                    )
-                }
-
+                ),
+            trailingContent = {
                 IconButton(onClick = {
                     focusManager.clearFocus()
                     if (textState.text.isNotBlank()) {
@@ -324,7 +250,8 @@ fun AIOverlay(
                             }
                         }
                     }
-                }) {
+                }
+                ) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.ic_send),
                         contentDescription = stringResource(R.string.send),
@@ -332,6 +259,70 @@ fun AIOverlay(
                     )
                 }
             }
+        ) {
+            val configuration = LocalConfiguration.current
+            val screenWidthDp = configuration.screenWidthDp.dp
+
+            val buttonWidth = 48.dp
+            val horizontalPadding = 32.dp
+
+            val textFieldWidth = screenWidthDp - buttonWidth - horizontalPadding * 2
+
+            BasicTextField(
+                value = textState,
+                onValueChange = { textState = it },
+                textStyle = LocalTextStyle.current.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = MaterialTheme.typography.bodyMedium.fontSize
+                ),
+                modifier = Modifier
+                    .width(textFieldWidth)
+                    .padding(start = 8.dp)
+                    .heightIn(max = 48.dp)
+                    .focusRequester(focusRequester),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Send
+                ),
+                keyboardActions = KeyboardActions(
+                    onSend = {
+                        focusManager.clearFocus()
+                        if (textState.text.isNotBlank()) {
+                            results = emptyList()
+                            failed = false
+                            scope.launch {
+                                isLoading = true
+                                try {
+                                    val raw = generateDeadline(context, textState.text)
+                                    val ddl = parseGeneratedDDL(raw)
+                                    results = listOf(ddl)
+                                } catch (e: Exception) {
+                                    results = listOf(
+                                        GeneratedDDL(
+                                            name = parseFailedText,
+                                            dueTime = LocalDateTime.now(),
+                                            note = e.message ?: unknownErrorText
+                                        )
+                                    )
+                                    failed = true
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        }
+                    }
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+                decorationBox = { innerTextField ->
+                    if (textState.text.isEmpty()) {
+                        Text(
+                            text = hintText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                    }
+                    innerTextField()
+                }
+            )
         }
 
         // 加载指示条
@@ -578,6 +569,61 @@ fun Modifier.glowingWobbleBorder(
                     cornerRadius = CornerRadius(r, r),
                     style = Stroke(width = strokePx)
                 )
+            }
+        }
+    )
+}
+
+fun Modifier.glowingWobbleBorder(
+    shape: Shape,
+    colors: List<Color>,
+    stroke: Dp,
+    wobblePx: Dp = 4.dp,
+    freqHz: Float = 0.20f,
+    breatheAmp: Float = 0.12f,
+    breatheHz: Float = 0.10f
+): Modifier = composed {
+    val density = LocalDensity.current
+    val timeSec by rememberTimeSeconds()
+
+    val wobble = with(density) { wobblePx.toPx() } *
+            sin(2f * Math.PI.toFloat() * (timeSec * freqHz))
+    val breathe = 1f + breatheAmp *
+            sin(2f * Math.PI.toFloat() * (timeSec * breatheHz + 0.17f))
+
+    this.then(
+        Modifier.drawWithCache {
+            val strokePx = stroke.toPx()
+
+            val brush = Brush.linearGradient(
+                colors = colors.map { it.copy(alpha = (it.alpha * breathe).coerceIn(0f, 1f)) },
+                start = Offset(-wobble, 0f),
+                end = Offset(size.width + wobble, 0f)
+            )
+
+            onDrawWithContent {
+                drawContent()
+
+                inset(strokePx / 2f) {
+                    val outline = shape.createOutline(
+                        size = size,
+                        layoutDirection = this.layoutDirection,
+                        density = this
+                    )
+                    when (outline) {
+                        is Outline.Rounded -> {
+                            val rr = outline.roundRect
+                            val path = Path().apply { addRoundRect(rr) }
+                            drawPath(path = path, brush = brush, style = Stroke(width = strokePx))
+                        }
+                        is Outline.Rectangle -> {
+                            drawRect(brush = brush, style = Stroke(width = strokePx))
+                        }
+                        is Outline.Generic -> {
+                            drawPath(path = outline.path, brush = brush, style = Stroke(width = strokePx))
+                        }
+                    }
+                }
             }
         }
     )
