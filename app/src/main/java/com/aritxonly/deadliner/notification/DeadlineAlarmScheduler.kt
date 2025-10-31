@@ -12,6 +12,7 @@ import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_ALARM_SHOW
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_ALARM_TRIGGER
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.notification.UpcomingLiveUpdatesReceiver
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -69,12 +70,6 @@ object DeadlineAlarmScheduler {
 
         val info = AlarmManager.AlarmClockInfo(triggerTime, showPendingIntent)
         alarmManager.setAlarmClock(info, pendingIntent)
-
-//        alarmManager.setExactAndAllowWhileIdle(
-//            AlarmManager.RTC_WAKEUP,
-//            triggerTime,
-//            pendingIntent
-//        )
     }
 
     fun cancelAllAlarms(context: Context) {
@@ -90,6 +85,11 @@ object DeadlineAlarmScheduler {
     }
 
     fun cancelAlarm(context: Context, ddlId: Long) {
+        cancelExactAlarm(context, ddlId)
+        cancelUpcomingDDLAlarm(context, ddlId)
+    }
+
+    fun cancelExactAlarm(context: Context, ddlId: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
         val intent = Intent(context, DeadlineAlarmReceiver::class.java).apply {
@@ -167,12 +167,6 @@ object DeadlineAlarmScheduler {
         val info = AlarmManager.AlarmClockInfo(triggerMillis, showPi)
         alarmManager.setAlarmClock(info, pi)
 
-//        alarmManager.setExactAndAllowWhileIdle(
-//            AlarmManager.RTC_WAKEUP,
-//            triggerMillis,
-//            pi
-//        )
-
         Log.d("AlarmDebug", "已调度每日通知，每天 ${hour}:${minute}，首次触发：${Date(triggerMillis)}")
     }
 
@@ -209,5 +203,78 @@ object DeadlineAlarmScheduler {
             pi.cancel()
             Log.d("AlarmDebug", "已取消旧版本的每日通知闹钟")
         }
+    }
+
+    fun scheduleUpcomingDDLAlarm(context: Context, ddl: DDLItem) {
+        val remainingTime = calculateRemainingTime(ddl) // 剩余秒数
+        if (remainingTime <= 0) return // 过期不设闹钟
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val triggerTime = System.currentTimeMillis() + (remainingTime - 600).coerceAtLeast(0) * 1000L // 提前10分钟
+
+        // 广播 PendingIntent
+        val pendingIntent = createUpcomingDDLPendingIntent(context, ddl)
+
+        // 打开 App 的 PendingIntent（用于锁屏时点击闹钟图标进入）
+        val showIntent = Intent(context, MainActivity::class.java)
+        val showPi = PendingIntent.getActivity(
+            context,
+            RC_ALARM_SHOW + ddl.id.hashCode(), // 可换成独立常量或 ddl id
+            showIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // 构造 AlarmClockInfo
+        val info = AlarmManager.AlarmClockInfo(triggerTime, showPi)
+
+        // 使用 setAlarmClock（高优先级闹钟，显示在状态栏和锁屏）
+        alarmManager.setAlarmClock(info, pendingIntent)
+
+        Log.d("DDLAlarm", "已调度DDL提醒：${ddl.name}，触发时间：${Date(triggerTime)}")
+    }
+
+    fun cancelUpcomingDDLAlarm(context: Context, ddlId: Long) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        // 必须与 createUpcomingDDLPendingIntent 中保持完全一致
+        val intent = Intent(context, UpcomingLiveUpdatesReceiver::class.java).apply {
+            action = "com.aritxonly.deadliner.ACTION_UPCOMING_DDL"
+            putExtra("DDL_ID", ddlId)
+        }
+
+        val requestCode = ddlId.hashCode()
+
+        PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )?.let { pi ->
+            alarmManager.cancel(pi)
+            pi.cancel()
+            Log.d("AlarmDebug", "取消Upcoming DDL闹钟：DDL_ID=$ddlId, reqCode=$requestCode")
+        } ?: run {
+            Log.d("AlarmDebug", "未找到可取消的Upcoming DDL闹钟：DDL_ID=$ddlId, reqCode=$requestCode")
+        }
+    }
+
+    internal fun calculateRemainingTime(ddl: DDLItem): Long {
+        val now = LocalDateTime.now()
+        val endTime = GlobalUtils.safeParseDateTime(ddl.endTime)
+        val duration = Duration.between(now, endTime)
+        return duration.toSeconds() // 返回剩余时间，单位为秒
+    }
+
+    private fun createUpcomingDDLPendingIntent(context: Context, ddl: DDLItem): PendingIntent {
+        val intent = Intent(context, UpcomingLiveUpdatesReceiver::class.java).apply {
+            action = "com.aritxonly.deadliner.ACTION_UPCOMING_DDL"
+            putExtra("DDL_ID", ddl.id)
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            ddl.id.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 }

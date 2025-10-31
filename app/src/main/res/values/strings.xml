@@ -604,4 +604,14 @@
     <string name="save_change">保存更改</string>
     <string name="remove_avatar">移除头像</string>
     <string name="crop_avatar">裁剪头像</string>
+    <string name="notification_upcoming_task">任务将在 %d 分钟后到期</string>
+    <string name="notification_upcoming_task_soon">您的任务即将到期，请尽快完成！</string>
+    <string name="control_center_tile">控制中心图块</string>
+    <string name="add_ddl_tile">“创建任务”图块</string>
+    <string name="add_ddl_tile_supporting">添加“创建任务”快捷设置到控制中心</string>
+    <string name="notification_upcoming_task_overdue">任务已逾期！</string>
+    <string name="notification_upcoming_task_title">任务状态：%s</string>
+    <string name="notification_upcoming_critical_soon">即将到期</string>
+    <string name="notification_upcoming_critical">剩余%d分钟</string>
+    <string name="notification_upcoming_critical_overdue">已逾期</string>
 </resources>

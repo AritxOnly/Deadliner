@@ -11,14 +11,14 @@ plugins {
 
 android {
     namespace = "com.aritxonly.deadliner"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.aritxonly.deadliner"
         minSdk = 31
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 28
-        versionName = "3.2.0 Early Stage"
+        versionName = "3.2.0 - Anniversary Beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

@@ -553,7 +553,9 @@ fun SimplifiedHost(
                             ) {
                                 FilledIconButton(
                                     onClick = {
-                                        val intent = Intent(context, AddDDLActivity::class.java)
+                                        val intent = Intent(context, AddDDLActivity::class.java).apply {
+                                            putExtra("EXTRA_CURRENT_TYPE", if (selectedPage == DeadlineType.TASK) 0 else 1)
+                                        }
                                         launcher.launch(intent)
                                     },
                                     modifier = Modifier
@@ -671,8 +673,7 @@ fun SimplifiedHost(
                                 ) {
                                     Icon(
                                         iconResource(R.drawable.ic_done),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurface
+                                        contentDescription = null
                                     )
                                 }
 

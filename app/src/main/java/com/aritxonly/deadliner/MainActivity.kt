@@ -144,7 +144,12 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     override fun onSwipeLeft(position: Int)  { classicController?.onSwipeLeft(position) }
     override fun onSwipeRight(position: Int) { classicController?.onSwipeRight(position) }
 
-    internal fun setClassicControllerRef(c: ClassicController?) { classicController = c }
+    internal fun setClassicControllerRef(c: ClassicController?) {
+        classicController = c
+        c?.let {
+            c.normalizeRootInsets()
+        }
+    }
 
     fun updateWidget() {
         val appWidgetManager = AppWidgetManager.getInstance(this)

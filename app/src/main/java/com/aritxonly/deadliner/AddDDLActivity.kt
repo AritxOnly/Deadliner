@@ -279,8 +279,10 @@ class AddDDLActivity : AppCompatActivity() {
                 )
 
                 repo.getDDLById(ddlId)?.let { item ->
-                    if (GlobalUtils.deadlineNotification)
+                    if (GlobalUtils.deadlineNotification) {
                         DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, item)
+                        DeadlineAlarmScheduler.scheduleUpcomingDDLAlarm(applicationContext, item)
+                    }
                     if (toCalendar) {
                         val calendarHelper = CalendarHelper(this)
                         lifecycleScope.launch {

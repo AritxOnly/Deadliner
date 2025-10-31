@@ -17,6 +17,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 
     <application
         android:name=".DeadlinerApp"
@@ -170,6 +171,15 @@
         <receiver
             android:name=".notification.NotificationActionReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".notification.UpcomingLiveUpdatesReceiver"
+            android:enabled="true"
+            android:exported="false"
+            android:permission="android.permission.WAKE_LOCK">
+            <intent-filter>
+                <action android:name="com.aritxonly.deadliner.ACTION_UPCOMING_DDL" />
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

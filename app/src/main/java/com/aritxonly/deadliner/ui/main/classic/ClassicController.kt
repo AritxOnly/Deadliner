@@ -1494,6 +1494,7 @@ class ClassicController(
             val allDDLs = DDLRepository().getAllDDLs()
             allDDLs.filter { !it.isCompleted }.forEach { ddl ->
                 DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, ddl)
+                DeadlineAlarmScheduler.scheduleUpcomingDDLAlarm(applicationContext, ddl)
             }
         }
     }
@@ -1751,12 +1752,14 @@ class ClassicController(
             .show()
     }
 
-    private fun normalizeRootInsets() {
+    internal fun normalizeRootInsets() {
         val root = activity.findViewById<ViewGroup>(android.R.id.content).getChildAt(0) ?: return
         ViewCompat.setOnApplyWindowInsetsListener(root, null)
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
             val status = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+//            Log.d("InsetsView", "l ${v.paddingLeft} | r ${v.paddingRight} | t ${v.paddingTop} | b ${v.paddingBottom}")
+//            Log.d("InsetsStatus", "l ${status.left} | r ${status.right} | t ${status.top} | b ${status.bottom}")
             // 只应用 top inset，忽略 bottom
             v.setPadding(v.paddingLeft, status.top, v.paddingRight, 0)
             insets // 不消费，让子控件能继续收到

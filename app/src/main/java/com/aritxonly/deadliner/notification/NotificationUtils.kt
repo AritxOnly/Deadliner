@@ -8,6 +8,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -15,6 +16,7 @@ import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.DeadlineDetailActivity
@@ -27,6 +29,7 @@ import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_DDL_DETAIL
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_DELETE
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_LATER
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_MARK_COMPLETE
+import com.aritxonly.deadliner.ui.main.simplified.computeProgress
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.time.Duration
 import java.time.LocalDateTime
@@ -102,12 +105,6 @@ object NotificationUtil {
             }
         }
 
-//        // MIUI权限检查
-//        if (isXiaomiDevice() && !checkXiaomiPopupPermission(context)) {
-//            showXiaomiPermissionDialog(context)
-//            return
-//        }
-
         val notification = buildNotification(context, ddl)
         NotificationManagerCompat.from(context).notify(ddl.id.hashCode(), notification)
     }
@@ -120,12 +117,6 @@ object NotificationUtil {
                 return
             }
         }
-
-//        // MIUI权限检查
-//        if (isXiaomiDevice() && !checkXiaomiPopupPermission(context)) {
-//            showXiaomiPermissionDialog(context)
-//            return
-//        }
 
         val notification = buildDailyNotification(context)
         NotificationManagerCompat.from(context).notify(114514, notification)
@@ -262,6 +253,88 @@ object NotificationUtil {
                     putString("oppo_notification_channel_id", "important_channel")
                 })
             }
+        }.build()
+    }
+
+    fun sendUpcomingDDLNotification(context: Context, ddl: DDLItem, remainingTime: Long) {
+        // 检查通知权限（Android 13+）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                return
+            }
+        }
+
+        // 计算剩余时间的通知文本
+        val notificationText = if (remainingTime <= 0) {
+            context.getString(R.string.notification_upcoming_task_overdue)
+        } else if (remainingTime <= 60) {
+            context.getString(R.string.notification_upcoming_task_soon)
+        } else {
+            context.getString(R.string.notification_upcoming_task, (remainingTime / 60))
+        }
+
+        val shortCriticalText = if (remainingTime <= 0) {
+                context.getString(R.string.notification_upcoming_critical_overdue)
+            } else if (remainingTime <= 60) {
+                context.getString(R.string.notification_upcoming_critical_soon)
+            } else {
+                context.getString(R.string.notification_upcoming_critical, (remainingTime / 60))
+            }
+
+        val notification = buildUpcomingDDLNotification(context, ddl, notificationText, shortCriticalText)
+
+        // 使用通知管理器发送通知
+        NotificationManagerCompat.from(context).notify(ddl.id.hashCode(), notification)
+    }
+
+    private fun buildUpcomingDDLNotification(context: Context, ddl: DDLItem, notificationText: String, shortCriticalText: String): Notification {
+        val progress = (computeProgress(
+            GlobalUtils.parseDateTime(ddl.startTime),
+            GlobalUtils.parseDateTime(ddl.endTime),
+        ) * 100f).toInt().coerceIn(0, 100)
+
+        // 设置任务详情页面的 PendingIntent
+        val detailIntent = DeadlineDetailActivity.newIntent(context, ddl).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val detailPendingIntent = PendingIntent.getActivity(
+            context,
+            RC_DDL_DETAIL + ddl.id.hashCode(),
+            detailIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // 创建 ProgressStyle 通知
+        return NotificationCompat.Builder(context, CHANNEL_ID).apply {
+            setSmallIcon(R.mipmap.ic_launcher)
+            setContentTitle(context.getString(R.string.notification_upcoming_task_title, ddl.name))
+            setContentText(notificationText)
+            setStyle(NotificationCompat.ProgressStyle()
+                .setProgress(progress)
+                .setProgressSegments(
+                    listOf(NotificationCompat.ProgressStyle.Segment(100))
+                )
+            )
+
+            // 设置通知为 Ongoing（持续事件）
+            setOngoing(true)
+
+            // 请求通知的提升
+            setRequestPromotedOngoing(true)
+
+            // 设置通知优先级和类别
+            priority = NotificationCompat.PRIORITY_HIGH
+            setCategory(NotificationCompat.CATEGORY_ALARM)
+
+            // 设置通知内容的点击行为
+            setContentIntent(detailPendingIntent)
+
+            setShortCriticalText(shortCriticalText)
+
+            // 倒计时
+            setUsesChronometer(true)
+            setChronometerCountDown(true)
         }.build()
     }
 

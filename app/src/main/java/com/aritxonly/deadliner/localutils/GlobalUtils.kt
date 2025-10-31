@@ -631,6 +631,7 @@ object GlobalUtils {
 
         pendingTasks.forEach { ddlItem ->
             DeadlineAlarmScheduler.scheduleExactAlarm(context, ddlItem)
+            DeadlineAlarmScheduler.scheduleUpcomingDDLAlarm(context, ddlItem)
         }
     }
 
