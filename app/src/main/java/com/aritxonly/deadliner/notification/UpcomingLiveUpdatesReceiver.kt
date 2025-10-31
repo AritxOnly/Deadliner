@@ -14,16 +14,10 @@ class UpcomingLiveUpdatesReceiver: BroadcastReceiver() {
 
         Log.d("AlarmDebug", "LiveUpdates收到闹钟广播！DDL_ID: $ddlId")
 
-        // 获取DDL项
-        val dbHelper = DatabaseHelper.getInstance(context)
-        val ddl = dbHelper.getDDLById(ddlId)
+        if (ddlId <= 0) return
 
-        if (ddl != null) {
-            // 计算剩余时间
-            val remainingTime = DeadlineAlarmScheduler.calculateRemainingTime(ddl)
+        val ddl = DatabaseHelper.getInstance(context).getDDLById(ddlId) ?: return
 
-            // 发送通知
-            NotificationUtil.sendUpcomingDDLNotification(context, ddl, remainingTime)
-        }
+        UpcomingLiveUpdateService.start(context, ddl)
     }
 }

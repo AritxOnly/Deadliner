@@ -288,6 +288,32 @@ object NotificationUtil {
         NotificationManagerCompat.from(context).notify(ddl.id.hashCode(), notification)
     }
 
+    @JvmStatic
+    fun createUpcomingDDLNotification(
+        context: Context,
+        ddl: DDLItem,
+        remainingTime: Long
+    ): Notification {
+        // 与 sendUpcomingDDLNotification 中保持同样的文案逻辑
+        val notificationText = if (remainingTime <= 0) {
+            context.getString(R.string.notification_upcoming_task_overdue)
+        } else if (remainingTime <= 60) {
+            context.getString(R.string.notification_upcoming_task_soon)
+        } else {
+            context.getString(R.string.notification_upcoming_task, (remainingTime / 60))
+        }
+
+        val shortCriticalText = if (remainingTime <= 0) {
+            context.getString(R.string.notification_upcoming_critical_overdue)
+        } else if (remainingTime <= 60) {
+            context.getString(R.string.notification_upcoming_critical_soon)
+        } else {
+            context.getString(R.string.notification_upcoming_critical, (remainingTime / 60))
+        }
+
+        return buildUpcomingDDLNotification(context, ddl, notificationText, shortCriticalText)
+    }
+
     private fun buildUpcomingDDLNotification(context: Context, ddl: DDLItem, notificationText: String, shortCriticalText: String): Notification {
         val progress = (computeProgress(
             GlobalUtils.parseDateTime(ddl.startTime),
@@ -332,9 +358,7 @@ object NotificationUtil {
 
             setShortCriticalText(shortCriticalText)
 
-            // 倒计时
-            setUsesChronometer(true)
-            setChronometerCountDown(true)
+            setOnlyAlertOnce(true)
         }.build()
     }
 

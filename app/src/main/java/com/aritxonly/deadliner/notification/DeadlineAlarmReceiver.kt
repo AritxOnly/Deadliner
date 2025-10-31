@@ -35,7 +35,7 @@ class DeadlineAlarmReceiver : BroadcastReceiver() {
 
         sendImmediateNotification(context, ddl)
 
-        DeadlineAlarmScheduler.cancelAlarm(context, ddl.id)
+        DeadlineAlarmScheduler.cancelExactAlarm(context, ddl.id)
 
         GlobalUtils.NotificationStatusManager.markAsNotified(ddl.id)
     }

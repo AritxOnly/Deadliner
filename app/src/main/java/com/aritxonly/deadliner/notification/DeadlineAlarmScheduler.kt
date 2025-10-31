@@ -127,6 +127,10 @@ object DeadlineAlarmScheduler {
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
+        if (!alarmManager.canScheduleExactAlarms()) {
+            return
+        }
+
         val hour = GlobalUtils.dailyNotificationHour
         val minute = GlobalUtils.dailyNotificationMinute
 
@@ -173,6 +177,10 @@ object DeadlineAlarmScheduler {
     fun cancelDailyAlarm(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
+        if (!alarmManager.canScheduleExactAlarms()) {
+            return
+        }
+
         // 构造与 scheduleDailyAlarm 完全一致的 Intent 和 requestCode
         val intent = Intent(context, DailyAlarmReceiver::class.java).apply {
             action = "com.aritxonly.deadliner.ACTION_DAILY_ALARM"
@@ -206,10 +214,17 @@ object DeadlineAlarmScheduler {
     }
 
     fun scheduleUpcomingDDLAlarm(context: Context, ddl: DDLItem) {
+        if (ddl.type == DeadlineType.HABIT || ddl.isCompleted || ddl.isArchived) return
+
         val remainingTime = calculateRemainingTime(ddl) // 剩余秒数
         if (remainingTime <= 0) return // 过期不设闹钟
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        if (!alarmManager.canScheduleExactAlarms()) {
+            return
+        }
+
         val triggerTime = System.currentTimeMillis() + (remainingTime - 600).coerceAtLeast(0) * 1000L // 提前10分钟
 
         // 广播 PendingIntent
@@ -235,6 +250,10 @@ object DeadlineAlarmScheduler {
 
     fun cancelUpcomingDDLAlarm(context: Context, ddlId: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        if (!alarmManager.canScheduleExactAlarms()) {
+            return
+        }
 
         // 必须与 createUpcomingDDLPendingIntent 中保持完全一致
         val intent = Intent(context, UpcomingLiveUpdatesReceiver::class.java).apply {
