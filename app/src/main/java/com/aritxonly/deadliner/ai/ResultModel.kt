@@ -2,6 +2,20 @@ package com.aritxonly.deadliner.ai
 
 enum class IntentType { ExtractTasks, PlanDay, SplitToSteps }
 
+fun String.toIntentTypeOrDefault(default: IntentType = IntentType.ExtractTasks): IntentType =
+    when (this) {
+        "PlanDay" -> IntentType.PlanDay
+        "SplitToSteps" -> IntentType.SplitToSteps
+        "ExtractTasks" -> IntentType.ExtractTasks
+        else -> default
+    }
+
+data class IntentGuess(
+    val intent: IntentType,
+    val confidence: Double,   // 0.0 ~ 1.0
+    val reason: String        // 调试/打点
+)
+
 data class UserProfile(
     val preferredLang: String?,         // 例: "zh-CN"；为空则用设备语言
     val defaultEveningHour: Int = 20,   // “晚上”映射
@@ -13,13 +27,7 @@ data class UserProfile(
 data class AITask(
     val name: String,
     val dueTime: String,          // "yyyy-MM-dd HH:mm"
-    val note: String = "",
-    val priority: Int? = null,    // 0/1/2
-    val reminders: List<Int>? = null,
-    val tags: List<String>? = null,
-    val recurrence: String? = null,    // RRULE subset
-    val checklist: List<String>? = null,
-    val dependsOn: List<String>? = null
+    val note: String = ""
 )
 
 data class ExtractTasksResult(
@@ -47,3 +55,10 @@ sealed class AIResult {
     data class PlanDay(val blocks: List<PlanBlock>): AIResult()
     data class SplitToSteps(val data: SplitStepsResult): AIResult()
 }
+
+data class MixedResult(
+    val primaryIntent: String,              // "ExtractTasks" | "PlanDay" | "SplitToSteps"
+    val tasks: List<AITask> = emptyList(),  // 允许缺省，Gson 会给空列表
+    val planBlocks: List<PlanBlock> = emptyList(),
+    val steps: List<SplitStepsResult> = emptyList() // 支持多个 steps 场景；单个也可放在列表中
+)

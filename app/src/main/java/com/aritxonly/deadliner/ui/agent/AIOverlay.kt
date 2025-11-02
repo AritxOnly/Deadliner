@@ -1,6 +1,7 @@
 package com.aritxonly.deadliner.ui.agent
 
 import android.content.Intent
+import android.provider.CalendarContract
 import com.aritxonly.deadliner.R
 
 import android.view.LayoutInflater
@@ -22,6 +23,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
@@ -39,6 +42,7 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
@@ -54,6 +58,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -62,6 +69,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
@@ -69,15 +77,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.AddDDLActivity
+import com.aritxonly.deadliner.ai.AIUtils
 import com.aritxonly.deadliner.ai.GeneratedDDL
 import com.aritxonly.deadliner.ai.AIUtils.generateDeadline
-import com.aritxonly.deadliner.ai.AIUtils.parseGeneratedDDL
+import com.aritxonly.deadliner.ai.IntentType
+import com.aritxonly.deadliner.ai.UserProfile
+import com.aritxonly.deadliner.data.DDLRepository
+import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.ui.iconResource
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
+import kotlin.math.max
 import kotlin.math.sin
 
 @Composable
@@ -128,14 +143,11 @@ fun AIOverlay(
 ) {
     // UI 状态
     var textState by remember { mutableStateOf(TextFieldValue(initialText)) }
-    var isLoading by remember { mutableStateOf(false) }
-    var results by remember { mutableStateOf<List<GeneratedDDL>>(emptyList()) }
-    var failed by remember { mutableStateOf(false) }
-    val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    var state by remember { mutableStateOf(ResultState()) }
+    val clipboard = LocalClipboardManager.current
 
     val panelAlpha = remember { Animatable(0f) }
     val panelTranslate = remember { Animatable(40f) }    // px：初始稍微在下方
@@ -143,6 +155,29 @@ fun AIOverlay(
     val hintAlpha = remember { Animatable(0f) }
 
     val context = LocalContext.current
+
+    fun launchAI() {
+        val text = textState.text
+        if (text.isBlank()) return
+        focusManager.clearFocus()
+        state = state.copy(isLoading = true, error = null, cards = emptyList())
+        scope.launch {
+            try {
+                val (guess, json) = AIUtils.generateAuto(
+                    context = context,
+                    rawText = text,
+                    profile = UserProfile(preferredLang = null, defaultEveningHour = 20, defaultReminderMinutes = listOf(30)),
+                    preferLLM = true
+                )
+                val mixed = AIUtils.parseMixedResult(json)
+                val (primary, cards) = mapMixedToUiCards(mixed)
+                val defaultFilter = ResultFilter.All
+                state = state.copy(intent = guess.intent, cards = cards, filter = defaultFilter, isLoading = false, error = null)
+            } catch (t: Throwable) {
+                state = state.copy(isLoading = false, error = t.message ?: "Unknown error")
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         glowAlpha.animateTo(1f, tween(320, easing = FastOutSlowInEasing))
@@ -154,6 +189,20 @@ fun AIOverlay(
 
     BackHandler(enabled = true) { onDismiss() }
 
+    val density = LocalDensity.current
+    var parentHeightPx by remember { mutableIntStateOf(0) }
+    var hintBottomPx by remember { mutableFloatStateOf(0f) }
+    var toolbarTopPx by remember { mutableFloatStateOf(Float.POSITIVE_INFINITY) }
+
+    // 计算安全内边距（顶部/底部）
+    val topSafePadding = with(density) {
+        (hintBottomPx + 16.dp.toPx()).toDp()
+    }
+    val bottomSafePadding = with(density) {
+        val padPx = (parentHeightPx.toFloat() - toolbarTopPx) + 16.dp.toPx()
+        max(0f, padPx).toDp()
+    }
+
     Box(modifier = modifier
         .fillMaxSize()
         .then(
@@ -162,6 +211,7 @@ fun AIOverlay(
             else
                 Modifier
         )
+        .onGloballyPositioned { parentHeightPx = it.size.height }
         .clickable {
             focusManager.clearFocus()
             onDismiss()
@@ -189,6 +239,7 @@ fun AIOverlay(
                 .align(Alignment.TopCenter)
                 .padding(top = 80.dp)
                 .graphicsLayer { alpha = hintAlpha.value }
+                .onGloballyPositioned { hintBottomPx = it.boundsInParent().bottom }
                 .background(
                     color = MaterialTheme.colorScheme.surfaceContainer,
                     shape = RoundedCornerShape(16.dp)
@@ -203,8 +254,6 @@ fun AIOverlay(
         }
 
         val toolbarShape = RoundedCornerShape(percent = 50)
-        val parseFailedText = stringResource(R.string.parse_failed)
-        val unknownErrorText = stringResource(R.string.unknown_error)
 
         HorizontalFloatingToolbar(
             expanded = true,
@@ -217,6 +266,7 @@ fun AIOverlay(
                 .graphicsLayer {
                     translationY = panelTranslate.value
                 }
+                .onGloballyPositioned { toolbarTopPx = it.boundsInParent().top }
                 .glowingWobbleBorder(
                     shape = toolbarShape,
                     colors = glowColors,
@@ -228,27 +278,7 @@ fun AIOverlay(
                 IconButton(onClick = {
                     focusManager.clearFocus()
                     if (textState.text.isNotBlank()) {
-                        results = emptyList()
-                        failed = false
-                        scope.launch {
-                            isLoading = true
-                            try {
-                                val raw = generateDeadline(context, textState.text)
-                                val ddl = parseGeneratedDDL(raw)
-                                results = listOf(ddl)
-                            } catch (e: Exception) {
-                                results = listOf(
-                                    GeneratedDDL(
-                                        name = parseFailedText,
-                                        dueTime = LocalDateTime.now(),
-                                        note = e.message ?: unknownErrorText
-                                    )
-                                )
-                                failed = true
-                            } finally {
-                                isLoading = false
-                            }
-                        }
+                        launchAI()
                     }
                 }
                 ) {
@@ -287,27 +317,7 @@ fun AIOverlay(
                     onSend = {
                         focusManager.clearFocus()
                         if (textState.text.isNotBlank()) {
-                            results = emptyList()
-                            failed = false
-                            scope.launch {
-                                isLoading = true
-                                try {
-                                    val raw = generateDeadline(context, textState.text)
-                                    val ddl = parseGeneratedDDL(raw)
-                                    results = listOf(ddl)
-                                } catch (e: Exception) {
-                                    results = listOf(
-                                        GeneratedDDL(
-                                            name = parseFailedText,
-                                            dueTime = LocalDateTime.now(),
-                                            note = e.message ?: unknownErrorText
-                                        )
-                                    )
-                                    failed = true
-                                } finally {
-                                    isLoading = false
-                                }
-                            }
+                            launchAI()
                         }
                     }
                 ),
@@ -326,7 +336,7 @@ fun AIOverlay(
         }
 
         // 加载指示条
-        if (isLoading) {
+        if (state.isLoading) {
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -345,59 +355,286 @@ fun AIOverlay(
             }
         }
 
-        // 结果展示
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(horizontal = 24.dp)
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = topSafePadding,
+                    bottom = bottomSafePadding
+                )
         ) {
-            results.forEach { ddl ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    AndroidView(
-                        factory = { ctx ->
-                            val view = LayoutInflater.from(ctx)
-                                .inflate(R.layout.item_layout, null, false)
-                            view.findViewById<TextView>(R.id.titleText)
-                                .text = ddl.name
-                            view.findViewById<TextView>(R.id.remainingTimeTextAlt)
-                                .text =
-                                ddl.dueTime.format(DateTimeFormatter
-                                        .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                                        .withLocale(Locale.getDefault()))
-                            view.findViewById<TextView>(R.id.noteText)
-                                .text = ddl.note
-                            view.findViewById<ImageView>(R.id.starIcon)
-                                .visibility = View.GONE
-                            view.findViewById<LinearProgressIndicator>(R.id.progressBar)
-                                .visibility = View.GONE
-                            view.findViewById<TextView>(R.id.remainingTimeText)
-                                .visibility = View.GONE
-                            view
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    )
+            // 顶部过滤（仅在有内容/加载/错误时显示）
+            if (state.cards.isNotEmpty() || state.error != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MyFilterChip("全部", state.filter == ResultFilter.All) { state = state.copy(filter = ResultFilter.All) }
+                    MyFilterChip("任务", state.filter == ResultFilter.Tasks) { state = state.copy(filter = ResultFilter.Tasks) }
+                    MyFilterChip("日程", state.filter == ResultFilter.Plan) { state = state.copy(filter = ResultFilter.Plan) }
+                    MyFilterChip("步骤", state.filter == ResultFilter.Steps) { state = state.copy(filter = ResultFilter.Steps) }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
 
-                    if (!failed) {
-                        Button(
-                            onClick = {
-                                val intent = Intent(context, AddDDLActivity::class.java).apply {
-                                    putExtra("EXTRA_CURRENT_TYPE", 0)
-                                    putExtra("EXTRA_GENERATE_DDL", ddl)
-                                }
-                                onAddDDL(intent)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            shape = RoundedCornerShape(24.dp)  // 圆角按钮
+            when {
+                state.isLoading -> null
+                state.error != null -> ErrorBlock(state.error!!)
+                state.cards.isEmpty() -> EmptyHint()
+                else -> {
+                    val filtered = when (state.filter) {
+                        ResultFilter.All   -> state.cards
+                        ResultFilter.Tasks -> state.cards.filterIsInstance<UiCard.TaskCard>()
+                        ResultFilter.Plan  -> state.cards.filterIsInstance<UiCard.PlanBlockCard>()
+                        ResultFilter.Steps -> state.cards.filterIsInstance<UiCard.StepsCard>()
+                    }
+
+                    Column {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth().weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(text = stringResource(R.string.add_event), style = MaterialTheme.typography.titleMedium)
+                            items(filtered) { card ->
+                                when (card) {
+                                    is UiCard.TaskCard -> TaskCardView(
+                                        card = card,
+                                        onAdd = {
+                                            card.toGeneratedDDLOrNull()?.let { ddl ->
+                                                val intent = Intent(
+                                                    context,
+                                                    AddDDLActivity::class.java
+                                                ).apply {
+                                                    putExtra("EXTRA_CURRENT_TYPE", 0)
+                                                    putExtra("EXTRA_GENERATE_DDL", ddl)
+                                                }
+                                                onAddDDL(intent)
+                                            }
+                                        },
+                                        onCopy = {}
+                                    )
+
+                                    is UiCard.PlanBlockCard -> PlanBlockCardView(card) {
+                                        val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                                        val start = runCatching {
+                                            LocalDateTime.parse(
+                                                card.start,
+                                                fmt
+                                            )
+                                        }.getOrNull()
+                                        val end = runCatching {
+                                            LocalDateTime.parse(
+                                                card.end,
+                                                fmt
+                                            )
+                                        }.getOrNull()
+                                        val startMillis =
+                                            start?.atZone(ZoneId.systemDefault())?.toInstant()
+                                                ?.toEpochMilli()
+                                        val endMillis =
+                                            end?.atZone(ZoneId.systemDefault())?.toInstant()
+                                                ?.toEpochMilli()
+
+                                        val intent = Intent(Intent.ACTION_INSERT).apply {
+                                            data = CalendarContract.Events.CONTENT_URI
+                                            putExtra(CalendarContract.Events.TITLE, card.title)
+                                            if (!card.location.isNullOrBlank())
+                                                putExtra(
+                                                    CalendarContract.Events.EVENT_LOCATION,
+                                                    card.location
+                                                )
+                                            if (!card.linkTask.isNullOrBlank())
+                                                putExtra(
+                                                    CalendarContract.Events.DESCRIPTION,
+                                                    "关联任务: ${card.linkTask}"
+                                                )
+                                            if (startMillis != null) putExtra(
+                                                CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                startMillis
+                                            )
+                                            if (endMillis != null) putExtra(
+                                                CalendarContract.EXTRA_EVENT_END_TIME,
+                                                endMillis
+                                            )
+                                        }
+                                        context.startActivity(intent)
+                                    }
+
+                                    is UiCard.StepsCard -> StepsCardView(
+                                        card = card,
+                                        onCreateSubtasks = { title, checklist ->
+                                            clipboard.setText(
+                                                AnnotatedString(
+                                                    (listOf(title) + checklist.mapIndexed { i, s -> "${i + 1}. $s" }).joinToString(
+                                                        "\n"
+                                                    )
+                                                )
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // 批量/应用 更改按钮
+                        val planBlocks = filtered.filterIsInstance<UiCard.PlanBlockCard>()
+                        val showFooter = when (state.filter) {
+                            ResultFilter.All  -> true
+                            ResultFilter.Plan -> planBlocks.isNotEmpty()
+                            else              -> false
+                        }
+
+                        if (showFooter) {
+                            Spacer(Modifier.height(8.dp))
+                            val isPlan = state.filter == ResultFilter.Plan
+                            Button(
+                                onClick = {
+                                    if (isPlan) {
+                                        val first = planBlocks.firstOrNull() ?: return@Button
+                                        val fmt =
+                                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                                        val start = runCatching {
+                                            LocalDateTime.parse(
+                                                first.start,
+                                                fmt
+                                            )
+                                        }.getOrNull()
+                                        val end = runCatching {
+                                            LocalDateTime.parse(
+                                                first.end,
+                                                fmt
+                                            )
+                                        }.getOrNull()
+                                        val startMillis =
+                                            start?.atZone(ZoneId.systemDefault())?.toInstant()
+                                                ?.toEpochMilli()
+                                        val endMillis =
+                                            end?.atZone(ZoneId.systemDefault())?.toInstant()
+                                                ?.toEpochMilli()
+
+                                        val intent = Intent(Intent.ACTION_INSERT).apply {
+                                            data = CalendarContract.Events.CONTENT_URI
+                                            putExtra(CalendarContract.Events.TITLE, first.title)
+                                            if (!first.location.isNullOrBlank())
+                                                putExtra(
+                                                    CalendarContract.Events.EVENT_LOCATION,
+                                                    first.location
+                                                )
+                                            if (!first.linkTask.isNullOrBlank())
+                                                putExtra(
+                                                    CalendarContract.Events.DESCRIPTION,
+                                                    "关联任务: ${first.linkTask}"
+                                                )
+                                            if (startMillis != null) putExtra(
+                                                CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                startMillis
+                                            )
+                                            if (endMillis != null) putExtra(
+                                                CalendarContract.EXTRA_EVENT_END_TIME,
+                                                endMillis
+                                            )
+                                        }
+                                        context.startActivity(intent)
+                                    } else {
+                                        scope.launch {
+                                            val repo = DDLRepository()
+                                            val taskCards =
+                                                filtered.filterIsInstance<UiCard.TaskCard>()
+
+                                            taskCards.forEach { t ->
+                                                val fmt =
+                                                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                                                val end = runCatching {
+                                                    LocalDateTime.parse(
+                                                        t.due,
+                                                        fmt
+                                                    )
+                                                }.getOrElse { LocalDateTime.now() }
+
+                                                repo.insertDDL(
+                                                    name = t.title,
+                                                    startTime = LocalDateTime.now().toString(),
+                                                    endTime = end.toString(),
+                                                    note = t.note.orEmpty(),
+                                                    type = DeadlineType.TASK,
+                                                    calendarEventId = null
+                                                )
+                                            }
+
+                                            // 2) 汇总 Steps 为 Markdown 并复制到剪贴板
+                                            val stepsCards =
+                                                filtered.filterIsInstance<UiCard.StepsCard>()
+                                            val md = buildString {
+                                                stepsCards.forEach { sc ->
+                                                    append("## ").append(sc.title).append('\n')
+                                                    sc.checklist.forEach { item ->
+                                                        append("- ").append(item).append('\n')
+                                                    }
+                                                    append('\n')
+                                                }
+                                            }.trim()
+                                            clipboard.setText(AnnotatedString(md))
+
+                                            val first = planBlocks.firstOrNull()
+                                            if (first != null) {
+                                                val fmt =
+                                                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                                                val start = runCatching {
+                                                    LocalDateTime.parse(
+                                                        first.start,
+                                                        fmt
+                                                    )
+                                                }.getOrNull()
+                                                val end = runCatching {
+                                                    LocalDateTime.parse(
+                                                        first.end,
+                                                        fmt
+                                                    )
+                                                }.getOrNull()
+                                                val startMillis =
+                                                    start?.atZone(ZoneId.systemDefault())
+                                                        ?.toInstant()?.toEpochMilli()
+                                                val endMillis =
+                                                    end?.atZone(ZoneId.systemDefault())
+                                                        ?.toInstant()?.toEpochMilli()
+
+                                                val intent =
+                                                    Intent(Intent.ACTION_INSERT).apply {
+                                                        data =
+                                                            CalendarContract.Events.CONTENT_URI
+                                                        putExtra(
+                                                            CalendarContract.Events.TITLE,
+                                                            first.title
+                                                        )
+                                                        if (!first.location.isNullOrBlank())
+                                                            putExtra(
+                                                                CalendarContract.Events.EVENT_LOCATION,
+                                                                first.location
+                                                            )
+                                                        if (!first.linkTask.isNullOrBlank())
+                                                            putExtra(
+                                                                CalendarContract.Events.DESCRIPTION,
+                                                                "关联任务: ${first.linkTask}"
+                                                            )
+                                                        if (startMillis != null) putExtra(
+                                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                            startMillis
+                                                        )
+                                                        if (endMillis != null) putExtra(
+                                                            CalendarContract.EXTRA_EVENT_END_TIME,
+                                                            endMillis
+                                                        )
+                                                    }
+                                                context.startActivity(intent)
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Text(if (isPlan) "导入日程块" else "应用全部更改")
+                            }
                         }
                     }
                 }
@@ -465,20 +702,26 @@ fun GlowScrim(
 
                 // 根据宽度计算自适应系数（可微调这些数）
                 val separationBoost = lerp(0.0f, 0.8f, 1f - widthNorm)  // 窄屏把中心再往左右推 ~9%
-                val radiusScale     = lerp(0.82f, 1.00f, widthNorm)      // 窄屏把半径降到 82%
-                val alphaScale      = lerp(0.85f, 1.00f, widthNorm)      // 窄屏整体稍微降亮度
-                val jitterScale     = lerp(0.70f, 1.00f, widthNorm)      // 窄屏减小抖动幅度
+                val radiusScale = lerp(0.82f, 1.00f, widthNorm)      // 窄屏把半径降到 82%
+                val alphaScale = lerp(0.85f, 1.00f, widthNorm)      // 窄屏整体稍微降亮度
+                val jitterScale = lerp(0.70f, 1.00f, widthNorm)      // 窄屏减小抖动幅度
 
                 // 把你的 jPx 做个缩放，避免窄屏晃动导致重叠更严重
                 val j = jPx * jitterScale
 
                 // —— 计算动态中心：窄屏时增加左右分离度 ——
                 val blueCenter = Offset(
-                    w * (0.25f - separationBoost) + if (jitterEnabled) j * 0.9f * s(freqBlue, 0.13f) else 0f,
+                    w * (0.25f - separationBoost) + if (jitterEnabled) j * 0.9f * s(
+                        freqBlue,
+                        0.13f
+                    ) else 0f,
                     h * 0.80f + if (jitterEnabled) j * 0.5f * s(freqBlue * 1.3f, 0.37f) else 0f
                 )
                 val pinkCenter = Offset(
-                    w * (0.78f + separationBoost) + if (jitterEnabled) j * 0.7f * s(freqPink, 0.51f) else 0f,
+                    w * (0.78f + separationBoost) + if (jitterEnabled) j * 0.7f * s(
+                        freqPink,
+                        0.51f
+                    ) else 0f,
                     h * 0.72f + if (jitterEnabled) j * 0.6f * s(freqPink * 1.4f, 0.11f) else 0f
                 )
                 val amberCenter = Offset(
@@ -487,25 +730,46 @@ fun GlowScrim(
                 )
 
                 // —— 半径按窄屏缩小：半径仍以高度为基准，但乘以 radiusScale ——
-                val blueRadius  = h * 1.10f * radiusScale * (1f + if (jitterEnabled) 0.015f * s(freqBlue * 1.1f, 0.2f) else 0f)
-                val pinkRadius  = h * 1.00f * radiusScale * (1f + if (jitterEnabled) 0.018f * s(freqPink * 0.95f, 0.4f) else 0f)
-                val amberRadius = h * 1.30f * radiusScale * (1f + if (jitterEnabled) 0.012f * s(freqAmber * 1.05f, 0.6f) else 0f)
+                val blueRadius = h * 1.10f * radiusScale * (1f + if (jitterEnabled) 0.015f * s(
+                    freqBlue * 1.1f,
+                    0.2f
+                ) else 0f)
+                val pinkRadius = h * 1.00f * radiusScale * (1f + if (jitterEnabled) 0.018f * s(
+                    freqPink * 0.95f,
+                    0.4f
+                ) else 0f)
+                val amberRadius = h * 1.30f * radiusScale * (1f + if (jitterEnabled) 0.012f * s(
+                    freqAmber * 1.05f,
+                    0.6f
+                ) else 0f)
 
-                val breathe = 0.90f + 0.10f * (if (jitterEnabled) (s(freqBreathe, 0.18f) * 0.5f + 0.5f) else 1f)
+                val breathe = 0.90f + 0.10f * (if (jitterEnabled) (s(
+                    freqBreathe,
+                    0.18f
+                ) * 0.5f + 0.5f) else 1f)
 
                 // —— 颜色强度按窄屏轻降，避免 Plus 混得太狠 ——
                 val blue = Brush.radialGradient(
-                    colors = listOf(Color(0xFF6AA9FF).copy(alpha = 0.85f * alphaScale * a * breathe), Color.Transparent),
+                    colors = listOf(
+                        Color(0xFF6AA9FF).copy(alpha = 0.85f * alphaScale * a * breathe),
+                        Color.Transparent
+                    ),
                     center = blueCenter,
                     radius = blueRadius
                 )
                 val pink = Brush.radialGradient(
-                    colors = listOf(Color(0xFFFF6AE6).copy(alpha = 0.80f * alphaScale * a * breathe), Color.Transparent),
+                    colors = listOf(
+                        Color(0xFFFF6AE6).copy(alpha = 0.80f * alphaScale * a * breathe),
+                        Color.Transparent
+                    ),
                     center = pinkCenter,
                     radius = pinkRadius
                 )
                 val amber = Brush.radialGradient(
-                    colors = listOf(Color(0xFFFFC36A).copy(alpha = 0.80f * alphaScale * a * breathe), Color.Transparent),
+                    colors = listOf(
+                        Color(0xFFFFC36A).copy(alpha = 0.80f * alphaScale * a * breathe),
+                        Color.Transparent
+                    ),
                     center = amberCenter,
                     radius = amberRadius
                 )
@@ -524,53 +788,12 @@ fun GlowScrim(
 
                 onDrawBehind {
                     drawRect(amber, blendMode = BlendMode.Plus)
-                    drawRect(blue,  blendMode = BlendMode.Plus)
-                    drawRect(pink,  blendMode = BlendMode.Plus)
+                    drawRect(blue, blendMode = BlendMode.Plus)
+                    drawRect(pink, blendMode = BlendMode.Plus)
                     drawRect(whiteFog)
                     drawRect(vertical)
                 }
             }
-    )
-}
-
-fun Modifier.glowingWobbleBorder(
-    colors: List<Color>,
-    corner: Dp,
-    stroke: Dp,
-    wobblePx: Dp = 4.dp,
-    freqHz: Float = 0.20f,      // 左右轻微晃动的频率（Hz）
-    breatheAmp: Float = 0.12f,  // alpha 呼吸幅度
-    breatheHz: Float = 0.10f
-): Modifier = composed {
-    val density = LocalDensity.current
-    val timeSec by rememberTimeSeconds()
-
-    val wobble = with(density) { wobblePx.toPx() } *
-            sin(2f * Math.PI.toFloat() * (timeSec * freqHz))
-
-    val breathe = 1f + breatheAmp *
-            sin(2f * Math.PI.toFloat() * (timeSec * breatheHz + 0.17f))
-
-    this.then(
-        Modifier.drawWithCache {
-            val strokePx = stroke.toPx()
-            val r = corner.toPx()
-
-            val brush = Brush.linearGradient(
-                colors = colors.map { it.copy(alpha = (it.alpha * breathe).coerceIn(0f, 1f)) },
-                start = Offset(-wobble, 0f),
-                end   = Offset(size.width + wobble, 0f)
-            )
-
-            onDrawBehind {
-                drawRoundRect(
-                    brush = brush,
-                    size = size,
-                    cornerRadius = CornerRadius(r, r),
-                    style = Stroke(width = strokePx)
-                )
-            }
-        }
     )
 }
 
@@ -645,4 +868,40 @@ fun rememberTimeSeconds(): State<Float> {
         }
     }
     return time
+}
+
+@Composable
+private fun MyFilterChip(
+    text: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(text) },
+        leadingIcon = if (selected) { { Icon(iconResource(R.drawable.ic_finish), contentDescription = null) } } else null,
+        modifier = modifier,
+        colors = FilterChipDefaults.filterChipColors()
+    )
+}
+
+fun Modifier.edgeFade(top: Dp = 16.dp, bottom: Dp = 16.dp) = this.drawWithContent {
+    drawContent()
+    val h = size.height
+    val topPx = top.toPx().coerceAtMost(h / 2f)
+    val bottomPx = bottom.toPx().coerceAtMost(h / 2f)
+
+    val brush = Brush.verticalGradient(
+        colorStops = arrayOf(
+            0f to Color.Transparent,
+            (topPx / h).coerceIn(0f, 0.33f) to Color.Black,
+            (1f - bottomPx / h).coerceIn(0.67f, 1f) to Color.Black,
+            1f to Color.Transparent
+        ),
+        startY = 0f,
+        endY = h
+    )
+    drawRect(brush = brush, blendMode = BlendMode.DstIn)
 }
