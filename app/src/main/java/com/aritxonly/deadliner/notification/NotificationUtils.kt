@@ -8,14 +8,17 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.IconCompat
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.data.DatabaseHelper
@@ -33,6 +36,7 @@ import com.aritxonly.deadliner.ui.main.simplified.computeProgress
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.time.Duration
 import java.time.LocalDateTime
+import javax.microedition.khronos.opengles.GL
 
 const val CHANNEL_ID = "deadliner_alerts"
 const val CHANNEL_DAILY_ID = "deadliner_daily_alerts"
@@ -315,10 +319,15 @@ object NotificationUtil {
     }
 
     private fun buildUpcomingDDLNotification(context: Context, ddl: DDLItem, notificationText: String, shortCriticalText: String): Notification {
-        val progress = (computeProgress(
-            GlobalUtils.parseDateTime(ddl.startTime),
-            GlobalUtils.parseDateTime(ddl.endTime),
-        ) * 100f).toInt().coerceIn(0, 100)
+        val remainingTime = Duration.between(
+            LocalDateTime.now(),
+            GlobalUtils.parseDateTime(ddl.endTime)
+        ).toSeconds()
+        val progress = ((remainingTime.toFloat() / (GlobalUtils.liveUpdatesInAdvance * 60)) * 100f)
+            .toInt()
+            .coerceIn(0, 100)
+
+        Log.d("DDLAlarm", "progress $progress | remainingTime $remainingTime | %1 ${GlobalUtils.liveUpdatesInAdvance * 60}")
 
         // 设置任务详情页面的 PendingIntent
         val detailIntent = DeadlineDetailActivity.newIntent(context, ddl).apply {
@@ -339,8 +348,14 @@ object NotificationUtil {
             setStyle(NotificationCompat.ProgressStyle()
                 .setProgress(progress)
                 .setProgressSegments(
-                    listOf(NotificationCompat.ProgressStyle.Segment(100))
+                    listOf(
+                        NotificationCompat.ProgressStyle.Segment(20)
+                            .setColor(ContextCompat.getColor(context, R.color.chart_red)),
+                        NotificationCompat.ProgressStyle.Segment(80)
+                            .setColor(ContextCompat.getColor(context, R.color.chart_green))
+                    )
                 )
+                .setProgressTrackerIcon(IconCompat.createWithResource(context, R.drawable.progress))
             )
 
             // 设置通知为 Ongoing（持续事件）

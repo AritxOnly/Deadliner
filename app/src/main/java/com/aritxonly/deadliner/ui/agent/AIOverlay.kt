@@ -50,6 +50,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
@@ -390,9 +391,18 @@ fun AIOverlay(
 
                     Column {
                         LazyColumn(
-                            modifier = Modifier.fillMaxWidth().weight(1f),
+                            modifier = Modifier.fillMaxWidth()
+                                .weight(1f)
+                                .graphicsLayer {
+                                    compositingStrategy = CompositingStrategy.Offscreen
+                                }
+                                .edgeFade(top = 16.dp, bottom = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            item {
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+
                             items(filtered) { card ->
                                 when (card) {
                                     is UiCard.TaskCard -> TaskCardView(
@@ -471,6 +481,10 @@ fun AIOverlay(
                                         }
                                     )
                                 }
+                            }
+
+                            item {
+                                Spacer(modifier = Modifier.height(12.dp))
                             }
                         }
 
@@ -887,21 +901,33 @@ private fun MyFilterChip(
     )
 }
 
-fun Modifier.edgeFade(top: Dp = 16.dp, bottom: Dp = 16.dp) = this.drawWithContent {
-    drawContent()
-    val h = size.height
-    val topPx = top.toPx().coerceAtMost(h / 2f)
-    val bottomPx = bottom.toPx().coerceAtMost(h / 2f)
+@Stable
+fun Modifier.edgeFade(top: Dp = 16.dp, bottom: Dp = 16.dp) = this.then(
+    drawWithContent {
+        drawContent()
 
-    val brush = Brush.verticalGradient(
-        colorStops = arrayOf(
-            0f to Color.Transparent,
-            (topPx / h).coerceIn(0f, 0.33f) to Color.Black,
-            (1f - bottomPx / h).coerceIn(0.67f, 1f) to Color.Black,
-            1f to Color.Transparent
-        ),
-        startY = 0f,
-        endY = h
-    )
-    drawRect(brush = brush, blendMode = BlendMode.DstIn)
-}
+        val h = size.height.coerceAtLeast(1f)
+        val topPx = top.toPx().coerceAtMost(h / 2f)
+        val bottomPx = bottom.toPx().coerceAtMost(h / 2f)
+
+        val c0 = Color.Black.copy(alpha = 0f) // 完全裁掉
+        val c1 = Color.Black.copy(alpha = 1f) // 完全保留
+
+        val sTop = (topPx / h).coerceIn(0f, 0.33f)
+        val sBot = (1f - bottomPx / h).coerceIn(0.67f, 1f)
+
+        val brush = Brush.verticalGradient(
+            colorStops = arrayOf(
+                0f   to c0,
+                sTop to c1,
+                sBot to c1,
+                1f   to c0
+            ),
+            startY = 0f,
+            endY = h
+        )
+
+        // 用目标(alpha) ∧ 源(alpha) 的交集作为显示区域
+        drawRect(brush = brush, blendMode = BlendMode.DstIn)
+    }
+)

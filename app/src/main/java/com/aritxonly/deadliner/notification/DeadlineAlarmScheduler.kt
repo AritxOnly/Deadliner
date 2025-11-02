@@ -225,7 +225,8 @@ object DeadlineAlarmScheduler {
             return
         }
 
-        val triggerTime = System.currentTimeMillis() + (remainingTime - 600).coerceAtLeast(0) * 1000L // 提前10分钟
+        val triggerTime = System.currentTimeMillis() +
+                ((remainingTime - GlobalUtils.liveUpdatesInAdvance * 60).coerceAtLeast(0)) * 1000L
 
         // 广播 PendingIntent
         val pendingIntent = createUpcomingDDLPendingIntent(context, ddl)
@@ -255,7 +256,6 @@ object DeadlineAlarmScheduler {
             return
         }
 
-        // 必须与 createUpcomingDDLPendingIntent 中保持完全一致
         val intent = Intent(context, UpcomingLiveUpdatesReceiver::class.java).apply {
             action = "com.aritxonly.deadliner.ACTION_UPCOMING_DDL"
             putExtra("DDL_ID", ddlId)

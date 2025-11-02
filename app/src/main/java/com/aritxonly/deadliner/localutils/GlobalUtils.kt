@@ -102,6 +102,12 @@ object GlobalUtils {
             sharedPreferences.edit { putLong("deadline_notify_before", value) }
         }
 
+    var liveUpdatesInAdvance: Int
+        get() = sharedPreferences.getInt("live_updates_in_advance", 10)
+        set(value) {
+            sharedPreferences.edit { putInt("live_updates_in_advance", value) }
+        }
+
     var dailyStatsNotification: Boolean
         get() = sharedPreferences.getBoolean("daily_stats_notification", false)
         set(value) {

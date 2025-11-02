@@ -59,6 +59,14 @@ fun NotificationSettingsScreen(
         GlobalUtils.setAlarms(DatabaseHelper.getInstance(context), context)
     }
 
+    var liveUpdatesInAdvance by remember { mutableStateOf(GlobalUtils.liveUpdatesInAdvance) }
+    val onLiveUpdatesChange: (Float) -> Unit = {
+        liveUpdatesInAdvance = it.toInt().coerceIn(1, 60)
+        GlobalUtils.liveUpdatesInAdvance = liveUpdatesInAdvance
+        DeadlineAlarmScheduler.cancelAllAlarms(context)
+        GlobalUtils.setAlarms(DatabaseHelper.getInstance(context), context)
+    }
+
     val defaultText = stringResource(R.string.settings_support_daily_notification)
     val initialTextDailyNotification = if (!dailyNotification)
         defaultText
@@ -129,6 +137,15 @@ fun NotificationSettingsScreen(
                         valueRange = 6f..72f,
                         onValueChange = onNotifyBeforeChange,
                         steps = 10
+                    )
+
+                    SettingsSectionDivider()
+
+                    SettingsSliderItemWithLabel(
+                        label = R.string.settings_live_updates_in_advance,
+                        value = liveUpdatesInAdvance.toFloat(),
+                        valueRange = 1f..60f,
+                        onValueChange = onLiveUpdatesChange
                     )
                 }
             }
