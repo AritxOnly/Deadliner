@@ -69,9 +69,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.AddDDLActivity
-import com.aritxonly.deadliner.model.GeneratedDDL
-import com.aritxonly.deadliner.web.AIUtils.generateDeadline
-import com.aritxonly.deadliner.web.AIUtils.parseGeneratedDDL
+import com.aritxonly.deadliner.ai.GeneratedDDL
+import com.aritxonly.deadliner.ai.AIUtils.generateDeadline
+import com.aritxonly.deadliner.ai.AIUtils.parseGeneratedDDL
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime

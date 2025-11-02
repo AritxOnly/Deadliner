@@ -1,30 +1,26 @@
-package com.aritxonly.deadliner.web
+package com.aritxonly.deadliner.ai
 
 import android.content.Context
 import android.util.Log
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
-import com.aritxonly.deadliner.model.BackendPreset
-import com.aritxonly.deadliner.model.BackendType
-import com.aritxonly.deadliner.model.ChatRequest
-import com.aritxonly.deadliner.model.ChatResponse
-import com.aritxonly.deadliner.model.GeneratedDDL
-import com.aritxonly.deadliner.model.LlmPreset
-import com.aritxonly.deadliner.model.LlmTransportFactory
-import com.aritxonly.deadliner.model.LocalDateTimeAdapter
-import com.aritxonly.deadliner.model.Message
-import com.aritxonly.deadliner.model.defaultLlmPreset
-import com.google.gson.Gson
+import com.aritxonly.deadliner.ai.BackendPreset
+import com.aritxonly.deadliner.ai.BackendType
+import com.aritxonly.deadliner.ai.ChatRequest
+import com.aritxonly.deadliner.ai.GeneratedDDL
+import com.aritxonly.deadliner.ai.LlmPreset
+import com.aritxonly.deadliner.ai.LlmTransportFactory
+import com.aritxonly.deadliner.ai.LocalDateTimeAdapter
+import com.aritxonly.deadliner.ai.Message
+import com.aritxonly.deadliner.ai.defaultLlmPreset
+import com.aritxonly.deadliner.ai.LlmTransport
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.TimeZone
 
 object AIUtils {
     private var model: String = "deepseek-chat"
@@ -77,14 +73,15 @@ object AIUtils {
         resp.choices.firstOrNull()?.message?.content ?: error("API 没有返回消息")
     }
 
-    suspend fun generateDeadline(context: Context, rawText: String): String = withContext(Dispatchers.IO) {
-        val langTag = currentLangTag(context) // 当前设备语言
-        val timeFormatSpec = "yyyy-MM-dd HH:mm"
+    suspend fun generateDeadline(context: Context, rawText: String): String =
+        withContext(Dispatchers.IO) {
+            val langTag = currentLangTag(context) // 当前设备语言
+            val timeFormatSpec = "yyyy-MM-dd HH:mm"
 
-        val tzId = java.util.TimeZone.getDefault().id
-        val nowLocal = LocalDateTime.now().toString()
+            val tzId = TimeZone.getDefault().id
+            val nowLocal = LocalDateTime.now().toString()
 
-        val systemPrompt = """
+            val systemPrompt = """
         你是Deadliner AI，一个任务管理助手。用户会输入一段自然语言文本，请你从中提取任务，并以**纯 JSON**返回，结构如下：
         {
           "name": "任务名称（≤16字符）",
@@ -101,18 +98,19 @@ object AIUtils {
         6) JSON 键固定为 name/dueTime/note，不要新增。
     """.trimIndent()
 
-        val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        val localeHint = "当前日期：$today；设备语言：$langTag；时区：$tzId。请严格按上述格式输出 JSON。"
+            val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            val localeHint =
+                "当前日期：$today；设备语言：$langTag；时区：$tzId。请严格按上述格式输出 JSON。"
 
-        val messages = listOfNotNull(
-            Message("system", systemPrompt),
-            Message("user", localeHint),
-            GlobalUtils.customPrompt?.let { Message("user", it) },
-            Message("user", rawText)
-        )
+            val messages = listOfNotNull(
+                Message("system", systemPrompt),
+                Message("user", localeHint),
+                GlobalUtils.customPrompt?.let { Message("user", it) },
+                Message("user", rawText)
+            )
 
-        sendPrompt(messages)
-    }
+            sendPrompt(messages)
+        }
 
     fun extractJsonFromMarkdown(raw: String): String {
         val jsonFenceRegex = Regex("```json\\s*([\\s\\S]*?)```", RegexOption.IGNORE_CASE)

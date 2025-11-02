@@ -1,9 +1,6 @@
-package com.aritxonly.deadliner.model
+package com.aritxonly.deadliner.ai
 
 import android.os.Parcelable
-import com.aritxonly.deadliner.web.DeadlinerProxyTransport
-import com.aritxonly.deadliner.web.DirectBearerTransport
-import com.aritxonly.deadliner.web.LlmTransport
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
@@ -32,9 +29,11 @@ data class ChatResponse(
     val choices: List<Choice>,
     val usage: Usage?
 )
+
 data class Choice(
     val message: Message
 )
+
 data class Usage(
     @SerializedName("prompt_tokens") val promptTokens: Int? = null,
     @SerializedName("completion_tokens") val completionTokens: Int? = null,

@@ -45,8 +45,8 @@ import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.GlobalUtils.getOrCreateDeviceId
 import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
 import com.aritxonly.deadliner.model.DeadlinerCheckResp
-import com.aritxonly.deadliner.model.defaultLlmPreset
-import com.aritxonly.deadliner.web.AIUtils.generateDeadline
+import com.aritxonly.deadliner.ai.defaultLlmPreset
+import com.aritxonly.deadliner.ai.AIUtils.generateDeadline
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId

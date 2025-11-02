@@ -5,11 +5,11 @@ import android.content.SharedPreferences
 import android.graphics.drawable.Drawable
 import androidx.annotation.DrawableRes
 import androidx.appcompat.content.res.AppCompatResources
-import com.aritxonly.deadliner.model.LlmPreset
+import com.aritxonly.deadliner.ai.LlmPreset
 import com.google.gson.Gson
 import androidx.core.content.edit
 import com.aritxonly.deadliner.R
-import com.aritxonly.deadliner.model.defaultLlmPreset
+import com.aritxonly.deadliner.ai.defaultLlmPreset
 
 class DeadlinerAIConfig(private val sp: SharedPreferences) {
 

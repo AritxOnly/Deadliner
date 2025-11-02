@@ -37,8 +37,8 @@ import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.localutils.GlobalUtils
-import com.aritxonly.deadliner.model.LlmPreset
-import com.aritxonly.deadliner.web.AIUtils
+import com.aritxonly.deadliner.ai.LlmPreset
+import com.aritxonly.deadliner.ai.AIUtils
 import java.util.UUID
 
 @Composable

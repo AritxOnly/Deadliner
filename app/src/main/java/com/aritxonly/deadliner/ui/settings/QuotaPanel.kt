@@ -22,7 +22,7 @@ import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.localutils.GlobalUtils.getOrCreateDeviceId
 import com.aritxonly.deadliner.model.DeadlinerCheckResp
 import com.aritxonly.deadliner.ui.iconResource
-import com.aritxonly.deadliner.web.fetchQuotaCheck
+import com.aritxonly.deadliner.ai.fetchQuotaCheck
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.Instant

@@ -41,7 +41,7 @@ import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.CalendarEvent
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
-import com.aritxonly.deadliner.model.GeneratedDDL
+import com.aritxonly.deadliner.ai.GeneratedDDL
 import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.toJson
 import com.google.android.material.button.MaterialButtonToggleGroup

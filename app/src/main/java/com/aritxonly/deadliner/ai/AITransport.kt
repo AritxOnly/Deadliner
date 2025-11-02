@@ -1,7 +1,7 @@
-package com.aritxonly.deadliner.web
+package com.aritxonly.deadliner.ai
 
-import com.aritxonly.deadliner.model.ChatRequest
-import com.aritxonly.deadliner.model.ChatResponse
+import com.aritxonly.deadliner.ai.ChatRequest
+import com.aritxonly.deadliner.ai.ChatResponse
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

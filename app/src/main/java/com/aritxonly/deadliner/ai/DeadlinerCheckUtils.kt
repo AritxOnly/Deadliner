@@ -1,8 +1,10 @@
-package com.aritxonly.deadliner.web
+package com.aritxonly.deadliner.ai
 
 import android.util.Log
 import com.aritxonly.deadliner.model.DeadlinerCheckResp
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -14,7 +16,7 @@ suspend fun fetchQuotaCheck(
     endpoint: String,
     appSecret: String,
     deviceId: String
-): Result<DeadlinerCheckResp> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+): Result<DeadlinerCheckResp> = withContext(Dispatchers.IO) {
     val base = if (endpoint.endsWith("/")) endpoint else "$endpoint/"
     val url = base + "check"
 
