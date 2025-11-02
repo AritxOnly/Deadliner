@@ -1,0 +1,74 @@
+@startuml Class
+skinparam classAttributeIconSize 0
+
+class AIUtils {
+  - model: String
+  - transport: LlmTransport?
+  + init(context: Context)
+  + setPreset(preset0: LlmPreset, context: Context)
+  - sendPrompt(messages: List<Message>): String <<suspend>>
+  + generateDeadline(context: Context, rawText: String): String <<suspend>>
+  + extractJsonFromMarkdown(raw: String): String
+  + parseGeneratedDDL(raw: String): GeneratedDDL
+  - currentLangTag(context: Context): String
+  - toBackendPreset(p: LlmPreset): BackendPreset
+}
+
+interface LlmTransport {
+  + chat(req: ChatRequest): ChatResponse <<suspend>>
+}
+
+class LlmTransportFactory {
+  + create(preset: BackendPreset, bearerKey: String, appSecret: String?, deviceId: String): LlmTransport
+}
+
+class BackendPreset {
+  + type: BackendType
+  + endpoint: String
+  + model: String
+}
+
+enum BackendType { 
+  DeadlinerProxy
+  DirectBearer 
+}
+
+class LlmPreset {
+  + endpoint: String
+  + model: String
+}
+
+class Message {
+  + role: String
+  + content: String
+}
+
+class ChatRequest {
+  + model: String
+  + messages: List<Message>
+  + stream: Boolean
+}
+
+class Choice { 
+  + message: Message 
+}
+class ChatResponse {
+  + choices: List<Choice> 
+}
+
+class GeneratedDDL {
+  + name: String
+  + dueTime: LocalDateTime
+  + note: String
+}
+
+AIUtils --> LlmTransport : uses
+LlmTransportFactory ..> LlmTransport : create
+AIUtils ..> BackendPreset
+AIUtils ..> LlmPreset
+AIUtils ..> ChatRequest
+AIUtils ..> ChatResponse
+AIUtils ..> Message
+AIUtils ..> GeneratedDDL
+BackendPreset ..> BackendType
+@enduml

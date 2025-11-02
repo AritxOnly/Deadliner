@@ -1,0 +1,38 @@
+@startuml Sequence2
+actor User
+participant UI as "UI/Compose"
+participant AIU as "AIUtils"
+participant Intent as "IntentClassifier"
+participant Cost as "CostRouter"
+participant Trans as "LlmTransport"
+participant Schema as "SchemaValidator"
+participant Time as "TimeResolver"
+participant Rule as "RuleBasedParser"
+collections Result as "AIResult (ExtractTasks/PlanDay/...)"
+
+User -> UI : 输入指令
+UI -> AIU : request(text)
+AIU -> Intent : classify(text, context)
+Intent --> AIU : intent=ExtractTasks | PlanDay | SplitToSteps | ...
+AIU -> Cost : pickModel(intent, size, latency)
+Cost --> AIU : {model, endpoint}
+AIU -> Trans : chat(req with strict schema)
+Trans --> AIU : resp
+AIU -> Schema : validate(resp)
+alt valid
+  AIU -> Time : resolveRelativeTimes(resp, tz)
+  Time --> AIU : resp(resolved)
+  AIU --> UI : Result(JSON)
+else invalid (一次重试)
+  AIU -> Trans : chat(req with stronger constraints)
+  Trans --> AIU : resp2
+  AIU -> Schema : validate(resp2)
+  alt still invalid
+    AIU -> Rule : fallback(text)
+    Rule --> AIU : minimal Result
+    AIU --> UI : Result(JSON, with warnings)
+  else valid
+    AIU --> UI : Result(JSON)
+  end
+end
+@enduml
