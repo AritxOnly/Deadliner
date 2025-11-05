@@ -65,7 +65,7 @@
     <string name="settings_auto_archive_title">Auto archive</string>
     <string name="settings_support_auto_archive">Auto-archive completed tasks after a period</string>
     <string name="settings_auto_archive">Enable auto archive</string>
-    <string name="settings_auto_archive_time">Custom auto archive duration</string>
+    <string name="settings_auto_archive_time">Custom auto archive duration (days)</string>
     <string name="settings_tasks_badge_title">Task badges</string>
     <string name="settings_support_tasks_badge">Show badges for upcoming tasks on tabs</string>
     <string name="settings_tasks_badge">Enable tab badges</string>

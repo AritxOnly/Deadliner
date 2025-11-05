@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="shortcut_add_task"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutShortLabel="@string/shortcut_add_task_short"
+        android:shortcutLongLabel="@string/shortcut_add_task_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled_message">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aritxonly.deadliner"
+            android:targetClass="com.aritxonly.deadliner.AddDDLActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_overview"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_chart"
+        android:shortcutShortLabel="@string/shortcut_overview_short"
+        android:shortcutLongLabel="@string/shortcut_overview_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled_message">
+
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aritxonly.deadliner"
+            android:targetClass="com.aritxonly.deadliner.OverviewActivity" />
+    </shortcut>
+
+</shortcuts>

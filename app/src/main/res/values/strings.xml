@@ -69,7 +69,7 @@
     <string name="settings_auto_archive_title">自动归档</string>
     <string name="settings_support_auto_archive">一段时间后将已完成任务自动放入归档文件夹</string>
     <string name="settings_auto_archive">启用自动归档</string>
-    <string name="settings_auto_archive_time">自定义自动归档时间</string>
+    <string name="settings_auto_archive_time">自定义自动归档时间 (天)</string>
 
     <string name="settings_tasks_badge_title">任务角标</string>
     <string name="settings_support_tasks_badge">在主界面选项卡上显示临近任务角标</string>
@@ -616,4 +616,12 @@
     <string name="notification_upcoming_critical_overdue">已逾期</string>
     <string name="copy">复制</string>
     <string name="settings_live_updates_in_advance">任务即将到期实时通知时间 (分钟)</string>
+
+    <string name="shortcut_add_task_short">添加任务</string>
+    <string name="shortcut_add_task_long">快速添加任务</string>
+    <string name="shortcut_overview_short">概览统计</string>
+    <string name="shortcut_overview_long">查看概览统计</string>
+    <string name="shortcut_disabled_message">此快捷方式当前不可用</string>
+
+    <string name="finished_import">成功应用全部更改！</string>
 </resources>

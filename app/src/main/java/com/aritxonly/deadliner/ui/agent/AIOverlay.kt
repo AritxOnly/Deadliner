@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner.ui.agent
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.provider.CalendarContract
 import com.aritxonly.deadliner.R
@@ -8,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -419,7 +421,8 @@ fun AIOverlay(
                                                 onAddDDL(intent)
                                             }
                                         },
-                                        onCopy = {}
+                                        onCopy = {
+                                        }
                                     )
 
                                     is UiCard.PlanBlockCard -> PlanBlockCardView(card) {
@@ -638,6 +641,9 @@ fun AIOverlay(
                                                         )
                                                     }
                                                 context.startActivity(intent)
+
+                                                Toast.makeText(context, R.string.finished_import, Toast.LENGTH_SHORT).show()
+                                                onDismiss()
                                             }
                                         }
                                     }
@@ -901,6 +907,7 @@ private fun MyFilterChip(
     )
 }
 
+@SuppressLint("SuspiciousModifierThen")
 @Stable
 fun Modifier.edgeFade(top: Dp = 16.dp, bottom: Dp = 16.dp) = this.then(
     drawWithContent {
