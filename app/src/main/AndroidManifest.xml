@@ -218,7 +218,15 @@
             android:launchMode="singleTask"
             android:resizeableActivity="true"
             android:windowSoftInputMode="adjustNothing|stateHidden"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"/>
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
+            <intent-filter android:autoVerify="true"
+                tools:ignore="AppLinkUrlError">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="deadliner" android:host="share" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".AddDDLActivity"
             android:exported="true"

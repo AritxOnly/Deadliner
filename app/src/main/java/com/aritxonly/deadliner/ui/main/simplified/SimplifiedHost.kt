@@ -61,8 +61,11 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.Dp
@@ -104,6 +107,8 @@ import org.json.JSONObject
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
+import androidx.core.net.toUri
+import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
 
 @Composable
 fun SimplifiedHost(
@@ -116,6 +121,62 @@ fun SimplifiedHost(
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val vm: MainViewModel = viewModel(factory = ViewModelFactory(context))
+    val clipboardManager = remember {
+        context.getSystemService(android.content.ClipboardManager::class.java)
+    }
+    val view = LocalView.current
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    var pendingUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    var lastHandledUrl by rememberSaveable { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        consumeDeadlinerUrl(activity)?.let { pendingUrl = it }
+    }
+
+    LaunchedEffect(pendingUrl) {
+        val url = pendingUrl ?: return@LaunchedEffect
+        if (url == lastHandledUrl) return@LaunchedEffect
+
+        val result = snackbarHostState.showSnackbar(
+            message = context.getString(R.string.detect_share_link),
+            actionLabel = context.getString(R.string.add),
+            withDismissAction = true,
+            duration = SnackbarDuration.Long
+        )
+
+        if (result == SnackbarResult.ActionPerformed) {
+            val item = DeadlinerURLScheme.decodeWithPassphrase(url, "deadliner-2025".toCharArray())
+            val intent = Intent(context, AddDDLActivity::class.java).apply {
+                putExtra("EXTRA_FULL_DDL", item)
+            }
+            activity.startActivity(intent)
+        }
+    }
+
+    DisposableEffect(view) {
+        val listener = android.view.ViewTreeObserver.OnWindowFocusChangeListener { hasFocus ->
+            if (!hasFocus) return@OnWindowFocusChangeListener
+
+            // 只有窗口真正拿到焦点时才读剪贴板，避免 Android 14 的 Denying log
+            val clipText = clipboardManager.primaryClip
+                ?.getItemAt(0)
+                ?.coerceToText(context)
+                ?.toString()
+                ?.trim()
+                .orEmpty()
+
+            if (clipText.isNotEmpty() && clipText.startsWith("deadliner://share")) {
+                pendingUrl = clipText
+            }
+        }
+
+        view.viewTreeObserver.addOnWindowFocusChangeListener(listener)
+        onDispose {
+            view.viewTreeObserver.removeOnWindowFocusChangeListener(listener)
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -295,8 +356,6 @@ fun SimplifiedHost(
     }
     val useAvatar = avatarPainter != null
     var moreAnchorRect by remember { mutableStateOf<Rect?>(null) }
-
-    val snackbarHostState = remember { SnackbarHostState() }
 
     var selectionMode by remember { mutableStateOf(false) }
     val selectedIds = remember { mutableStateListOf<Long>() }
@@ -848,7 +907,7 @@ fun SimplifiedHost(
 
 fun Modifier.detectSwipeUp(
     threshold: Dp = 64.dp,
-    onSwipeUp: () -> Unit
+    onSwipeUp: () -> Unit,
 ): Modifier = composed {
     val thresholdPx = with(LocalDensity.current) { threshold.toPx() }
     var totalDy by remember { mutableStateOf(0f) }
@@ -878,4 +937,14 @@ fun Modifier.detectSwipeUp(
             }
         )
     }
+}
+
+private fun consumeDeadlinerUrl(activity: Activity): String? {
+    val data = activity.intent?.dataString ?: return null
+    if (data.startsWith("deadliner://share")) {
+        // 消费一次，避免重组或回到前台时重复触发
+        activity.intent?.data = null
+        return data
+    }
+    return null
 }

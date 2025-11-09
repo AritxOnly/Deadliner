@@ -3,17 +3,7 @@ package com.aritxonly.deadliner.ai
 import android.content.Context
 import android.util.Log
 import com.aritxonly.deadliner.localutils.GlobalUtils
-import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
-import com.aritxonly.deadliner.ai.BackendPreset
-import com.aritxonly.deadliner.ai.BackendType
-import com.aritxonly.deadliner.ai.ChatRequest
-import com.aritxonly.deadliner.ai.GeneratedDDL
-import com.aritxonly.deadliner.ai.LlmPreset
-import com.aritxonly.deadliner.ai.LlmTransportFactory
-import com.aritxonly.deadliner.ai.LocalDateTimeAdapter
-import com.aritxonly.deadliner.ai.Message
-import com.aritxonly.deadliner.ai.defaultLlmPreset
-import com.aritxonly.deadliner.ai.LlmTransport
+import com.aritxonly.deadliner.localutils.ApiKeystore
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +11,6 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.TimeZone
 
 object AIUtils {
     private var model: String = "deepseek-chat"
@@ -34,10 +23,10 @@ object AIUtils {
         val deviceId = GlobalUtils.getOrCreateDeviceId(context)
 
         val bearerKey = try {
-            KeystorePreferenceManager.retrieveAndDecrypt(context).orEmpty()
+            ApiKeystore.retrieveAndDecrypt(context).orEmpty()
         } catch (t: Throwable) {
             Log.e("AIUtils", "decrypt failed, fallback empty", t)
-            KeystorePreferenceManager.reset(context)
+            ApiKeystore.reset(context)
             ""
         }
         val appSecret = GlobalUtils.getDeadlinerAppSecret(context)
@@ -57,7 +46,7 @@ object AIUtils {
         val bp = toBackendPreset(preset0)
         model = bp.model
 
-        val bearerKey = KeystorePreferenceManager.retrieveAndDecrypt(context).orEmpty()
+        val bearerKey = ApiKeystore.retrieveAndDecrypt(context).orEmpty()
         val appSecret = GlobalUtils.getDeadlinerAppSecret(context).orEmpty()
         val deviceId = GlobalUtils.getOrCreateDeviceId(context)
 

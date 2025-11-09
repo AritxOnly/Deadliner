@@ -624,4 +624,5 @@
     <string name="shortcut_disabled_message">此快捷方式当前不可用</string>
 
     <string name="finished_import">成功应用全部更改！</string>
+    <string name="detect_share_link">检测到分享链接</string>
 </resources>

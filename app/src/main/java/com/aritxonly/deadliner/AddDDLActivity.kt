@@ -42,6 +42,7 @@ import com.aritxonly.deadliner.model.CalendarEvent
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ai.GeneratedDDL
+import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.toJson
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -106,6 +107,7 @@ class AddDDLActivity : AppCompatActivity() {
         normalizeRootInsets()
 
         val generatedDDL = intent.getParcelableExtra<GeneratedDDL>("EXTRA_GENERATE_DDL")
+        val fullDDL = intent.getParcelableExtra<DDLItem>("EXTRA_FULL_DDL")
 
         DynamicColors.applyToActivitiesIfAvailable(this.application)
         DynamicColors.applyToActivityIfAvailable(this)
@@ -244,11 +246,88 @@ class AddDDLActivity : AppCompatActivity() {
         val formattedNote = GlobalUtils.generateHabitNote(this, frequency, total, frequencyType)
         habitNoteHint.text = formattedNote
 
-        ddlNameEditText.setText(generatedDDL?.name)
-        endTime = generatedDDL?.dueTime
-        if (generatedDDL != null)
-            endTimeContent.text = formatLocalDateTime(generatedDDL.dueTime)
-        ddlNoteEditText.setText(generatedDDL?.note)
+        generatedDDL?.let {
+            ddlNameEditText.setText(it.name)
+            endTime = it.dueTime
+            endTimeContent.text = formatLocalDateTime(it.dueTime)
+            ddlNoteEditText.setText(it.note)
+        }
+
+        fullDDL?.let {
+            ddlNameEditText.setText(it.name)
+            val et = GlobalUtils.parseDateTime(it.endTime)
+            val st = GlobalUtils.parseDateTime(it.startTime)
+            endTime = et
+            startTime = st
+            et?.let { endTimeContent.text = formatLocalDateTime(et) }
+            startTimeContent.text = formatLocalDateTime(st?:LocalDateTime.now())
+            calendarEventId = it.calendarEventId
+
+            when (it.type) {
+                DeadlineType.TASK -> {
+                    // 选中“任务”Tab并设置可见性
+                    selectedPage = 0
+                    typeTabLayout.getTabAt(0)?.select()
+
+                    ddlNoteLayout.visibility = View.VISIBLE
+                    ddlNoteEditText.visibility = View.VISIBLE
+
+                    freqTypeToggleGroup.visibility = View.GONE
+                    freqTypeHint.visibility = View.GONE
+                    freqEditLayout.visibility = View.GONE
+                    habitNoteHint.visibility = View.GONE
+
+                    // 备注
+                    ddlNoteEditText.setText(it.note)
+                }
+                DeadlineType.HABIT -> {
+                    // 选中“习惯”Tab并设置可见性
+                    selectedPage = 1
+                    typeTabLayout.getTabAt(1)?.select()
+
+                    ddlNoteLayout.visibility = View.GONE
+                    ddlNoteEditText.visibility = View.GONE
+
+                    freqTypeToggleGroup.visibility = View.VISIBLE
+                    freqTypeHint.visibility = View.VISIBLE
+                    freqEditLayout.visibility = View.VISIBLE
+                    habitNoteHint.visibility = View.VISIBLE
+
+                    // 解析习惯元数据并回填
+                    val meta = GlobalUtils.parseHabitMetaData(it.note)
+
+                    // 频率数值
+                    freqEditText.setText(meta.frequency.toString())
+
+                    // 总次数：为 0 则清空，避免造成“总次数限制”的误解
+                    if (meta.total > 0) {
+                        totalEditText.setText(meta.total.toString())
+                    } else {
+                        totalEditText.setText("")
+                    }
+
+                    // 频率类型按钮（注意你项目里 btnYearly 映射到 MONTHLY）
+                    val checkedId = when (meta.frequencyType) {
+                        DeadlineFrequency.TOTAL  -> R.id.btnTotal
+                        DeadlineFrequency.DAILY  -> R.id.btnDaily
+                        DeadlineFrequency.WEEKLY -> R.id.btnWeekly
+                        DeadlineFrequency.MONTHLY -> R.id.btnYearly
+                    }
+                    if (freqTypeToggleGroup.checkedButtonId != checkedId) {
+                        freqTypeToggleGroup.check(checkedId)
+                    }
+
+                    // 刷新提示文案
+                    val formattedNote = GlobalUtils.generateHabitNote(
+                        this@AddDDLActivity,
+                        meta.frequency,
+                        meta.total.takeIf { t -> t > 0 },
+                        meta.frequencyType
+                    )
+                    habitNoteHint.text = formattedNote
+                }
+            }
+        }
     }
 
     private fun save(toCalendar: Boolean) {

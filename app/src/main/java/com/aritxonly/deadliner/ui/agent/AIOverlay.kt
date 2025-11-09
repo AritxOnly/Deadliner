@@ -5,10 +5,6 @@ import android.content.Intent
 import android.provider.CalendarContract
 import com.aritxonly.deadliner.R
 
-import android.view.LayoutInflater
-import android.view.View
-import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -27,15 +23,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,7 +39,6 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -68,8 +59,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.AnnotatedString
@@ -78,23 +67,18 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.AddDDLActivity
 import com.aritxonly.deadliner.ai.AIUtils
-import com.aritxonly.deadliner.ai.GeneratedDDL
-import com.aritxonly.deadliner.ai.AIUtils.generateDeadline
-import com.aritxonly.deadliner.ai.IntentType
 import com.aritxonly.deadliner.ai.UserProfile
 import com.aritxonly.deadliner.data.DDLRepository
+import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
+import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ui.iconResource
-import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 import kotlin.math.max
 import kotlin.math.sin
 
@@ -422,6 +406,17 @@ fun AIOverlay(
                                             }
                                         },
                                         onCopy = {
+                                            card.toGeneratedDDLOrNull()?.let { ddl ->
+                                                val item = DDLItem(
+                                                    name = ddl.name,
+                                                    startTime = LocalDateTime.now().toString(),
+                                                    endTime = ddl.dueTime.toString(),
+                                                    note = ddl.note,
+                                                )
+                                                val url = DeadlinerURLScheme.encodeWithPassphrase(item, "deadliner-2025".toCharArray())
+
+                                                clipboard.setText(AnnotatedString(url))
+                                            }
                                         }
                                     )
 

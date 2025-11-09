@@ -15,7 +15,7 @@ import androidx.window.embedding.SplitPlaceholderRule
 import androidx.window.embedding.SplitRule
 import com.aritxonly.deadliner.data.UserProfileRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils
-import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
+import com.aritxonly.deadliner.localutils.ApiKeystore
 import com.aritxonly.deadliner.sync.SyncScheduler
 import com.aritxonly.deadliner.ai.AIUtils
 
@@ -23,7 +23,7 @@ class DeadlinerApp : Application() {
     override fun onCreate() {
         super.onCreate()
         GlobalUtils.init(this)
-        KeystorePreferenceManager.createKeyIfNeeded()
+        ApiKeystore.createKeyIfNeeded()
         AIUtils.init(this)
         AppSingletons.init(this)
         UserProfileRepository.init(this)

@@ -5,17 +5,12 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.res.Configuration
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
-import android.view.View
-import android.view.WindowInsetsController
-import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -29,14 +24,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -72,6 +66,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -84,14 +79,17 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.calendar.CalendarHelper
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.data.DDLRepository
+import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.AppColorScheme
 import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.ui.iconResource
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -247,6 +245,8 @@ fun DeadlineDetailScreen(
     val deleteText = stringResource(R.string.delete)
     val saveToCalendarText = stringResource(R.string.save_and_add_to_calendar)
 
+    val clipboard = LocalClipboardManager.current
+
     Scaffold(
         modifier = Modifier.background(Color(colorScheme.surface)),
         topBar = {
@@ -270,23 +270,37 @@ fun DeadlineDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        isStared = !isStared
-                        onToggleStar(isStared)
-                    }) {
-                        val iconStar = painterResource(
-                            if (isStared) R.drawable.ic_star_filled
-                            else R.drawable.ic_star
-                        )
-                        val tintColor = if (isStared)
-                            Color("ffffe819".hexToInt())
-                        else Color(colorScheme.onSurface)
-                        Icon(
-                            iconStar,
-                            contentDescription = stringResource(R.string.star),
-                            tint = tintColor,
-                            modifier = expressiveTypeModifier
-                        )
+                    Row {
+                        IconButton(onClick = {
+                            val url = DeadlinerURLScheme.encodeWithPassphrase(deadline, "deadliner-2025".toCharArray())
+                            clipboard.setText(AnnotatedString(url))
+                        }) {
+                            Icon(
+                                iconResource(R.drawable.ic_share_alt),
+                                contentDescription = stringResource(R.string.share),
+                                tint = Color(colorScheme.onSurface),
+                                modifier = expressiveTypeModifier
+                            )
+                        }
+
+                        IconButton(onClick = {
+                            isStared = !isStared
+                            onToggleStar(isStared)
+                        }) {
+                            val iconStar = painterResource(
+                                if (isStared) R.drawable.ic_star_filled
+                                else R.drawable.ic_star
+                            )
+                            val tintColor = if (isStared)
+                                Color("ffffe819".hexToInt())
+                            else Color(colorScheme.onSurface)
+                            Icon(
+                                iconStar,
+                                contentDescription = stringResource(R.string.star),
+                                tint = tintColor,
+                                modifier = expressiveTypeModifier
+                            )
+                        }
                     }
                 },
                 modifier = Modifier

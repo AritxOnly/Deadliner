@@ -1,31 +1,24 @@
 package com.aritxonly.deadliner.ui.settings
 
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -38,19 +31,13 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.SettingsRoute
-import com.aritxonly.deadliner.localutils.DeadlinerAIConfig
 import com.aritxonly.deadliner.ui.SvgCard
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.localutils.GlobalUtils
-import com.aritxonly.deadliner.localutils.GlobalUtils.getOrCreateDeviceId
-import com.aritxonly.deadliner.localutils.KeystorePreferenceManager
-import com.aritxonly.deadliner.model.DeadlinerCheckResp
+import com.aritxonly.deadliner.localutils.ApiKeystore
 import com.aritxonly.deadliner.ai.defaultLlmPreset
 import com.aritxonly.deadliner.ai.AIUtils.generateDeadline
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -60,7 +47,7 @@ fun AISettingsScreen(
 ) {
     val context = LocalContext.current
 
-    var apiKey by remember { mutableStateOf(KeystorePreferenceManager.retrieveAndDecrypt(context)) }
+    var apiKey by remember { mutableStateOf(ApiKeystore.retrieveAndDecrypt(context)) }
     val onApiKeyChange: (String) -> Unit = {
         apiKey = it
     }
@@ -90,7 +77,7 @@ fun AISettingsScreen(
         if (apiKey.isNullOrEmpty()) {
             Toast.makeText(context, incompleteText, Toast.LENGTH_SHORT).show()
         } else {
-            KeystorePreferenceManager.encryptAndStore(context, apiKey?:"")
+            ApiKeystore.encryptAndStore(context, apiKey?:"")
             Toast.makeText(context, successText, Toast.LENGTH_SHORT).show()
         }
     }

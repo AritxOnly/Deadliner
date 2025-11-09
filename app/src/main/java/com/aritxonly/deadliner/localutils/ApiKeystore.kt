@@ -11,7 +11,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.spec.GCMParameterSpec
 import androidx.core.content.edit
 
-object KeystorePreferenceManager {
+object ApiKeystore {
     private const val ANDROID_KEYSTORE = "AndroidKeyStore"
     private const val KEY_ALIAS = "deepseek_api_key_alias"
     private const val PREFS_NAME = "secure_prefs_keystore"
