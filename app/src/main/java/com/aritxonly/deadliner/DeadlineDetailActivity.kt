@@ -245,8 +245,6 @@ fun DeadlineDetailScreen(
     val deleteText = stringResource(R.string.delete)
     val saveToCalendarText = stringResource(R.string.save_and_add_to_calendar)
 
-    val clipboard = LocalClipboardManager.current
-
     Scaffold(
         modifier = Modifier.background(Color(colorScheme.surface)),
         topBar = {
@@ -272,8 +270,18 @@ fun DeadlineDetailScreen(
                 actions = {
                     Row {
                         IconButton(onClick = {
-                            val url = DeadlinerURLScheme.encodeWithPassphrase(deadline, "deadliner-2025".toCharArray())
-                            clipboard.setText(AnnotatedString(url))
+                            val url = DeadlinerURLScheme.encodeWithPassphrase(
+                                deadline,
+                                "deadliner-2025".toCharArray()
+                            )
+
+                            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, url)
+                            }
+
+                            val shareIntent = Intent.createChooser(sendIntent, context.getString(R.string.share))
+                            context.startActivity(shareIntent)
                         }) {
                             Icon(
                                 iconResource(R.drawable.ic_share_alt),

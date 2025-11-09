@@ -21,10 +21,17 @@ import androidx.core.net.toUri
  * deadliner://share?v=1&k=1&m=pass&s=<salt_b64url>&i=<iters>&d=<payload>
  */
 object DeadlinerURLScheme {
+    const val DEADLINER_URL_SCHEME_PREFIX = "https://www.aritxonly.top/deadliner/share"
+    const val DEADLINER_URL_SCHEME_PREFIX_LEGACY = "deadliner://share"
 
     // —— 协议常量 —— //
-    private const val SCHEME = "deadliner"
-    private const val AUTHORITY = "share"
+    private const val HTTPS_SCHEME = "https"
+    private const val HTTPS_HOST = "www.aritxonly.top"
+    private const val HTTPS_PATH_PREFIX = "/deadliner/share"
+
+    private const val LEGACY_SCHEME = "deadliner"
+    private const val LEGACY_AUTHORITY = "share"
+
     private const val PARAM_V = "v"
     private const val PARAM_K = "k"
     private const val PARAM_M = "m"
@@ -61,19 +68,15 @@ object DeadlinerURLScheme {
         val json = gson.toJson(item).encodeToByteArray()
         val compressed = deflate(json)
 
-        // AAD 绑定所有明文参数，防止篡改
         val saltB64 = b64urlEncode(salt)
         val aad = "v=$PROTO_VERSION&k=$kid&m=pass&s=$saltB64&i=$iterations".encodeToByteArray()
 
         val env = aesGcmEncrypt(compressed, key, aad)
         val token = b64urlEncode(env)
-
-        // 可选：擦除派生密钥
         key.fill(0)
 
-        return Uri.Builder()
-            .scheme(SCHEME)
-            .authority(AUTHORITY)
+        // 构造 query 部分
+        val queryUri = Uri.Builder()
             .appendQueryParameter(PARAM_V, PROTO_VERSION.toString())
             .appendQueryParameter(PARAM_K, kid.toString())
             .appendQueryParameter(PARAM_M, "pass")
@@ -81,7 +84,9 @@ object DeadlinerURLScheme {
             .appendQueryParameter(PARAM_I, iterations.toString())
             .appendQueryParameter(PARAM_D, token)
             .build()
-            .toString()
+
+        // queryUri.toString() 形如 "?v=1&k=1&m=pass&..."
+        return DEADLINER_URL_SCHEME_PREFIX + queryUri.toString()
     }
 
     /** 使用口令解析 URL 并还原 DDLItem */
@@ -90,7 +95,17 @@ object DeadlinerURLScheme {
         passphrase: CharArray,
     ): DDLItem {
         val uri = url.toUri()
-        require(uri.scheme == SCHEME && uri.authority == AUTHORITY) { "invalid scheme/host" }
+
+        val isHttpsMatch =
+            uri.scheme == HTTPS_SCHEME &&
+                    uri.host == HTTPS_HOST &&
+                    (uri.path ?: "").startsWith(HTTPS_PATH_PREFIX)
+
+        val isLegacyMatch =
+            uri.scheme == LEGACY_SCHEME &&
+                    uri.authority == LEGACY_AUTHORITY
+
+        require(isHttpsMatch || isLegacyMatch) { "invalid scheme/host/path: $uri" }
 
         val v = uri.getQueryParameter(PARAM_V)?.toIntOrNull() ?: error("missing v")
         require(v == PROTO_VERSION) { "unsupported version $v" }

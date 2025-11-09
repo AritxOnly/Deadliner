@@ -219,6 +219,15 @@
             android:resizeableActivity="true"
             android:windowSoftInputMode="adjustNothing|stateHidden"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="www.aritxonly.top"
+                    android:pathPrefix="/deadliner/share" />
+            </intent-filter>
             <intent-filter android:autoVerify="true"
                 tools:ignore="AppLinkUrlError">
                 <action android:name="android.intent.action.VIEW" />

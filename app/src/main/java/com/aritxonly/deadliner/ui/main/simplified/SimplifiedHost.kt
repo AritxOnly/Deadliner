@@ -109,6 +109,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import androidx.core.net.toUri
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
+import com.aritxonly.deadliner.localutils.DeadlinerURLScheme.DEADLINER_URL_SCHEME_PREFIX
+import com.aritxonly.deadliner.localutils.DeadlinerURLScheme.DEADLINER_URL_SCHEME_PREFIX_LEGACY
 
 @Composable
 fun SimplifiedHost(
@@ -132,7 +134,20 @@ fun SimplifiedHost(
     var lastHandledUrl by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        consumeDeadlinerUrl(activity)?.let { pendingUrl = it }
+        consumeDeadlinerUrl(activity)?.let { url ->
+            try {
+                val item = DeadlinerURLScheme.decodeWithPassphrase(
+                    url,
+                    "deadliner-2025".toCharArray()
+                )
+                val intent = Intent(context, AddDDLActivity::class.java).apply {
+                    putExtra("EXTRA_FULL_DDL", item)
+                }
+                activity.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, context.getString(R.string.share_link_parse_failed), Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     LaunchedEffect(pendingUrl) {
@@ -167,7 +182,8 @@ fun SimplifiedHost(
                 ?.trim()
                 .orEmpty()
 
-            if (clipText.isNotEmpty() && clipText.startsWith("deadliner://share")) {
+            if (clipText.isNotEmpty() &&
+                (clipText.startsWith(DEADLINER_URL_SCHEME_PREFIX) || clipText.startsWith(DEADLINER_URL_SCHEME_PREFIX_LEGACY))) {
                 pendingUrl = clipText
             }
         }
@@ -941,7 +957,7 @@ fun Modifier.detectSwipeUp(
 
 private fun consumeDeadlinerUrl(activity: Activity): String? {
     val data = activity.intent?.dataString ?: return null
-    if (data.startsWith("deadliner://share")) {
+    if (data.startsWith(DEADLINER_URL_SCHEME_PREFIX) || data.startsWith(DEADLINER_URL_SCHEME_PREFIX_LEGACY)) {
         // 消费一次，避免重组或回到前台时重复触发
         activity.intent?.data = null
         return data
