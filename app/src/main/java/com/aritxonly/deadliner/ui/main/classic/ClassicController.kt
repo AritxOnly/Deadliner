@@ -51,6 +51,11 @@ import android.widget.ViewFlipper
 import androidx.activity.addCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -71,7 +76,6 @@ import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
 import com.aritxonly.deadliner.AddDDLActivity
 import com.aritxonly.deadliner.ArchiveActivity
-import com.aritxonly.deadliner.ui.main.classic.CustomAdapter
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.DeadlineDetailActivity
 import com.aritxonly.deadliner.EditDDLFragment
@@ -85,8 +89,10 @@ import com.aritxonly.deadliner.SettingsRoute
 import com.aritxonly.deadliner.ui.agent.AIOverlayHost
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.data.DatabaseHelper
+import com.aritxonly.deadliner.data.HabitViewModel
+import com.aritxonly.deadliner.data.HabitViewModelFactory
 import com.aritxonly.deadliner.data.MainViewModel
-import com.aritxonly.deadliner.data.ViewModelFactory
+import com.aritxonly.deadliner.data.MainViewModelFactory
 import com.aritxonly.deadliner.databinding.ActivityMainBinding
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
@@ -102,6 +108,7 @@ import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.PartyPresets
 import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.aritxonly.deadliner.notification.NotificationUtil
+import com.aritxonly.deadliner.ui.main.simplified.HabitScreen
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.aritxonly.deadliner.web.UpdateInfo
 import com.aritxonly.deadliner.web.UpdateManager
@@ -136,9 +143,11 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.forEach
 import kotlin.getValue
+import androidx.core.view.isVisible
+import com.aritxonly.deadliner.data.HabitRepository
 
 class ClassicController(
-    private val activity: MainActivity
+    private val activity: MainActivity,
 ): CustomAdapter.SwipeListener {
     // region: override
     fun getString(resId: Int) = activity.getString(resId)
@@ -189,10 +198,13 @@ class ClassicController(
 
     private lateinit var searchButton: ImageButton
 
+    private lateinit var habitComposeView: ComposeView
+
     private val handler = Handler(Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
         override fun run() {
             viewModel.loadData(currentType, silent = true)
+            habitViewModel.refresh()
             handler.postDelayed(this, 30000)
         }
     }
@@ -204,7 +216,13 @@ class ClassicController(
     private var currentType = DeadlineType.TASK
 
     private val viewModel by activity.viewModels<MainViewModel> {
-        ViewModelFactory(
+        MainViewModelFactory(
+            context = activity
+        )
+    }
+
+    private val habitViewModel by activity.viewModels<HabitViewModel> {
+        HabitViewModelFactory(
             context = activity
         )
     }
@@ -253,6 +271,21 @@ class ClassicController(
             }
         }
         snackbar.show()
+    }
+
+    var selectionMode by mutableStateOf(false)
+    val selectedIds = mutableStateListOf<Long>()
+
+    val onHabitItemLongPress: (Long) -> Unit = { ddlId ->
+        adapter.enterSelectionById(ddlId)
+    }
+
+    val onHabitItemClickInSelection: (Long) -> Unit = { ddlId ->
+        adapter.toggleSelectionById(ddlId)
+    }
+
+    val onHabitToggle: (Long) -> Unit = { habitId ->
+        habitViewModel.onToggleHabit(habitId)
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -314,6 +347,8 @@ class ClassicController(
         viewHolderWithAppBar = b.viewHolderWithAppBar
         viewHolderWithNoAppBar = b.viewHolderWithNoAppBar
 
+        habitComposeView = b.habitComposeView
+
         decideShowEmptyNotice()
 
         // 设置 RecyclerView
@@ -369,6 +404,7 @@ class ClassicController(
                         DDLRepository().updateDDL(updatedHabit)
 
                         viewModel.loadData(viewModel.currentType)
+                        habitViewModel.refresh()
                     }
                     return
                 }
@@ -384,8 +420,15 @@ class ClassicController(
         })
 
         adapter.multiSelectListener = object : CustomAdapter.MultiSelectListener {
-            override fun onSelectionChanged(selectedCount: Int) {
+            override fun onSelectionChanged(selected: Set<Long>, isMultiSelectMode: Boolean) {
+                selectionMode = isMultiSelectMode
+                selectedIds.clear()
+                selectedIds.addAll(selected)
+
                 showBottomBar()
+
+                val selectedCount = selected.size
+
                 switchAppBarStatus(selectedCount == 0)
                 if (selectedCount != 0) {
                     excitementText.text = getString(R.string.selected_items, selectedCount)
@@ -442,6 +485,7 @@ class ClassicController(
                         )
                         DDLRepository().updateDDL(revertedHabit)
                         viewModel.loadData(currentType)
+                        habitViewModel.refresh()
                     }.setAnchorView(bottomAppBar)
 
                 val bg = snackbar.view.background
@@ -634,6 +678,7 @@ class ClassicController(
         searchInputLayout.setStartIconOnClickListener {
             searchEditText.text?.clear()
             viewModel.loadData(currentType)
+            habitViewModel.refresh()
             hideSearchOverlay()
         }
 
@@ -676,6 +721,7 @@ class ClassicController(
                             if (selectedItem != -1) {
                                 GlobalUtils.filterSelection = selectedItem
                                 viewModel.loadData(currentType)
+                                habitViewModel.refresh()
                             } else {
                                 Toast.makeText(activity, getString(R.string.none_selected), Toast.LENGTH_SHORT).show()
                             }
@@ -700,9 +746,11 @@ class ClassicController(
                                 for (position in positionsToDelete) {
                                     val item = adapter.itemList[position]
                                     DDLRepository().deleteDDL(item.id)
+                                    HabitRepository().deleteHabitByDdlId(item.id)
                                     DeadlineAlarmScheduler.cancelAlarm(applicationContext, item.id)
                                 }
                                 viewModel.loadData(currentType)
+                                habitViewModel.refresh()
                                 Toast.makeText(activity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
 
                                 switchAppBarStatus(true)
@@ -750,6 +798,7 @@ class ClassicController(
                                 DDLRepository().updateDDL(item)
                             }
                             viewModel.loadData(currentType)
+                            habitViewModel.refresh()
                             Toast.makeText(
                                 activity,
                                 R.string.toast_finished,
@@ -781,6 +830,7 @@ class ClassicController(
                             }
                         }
                         viewModel.loadData(currentType)
+                        habitViewModel.refresh()
                         Toast.makeText(
                             activity,
                             resources.getString(R.string.toast_archived, count),
@@ -808,6 +858,7 @@ class ClassicController(
                             count++
                         }
                         viewModel.loadData(currentType)
+                        habitViewModel.refresh()
                         Toast.makeText(
                             activity,
                             resources.getString(R.string.toast_stared),
@@ -832,6 +883,7 @@ class ClassicController(
             if (searchOverlay.visibility == View.VISIBLE) {
                 searchEditText.text?.clear()
                 viewModel.loadData(currentType)
+                habitViewModel.refresh()
                 hideSearchOverlay()
             }
             else if (adapter.isMultiSelectMode) {
@@ -961,12 +1013,17 @@ class ClassicController(
         }
 
         viewModel.loadData(currentType)
+        habitViewModel.refresh()
+
+        recyclerView.visibility = View.VISIBLE
+        habitComposeView.visibility = View.GONE
 
         attached = true
     }
 
     fun reloadAfterAdd() {
         viewModel.loadData(currentType)
+        habitViewModel.refresh()
     }
 
     fun dialogFlipperNext() {
@@ -1006,6 +1063,7 @@ class ClassicController(
 
     private fun refreshData() {
         viewModel.loadData(currentType)
+        habitViewModel.refresh()
     }
 
     private fun updateTitleAndExcitementText(isEnabled: Boolean) {
@@ -1028,6 +1086,7 @@ class ClassicController(
         if (requestCode == REQUEST_CODE_ADD_DDL && resultCode == RESULT_OK) {
             // 刷新数据
             viewModel.loadData(currentType)
+            habitViewModel.refresh()
         }
 
         decideShowEmptyNotice()
@@ -1043,6 +1102,7 @@ class ClassicController(
         }
         DDLRepository().updateDDL(item)
         viewModel.loadData(currentType)
+        habitViewModel.refresh()
         if (item.isCompleted) {
             if (isFireworksAnimEnable) { konfettiViewMain.start(PartyPresets.festive()) }
             Toast.makeText(activity, R.string.toast_finished, Toast.LENGTH_SHORT).show()
@@ -1065,6 +1125,7 @@ class ClassicController(
                 DDLRepository().deleteDDL(item.id)
                 DeadlineAlarmScheduler.cancelAlarm(applicationContext, item.id)
                 viewModel.loadData(currentType)
+                habitViewModel.refresh()
                 Toast.makeText(activity, R.string.toast_deletion, Toast.LENGTH_SHORT).show()
                 decideShowEmptyNotice()
                 pauseRefresh = false
@@ -1115,6 +1176,7 @@ class ClassicController(
         isFireworksAnimEnable = GlobalUtils.fireworksOnFinish
         switchAppBarStatus(true)
         viewModel.loadData(currentType)
+        habitViewModel.refresh()
         decideShowEmptyNotice()
 
         activity.lifecycleScope.launch(Dispatchers.IO) {
@@ -1176,6 +1238,7 @@ class ClassicController(
                     val editDialog = EditDDLFragment(clickedItem) { updatedDDL ->
                         DDLRepository().updateDDL(updatedDDL)
                         viewModel.loadData(currentType)
+                        habitViewModel.refresh()
                         // 清除多选状态
                         adapter.selectedPositions.clear()
                         adapter.isMultiSelectMode = false
@@ -1198,6 +1261,7 @@ class ClassicController(
             adapter.selectedPositions.clear()
             adapter.isMultiSelectMode = false
             viewModel.loadData(currentType)
+            habitViewModel.refresh()
 
             addEventButton.animate().alpha(0f).setDuration(150).withEndAction {
                 // 切换图标
@@ -1222,6 +1286,7 @@ class ClassicController(
                 adapter.isMultiSelectMode = false
                 adapter.selectedPositions.clear()
                 viewModel.loadData(currentType)
+                habitViewModel.refresh()
                 switchAppBarStatus(true)
                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
             }
@@ -1284,14 +1349,45 @@ class ClassicController(
                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                 switchAppBarStatus(true)
 
-                adapter.updateType(currentType)
-                viewModel.loadData(currentType)
+                if (currentType == DeadlineType.HABIT) {
+                    // ====== 习惯 Tab：只显示 Compose，彻底停用 RecyclerView 列表 ======
 
-                if (searchOverlay.visibility == View.VISIBLE) {
-                    val s = searchEditText.text
-                    val filter = SearchFilter.parse(s.toString())
+                    recyclerView.visibility = View.GONE
+                    habitComposeView.visibility = View.VISIBLE
 
-                    viewModel.filterData(filter, currentType)
+                    habitComposeView.setContent {
+                        DeadlinerTheme {
+                            HabitScreen(
+                                habitViewModel = habitViewModel,
+                                selectionMode = selectionMode,
+                                isSelected = { ddlId -> selectedIds.contains(ddlId) },
+                                onItemLongPress = onHabitItemLongPress,
+                                onItemClickInSelection = onHabitItemClickInSelection,
+                                onToggleHabit = onHabitToggle,
+                                onCelebrate = {
+                                    if (isFireworksAnimEnable) {
+                                        konfettiViewMain.start(PartyPresets.festive())
+                                    }
+                                    Toast.makeText(activity, R.string.toast_all_habits_done, Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+                    }
+                } else {
+                    // ====== TASK Tab：恢复原来的经典列表 ======
+
+                    habitComposeView.visibility = View.GONE
+                    recyclerView.visibility = View.VISIBLE
+
+                    adapter.updateType(currentType)           // 这里 currentType == TASK
+                    viewModel.loadData(currentType)
+                    habitViewModel.refresh()
+
+                    if (searchOverlay.visibility == View.VISIBLE) {
+                        val s = searchEditText.text
+                        val filter = SearchFilter.parse(s.toString())
+                        viewModel.filterData(filter, currentType)
+                    }
                 }
 
                 handler.postDelayed({
@@ -1677,6 +1773,7 @@ class ClassicController(
                 )
                 DDLRepository().updateDDL(revertedHabit)
                 viewModel.loadData(currentType)
+                habitViewModel.refresh()
             }.setAnchorView(bottomAppBar)
 
         val bg = snackbar.view.background

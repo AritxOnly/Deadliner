@@ -42,8 +42,12 @@ import com.aritxonly.deadliner.model.CalendarEvent
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ai.GeneratedDDL
+import com.aritxonly.deadliner.data.HabitRepository
 import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.Habit
+import com.aritxonly.deadliner.model.HabitGoalType
 import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.HabitPeriod
 import com.aritxonly.deadliner.model.toJson
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
@@ -62,7 +66,9 @@ import java.util.*
 @SuppressLint("SimpleDateFormat")
 class AddDDLActivity : AppCompatActivity() {
 
-    private lateinit var repo: DDLRepository
+    private val repo = DDLRepository()
+    private val habitRepo = HabitRepository()
+
     private lateinit var ddlNameEditText: EditText
     private lateinit var startTimeCard: MaterialCardView
     private lateinit var endTimeCard: MaterialCardView
@@ -116,7 +122,6 @@ class AddDDLActivity : AppCompatActivity() {
 
         selectedPage = intent.getIntExtra("EXTRA_CURRENT_TYPE", 0)
 
-        repo = DDLRepository()
         ddlNameEditText = findViewById(R.id.ddlNameEditText)
         startTimeCard = findViewById(R.id.startTimeCard) // MaterialCardView
         endTimeCard = findViewById(R.id.endTimeCard) // MaterialCardView
@@ -224,7 +229,6 @@ class AddDDLActivity : AppCompatActivity() {
 
         freqTypeToggleGroup.addOnButtonCheckedListener { _, _, _ ->
             frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
-                R.id.btnTotal -> DeadlineFrequency.TOTAL
                 R.id.btnDaily -> DeadlineFrequency.DAILY
                 R.id.btnWeekly -> DeadlineFrequency.WEEKLY
                 R.id.btnYearly -> DeadlineFrequency.MONTHLY
@@ -308,7 +312,7 @@ class AddDDLActivity : AppCompatActivity() {
 
                     // 频率类型按钮（注意你项目里 btnYearly 映射到 MONTHLY）
                     val checkedId = when (meta.frequencyType) {
-                        DeadlineFrequency.TOTAL  -> R.id.btnTotal
+                        DeadlineFrequency.TOTAL  -> R.id.btnDaily
                         DeadlineFrequency.DAILY  -> R.id.btnDaily
                         DeadlineFrequency.WEEKLY -> R.id.btnWeekly
                         DeadlineFrequency.MONTHLY -> R.id.btnYearly
@@ -337,7 +341,6 @@ class AddDDLActivity : AppCompatActivity() {
         val total = totalEditText.text.toString().ifBlank { "0" }.toIntOrNull()
 
         val frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
-            R.id.btnTotal -> DeadlineFrequency.TOTAL
             R.id.btnDaily -> DeadlineFrequency.DAILY
             R.id.btnWeekly -> DeadlineFrequency.WEEKLY
             R.id.btnYearly -> DeadlineFrequency.MONTHLY
@@ -348,7 +351,6 @@ class AddDDLActivity : AppCompatActivity() {
             if (selectedPage != 1) {
                 if (endTime == null) return
 
-                // 保存到数据库
                 val ddlId = repo.insertDDL(
                     ddlName,
                     startTime.toString(),
@@ -368,35 +370,87 @@ class AddDDLActivity : AppCompatActivity() {
                             try {
                                 val eventId = calendarHelper.insertEvent(item)
                                 item.calendarEventId = eventId
-                                DDLRepository().updateDDL(item)
-                                Toast.makeText(this@AddDDLActivity, getString(R.string.add_calendar_success), Toast.LENGTH_SHORT).show()
+                                // 这里直接用同一个 repo，别再 new 一个
+                                repo.updateDDL(item)
+                                Toast.makeText(
+                                    this@AddDDLActivity,
+                                    getString(R.string.add_calendar_success),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             } catch (e: Exception) {
                                 Log.e("Calendar", e.toString())
-                                Toast.makeText(this@AddDDLActivity, getString(R.string.add_calendar_failed, e.toString()), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    this@AddDDLActivity,
+                                    getString(R.string.add_calendar_failed, e.toString()),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
                     }
                 }
 
                 setResult(RESULT_OK)
-                finishAfterTransition() // 返回 MainActivity
+                finishAfterTransition()
             } else {
-                repo.insertDDL(
+                // ========= 新的 Habit 分支：DDL + Habit 双写 =========
+
+                val meta = HabitMetaData(
+                    completedDates = setOf(),
+                    frequencyType = frequencyType,
+                    frequency = frequency,
+                    total = total ?: 0,
+                    refreshDate = LocalDate.now().toString()
+                )
+
+                val noteJson = meta.toJson()
+
+                val ddlId = repo.insertDDL(
                     ddlName,
                     startTime.toString(),
                     endTime.toString(),
-                    note = HabitMetaData(
-                        completedDates = setOf(),
-                        frequencyType = frequencyType,
-                        frequency = frequency,
-                        total = total ?: 0,
-                        refreshDate = LocalDate.now().toString()
-                    ).toJson(),
+                    note = noteJson,
                     type = DeadlineType.HABIT
                 )
+
+                val habitPeriod = when (frequencyType) {
+                    DeadlineFrequency.DAILY -> HabitPeriod.DAILY
+                    DeadlineFrequency.WEEKLY -> HabitPeriod.WEEKLY
+                    DeadlineFrequency.MONTHLY -> HabitPeriod.MONTHLY
+                    DeadlineFrequency.TOTAL -> HabitPeriod.DAILY
+                }
+
+                val habitGoalType =
+                    if (frequencyType == DeadlineFrequency.TOTAL)
+                        HabitGoalType.TOTAL
+                    else
+                        HabitGoalType.PER_PERIOD
+
+                val habitTimesPerPeriod =
+                    if (frequencyType == DeadlineFrequency.TOTAL)
+                        1
+                    else
+                        frequency
+
+                val habitTotalTarget =
+                    if (frequencyType == DeadlineFrequency.TOTAL)
+                        total
+                    else
+                        null
+
+                // 4) 再在 habits 表插一条 Habit（挂在 ddlId 上）
+                habitRepo.createHabitForDdl(
+                    ddlId = ddlId,
+                    name = ddlName,
+                    period = habitPeriod,
+                    timesPerPeriod = habitTimesPerPeriod,
+                    goalType = habitGoalType,
+                    totalTarget = habitTotalTarget,
+                    description = ddlNote
+                )
+
                 Log.d("endTime", endTime.toString())
                 setResult(RESULT_OK)
-                finishAfterTransition() // 返回 MainActivity
+                finishAfterTransition()
             }
         }
     }

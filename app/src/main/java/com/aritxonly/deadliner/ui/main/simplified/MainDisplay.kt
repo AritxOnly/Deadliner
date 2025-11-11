@@ -113,6 +113,7 @@ import com.aritxonly.deadliner.DeadlineDetailActivity
 import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.data.DDLRepository
+import com.aritxonly.deadliner.data.HabitViewModel
 import com.aritxonly.deadliner.localutils.SearchFilter
 import com.aritxonly.deadliner.data.MainViewModel
 import com.aritxonly.deadliner.data.UserProfileRepository
@@ -120,8 +121,10 @@ import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.GlobalUtils.refreshCount
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DDLStatus
+import com.aritxonly.deadliner.model.DayOverview
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.model.PartyPresets
 import com.aritxonly.deadliner.model.UserProfile
 import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.aritxonly.deadliner.ui.main.DDLItemCardSimplified
@@ -140,6 +143,7 @@ import kotlin.math.max
 @Composable
 fun MainDisplay(
     ddlList: List<DDLItem>,
+    habitViewModel: HabitViewModel,
     refreshState: MainViewModel.RefreshState,
     selectedPage: DeadlineType,
     activity: MainActivity,
@@ -158,7 +162,7 @@ fun MainDisplay(
     onItemClickInSelection: (Long) -> Unit,
     onRequestBackdropBlur: (Boolean) -> Unit = {},
     onShowUndoSnackbar: (DDLItem) -> Unit = {},
-    onCelebrate: (() -> Unit)? = null
+    onCelebrate: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
 
@@ -176,6 +180,11 @@ fun MainDisplay(
     DisposableEffect(Unit) {
         onDispose { onRequestBackdropBlur(false) }
     }
+
+    val selectedDate by habitViewModel.selectedDate.collectAsState()
+    val weekOverview by habitViewModel.weekOverview.collectAsState()
+    val habits by habitViewModel.habitsForSelectedDate.collectAsState()
+    val searchQuery by habitViewModel.searchQuery.collectAsState()
 
     Column(modifier) {
         PullToRefreshBox(
@@ -239,57 +248,76 @@ fun MainDisplay(
                     }
                 }
                 DeadlineType.HABIT -> {
-                    LazyVerticalStaggeredGrid(
-                        columns = StaggeredGridCells.Fixed(2), // 👉 手机上固定两列
-                        verticalItemSpacing = 10.dp,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        contentPadding = PaddingValues(16.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        itemsIndexed(
-                            items = ddlList,
-                            key = { _, it -> it.id }
-                        ) { index, item ->
-                            AnimatedItem(
-                                item = item,
-                                index = index
-                            ) {
-                                HabitItem(
-                                    item = item,
-                                    onRefresh = { vm.loadData(selectedPage) },
-                                    updateDDL = { newItem ->
-                                        DDLRepository().updateDDL(newItem)
-                                        vm.loadData(selectedPage)
-                                    },
-                                    onCheckInFailed = {
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.snackbar_already_checkin),
-                                            Toast.LENGTH_SHORT).show()
-                                    },
-                                    onCheckInSuccess = { updatedHabit, habitMeta ->
-                                        GlobalUtils.triggerVibration(activity, 100)
-                                        val count = updatedHabit.habitCount
-                                        val frequency = habitMeta.frequency
-                                        if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
-                                            if (count >= frequency && GlobalUtils.fireworksOnFinish) {
-                                                if (GlobalUtils.fireworksOnFinish) onCelebrate?.invoke()
-                                            }
-                                        } else {
-                                            if (GlobalUtils.fireworksOnFinish) {
-                                                if (GlobalUtils.fireworksOnFinish) onCelebrate?.invoke()
-                                            }
-                                        }
-                                        onShowUndoSnackbar(updatedHabit)
-                                    },
-                                    selectionMode = selectionMode,
-                                    selected = isSelected(item.id),
-                                    onLongPressSelect = { onItemLongPress(item.id) },
-                                    onToggleSelect = { onItemClickInSelection(item.id) }
-                                )
-                            }
+                    HabitDisplayLayout(
+                        weekOverview, selectedDate,
+                        habitViewModel = habitViewModel,
+                        habits = habits,
+                        selectionMode = selectionMode,
+                        isSelected = isSelected,
+                        onItemLongPress = onItemLongPress,
+                        onItemClickInSelection = onItemClickInSelection,
+                        onToggleHabit = { id ->
+                            habitViewModel.onToggleHabit(id)
+                        },
+                        onCelebrate = {
+                            if (GlobalUtils.fireworksOnFinish) onCelebrate?.invoke()
+                            Toast.makeText(context, R.string.toast_all_habits_done, Toast.LENGTH_SHORT).show()
                         }
-                    }
+                    )
+
+                    // region old
+//                    LazyVerticalStaggeredGrid(
+//                        columns = StaggeredGridCells.Fixed(2), // 👉 手机上固定两列
+//                        verticalItemSpacing = 10.dp,
+//                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+//                        contentPadding = PaddingValues(16.dp),
+//                        modifier = Modifier.fillMaxSize()
+//                    ) {
+//                        itemsIndexed(
+//                            items = ddlList,
+//                            key = { _, it -> it.id }
+//                        ) { index, item ->
+//                            AnimatedItem(
+//                                item = item,
+//                                index = index
+//                            ) {
+//                                HabitItem(
+//                                    item = item,
+//                                    onRefresh = { vm.loadData(selectedPage) },
+//                                    updateDDL = { newItem ->
+//                                        DDLRepository().updateDDL(newItem)
+//                                        vm.loadData(selectedPage)
+//                                    },
+//                                    onCheckInFailed = {
+//                                        Toast.makeText(
+//                                            context,
+//                                            context.getString(R.string.snackbar_already_checkin),
+//                                            Toast.LENGTH_SHORT).show()
+//                                    },
+//                                    onCheckInSuccess = { updatedHabit, habitMeta ->
+//                                        GlobalUtils.triggerVibration(activity, 100)
+//                                        val count = updatedHabit.habitCount
+//                                        val frequency = habitMeta.frequency
+//                                        if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
+//                                            if (count >= frequency && GlobalUtils.fireworksOnFinish) {
+//                                                if (GlobalUtils.fireworksOnFinish) onCelebrate?.invoke()
+//                                            }
+//                                        } else {
+//                                            if (GlobalUtils.fireworksOnFinish) {
+//                                                if (GlobalUtils.fireworksOnFinish) onCelebrate?.invoke()
+//                                            }
+//                                        }
+//                                        onShowUndoSnackbar(updatedHabit)
+//                                    },
+//                                    selectionMode = selectionMode,
+//                                    selected = isSelected(item.id),
+//                                    onLongPressSelect = { onItemLongPress(item.id) },
+//                                    onToggleSelect = { onItemClickInSelection(item.id) }
+//                                )
+//                            }
+//                        }
+//                    }
+                    // endregion
                 }
             }
         }

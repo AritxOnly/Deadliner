@@ -31,6 +31,8 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
 import androidx.core.graphics.drawable.toDrawable
+import com.aritxonly.deadliner.data.HabitRepository
+import com.aritxonly.deadliner.model.HabitPeriod
 
 class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLItem) -> Unit) : DialogFragment() {
 
@@ -54,6 +56,8 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
     private lateinit var totalTextInput: TextInputLayout
     private lateinit var totalEditText: EditText
     private lateinit var freqTypeHint: TextView
+
+    private val habitRepo by lazy { HabitRepository() }
 
     override fun onStart() {
         super.onStart()
@@ -118,17 +122,24 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
                 freqTypeHint.visibility = View.VISIBLE
                 freqEditLayout.visibility = View.VISIBLE
 
-                val habitMeta = GlobalUtils.parseHabitMetaData(ddlItem.note)
-                freqTypeToggleGroup.check(
-                    when (habitMeta.frequencyType) {
-                        DeadlineFrequency.TOTAL -> R.id.btnTotal
-                        DeadlineFrequency.DAILY -> R.id.btnDaily
-                        DeadlineFrequency.WEEKLY -> R.id.btnWeekly
-                        DeadlineFrequency.MONTHLY -> R.id.btnYearly
-                    }
-                )
-                freqEditText.setText(habitMeta.frequency.toString())
-                totalEditText.setText(habitMeta.total.toString())
+                val habit = habitRepo.getHabitByDdlId(ddlItem.id)
+
+                if (habit != null) {
+                    freqTypeToggleGroup.check(
+                        when (habit.period) {
+                            HabitPeriod.DAILY -> R.id.btnDaily
+                            HabitPeriod.WEEKLY -> R.id.btnWeekly
+                            HabitPeriod.MONTHLY -> R.id.btnYearly
+                        }
+                    )
+                    freqEditText.setText(habit.timesPerPeriod.toString())
+                    totalEditText.setText(habit.totalTarget?.toString().orEmpty())
+                } else {
+                    // 找不到 Habit 的兜底策略：默认每天 1 次
+                    freqTypeToggleGroup.check(R.id.btnDaily)
+                    freqEditText.setText("1")
+                    totalEditText.setText("")
+                }
             }
         }
 
@@ -167,30 +178,35 @@ class EditDDLFragment(private val ddlItem: DDLItem, private val onUpdate: (DDLIt
                 }
                 DeadlineType.HABIT -> {
                     val frequency = freqEditText.text.toString().ifBlank { "1" }.toInt()
-                    val total = totalEditText.text.toString().ifBlank { "0" }.toIntOrNull()
+                    val total = totalEditText.text.toString().ifBlank { "" }.toIntOrNull()
 
-                    val frequencyType = when (freqTypeToggleGroup.checkedButtonId) {
-                        R.id.btnTotal -> DeadlineFrequency.TOTAL
-                        R.id.btnDaily -> DeadlineFrequency.DAILY
-                        R.id.btnWeekly -> DeadlineFrequency.WEEKLY
-                        R.id.btnYearly -> DeadlineFrequency.MONTHLY
-                        else -> DeadlineFrequency.TOTAL
+                    val period = when (freqTypeToggleGroup.checkedButtonId) {
+                        R.id.btnDaily -> HabitPeriod.DAILY
+                        R.id.btnWeekly -> HabitPeriod.WEEKLY
+                        R.id.btnYearly -> HabitPeriod.MONTHLY
+                        else -> HabitPeriod.DAILY
                     }
 
+                    // 更新 DDLItem：只改通用字段，不再写 HabitMetaData JSON
                     val updatedDDL = ddlItem.copy(
                         name = ddlNameEditText.text.toString(),
                         startTime = startTime.toString(),
                         endTime = endTime.toString(),
-                        note = HabitMetaData(
-                            completedDates = setOf(),
-                            frequencyType = frequencyType,
-                            frequency = frequency,
-                            total = total ?: 0,
-                            refreshDate = LocalDate.now().toString()
-                        ).toJson(),
                         type = DeadlineType.HABIT
                     )
                     onUpdate(updatedDDL)
+
+                    // 同步更新 Habit 表
+                    val habit = habitRepo.getHabitByDdlId(ddlItem.id)
+                    if (habit != null) {
+                        val updatedHabit = habit.copy(
+                            name = updatedDDL.name,
+                            period = period,
+                            timesPerPeriod = frequency,
+                            totalTarget = total // null 或 正整数
+                        )
+                        habitRepo.updateHabit(updatedHabit)
+                    }
                 }
             }
             dismiss()

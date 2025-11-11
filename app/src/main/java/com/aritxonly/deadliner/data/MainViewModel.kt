@@ -39,7 +39,7 @@ class MainViewModel(
     // 当前筛选的 DeadlineType
     var currentType: DeadlineType = DeadlineType.TASK
 
-    fun isEmpty(): Boolean? = _ddlList.value?.isEmpty()
+    fun isEmpty(): Boolean? = _ddlList.value.isEmpty()
 
     /**
      * 计算某个类型下“即将到期”的 DDL 数量：

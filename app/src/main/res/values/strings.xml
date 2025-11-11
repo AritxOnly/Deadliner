@@ -626,4 +626,5 @@
     <string name="finished_import">成功应用全部更改！</string>
     <string name="detect_share_link">检测到分享链接</string>
     <string name="share_link_parse_failed">分享链接解析错误！</string>
+    <string name="toast_all_habits_done">成功完成所有习惯打卡！🎉</string>
 </resources>

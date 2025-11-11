@@ -10,7 +10,6 @@ import android.graphics.ColorMatrixColorFilter
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.util.Log
-import android.widget.Space
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -30,9 +29,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -52,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.asImageBitmap
@@ -61,8 +57,6 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -81,9 +75,10 @@ import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.EditDDLFragment
 import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.data.DDLRepository
+import com.aritxonly.deadliner.data.HabitRepository
 import com.aritxonly.deadliner.data.MainViewModel
 import com.aritxonly.deadliner.data.UserProfileRepository
-import com.aritxonly.deadliner.data.ViewModelFactory
+import com.aritxonly.deadliner.data.MainViewModelFactory
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.SearchFilter
 import com.aritxonly.deadliner.model.DDLItem
@@ -107,7 +102,8 @@ import org.json.JSONObject
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
-import androidx.core.net.toUri
+import com.aritxonly.deadliner.data.HabitViewModel
+import com.aritxonly.deadliner.data.HabitViewModelFactory
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme.DEADLINER_URL_SCHEME_PREFIX
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme.DEADLINER_URL_SCHEME_PREFIX_LEGACY
@@ -122,7 +118,8 @@ fun SimplifiedHost(
     val context = LocalContext.current
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
-    val vm: MainViewModel = viewModel(factory = ViewModelFactory(context))
+    val vm: MainViewModel = viewModel(factory = MainViewModelFactory(context))
+    val habitVm: HabitViewModel = viewModel(factory = HabitViewModelFactory(context))
     val clipboardManager = remember {
         context.getSystemService(android.content.ClipboardManager::class.java)
     }
@@ -199,6 +196,7 @@ fun SimplifiedHost(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 vm.loadData(vm.currentType)  // Activity 恢复时强制刷新
+                habitVm.refresh()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -212,12 +210,14 @@ fun SimplifiedHost(
     ) { res ->
         if (res.resultCode == Activity.RESULT_OK) {
             vm.loadData(vm.currentType)
+            habitVm.refresh()
         }
     }
 
     LaunchedEffect(Unit) {
         GlobalUtils.decideHideFromRecent(context, activity)
         vm.loadData(vm.currentType)
+        habitVm.refresh()
     }
 
     val ddlList by vm.ddlListFlow.collectAsStateWithLifecycle()
@@ -280,6 +280,7 @@ fun SimplifiedHost(
     var selectedPage by remember { mutableStateOf(vm.currentType) }
     LaunchedEffect(selectedPage) {
         vm.loadData(selectedPage)
+        habitVm.refresh()
     }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -431,19 +432,25 @@ fun SimplifiedHost(
             },
         contentWindowInsets = WindowInsets(0),
         snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData = data,
-                    shape = RoundedCornerShape(16.dp),
-                    containerColor = MaterialTheme.colorScheme.inverseSurface,
-                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                    actionColor = MaterialTheme.colorScheme.inversePrimary,
-                    actionContentColor = MaterialTheme.colorScheme.inversePrimary,
-                    dismissActionContentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                SnackbarHost(hostState = snackbarHostState) { data ->
+                    Snackbar(
+                        snackbarData = data,
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = MaterialTheme.colorScheme.inverseSurface,
+                        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                        actionColor = MaterialTheme.colorScheme.inversePrimary,
+                        actionContentColor = MaterialTheme.colorScheme.inversePrimary,
+                        dismissActionContentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                }
             }
         },
         topBar = {
@@ -502,6 +509,7 @@ fun SimplifiedHost(
         ) {
             MainDisplay(
                 ddlList = ddlList,
+                habitViewModel = habitVm,
                 refreshState = refreshState,
                 selectedPage = selectedPage,
                 activity = activity,
@@ -535,6 +543,7 @@ fun SimplifiedHost(
                             )
                             DDLRepository().updateDDL(revertedHabit)
                             vm.loadData(selectedPage)
+                            habitVm.refresh()
                         }
                     }
                 },
@@ -705,6 +714,7 @@ fun SimplifiedHost(
                                                 }
 
                                                 vm.loadData(selectedPage)
+                                                habitVm.refresh()
                                                 selectedIds.clear()
                                                 if (GlobalUtils.fireworksOnFinish) celebrate()
                                                 Toast.makeText(
@@ -728,6 +738,7 @@ fun SimplifiedHost(
                                                 }
 
                                                 vm.loadData(selectedPage)
+                                                habitVm.refresh()
                                                 Toast.makeText(
                                                     context,
                                                     R.string.toast_finished,
@@ -772,6 +783,7 @@ fun SimplifiedHost(
 
                                             // 刷新 & 提示
                                             vm.loadData(selectedPage)
+                                            habitVm.refresh()
                                             Toast.makeText(
                                                 activity,
                                                 activity.getString(R.string.toast_archived, count),
@@ -828,6 +840,7 @@ fun SimplifiedHost(
                                                         // 回调：保存并刷新
                                                         DDLRepository().updateDDL(updatedDDL)
                                                         vm.loadData(selectedPage)
+                                                        habitVm.refresh()
 
                                                         // 清除多选状态
                                                         selectedIds.clear()
@@ -897,10 +910,12 @@ fun SimplifiedHost(
                     val idsToDelete = selectedIds.toList() // 拷贝一份避免并发修改
                     idsToDelete.forEach { id ->
                         DDLRepository().deleteDDL(id)
+                        HabitRepository().deleteHabitByDdlId(id)
                         DeadlineAlarmScheduler.cancelAlarm(activity.applicationContext, id)
                     }
 
                     vm.loadData(selectedPage)
+                    habitVm.refresh()
 
                     Toast.makeText(
                         activity,

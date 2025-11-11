@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.with
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -111,6 +112,30 @@ fun AnimatedHintPlaceholder(
             text = hint,
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1
+        )
+    }
+}
+
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun AnimatedProgressText(
+    progress: Float,
+    fadeMillis: Int = 250
+) {
+    // 用整型百分比做 targetState，可以避免浮点抖动导致频繁重组
+    val percent = (progress.coerceIn(0f, 1f) * 100).toInt()
+
+    AnimatedContent(
+        targetState = percent,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(fadeMillis)) with
+                    fadeOut(animationSpec = tween(fadeMillis))
+        },
+        label = "progress-text-anim"
+    ) { p ->
+        Text(
+            text = "$p%",
+            style = MaterialTheme.typography.titleMediumEmphasized
         )
     }
 }

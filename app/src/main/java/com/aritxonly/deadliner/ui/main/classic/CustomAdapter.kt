@@ -43,13 +43,18 @@ class CustomAdapter(
     var multiSelectListener: MultiSelectListener? = null
     var onCheckInGlobalListener: OnCheckInGlobalListener? = null
 
+    private fun currentSelectedIds(): Set<Long> =
+        selectedPositions.mapNotNull { pos ->
+            itemList.getOrNull(pos)?.id
+        }.toSet()
+
     interface OnCheckInGlobalListener {
         fun onCheckInFailedGlobal(context: Context, habitItem: DDLItem)
         fun onCheckInSuccessGlobal(context: Context, habitItem: DDLItem, habitMeta: HabitMetaData)
     }
 
     interface MultiSelectListener {
-        fun onSelectionChanged(selectedCount: Int)
+        fun onSelectionChanged(selectedIds: Set<Long>, isMultiSelectMode: Boolean)
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -63,7 +68,6 @@ class CustomAdapter(
                     isMultiSelectMode = true
                 }
                 toggleSelection(adapterPosition)
-                multiSelectListener?.onSelectionChanged(selectedPositions.size)
                 true
             }
 
@@ -71,7 +75,6 @@ class CustomAdapter(
             itemView.setOnClickListener {
                 if (isMultiSelectMode) {
                     toggleSelection(adapterPosition)
-                    multiSelectListener?.onSelectionChanged(selectedPositions.size)
                 } else {
                     // 正常的单击事件逻辑
                     itemClickListener?.onItemClick(adapterPosition)
@@ -87,6 +90,11 @@ class CustomAdapter(
             selectedPositions.add(position)
         }
         notifyItemChanged(position)
+
+        multiSelectListener?.onSelectionChanged(
+            currentSelectedIds(),
+            isMultiSelectMode
+        )
     }
 
     interface SwipeListener {
@@ -154,7 +162,7 @@ class CustomAdapter(
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         when (viewModel.currentType) {
-            DeadlineType.HABIT -> habitBindViewHolder(holder, position)
+            DeadlineType.HABIT -> return /*habitBindViewHolder(holder, position)*/
             else -> taskBindViewHolder(holder, position)
         }
     }
@@ -562,5 +570,53 @@ class CustomAdapter(
         val typedValue = TypedValue()
         context.theme.resolveAttribute(attributeId, typedValue, true)
         return typedValue.data
+    }
+
+    fun enterSelectionById(ddlId: Long) {
+        // 找到 position
+        val pos = itemList.indexOfFirst { it.id == ddlId }
+        if (pos == -1) return
+
+        if (!isMultiSelectMode) {
+            isMultiSelectMode = true
+        }
+        if (!selectedPositions.contains(pos)) {
+            selectedPositions.add(pos)
+            notifyItemChanged(pos)
+            multiSelectListener?.onSelectionChanged(
+                currentSelectedIds(),
+                isMultiSelectMode
+            )
+        }
+    }
+
+    fun toggleSelectionById(ddlId: Long) {
+        val pos = itemList.indexOfFirst { it.id == ddlId }
+        if (pos == -1) return
+
+        if (selectedPositions.contains(pos)) {
+            selectedPositions.remove(pos)
+        } else {
+            selectedPositions.add(pos)
+        }
+        if (selectedPositions.isEmpty()) {
+            isMultiSelectMode = false
+        }
+        notifyItemChanged(pos)
+        multiSelectListener?.onSelectionChanged(
+            currentSelectedIds(),
+            isMultiSelectMode
+        )
+    }
+
+    fun clearSelection() {
+        val prev = selectedPositions.toList()
+        selectedPositions.clear()
+        isMultiSelectMode = false
+        prev.forEach { notifyItemChanged(it) }
+        multiSelectListener?.onSelectionChanged(
+            emptySet(),
+            isMultiSelectMode
+        )
     }
 }
