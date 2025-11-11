@@ -129,42 +129,78 @@ class HabitRepository(
      */
     fun toggleRecord(habitId: Long, date: LocalDate) {
         val habit = getHabitById(habitId) ?: return
-
-        // 该习惯在一个周期内允许的最大次数
         val target = habit.timesPerPeriod.coerceAtLeast(1)
 
-        // 周期边界（天/周/月）
-        val (start, endInclusive) = periodBounds(habit.period, date)
+        when (habit.period) {
+            HabitPeriod.DAILY -> {
+                // —— 每日习惯：次数按“当天”计 —— //
+                val recordsToday = getRecordsForHabitOnDate(habitId, date)
+                    .filter { it.status == HabitRecordStatus.COMPLETED }
 
-        // 周期内所有完成记录
-        val recordsInPeriod = getRecordsForHabitInRange(habitId, start, endInclusive)
-            .filter { it.status == HabitRecordStatus.COMPLETED }
+                val currentCount = recordsToday.sumOf { it.count }
 
-        val totalInPeriod = recordsInPeriod.sumOf { it.count }
+                when {
+                    // 0 次 → 第一次打卡
+                    currentCount <= 0 -> {
+                        insertRecord(
+                            habitId = habitId,
+                            date = date,
+                            count = 1,
+                            status = HabitRecordStatus.COMPLETED
+                        )
+                    }
 
-        // 今天的记录
-        val todayRecords = recordsInPeriod.filter { it.date == date }
-        val todayCount = todayRecords.sumOf { it.count }
+                    // 1..(target-1) 次 → 继续累加
+                    currentCount < target -> {
+                        insertRecord(
+                            habitId = habitId,
+                            date = date,
+                            count = 1,
+                            status = HabitRecordStatus.COMPLETED
+                        )
+                    }
 
-        when {
-            // 1. 今天已经有记录 → 这次点击 = 取消今天
-            todayCount > 0 -> {
-                deleteRecordsForHabitOnDate(habitId, date)
+                    // 已达标 → 再点视为“清空今天”
+                    else -> {
+                        deleteRecordsForHabitOnDate(habitId, date)
+                    }
+                }
             }
 
-            // 2. 今天没有记录，且本周期已经满额 → no-op
-            totalInPeriod >= target -> {
-                // 什么都不做
-            }
+            HabitPeriod.WEEKLY,
+            HabitPeriod.MONTHLY -> {
+                // —— 周 / 月习惯：次数按“周期总和”计 —— //
+                val (start, endInclusive) = periodBounds(habit.period, date)
 
-            // 3. 今天没有记录，且本周期未满 → 给今天 +1
-            else -> {
-                insertRecord(
-                    habitId = habitId,
-                    date = date,
-                    count = 1,
-                    status = HabitRecordStatus.COMPLETED
-                )
+                val recordsInPeriod = getRecordsForHabitInRange(habitId, start, endInclusive)
+                    .filter { it.status == HabitRecordStatus.COMPLETED }
+
+                val totalInPeriod = recordsInPeriod.sumOf { it.count }
+
+                val recordsToday = recordsInPeriod.filter { it.date == date }
+                val todayCount = recordsToday.sumOf { it.count }
+
+                when {
+                    // 今天已经有记录 → 再点 = 取消今天（但保留周期内其它天）
+                    todayCount > 0 -> {
+                        deleteRecordsForHabitOnDate(habitId, date)
+                    }
+
+                    // 今天没记录，但周期已经满额 → no-op
+                    totalInPeriod >= target -> {
+                        // do nothing
+                    }
+
+                    // 今天没记录，周期未满 → 今天 +1
+                    else -> {
+                        insertRecord(
+                            habitId = habitId,
+                            date = date,
+                            count = 1,
+                            status = HabitRecordStatus.COMPLETED
+                        )
+                    }
+                }
             }
         }
     }
