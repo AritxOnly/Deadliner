@@ -664,65 +664,41 @@ fun SimplifiedHost(
 
                                             if (selectedPage == DeadlineType.HABIT) {
                                                 val idsToUpdate = selectedIds.toList()
-                                                idsToUpdate.forEach { id ->
-                                                    val item =
-                                                        ddlList.find { it.id == id }
-                                                            ?: return@forEach
-                                                    val habitMeta =
-                                                        GlobalUtils.parseHabitMetaData(item.note)
-                                                    val today = LocalDate.now()
+                                                val habitRepo = HabitRepository()
+                                                val selectedDate = habitVm.selectedDate.value
+                                                val today = LocalDate.now()
 
-                                                    val completedDates: Set<LocalDate> =
-                                                        habitMeta.completedDates.map {
-                                                            LocalDate.parse(
-                                                                it
-                                                            )
-                                                        }.toSet()
+                                                if (selectedDate.isAfter(today)) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        R.string.cannot_check_future,
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                } else {
+                                                    idsToUpdate.forEach { id ->
+                                                        val item = ddlList.find { it.id == id } ?: return@forEach
+                                                        if (item.type != DeadlineType.HABIT) return@forEach
 
-                                                    val canCheckIn = (habitMeta.total != 0 && (
-                                                            if (habitMeta.frequencyType != DeadlineFrequency.TOTAL) {
-                                                                (item.habitCount < habitMeta.frequency) && (completedDates.size < habitMeta.total)
-                                                            } else true
-                                                            ) && (item.habitTotalCount < habitMeta.total)) || (habitMeta.total == 0)
+                                                        // ddlId -> Habit
+                                                        val habit = habitRepo.getHabitByDdlId(item.id) ?: return@forEach
 
-                                                    val alreadyChecked =
-                                                        when (habitMeta.frequencyType) {
-                                                            DeadlineFrequency.TOTAL -> false
-                                                            else -> habitMeta.frequency <= item.habitCount
-                                                        }
-                                                    val canPerformClick =
-                                                        canCheckIn && !alreadyChecked
-
-                                                    if (!canPerformClick) {
-                                                        Toast.makeText(
-                                                            context,
-                                                            context.getString(R.string.snackbar_already_checkin),
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
+                                                        // 行为等价于单个条目的点击：按周期规则 toggle 一下这一天的记录
+                                                        habitRepo.toggleRecord(habit.id, selectedDate)
                                                     }
 
-                                                    val updatedNote =
-                                                        updateNoteWithDate(item, today)
+                                                    vm.loadData(selectedPage)
+                                                    habitVm.refresh()
 
-                                                    val updatedHabit = item.copy(
-                                                        note = updatedNote,
-                                                        habitCount = item.habitCount + 1,
-                                                        habitTotalCount = item.habitTotalCount + 1
-                                                    )
+                                                    selectedIds.clear()
+                                                    if (GlobalUtils.fireworksOnFinish) celebrate()
 
-                                                    DDLRepository().updateDDL(updatedHabit)
+                                                    Toast.makeText(
+                                                        context,
+                                                        R.string.toast_finished,
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                    selectionMode = false
                                                 }
-
-                                                vm.loadData(selectedPage)
-                                                habitVm.refresh()
-                                                selectedIds.clear()
-                                                if (GlobalUtils.fireworksOnFinish) celebrate()
-                                                Toast.makeText(
-                                                    context,
-                                                    R.string.toast_finished,
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                                selectionMode = false
                                             } else {
                                                 val idsToUpdate = selectedIds.toList()
                                                 idsToUpdate.forEach { id ->

@@ -573,22 +573,28 @@ class CustomAdapter(
     }
 
     fun enterSelectionById(ddlId: Long) {
-        // 找到 position
         val pos = itemList.indexOfFirst { it.id == ddlId }
         if (pos == -1) return
 
-        if (!isMultiSelectMode) {
-            isMultiSelectMode = true
-        }
+        // 加入选中集合
         if (!selectedPositions.contains(pos)) {
             selectedPositions.add(pos)
             notifyItemChanged(pos)
+        }
+
+        // 统一由 selectedPositions 推导多选态
+        isMultiSelectMode = selectedPositions.isNotEmpty()
+
+        // 通知外面：当前选中哪些 id，是否在多选模式
+        if (!suppressSelectionCallback) {
             multiSelectListener?.onSelectionChanged(
                 currentSelectedIds(),
                 isMultiSelectMode
             )
         }
     }
+
+    private var suppressSelectionCallback = false
 
     fun toggleSelectionById(ddlId: Long) {
         val pos = itemList.indexOfFirst { it.id == ddlId }
@@ -599,24 +605,25 @@ class CustomAdapter(
         } else {
             selectedPositions.add(pos)
         }
-        if (selectedPositions.isEmpty()) {
-            isMultiSelectMode = false
-        }
+
+        isMultiSelectMode = selectedPositions.isNotEmpty()
+
         notifyItemChanged(pos)
-        multiSelectListener?.onSelectionChanged(
-            currentSelectedIds(),
-            isMultiSelectMode
-        )
+
+        if (!suppressSelectionCallback) {
+            multiSelectListener?.onSelectionChanged(
+                currentSelectedIds(),    // Set<Long>，给习惯用
+                isMultiSelectMode        // 给 AppBar / 其他逻辑用
+            )
+        }
     }
 
     fun clearSelection() {
         val prev = selectedPositions.toList()
         selectedPositions.clear()
         isMultiSelectMode = false
+        suppressSelectionCallback = true
         prev.forEach { notifyItemChanged(it) }
-        multiSelectListener?.onSelectionChanged(
-            emptySet(),
-            isMultiSelectMode
-        )
+        suppressSelectionCallback = false
     }
 }

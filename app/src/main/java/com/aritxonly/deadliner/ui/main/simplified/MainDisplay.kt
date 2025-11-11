@@ -257,11 +257,10 @@ fun MainDisplay(
                         onItemLongPress = onItemLongPress,
                         onItemClickInSelection = onItemClickInSelection,
                         onToggleHabit = { id ->
-                            habitViewModel.onToggleHabit(id)
-                        },
-                        onCelebrate = {
-                            if (GlobalUtils.fireworksOnFinish) onCelebrate?.invoke()
-                            Toast.makeText(context, R.string.toast_all_habits_done, Toast.LENGTH_SHORT).show()
+                            habitViewModel.onToggleHabit(id) {
+                                if (GlobalUtils.fireworksOnFinish) onCelebrate?.invoke()
+                                Toast.makeText(context, R.string.toast_all_habits_done, Toast.LENGTH_SHORT).show()
+                            }
                         }
                     )
 

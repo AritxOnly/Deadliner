@@ -39,8 +39,7 @@ fun HabitScreen(
     isSelected: (Long) -> Boolean = { false },
     onItemLongPress: (Long) -> Unit = {},
     onItemClickInSelection: (Long) -> Unit = {},
-    onToggleHabit: (Long) -> Unit = {},
-    onCelebrate: () -> Unit = {}
+    onToggleHabit: (Long) -> Unit = {}
 ) {
     val selectedDate by habitViewModel.selectedDate.collectAsState()
     val weekOverview by habitViewModel.weekOverview.collectAsState()
@@ -54,8 +53,7 @@ fun HabitScreen(
         onItemLongPress = onItemLongPress,
         onItemClickInSelection = onItemClickInSelection,
         onToggleHabit = onToggleHabit,
-        isClassic = true,
-        onCelebrate = onCelebrate
+        isClassic = true
     )
 }
 
@@ -72,8 +70,7 @@ fun HabitDisplayLayout(
     onItemClickInSelection: (Long) -> Unit = {},
     onToggleHabit: (Long) -> Unit = {},
     isClassic: Boolean = false,
-    listState: LazyListState = LazyListState(),
-    onCelebrate: () -> Unit = {}
+    listState: LazyListState = LazyListState()
 ) {
     val context = LocalContext.current
 
@@ -85,14 +82,9 @@ fun HabitDisplayLayout(
         val todayOverview = weekOverview.firstOrNull { it.date == selectedDate }
         val ratio = todayOverview?.completionRatio ?: 0f
 
-        var lastRatio by remember { mutableFloatStateOf(ratio) }
-
-        LaunchedEffect(ratio) {
-            if (lastRatio < 1f && ratio >= 1f) {
-                onCelebrate()
-            }
-            lastRatio = ratio
-        }
+        val context = LocalContext.current
+        val today = LocalDate.now()
+        val canToggleOnThisDate = !selectedDate.isAfter(today)
 
         if (!isClassic) {
             HabitCircleProgress(
@@ -157,6 +149,7 @@ fun HabitDisplayLayout(
                             data = item,
                             status = status,
                             isSelected = selected,
+                            canToggle = canToggleOnThisDate,
                             onToggle = {
                                 if (selectionMode) {
                                     onItemClickInSelection(item.habit.ddlId)
@@ -174,6 +167,7 @@ fun HabitDisplayLayout(
                     HabitRowClassic(
                         data = item,
                         isSelected = selected,
+                        canToggle = canToggleOnThisDate,
                         onToggle = {
                             if (selectionMode) {
                                 onItemClickInSelection(item.habit.ddlId)

@@ -284,8 +284,15 @@ class ClassicController(
         adapter.toggleSelectionById(ddlId)
     }
 
+    val onCelebrateHabit: () -> Unit = {
+        if (isFireworksAnimEnable) {
+            konfettiViewMain.start(PartyPresets.festive())
+        }
+        Toast.makeText(activity, R.string.toast_all_habits_done, Toast.LENGTH_SHORT).show()
+    }
+
     val onHabitToggle: (Long) -> Unit = { habitId ->
-        habitViewModel.onToggleHabit(habitId)
+        habitViewModel.onToggleHabit(habitId, onCelebrateHabit)
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -772,21 +779,37 @@ class ClassicController(
                     if (adapter.selectedPositions.isNotEmpty()) {
                         if (currentType == DeadlineType.HABIT) {
                             GlobalUtils.triggerVibration(activity, 100)
-                            val positionsToUpdate = adapter.selectedPositions.toList()
-                            for (position in positionsToUpdate) {
-                                val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
-                                viewHolder?.let {
-                                    // 获取按钮并执行点击操作
-                                    val button = it.itemView.findViewById<MaterialButton>(R.id.checkButton)
-                                    button.performClick()
-                                }
+
+                            val selectedDate = habitViewModel.selectedDate.value
+                            val today = LocalDate.now()
+
+                            // 如果你也想沿用“未来日期不能打卡”的规则，可以加这一段守卫（可选）
+                            if (selectedDate.isAfter(today)) {
+                                 Toast.makeText(activity, R.string.cannot_check_future, Toast.LENGTH_SHORT).show()
+                                return@setOnMenuItemClickListener true
                             }
 
-                            decideShowEmptyNotice()
-                            // 清除多选状态
+                            val habitRepo = HabitRepository()
 
+                            // 从被多选的 position 里拿到对应的 DDL id
+                            val ddlIds = adapter.selectedPositions
+                                .mapNotNull { pos -> adapter.itemList.getOrNull(pos)?.id }
+
+                            // 对每个 DDL 找到挂靠的 Habit，再按当前选中日期打卡
+                            ddlIds.forEach { ddlId ->
+                                val habit = habitRepo.getHabitByDdlId(ddlId) ?: return@forEach
+                                habitRepo.toggleRecord(habit.id, selectedDate)
+                            }
+
+                            // 刷新 Habit 屏幕的数据（周进度 / 列表）
+                            habitViewModel.refresh()
+
+                            decideShowEmptyNotice()
+
+                            // 清除多选和恢复 AppBar（保持你原来的逻辑）
                             switchAppBarStatus(true)
                             updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
+
                             true
                         } else {
                             GlobalUtils.triggerVibration(activity, 100)
@@ -1240,8 +1263,7 @@ class ClassicController(
                         viewModel.loadData(currentType)
                         habitViewModel.refresh()
                         // 清除多选状态
-                        adapter.selectedPositions.clear()
-                        adapter.isMultiSelectMode = false
+                        adapter.clearSelection()
                     }
                     editDialog.show(supportFragmentManager, "EditDDLFragment")
                 } else {
@@ -1258,8 +1280,7 @@ class ClassicController(
                 bottomAppBar.performShow()
             }, ANIMATION_DURATION)
 
-            adapter.selectedPositions.clear()
-            adapter.isMultiSelectMode = false
+            adapter.clearSelection()
             viewModel.loadData(currentType)
             habitViewModel.refresh()
 
@@ -1283,8 +1304,7 @@ class ClassicController(
             bottomAppBar.setNavigationIcon(R.drawable.ic_back)
             bottomAppBar.setNavigationOnClickListener {
                 // 撤销多选
-                adapter.isMultiSelectMode = false
-                adapter.selectedPositions.clear()
+                adapter.clearSelection()
                 viewModel.loadData(currentType)
                 habitViewModel.refresh()
                 switchAppBarStatus(true)
@@ -1344,7 +1364,7 @@ class ClassicController(
                 }
                 showOverlay()
 
-                adapter.selectedPositions.clear()
+                adapter.clearSelection()
                 adapter.isMultiSelectMode = false
                 updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
                 switchAppBarStatus(true)
@@ -1364,12 +1384,6 @@ class ClassicController(
                                 onItemLongPress = onHabitItemLongPress,
                                 onItemClickInSelection = onHabitItemClickInSelection,
                                 onToggleHabit = onHabitToggle,
-                                onCelebrate = {
-                                    if (isFireworksAnimEnable) {
-                                        konfettiViewMain.start(PartyPresets.festive())
-                                    }
-                                    Toast.makeText(activity, R.string.toast_all_habits_done, Toast.LENGTH_SHORT).show()
-                                }
                             )
                         }
                     }

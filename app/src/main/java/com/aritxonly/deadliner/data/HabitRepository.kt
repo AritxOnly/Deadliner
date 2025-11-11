@@ -2,6 +2,7 @@ package com.aritxonly.deadliner.data
 
 import com.aritxonly.deadliner.AppSingletons
 import com.aritxonly.deadliner.model.Habit
+import com.aritxonly.deadliner.model.HabitPeriod
 import com.aritxonly.deadliner.model.HabitRecord
 import com.aritxonly.deadliner.model.HabitRecordStatus
 import java.time.LocalDate
@@ -104,46 +105,66 @@ class HabitRepository(
             .toSet()
     }
 
+    private fun periodBounds(period: HabitPeriod, date: LocalDate): Pair<LocalDate, LocalDate> {
+        return when (period) {
+            HabitPeriod.DAILY -> date to date
+            HabitPeriod.WEEKLY -> {
+                val start = date.with(java.time.DayOfWeek.MONDAY)
+                val end = start.plusDays(6)
+                start to end
+            }
+            HabitPeriod.MONTHLY -> {
+                val ym = java.time.YearMonth.from(date)
+                val start = ym.atDay(1)
+                val end = ym.atEndOfMonth()
+                start to end
+            }
+        }
+    }
+
     /**
      * 切换某天某个习惯的完成状态：
      * - 如果当天已经有 COMPLETED 记录，则删掉这一天所有该习惯记录
      * - 如果没有，则插入一条新的 COMPLETED 记录 count=1
      */
     fun toggleRecord(habitId: Long, date: LocalDate) {
-        // 1. 找到 Habit，拿到每天的 target 次数
         val habit = getHabitById(habitId) ?: return
-        val targetPerDay = habit.timesPerPeriod.coerceAtLeast(1)
 
-        // 2. 查当天所有记录，累计 COMPLETED 的 count
-        val records = getRecordsForHabitOnDate(habitId, date)
-        val currentCount = records
+        // 该习惯在一个周期内允许的最大次数
+        val target = habit.timesPerPeriod.coerceAtLeast(1)
+
+        // 周期边界（天/周/月）
+        val (start, endInclusive) = periodBounds(habit.period, date)
+
+        // 周期内所有完成记录
+        val recordsInPeriod = getRecordsForHabitInRange(habitId, start, endInclusive)
             .filter { it.status == HabitRecordStatus.COMPLETED }
-            .sumOf { it.count }
+
+        val totalInPeriod = recordsInPeriod.sumOf { it.count }
+
+        // 今天的记录
+        val todayRecords = recordsInPeriod.filter { it.date == date }
+        val todayCount = todayRecords.sumOf { it.count }
 
         when {
-            // 0 次 → 第一次打卡：插入 count=1
-            currentCount <= 0 -> {
-                insertRecord(
-                    habitId = habitId,
-                    date = date,
-                    count = 1,
-                    status = HabitRecordStatus.COMPLETED
-                )
-            }
-
-            // 1..(N-1) 次 → 继续累加：再插一条 count=1
-            currentCount < targetPerDay -> {
-                insertRecord(
-                    habitId = habitId,
-                    date = date,
-                    count = 1,
-                    status = HabitRecordStatus.COMPLETED
-                )
-            }
-
-            // 已经达到或超过 N 次 → 下一次点击视为“清空今天”
-            else -> {
+            // 1. 今天已经有记录 → 这次点击 = 取消今天
+            todayCount > 0 -> {
                 deleteRecordsForHabitOnDate(habitId, date)
+            }
+
+            // 2. 今天没有记录，且本周期已经满额 → no-op
+            totalInPeriod >= target -> {
+                // 什么都不做
+            }
+
+            // 3. 今天没有记录，且本周期未满 → 给今天 +1
+            else -> {
+                insertRecord(
+                    habitId = habitId,
+                    date = date,
+                    count = 1,
+                    status = HabitRecordStatus.COMPLETED
+                )
             }
         }
     }

@@ -177,6 +177,7 @@ fun HabitRow(
     data: HabitWithDailyStatus,
     status: DDLStatus,
     isSelected: Boolean,
+    canToggle: Boolean,
     onToggle: () -> Unit,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
@@ -218,7 +219,7 @@ fun HabitRow(
             .fillMaxWidth()
             .clip(shape)
             .combinedClickable(
-                onClick = onToggle,
+                onClick = { if (canToggle) onToggle() },
                 onLongClick = onLongPress
             ),
         shape = shape
@@ -253,8 +254,9 @@ fun HabitRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
+                    enabled = canToggle,
                     checked = data.isCompleted,
-                    onCheckedChange = { onToggle() }
+                    onCheckedChange = { if (canToggle) onToggle() }
                 )
 
                 Column(
@@ -314,6 +316,7 @@ fun HabitRow(
 fun HabitRowClassic(
     data: HabitWithDailyStatus,
     isSelected: Boolean,
+    canToggle: Boolean,
     onToggle: () -> Unit,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
@@ -345,7 +348,7 @@ fun HabitRowClassic(
             )
             .clip(RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius)))
             .combinedClickable(
-                onClick = onToggle,
+                onClick = { if (canToggle) onToggle() },
                 onLongClick = onLongPress
             )
             .background(
@@ -363,8 +366,9 @@ fun HabitRowClassic(
             modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)
         ) {
             Checkbox(
+                enabled = canToggle,
                 checked = data.isCompleted,
-                onCheckedChange = { onToggle() }
+                onCheckedChange = { if (canToggle) onToggle() }
             )
 
             Column(
