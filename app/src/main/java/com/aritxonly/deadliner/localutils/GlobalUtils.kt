@@ -928,7 +928,7 @@ object GlobalUtils {
 
         val switch = MaterialSwitch(context).apply {
             textSize = 16f
-            text = "开启提醒"
+            text = context.getString(R.string.habit_enable_notification)
             isChecked = enabled
             thumbIconDrawable = ContextCompat.getDrawable(context, R.drawable.switch_thumb_icon)
             setPadding(16, 0, 16, 0)
@@ -936,12 +936,12 @@ object GlobalUtils {
 
         val timeText = TextView(context).apply {
             textSize = 16f
-            text = "提醒时间：${pickedTime.format(TIME_FORMATTER)}"
+            text = context.getString(R.string.habit_notify_at, pickedTime.format(TIME_FORMATTER))
             setPadding(16, 24, 16, 8)
         }
 
         val changeButton = MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = "选择时间"
+            text = context.getString(R.string.set_time)
             setOnClickListener {
                 // 只在“开启”时弹时间选择器；未开启时先打开再选
                 if (!switch.isChecked) {
@@ -952,12 +952,12 @@ object GlobalUtils {
                     .setTimeFormat(TimeFormat.CLOCK_24H)
                     .setHour(pickedTime.hour)
                     .setMinute(pickedTime.minute)
-                    .setTitleText("选择提醒时间")
+                    .setTitleText(R.string.habit_set_notification_time)
                     .build()
 
                 picker.addOnPositiveButtonClickListener {
                     pickedTime = LocalTime.of(picker.hour, picker.minute)
-                    timeText.text = "提醒时间：${pickedTime.format(TIME_FORMATTER)}"
+                    timeText.text = context.getString(R.string.habit_notify_at, pickedTime.format(TIME_FORMATTER))
                 }
 
                 picker.show(activity.supportFragmentManager, "habit_alarm_time_$ddlId")
@@ -974,7 +974,7 @@ object GlobalUtils {
         }
 
         MaterialAlertDialogBuilder(context)
-            .setTitle("习惯提醒: ${habit.name}")
+            .setTitle(context.getString(R.string.habit_notification_title, habit.name))
             .setView(root)
             .setPositiveButton(R.string.accept) { _, _ ->
                 val updated = habit.copy(

@@ -512,4 +512,106 @@
     <string name="settings_support_simplified">When enabled, the main interface will switch to a brand-new simplified design, bringing you a different task management experience</string>
     <string name="overview">Overview</string>
     <string name="edit_profile">Edit Profile</string>
+    <string name="settings_model_settings_advance">Enable to customize model endpoints and your own API key</string>
+    <string name="settings_model_settings">Advanced model settings</string>
+    <string name="settings_ai_function">Feature settings</string>
+
+    <string name="quota_title">Current quota</string>
+    <string name="quota_identity_vip">VIP</string>
+    <string name="quota_identity_free">Free</string>
+    <string name="quota_identity_unknown">Identity</string>
+    <string name="quota_action_refresh">Refresh</string>
+    <string name="quota_action_refreshing">Refreshing…</string>
+    <string name="quota_action_refresh_cd">Refresh</string>
+    <string name="quota_action_retry">Retry</string>
+    <string name="quota_error_text">Failed to fetch: %s</string>
+    <string name="quota_error_unknown">Unknown error</string>
+    <string name="quota_device_label">Device</string>
+    <string name="quota_month_label">Billing month</string>
+    <string name="quota_used_label">Used</string>
+    <string name="quota_remaining_label">Remaining</string>
+    <string name="quota_reset_label">Reset time</string>
+    <string name="quota_endpoint_label">Service endpoint</string>
+
+    <string name="share">Share</string>
+    <string name="summary_with_text">%s Summary</string>
+    <string name="saved_to_gallery">Image saved to gallery</string>
+    <string name="export_settings">Export settings</string>
+    <string name="light_text">Light text</string>
+    <string name="dark_text">Dark text</string>
+    <string name="text_tone">Text brightness</string>
+    <string name="background_img">Background image</string>
+    <string name="pick_from_gallery">Choose from gallery</string>
+    <string name="clear">Clear</string>
+    <string name="preview">Preview</string>
+    <string name="change_avatar">Change avatar</string>
+    <string name="nickname">Nickname</string>
+    <string name="enter_nickname">Enter nickname</string>
+    <string name="save_change">Save changes</string>
+    <string name="remove_avatar">Remove avatar</string>
+    <string name="crop_avatar">Crop avatar</string>
+
+    <string name="notification_upcoming_task">Your task is due in %d minutes</string>
+    <string name="notification_upcoming_task_soon">Your task is about to expire. Please finish it soon!</string>
+    <string name="control_center_tile">Control center tile</string>
+    <string name="add_ddl_tile">“Create Task” tile</string>
+    <string name="add_ddl_tile_supporting">Add the “Create Task” quick setting to the control center</string>
+    <string name="notification_upcoming_task_overdue">Task is overdue!</string>
+    <string name="notification_upcoming_task_title">Task status: %s</string>
+    <string name="notification_upcoming_critical_soon">Due soon</string>
+    <string name="notification_upcoming_critical">%d minutes left</string>
+    <string name="notification_upcoming_critical_overdue">Overdue</string>
+
+    <string name="copy">Copy</string>
+    <string name="settings_live_updates_in_advance">Real-time reminder lead time (minutes)</string>
+
+    <string name="shortcut_add_task_short">Add task</string>
+    <string name="shortcut_add_task_long">Quick add task</string>
+    <string name="shortcut_overview_short">Overview</string>
+    <string name="shortcut_overview_long">View overview</string>
+    <string name="shortcut_disabled_message">This shortcut is currently unavailable</string>
+
+    <string name="finished_import">All changes applied successfully!</string>
+    <string name="detect_share_link">Share link detected</string>
+    <string name="share_link_parse_failed">Failed to parse share link!</string>
+    <string name="toast_all_habits_done">All habits completed! 🎉</string>
+    <string name="cannot_check_future">You cannot check in for future days!</string>
+
+    <string name="habit_goal_total_with_target">Total goal: %1$d times</string>
+    <string name="habit_goal_total_open">Total goal (unlimited)</string>
+    <string name="avatar">Avatar</string>
+
+    <string name="tile_result_tile_added">Added to quick settings</string>
+    <string name="tile_result_tile_already_added">Already in quick settings</string>
+    <string name="tile_result_tile_not_added">User declined</string>
+    <string name="tile_error_app_not_in_foreground">Must be called in the foreground</string>
+    <string name="tile_error_bad_component">Component not exported or disabled</string>
+    <string name="tile_error_mismatched_package">Package name does not match TileService</string>
+    <string name="tile_error_request_in_progress">A request is already in progress</string>
+    <string name="tile_error_no_status_bar_service">System service unavailable</string>
+    <string name="tile_invalid_android">Quick tile addition is only supported on Android 13+</string>
+
+    <string name="habit_enable_notification">Enable reminder</string>
+    <string name="habit_notify_at">Reminder time: %s</string>
+    <string name="set_time">Select time</string>
+    <string name="habit_set_notification_time">Set reminder time</string>
+    <string name="habit_notification_title">Habit reminder: %s</string>
+    <string name="habit_notification">Habit reminder</string>
+
+    <string name="today">Today</string>
+    <string name="this_week">This week</string>
+    <string name="this_month">This month</string>
+    <string name="total_progress">Total progress</string>
+    <string name="progress_with_postfix">Progress:</string>
+    <string name="all">All</string>
+    <string name="event">Event</string>
+    <string name="steps">Steps</string>
+    <string name="show_monthly_dashboard">Share monthly dashboard</string>
+
+    <string name="import_plan">Import schedule block</string>
+    <string name="apply_all_changes">Apply all changes</string>
+    <string name="convert_to_subtask">Convert to subtask</string>
+    <string name="copy_list">Copy list</string>
+    <string name="ai_empty_hint">Try describing your task, today’s plan, or let me break your goal into steps.</string>
+    <string name="linked_task">Linked: %s</string>
 </resources>

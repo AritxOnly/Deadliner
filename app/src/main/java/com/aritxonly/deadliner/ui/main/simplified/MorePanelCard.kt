@@ -72,7 +72,7 @@ fun MorePanelCard(
             if (avatarPainter != null) {
                 Image(
                     painter = avatarPainter,
-                    contentDescription = "头像",
+                    contentDescription = stringResource(R.string.avatar),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(48.dp)

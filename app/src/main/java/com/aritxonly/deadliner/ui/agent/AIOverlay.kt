@@ -355,10 +355,10 @@ fun AIOverlay(
             // 顶部过滤（仅在有内容/加载/错误时显示）
             if (state.cards.isNotEmpty() || state.error != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MyFilterChip("全部", state.filter == ResultFilter.All) { state = state.copy(filter = ResultFilter.All) }
-                    MyFilterChip("任务", state.filter == ResultFilter.Tasks) { state = state.copy(filter = ResultFilter.Tasks) }
-                    MyFilterChip("日程", state.filter == ResultFilter.Plan) { state = state.copy(filter = ResultFilter.Plan) }
-                    MyFilterChip("步骤", state.filter == ResultFilter.Steps) { state = state.copy(filter = ResultFilter.Steps) }
+                    MyFilterChip(stringResource(R.string.all), state.filter == ResultFilter.All) { state = state.copy(filter = ResultFilter.All) }
+                    MyFilterChip(stringResource(R.string.task), state.filter == ResultFilter.Tasks) { state = state.copy(filter = ResultFilter.Tasks) }
+                    MyFilterChip(stringResource(R.string.event), state.filter == ResultFilter.Plan) { state = state.copy(filter = ResultFilter.Plan) }
+                    MyFilterChip(stringResource(R.string.steps), state.filter == ResultFilter.Steps) { state = state.copy(filter = ResultFilter.Steps) }
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -452,7 +452,7 @@ fun AIOverlay(
                                             if (!card.linkTask.isNullOrBlank())
                                                 putExtra(
                                                     CalendarContract.Events.DESCRIPTION,
-                                                    "关联任务: ${card.linkTask}"
+                                                    context.getString(R.string.linked_task, card.linkTask)
                                                 )
                                             if (startMillis != null) putExtra(
                                                 CalendarContract.EXTRA_EVENT_BEGIN_TIME,
@@ -533,7 +533,7 @@ fun AIOverlay(
                                             if (!first.linkTask.isNullOrBlank())
                                                 putExtra(
                                                     CalendarContract.Events.DESCRIPTION,
-                                                    "关联任务: ${first.linkTask}"
+                                                    context.getString(R.string.linked_task, first.linkTask)
                                                 )
                                             if (startMillis != null) putExtra(
                                                 CalendarContract.EXTRA_EVENT_BEGIN_TIME,
@@ -624,7 +624,7 @@ fun AIOverlay(
                                                         if (!first.linkTask.isNullOrBlank())
                                                             putExtra(
                                                                 CalendarContract.Events.DESCRIPTION,
-                                                                "关联任务: ${first.linkTask}"
+                                                                context.getString(R.string.linked_task, first.linkTask)
                                                             )
                                                         if (startMillis != null) putExtra(
                                                             CalendarContract.EXTRA_EVENT_BEGIN_TIME,
@@ -648,7 +648,7 @@ fun AIOverlay(
                                     .height(48.dp),
                                 shape = RoundedCornerShape(16.dp)
                             ) {
-                                Text(if (isPlan) "导入日程块" else "应用全部更改")
+                                Text(if (isPlan) stringResource(R.string.import_plan) else stringResource(R.string.apply_all_changes))
                             }
                         }
                     }

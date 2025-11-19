@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aritxonly.deadliner.model.DayOverview
 import com.aritxonly.deadliner.model.Habit
+import com.aritxonly.deadliner.model.HabitGoalType
 import com.aritxonly.deadliner.model.HabitPeriod
 import com.aritxonly.deadliner.model.HabitRecordStatus
 import com.aritxonly.deadliner.model.HabitWithDailyStatus
@@ -75,22 +76,49 @@ class HabitViewModel(
         habit: Habit,
         date: LocalDate
     ): HabitWithDailyStatus {
-        val (start, endInclusive) = periodBounds(habit.period, date)
+        return when (habit.goalType) {
+            HabitGoalType.PER_PERIOD -> {
+                // 原来的逻辑：按周期窗口统计
+                val (start, endInclusive) = periodBounds(habit.period, date)
 
-        val recordsInPeriod = habitRepo
-            .getRecordsForHabitInRange(habit.id, start, endInclusive)
-            .filter { it.status == HabitRecordStatus.COMPLETED }
+                val recordsInPeriod = habitRepo
+                    .getRecordsForHabitInRange(habit.id, start, endInclusive)
+                    .filter { it.status == HabitRecordStatus.COMPLETED }
 
-        val done = recordsInPeriod.sumOf { it.count }
-        val target = habit.timesPerPeriod.coerceAtLeast(1)
-        val completed = done >= target
+                val done = recordsInPeriod.sumOf { it.count }
+                val target = habit.timesPerPeriod.coerceAtLeast(1)
+                val completed = done >= target
 
-        return HabitWithDailyStatus(
-            habit = habit,
-            doneCount = done,
-            targetCount = target,
-            isCompleted = completed
-        )
+                HabitWithDailyStatus(
+                    habit = habit,
+                    doneCount = done,
+                    targetCount = target,
+                    isCompleted = completed
+                )
+            }
+
+            HabitGoalType.TOTAL -> {
+                // TOTAL：从“起点”到当前 date 的累计次数
+                val recordsUntilToday = habitRepo
+                    .getRecordsForHabitInRange(
+                        habit.id,
+                        LocalDate.of(1970, 1, 1),
+                        date
+                    )
+                    .filter { it.status == HabitRecordStatus.COMPLETED }
+
+                val done = recordsUntilToday.sumOf { it.count }
+                val target = habit.totalTarget?.coerceAtLeast(1) ?: done.coerceAtLeast(1)
+                val completed = habit.totalTarget?.let { done >= it } ?: false
+
+                HabitWithDailyStatus(
+                    habit = habit,
+                    doneCount = done,
+                    targetCount = target,
+                    isCompleted = completed
+                )
+            }
+        }
     }
 
     /**

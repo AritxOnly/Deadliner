@@ -146,32 +146,32 @@ internal fun requestTile(context: Context, component: ComponentName, @DrawableRe
             when (result) {
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED -> {
                     // 已成功添加
-                    Toast.makeText(context, "已添加到快捷设置", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.tile_result_tile_added, Toast.LENGTH_SHORT).show()
                 }
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED -> {
-                    Toast.makeText(context, "已在快捷设置中", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.tile_result_tile_already_added, Toast.LENGTH_SHORT).show()
                 }
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_NOT_ADDED -> {
-                    Toast.makeText(context, "用户拒绝添加", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.tile_result_tile_not_added, Toast.LENGTH_SHORT).show()
                 }
                 StatusBarManager.TILE_ADD_REQUEST_ERROR_APP_NOT_IN_FOREGROUND -> {
-                    Toast.makeText(context, "需要在前台界面调用", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.tile_error_app_not_in_foreground, Toast.LENGTH_SHORT).show()
                 }
                 StatusBarManager.TILE_ADD_REQUEST_ERROR_BAD_COMPONENT -> {
-                    Toast.makeText(context, "组件未导出或未启用", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.tile_error_bad_component, Toast.LENGTH_SHORT).show()
                 }
                 StatusBarManager.TILE_ADD_REQUEST_ERROR_MISMATCHED_PACKAGE -> {
-                    Toast.makeText(context, "包名与 TileService 不一致", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.tile_error_mismatched_package, Toast.LENGTH_SHORT).show()
                 }
                 StatusBarManager.TILE_ADD_REQUEST_ERROR_REQUEST_IN_PROGRESS -> {
-                    Toast.makeText(context, "已有请求正在处理", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.tile_error_request_in_progress, Toast.LENGTH_SHORT).show()
                 }
                 StatusBarManager.TILE_ADD_REQUEST_ERROR_NO_STATUS_BAR_SERVICE -> {
-                    Toast.makeText(context, "系统服务不可用", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.tile_error_no_status_bar_service, Toast.LENGTH_SHORT).show()
                 }
             }
         }
     } else {
-        Toast.makeText(context, "仅支持 Android 13+ 的磁贴快速添加", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, R.string.tile_invalid_android, Toast.LENGTH_SHORT).show()
     }
 }

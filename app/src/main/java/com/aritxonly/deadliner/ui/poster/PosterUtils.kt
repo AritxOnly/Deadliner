@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.FileProvider
 import androidx.core.view.drawToBitmap
+import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.ui.overview.TextTone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -186,5 +187,5 @@ fun shareImage(context: Activity, uri: Uri) {
         putExtra(Intent.EXTRA_STREAM, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(Intent.createChooser(intent, "分享月度看板"))
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.show_monthly_dashboard)))
 }

@@ -49,6 +49,7 @@ import androidx.core.content.ContextCompat
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.model.DDLStatus
 import com.aritxonly.deadliner.model.DayOverview
+import com.aritxonly.deadliner.model.HabitGoalType
 import com.aritxonly.deadliner.model.HabitPeriod
 import com.aritxonly.deadliner.model.HabitWithDailyStatus
 import java.time.LocalDate
@@ -209,10 +210,38 @@ fun HabitRow(
         }
     }
 
-    val bottomLine = if (!remainingText.isNullOrBlank()) {
-        "$remainingText · ${data.doneCount}/${data.targetCount}"
-    } else {
-        "${data.doneCount}/${data.targetCount}"
+    val bottomLine = when (data.habit.goalType) {
+        HabitGoalType.PER_PERIOD -> {
+            val progressText = "${data.doneCount}/${data.targetCount}"
+            if (!remainingText.isNullOrBlank()) {
+                "$remainingText · $progressText"
+            } else {
+                progressText
+            }
+        }
+
+        HabitGoalType.TOTAL -> {
+            val totalTargetText = data.habit.totalTarget?.toString() ?: "∞"
+            val progressText = "${data.doneCount}/$totalTargetText"
+            if (!remainingText.isNullOrBlank()) {
+                // e.g. “还有 12 天 · 7/30”
+                "$remainingText · $progressText"
+            } else {
+                progressText
+            }
+        }
+    }
+
+    val rightLabel = when (data.habit.goalType) {
+        HabitGoalType.PER_PERIOD -> when (data.habit.period) {
+            HabitPeriod.DAILY -> stringResource(R.string.frequency_daily)
+            HabitPeriod.WEEKLY -> stringResource(R.string.frequency_weekly)
+            HabitPeriod.MONTHLY -> stringResource(R.string.frequency_monthly)
+        }
+
+        HabitGoalType.TOTAL -> data.habit.totalTarget?.let {
+            stringResource(R.string.habit_goal_total_with_target, it)
+        } ?: stringResource(R.string.habit_goal_total_open)
     }
 
     Card(
@@ -283,11 +312,7 @@ fun HabitRow(
                 }
 
                 Text(
-                    text = when (data.habit.period) {
-                        HabitPeriod.DAILY -> stringResource(R.string.frequency_daily)
-                        HabitPeriod.WEEKLY -> stringResource(R.string.frequency_weekly)
-                        HabitPeriod.MONTHLY -> stringResource(R.string.frequency_monthly)
-                    },
+                    text = rightLabel,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -332,10 +357,37 @@ fun HabitRowClassic(
         R.drawable.item_background
     }
 
-    val bottomLine = if (!remainingText.isNullOrBlank()) {
-        "$remainingText · ${data.doneCount}/${data.targetCount}"
-    } else {
-        "${data.doneCount}/${data.targetCount}"
+    val bottomLine = when (data.habit.goalType) {
+        HabitGoalType.PER_PERIOD -> {
+            val progressText = "${data.doneCount}/${data.targetCount}"
+            if (!remainingText.isNullOrBlank()) {
+                "$remainingText · $progressText"
+            } else {
+                progressText
+            }
+        }
+
+        HabitGoalType.TOTAL -> {
+            val totalTargetText = data.habit.totalTarget?.toString() ?: "∞"
+            val progressText = "${data.doneCount}/$totalTargetText"
+            if (!remainingText.isNullOrBlank()) {
+                "$remainingText · $progressText"
+            } else {
+                progressText
+            }
+        }
+    }
+
+    val rightLabel = when (data.habit.goalType) {
+        HabitGoalType.PER_PERIOD -> when (data.habit.period) {
+            HabitPeriod.DAILY -> stringResource(R.string.frequency_daily)
+            HabitPeriod.WEEKLY -> stringResource(R.string.frequency_weekly)
+            HabitPeriod.MONTHLY -> stringResource(R.string.frequency_monthly)
+        }
+
+        HabitGoalType.TOTAL -> data.habit.totalTarget?.let {
+            stringResource(R.string.habit_goal_total_with_target, it)
+        } ?: stringResource(R.string.habit_goal_total_open)
     }
 
     Box(
@@ -395,11 +447,7 @@ fun HabitRowClassic(
             }
 
             Text(
-                text = when (data.habit.period) {
-                    HabitPeriod.DAILY -> stringResource(R.string.frequency_daily)
-                    HabitPeriod.WEEKLY -> stringResource(R.string.frequency_weekly)
-                    HabitPeriod.MONTHLY -> stringResource(R.string.frequency_monthly)
-                },
+                text = rightLabel,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -441,15 +441,15 @@ object NotificationUtil {
 
         val periodLabel = when (habit.goalType) {
             HabitGoalType.PER_PERIOD -> when (habit.period) {
-                HabitPeriod.DAILY -> "今天"
-                HabitPeriod.WEEKLY -> "本周"
-                HabitPeriod.MONTHLY -> "本月"
+                HabitPeriod.DAILY -> context.getString(R.string.today)
+                HabitPeriod.WEEKLY -> context.getString(R.string.this_week)
+                HabitPeriod.MONTHLY -> context.getString(R.string.this_month)
             }
-            HabitGoalType.TOTAL -> "总进度"
+            HabitGoalType.TOTAL -> context.getString(R.string.total_progress)
         }
 
-        val title = habit.name.ifBlank { "习惯提醒" }
-        val summary = "$periodLabel 进度：$doneInPeriod / $targetInPeriod"
+        val title = habit.name.ifBlank { context.getString(R.string.habit_notification) }
+        val summary = "$periodLabel " + context.getString(R.string.progress_with_postfix) + "$doneInPeriod / $targetInPeriod"
 
         val builder = NotificationCompat.Builder(context, CHANNEL_DAILY_ID).apply {
             setSmallIcon(R.mipmap.ic_launcher)

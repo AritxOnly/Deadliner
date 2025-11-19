@@ -46,7 +46,7 @@ fun PlanBlockCardView(card: UiCard.PlanBlockCard, onAdd: () -> Unit) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 card.location?.let { Pill(it) }
                 card.energy?.let { Pill(it.uppercase()) }
-                card.linkTask?.let { Pill("关联: $it") }
+                card.linkTask?.let { Pill(stringResource(R.string.linked_task, it)) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onAdd, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.save_and_add_to_calendar)) }
@@ -73,11 +73,8 @@ fun StepsCardView(card: UiCard.StepsCard, onCreateSubtasks: (String, List<String
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
-                Button(onClick = { onCreateSubtasks(card.title, card.checklist) }, modifier = Modifier.weight(1f)) {
-                    Text("转为子任务")
-                }
-                OutlinedButton(onClick = { /* Copy list */ }, modifier = Modifier.weight(1f)) {
-                    Text("复制清单")
+                OutlinedButton(onClick = { /* TODO Copy list */ }, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.copy_list))
                 }
             }
         }
@@ -99,7 +96,7 @@ fun EmptyHint() {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "试着描述你的任务、今天的安排，或让我把目标拆成步骤。",
+            stringResource(R.string.ai_empty_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -119,7 +116,7 @@ fun ErrorBlock(message: String) {
                 tint = MaterialTheme.colorScheme.error
             )
             Spacer(Modifier.height(4.dp))
-            Text("解析失败", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.parse_failed), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
             Spacer(Modifier.height(4.dp))
             Text(message, style = MaterialTheme.typography.bodyMedium)
         }
