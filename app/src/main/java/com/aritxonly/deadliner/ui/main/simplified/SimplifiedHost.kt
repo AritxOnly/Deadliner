@@ -3,7 +3,6 @@
 package com.aritxonly.deadliner.ui.main.simplified
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.ColorMatrix
@@ -11,9 +10,6 @@ import android.graphics.ColorMatrixColorFilter
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.util.Log
-import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -69,8 +65,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -88,11 +82,9 @@ import com.aritxonly.deadliner.data.MainViewModelFactory
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.SearchFilter
 import com.aritxonly.deadliner.model.DDLItem
-import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.PartyPresets
 import com.aritxonly.deadliner.model.UserProfile
-import com.aritxonly.deadliner.model.updateNoteWithDate
 import com.aritxonly.deadliner.ui.agent.AIOverlayHost
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.ui.iconResource
@@ -114,14 +106,6 @@ import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme.DEADLINER_URL_SCHEME_PREFIX
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme.DEADLINER_URL_SCHEME_PREFIX_LEGACY
 import com.aritxonly.deadliner.localutils.GlobalUtils.showHabitReminderDialog
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.materialswitch.MaterialSwitch
-import com.google.android.material.switchmaterial.SwitchMaterial
-import com.google.android.material.timepicker.MaterialTimePicker
-import com.google.android.material.timepicker.TimeFormat
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun SimplifiedHost(
@@ -302,7 +286,17 @@ fun SimplifiedHost(
     var moreExpanded by remember { mutableStateOf(false) }
     var showOverlay by remember { mutableStateOf(false) }
     var childRequestsBlur by remember { mutableStateOf(false) }
-    val shouldBlur = showOverlay || childRequestsBlur || moreExpanded || showDeleteDialog
+    var habitRemTargetId by remember { mutableStateOf<Long?>(null) }
+    val shouldBlur = showOverlay || childRequestsBlur || moreExpanded || showDeleteDialog || (habitRemTargetId != null)
+
+    LaunchedEffect(habitRemTargetId) {
+        val targetId = habitRemTargetId ?: return@LaunchedEffect
+
+        // 这里已经发生了一次重组，背景会根据 shouldBlur 开始模糊
+        showHabitReminderDialog(context, targetId) {
+            habitRemTargetId = null
+        }
+    }
 
     val scale by animateFloatAsState(targetValue = if (showOverlay) 0.98f else 1f, label = "content-scale")
     val maxBlur = 24f
@@ -809,7 +803,7 @@ fun SimplifiedHost(
                                                     ddlList.firstOrNull { it.id == firstId }
 
                                                 if (item != null) {
-                                                    showHabitReminderDialog(context, item.id)
+                                                    habitRemTargetId = item.id
                                                 } else {
                                                     Toast.makeText(
                                                         activity,

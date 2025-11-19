@@ -898,7 +898,9 @@ private fun MyFilterChip(
         label = { Text(text) },
         leadingIcon = if (selected) { { Icon(iconResource(R.drawable.ic_finish), contentDescription = null) } } else null,
         modifier = modifier,
-        colors = FilterChipDefaults.filterChipColors()
+        colors = FilterChipDefaults.filterChipColors().copy(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
+        )
     )
 }
 

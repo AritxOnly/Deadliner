@@ -73,7 +73,7 @@ fun StepsCardView(card: UiCard.StepsCard, onCreateSubtasks: (String, List<String
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
-                OutlinedButton(onClick = { /* TODO Copy list */ }, modifier = Modifier.weight(1f)) {
+                OutlinedButton(onClick = { onCreateSubtasks(card.title, card.checklist) }, modifier = Modifier.weight(1f)) {
                     Text(stringResource(R.string.copy_list))
                 }
             }

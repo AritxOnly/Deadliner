@@ -902,7 +902,7 @@ object GlobalUtils {
 
     private val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-    fun showHabitReminderDialog(context: Context, ddlId: Long) {
+    fun showHabitReminderDialog(context: Context, ddlId: Long, onCancel: () -> Unit = {}) {
         val activity = context as? FragmentActivity ?: return
         val repo = com.aritxonly.deadliner.data.HabitRepository()
         val habit = repo.getHabitByDdlId(ddlId) ?: return
@@ -989,8 +989,15 @@ object GlobalUtils {
                     DeadlineAlarmScheduler
                         .cancelHabitNotifyAlarm(context, ddlId)
                 }
+
+                onCancel()
             }
-            .setNegativeButton(R.string.cancel, null)
+            .setNegativeButton(R.string.cancel) { _, _ ->
+                onCancel()
+            }
+            .setOnCancelListener {
+                onCancel()
+            }
             .show()
     }
 }
