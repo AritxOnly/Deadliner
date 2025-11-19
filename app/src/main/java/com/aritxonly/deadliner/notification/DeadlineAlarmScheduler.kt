@@ -7,11 +7,13 @@ import android.content.Intent
 import android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
 import android.util.Log
 import com.aritxonly.deadliner.data.DatabaseHelper
+import com.aritxonly.deadliner.data.HabitRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_ALARM_SHOW
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_ALARM_TRIGGER
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
+import com.aritxonly.deadliner.notification.HabitNotifyReceiver
 import com.aritxonly.deadliner.notification.UpcomingLiveUpdatesReceiver
 import java.time.Duration
 import java.time.LocalDateTime
@@ -79,6 +81,8 @@ object DeadlineAlarmScheduler {
         for (ddlId in allDdlIds) {
             Log.d("AlarmDebug", "Removing $ddlId")
             cancelAlarm(context, ddlId)
+            cancelUpcomingDDLAlarm(context, ddlId)
+            cancelHabitNotifyAlarm(context, ddlId)
         }
 
         cancelDailyAlarm(context)
@@ -87,6 +91,7 @@ object DeadlineAlarmScheduler {
     fun cancelAlarm(context: Context, ddlId: Long) {
         cancelExactAlarm(context, ddlId)
         cancelUpcomingDDLAlarm(context, ddlId)
+        cancelHabitNotifyAlarm(context, ddlId)
     }
 
     fun cancelExactAlarm(context: Context, ddlId: Long) {
@@ -274,6 +279,119 @@ object DeadlineAlarmScheduler {
             Log.d("AlarmDebug", "取消Upcoming DDL闹钟：DDL_ID=$ddlId, reqCode=$requestCode")
         } ?: run {
             Log.d("AlarmDebug", "未找到可取消的Upcoming DDL闹钟：DDL_ID=$ddlId, reqCode=$requestCode")
+        }
+    }
+
+    private const val ACTION_HABIT_NOTIFY = "com.aritxonly.deadliner.ACTION_HABIT_NOTIFY"
+
+    private fun buildHabitAlarmRequestCode(ddlId: Long, habitId: Long): Int {
+        return 31 * ddlId.hashCode() + habitId.hashCode()
+    }
+
+    fun scheduleHabitNotifyAlarm(context: Context, ddlId: Long) {
+        val repo = HabitRepository()
+        val habit = repo.getHabitByDdlId(ddlId) ?: run {
+            Log.d("HabitAlarm", "schedule: no habit for ddlId=$ddlId")
+            return
+        }
+
+        val alarmStr = habit.alarmTime?.takeIf { it.isNotBlank() } ?: run {
+            Log.d("HabitAlarm", "schedule: alarmTime is null/blank for habit=${habit.id}")
+            return
+        }
+
+        val localTime = try {
+            // 推荐存 LocalTime("HH:mm")；兼容历史 LocalDateTime
+            try {
+                java.time.LocalTime.parse(alarmStr)
+            } catch (e: Exception) {
+                java.time.LocalDateTime.parse(alarmStr).toLocalTime()
+            }
+        } catch (e: Exception) {
+            Log.e("HabitAlarm", "schedule: parse alarmTime failed: $alarmStr", e)
+            return
+        }
+
+        val now = java.time.LocalDateTime.now()
+        val today = now.toLocalDate()
+        val todayAtAlarm = java.time.LocalDateTime.of(today, localTime)
+
+        // 如果今天这个时间还没到 → 今天；否则 → 明天同一时间
+        val nextTriggerDateTime =
+            if (todayAtAlarm.isAfter(now)) todayAtAlarm else todayAtAlarm.plusDays(1)
+
+        val triggerMillis = nextTriggerDateTime
+            .atZone(java.time.ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (!alarmManager.canScheduleExactAlarms()) {
+            Log.d("HabitAlarm", "schedule: cannot schedule exact alarms, skip")
+            return
+        }
+
+        val intent = Intent(context, HabitNotifyReceiver::class.java).apply {
+            action = ACTION_HABIT_NOTIFY
+            putExtra("DDL_ID", ddlId)
+        }
+        val requestCode = buildHabitAlarmRequestCode(ddlId, habit.id)
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // 锁屏图标跳转
+        val showIntent = Intent(context, MainActivity::class.java)
+        val showPi = PendingIntent.getActivity(
+            context,
+            RC_ALARM_SHOW + ddlId.hashCode(),
+            showIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val info = AlarmManager.AlarmClockInfo(triggerMillis, showPi)
+        alarmManager.setAlarmClock(info, pendingIntent)
+
+        Log.d(
+            "HabitAlarm",
+            "schedule: habitId=${habit.id}, ddlId=$ddlId, trigger=$nextTriggerDateTime"
+        )
+    }
+
+    fun cancelHabitNotifyAlarm(context: Context, ddlId: Long) {
+        val repo = HabitRepository()
+        val habit = repo.getHabitByDdlId(ddlId) ?: run {
+            Log.d("AlarmDebug", "cancel: no habit for ddlId=$ddlId")
+            return
+        }
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (!alarmManager.canScheduleExactAlarms()) {
+            Log.d("AlarmDebug", "cancel: cannot schedule exact alarms, skip cancel")
+            return
+        }
+
+        val intent = Intent(context, HabitNotifyReceiver::class.java).apply {
+            action = ACTION_HABIT_NOTIFY
+            putExtra("DDL_ID", ddlId)
+        }
+        val requestCode = buildHabitAlarmRequestCode(ddlId, habit.id)
+
+        PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )?.let { pi ->
+            alarmManager.cancel(pi)
+            pi.cancel()
+            Log.d("AlarmDebug", "取消Habit闹钟：DDL_ID=$ddlId, reqCode=$requestCode")
+        } ?: run {
+            Log.d("AlarmDebug", "未找到可取消的Habit闹钟：DDL_ID=$ddlId, reqCode=$requestCode")
         }
     }
 

@@ -310,9 +310,8 @@ class AddDDLActivity : AppCompatActivity() {
                         totalEditText.setText("")
                     }
 
-                    // 频率类型按钮（注意你项目里 btnYearly 映射到 MONTHLY）
                     val checkedId = when (meta.frequencyType) {
-                        DeadlineFrequency.TOTAL  -> R.id.btnDaily
+                        DeadlineFrequency.TOTAL  -> R.id.btnTotal
                         DeadlineFrequency.DAILY  -> R.id.btnDaily
                         DeadlineFrequency.WEEKLY -> R.id.btnWeekly
                         DeadlineFrequency.MONTHLY -> R.id.btnYearly

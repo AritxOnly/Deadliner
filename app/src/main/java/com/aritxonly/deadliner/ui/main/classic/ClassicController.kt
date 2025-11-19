@@ -145,6 +145,7 @@ import kotlin.collections.forEach
 import kotlin.getValue
 import androidx.core.view.isVisible
 import com.aritxonly.deadliner.data.HabitRepository
+import com.aritxonly.deadliner.localutils.GlobalUtils.showHabitReminderDialog
 
 class ClassicController(
     private val activity: MainActivity,
@@ -870,40 +871,37 @@ class ClassicController(
                         false
                     }
                 }
-                R.id.star -> {
+                R.id.alarm -> {
                     if (adapter.selectedPositions.isNotEmpty()) {
-                        val positionsToUpdate = adapter.selectedPositions.toList()
-                        var count = 0
-                        for (position in positionsToUpdate) {
-                            val item = adapter.itemList[position]
-                            item.isStared = !item.isStared
-                            DDLRepository().updateDDL(item)
-                            count++
+                        val ddlId = adapter.selectedPositions.firstNotNullOfOrNull { pos ->
+                            adapter.itemList.getOrNull(pos)?.id
                         }
-                        viewModel.loadData(currentType)
-                        habitViewModel.refresh()
+                        val item = DDLRepository().getDDLById(ddlId?: return@setOnMenuItemClickListener false)
+
+                        if (item != null) {
+                            showHabitReminderDialog(activity, item.id)
+                        } else {
+                            Toast.makeText(
+                                activity,
+                                activity.getString(R.string.please_select_edit_first),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else {
                         Toast.makeText(
                             activity,
-                            resources.getString(R.string.toast_stared),
+                            activity.getString(R.string.please_select_edit_first),
                             Toast.LENGTH_SHORT
                         ).show()
-                        decideShowEmptyNotice()
-                        // 清除多选状态
-
-                        switchAppBarStatus(true)
-                        updateTitleAndExcitementText(GlobalUtils.motivationalQuotes)
-                        true
-                    } else {
-                        Toast.makeText(activity, getString(R.string.please_select_done_first), Toast.LENGTH_SHORT).show()
-                        false
                     }
+                    true
                 }
                 else -> false
             }
         }
 
         activity.onBackPressedDispatcher.addCallback {
-            if (searchOverlay.visibility == View.VISIBLE) {
+            if (searchOverlay.isVisible) {
                 searchEditText.text?.clear()
                 viewModel.loadData(currentType)
                 habitViewModel.refresh()
@@ -1605,6 +1603,7 @@ class ClassicController(
             allDDLs.filter { !it.isCompleted }.forEach { ddl ->
                 DeadlineAlarmScheduler.scheduleExactAlarm(applicationContext, ddl)
                 DeadlineAlarmScheduler.scheduleUpcomingDDLAlarm(applicationContext, ddl)
+                DeadlineAlarmScheduler.scheduleHabitNotifyAlarm(applicationContext, ddl.id)
             }
         }
     }

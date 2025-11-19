@@ -185,6 +185,15 @@
                 <action android:name="com.aritxonly.deadliner.ACTION_UPCOMING_DDL" />
             </intent-filter>
         </receiver>
+        <receiver
+            android:name=".notification.HabitNotifyReceiver"
+            android:enabled="true"
+            android:exported="false"
+            android:permission="android.permission.WAKE_LOCK">
+            <intent-filter>
+                <action android:name="com.aritxonly.deadliner.ACTION_HABIT_NOTIFY" />
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

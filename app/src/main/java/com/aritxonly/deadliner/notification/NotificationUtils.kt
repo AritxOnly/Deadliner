@@ -26,15 +26,22 @@ import com.aritxonly.deadliner.DeadlineDetailActivity
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.LauncherActivity
+import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.OverviewActivity
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.data.HabitRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_DDL_DETAIL
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_DELETE
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_LATER
 import com.aritxonly.deadliner.localutils.GlobalUtils.PendingCode.RC_MARK_COMPLETE
+import com.aritxonly.deadliner.model.Habit
+import com.aritxonly.deadliner.model.HabitGoalType
+import com.aritxonly.deadliner.model.HabitPeriod
+import com.aritxonly.deadliner.model.HabitRecordStatus
 import com.aritxonly.deadliner.ui.main.simplified.computeProgress
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.microedition.khronos.opengles.GL
 
@@ -375,6 +382,103 @@ object NotificationUtil {
 
             setOnlyAlertOnce(true)
         }.build()
+    }
+
+    fun sendHabitNotification(
+        context: Context,
+        habit: Habit,
+        ddl: DDLItem
+    ) {
+        // 检查通知权限（Android 13+）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+        }
+
+        val notification = buildHabitNotification(context, habit, ddl)
+        // 用 habit.id 做一个稳定的 notificationId
+        val notificationId = 200000 + habit.id.hashCode()
+        NotificationManagerCompat.from(context).notify(notificationId, notification)
+    }
+
+    private fun buildHabitNotification(
+        context: Context,
+        habit: Habit,
+        ddl: DDLItem
+    ): Notification {
+        val repo = HabitRepository()
+        val today = LocalDate.now()
+
+        val (start, endInclusive) = when (habit.period) {
+            HabitPeriod.DAILY -> today to today
+            HabitPeriod.WEEKLY -> {
+                val s = today.with(java.time.DayOfWeek.MONDAY)
+                val e = s.plusDays(6)
+                s to e
+            }
+            HabitPeriod.MONTHLY -> {
+                val ym = java.time.YearMonth.from(today)
+                val s = ym.atDay(1)
+                val e = ym.atEndOfMonth()
+                s to e
+            }
+        }
+
+        val recordsInPeriod = repo
+            .getRecordsForHabitInRange(habit.id, start, endInclusive)
+            .filter { it.status == HabitRecordStatus.COMPLETED }
+
+        val doneInPeriod = recordsInPeriod.sumOf { it.count }
+        val targetInPeriod = when (habit.goalType) {
+            HabitGoalType.PER_PERIOD -> habit.timesPerPeriod.coerceAtLeast(1)
+            HabitGoalType.TOTAL -> habit.totalTarget ?: habit.timesPerPeriod.coerceAtLeast(1)
+        }
+
+        val periodLabel = when (habit.goalType) {
+            HabitGoalType.PER_PERIOD -> when (habit.period) {
+                HabitPeriod.DAILY -> "今天"
+                HabitPeriod.WEEKLY -> "本周"
+                HabitPeriod.MONTHLY -> "本月"
+            }
+            HabitGoalType.TOTAL -> "总进度"
+        }
+
+        val title = habit.name.ifBlank { "习惯提醒" }
+        val summary = "$periodLabel 进度：$doneInPeriod / $targetInPeriod"
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_DAILY_ID).apply {
+            setSmallIcon(R.mipmap.ic_launcher)
+            setContentTitle(title)
+            setContentText(summary)
+            setStyle(NotificationCompat.BigTextStyle().bigText(summary))
+
+            // OPPO（ColorOS）额外字段
+            if (isOppoDevice()) {
+                addExtras(Bundle().apply {
+                    putString("oppo_notification_channel_id", "important_channel")
+                })
+            }
+
+            // 点击进入主界面，最好让 MainActivity 自己根据 extra 跳到习惯页
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                200000 + habit.id.hashCode(),
+                Intent(context, MainActivity::class.java).apply {
+                    putExtra("EXTRA_OPEN_TAB", "habit")
+                    putExtra("EXTRA_DDL_ID", ddl.id)
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            setContentIntent(pendingIntent)
+            setAutoCancel(true)
+        }
+
+        return builder.build()
     }
 
     private fun isOppoDevice() =

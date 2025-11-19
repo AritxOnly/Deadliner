@@ -3,6 +3,7 @@
 package com.aritxonly.deadliner.ui.main.simplified
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.ColorMatrix
@@ -10,6 +11,9 @@ import android.graphics.ColorMatrixColorFilter
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.util.Log
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -65,6 +69,8 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -107,6 +113,15 @@ import com.aritxonly.deadliner.data.HabitViewModelFactory
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme.DEADLINER_URL_SCHEME_PREFIX
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme.DEADLINER_URL_SCHEME_PREFIX_LEGACY
+import com.aritxonly.deadliner.localutils.GlobalUtils.showHabitReminderDialog
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun SimplifiedHost(
@@ -741,44 +756,78 @@ fun SimplifiedHost(
 
                                 Spacer(modifier = Modifier.width(16.dp))
 
-                                IconButton(
-                                    onClick = {
-                                        if (selectedIds.isNotEmpty()) {
-                                            val idsToUpdate = selectedIds.toList()
-                                            var count = 0
+                                if (selectedPage == DeadlineType.TASK) {
+                                    IconButton(
+                                        onClick = {
+                                            if (selectedIds.isNotEmpty()) {
+                                                val idsToUpdate = selectedIds.toList()
+                                                var count = 0
 
-                                            idsToUpdate.forEach { id ->
-                                                val item = ddlList.firstOrNull { it.id == id }
-                                                    ?: return@forEach
-                                                if (item.isCompleted) {
-                                                    val updated = item.copy(isArchived = true)
-                                                    DDLRepository().updateDDL(updated)
-                                                    count++
+                                                idsToUpdate.forEach { id ->
+                                                    val item = ddlList.firstOrNull { it.id == id }
+                                                        ?: return@forEach
+                                                    if (item.isCompleted) {
+                                                        val updated = item.copy(isArchived = true)
+                                                        DDLRepository().updateDDL(updated)
+                                                        count++
+                                                    }
                                                 }
+
+                                                // 刷新 & 提示
+                                                vm.loadData(selectedPage)
+                                                habitVm.refresh()
+                                                Toast.makeText(
+                                                    activity,
+                                                    activity.getString(
+                                                        R.string.toast_archived,
+                                                        count
+                                                    ),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+
+                                                // 清除多选状态 & 恢复 AppBar
+                                                selectedIds.clear()
+                                                selectionMode = false
+                                            } else {
+                                                Toast.makeText(
+                                                    activity,
+                                                    activity.getString(R.string.please_select_done_first),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
                                             }
+                                        },
+                                    ) {
+                                        Icon(iconResource(R.drawable.ic_archiving), null)
+                                    }
+                                } else {
+                                    IconButton(
+                                        onClick = {
+                                            if (selectedIds.isNotEmpty()) {
+                                                // 取第一个选中项
+                                                val firstId = selectedIds.first()
+                                                val item =
+                                                    ddlList.firstOrNull { it.id == firstId }
 
-                                            // 刷新 & 提示
-                                            vm.loadData(selectedPage)
-                                            habitVm.refresh()
-                                            Toast.makeText(
-                                                activity,
-                                                activity.getString(R.string.toast_archived, count),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-
-                                            // 清除多选状态 & 恢复 AppBar
-                                            selectedIds.clear()
-                                            selectionMode = false
-                                        } else {
-                                            Toast.makeText(
-                                                activity,
-                                                activity.getString(R.string.please_select_done_first),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    },
-                                ) {
-                                    Icon(iconResource(R.drawable.ic_archiving), null)
+                                                if (item != null) {
+                                                    showHabitReminderDialog(context, item.id)
+                                                } else {
+                                                    Toast.makeText(
+                                                        activity,
+                                                        activity.getString(R.string.please_select_edit_first),
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            } else {
+                                                Toast.makeText(
+                                                    activity,
+                                                    activity.getString(R.string.please_select_edit_first),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        },
+                                    ) {
+                                        Icon(iconResource(R.drawable.ic_notification_add), null)
+                                    }
                                 }
 
                                 Spacer(modifier = Modifier.width(16.dp))

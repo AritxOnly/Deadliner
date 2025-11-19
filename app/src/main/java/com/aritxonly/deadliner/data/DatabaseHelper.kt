@@ -35,7 +35,7 @@ class DatabaseHelper private constructor(context: Context) :
         }
 
         const val DATABASE_NAME = "deadliner.db"
-        private const val DATABASE_VERSION = 12
+        private const val DATABASE_VERSION = 13
         private const val TABLE_NAME = "ddl_items"
         private const val COLUMN_ID = "id"
         private const val COLUMN_NAME = "name"
@@ -77,6 +77,7 @@ class DatabaseHelper private constructor(context: Context) :
         private const val HABIT_UPDATED_AT = "updated_at"
         private const val HABIT_STATUS = "status"
         private const val HABIT_SORT_ORDER = "sort_order"
+        private const val HABIT_ALARM_TIME = "alarm_time"
 
         // habit_records 表字段
         private const val HR_ID = "id"
@@ -142,6 +143,7 @@ class DatabaseHelper private constructor(context: Context) :
             $HABIT_UPDATED_AT TEXT NOT NULL,
             $HABIT_STATUS TEXT NOT NULL DEFAULT 'ACTIVE',
             $HABIT_SORT_ORDER INTEGER NOT NULL DEFAULT 0,
+            $HABIT_ALARM_TIME TEXT,
             FOREIGN KEY($HABIT_DDL_ID) REFERENCES $TABLE_NAME($COLUMN_ID) ON DELETE CASCADE
         )
         """.trimIndent()
@@ -295,6 +297,17 @@ class DatabaseHelper private constructor(context: Context) :
                 execSQL("CREATE INDEX IF NOT EXISTS idx_hr_habit_date ON $TABLE_HABIT_RECORD($HR_HABIT_ID, $HR_DATE)")
 
                 migrateLegacyHabits(this)
+            }
+        }
+        if (oldVersion < 13) {
+            db.transaction {
+                try {
+                    execSQL(
+                        "ALTER TABLE $TABLE_HABIT ADD COLUMN $HABIT_ALARM_TIME TEXT"
+                    )
+                } catch (e: Exception) {
+                    Log.e("DatabaseHelper", "Add alarm_time to habits failed", e)
+                }
             }
         }
     }
@@ -467,6 +480,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(HABIT_UPDATED_AT, habit.updatedAt.toString())
             put(HABIT_STATUS, habit.status.name)              // ACTIVE / ARCHIVED
             put(HABIT_SORT_ORDER, habit.sortOrder)
+            habit.alarmTime?.let { put(HABIT_ALARM_TIME, it) } ?: putNull(HABIT_ALARM_TIME)
         }
         return db.insert(TABLE_HABIT, null, values)
     }
@@ -486,6 +500,7 @@ class DatabaseHelper private constructor(context: Context) :
             put(HABIT_UPDATED_AT, habit.updatedAt.toString())
             put(HABIT_STATUS, habit.status.name)
             put(HABIT_SORT_ORDER, habit.sortOrder)
+            habit.alarmTime?.let { put(HABIT_ALARM_TIME, it) } ?: putNull(HABIT_ALARM_TIME)
         }
         db.update(TABLE_HABIT, values, "$HABIT_ID = ?", arrayOf(habit.id.toString()))
     }
@@ -573,6 +588,9 @@ class DatabaseHelper private constructor(context: Context) :
                 )
                 val sortOrder = getInt(getColumnIndexOrThrow(HABIT_SORT_ORDER))
 
+                val alarmIdx = getColumnIndexOrThrow(HABIT_ALARM_TIME)
+                val alarmTime = if (isNull(alarmIdx)) null else getString(alarmIdx)
+
                 result.add(
                     com.aritxonly.deadliner.model.Habit(
                         id = id,
@@ -588,7 +606,8 @@ class DatabaseHelper private constructor(context: Context) :
                         createdAt = createdAt,
                         updatedAt = updatedAt,
                         status = status,
-                        sortOrder = sortOrder
+                        sortOrder = sortOrder,
+                        alarmTime = alarmTime
                     )
                 )
             }

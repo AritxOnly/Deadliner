@@ -32,5 +32,6 @@ data class Habit(
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now(),
     val status: HabitStatus = HabitStatus.ACTIVE,
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
+    val alarmTime: String? = null
 )

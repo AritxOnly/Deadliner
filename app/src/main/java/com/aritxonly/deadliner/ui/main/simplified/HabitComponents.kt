@@ -149,7 +149,8 @@ fun WeekRow(
                 ) {
                     Text(
                         text = dayNum.toString(),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 

@@ -91,7 +91,7 @@
     <string name="settings_support_ldwidget_add_btn">开启后，任务大组件上将会显示一个浮动的\"+\"按钮，用于从小组件快速添加任务</string>
 
     <string name="settings_nearby_notification">Deadline临近通知</string>
-    <string name="settings_everyday_notification">每日Deadline统计通知</string>
+    <string name="settings_everyday_notification">每日摘要通知</string>
 
     <string name="settings_experimental_e2e">系统栏边到边沉浸（实验性）</string>
     <string name="settings_excitement">主菜单鼓励语句</string>

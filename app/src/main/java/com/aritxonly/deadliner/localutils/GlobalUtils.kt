@@ -9,12 +9,16 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
 import android.util.Log
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import com.aritxonly.deadliner.BuildConfig
 import com.aritxonly.deadliner.data.DatabaseHelper
@@ -28,10 +32,13 @@ import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.UiStyle
 import com.aritxonly.deadliner.model.toJson
 import com.aritxonly.deadliner.model.updateNoteWithDate
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.DateValidatorPointForward
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.google.gson.Gson
@@ -353,6 +360,12 @@ object GlobalUtils {
         style = newStyle.key
         _styleFlow?.value = newStyle
     }
+
+    var addDeadlineGuide: Boolean
+        get() = sharedPreferences.getBoolean("add_deadline_guide", true)
+        set(value) {
+            sharedPreferences.edit { putBoolean("add_deadline_guide", value) }
+        }
 
     var advancedAISettings: Boolean
         get() = sharedPreferences.getBoolean("advanced_ai_settings", false)
@@ -885,5 +898,99 @@ object GlobalUtils {
 
             onRefresh()
         }
+    }
+
+    private val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    fun showHabitReminderDialog(context: Context, ddlId: Long) {
+        val activity = context as? FragmentActivity ?: return
+        val repo = com.aritxonly.deadliner.data.HabitRepository()
+        val habit = repo.getHabitByDdlId(ddlId) ?: return
+
+        // 当前是否已开启提醒
+        var enabled = !habit.alarmTime.isNullOrBlank()
+        // 当前时间：已有则解析，否则给个默认 20:00
+        var pickedTime: LocalTime = try {
+            habit.alarmTime?.let { LocalTime.parse(it) } ?: LocalTime.of(20, 0)
+        } catch (_: Exception) {
+            LocalTime.of(20, 0)
+        }
+
+        // 简单构建一个纵向布局：Switch + 时间 + 修改按钮
+        val root = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(32, 24, 32, 8)
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val switch = MaterialSwitch(context).apply {
+            textSize = 16f
+            text = "开启提醒"
+            isChecked = enabled
+            thumbIconDrawable = ContextCompat.getDrawable(context, R.drawable.switch_thumb_icon)
+            setPadding(16, 0, 16, 0)
+        }
+
+        val timeText = TextView(context).apply {
+            textSize = 16f
+            text = "提醒时间：${pickedTime.format(TIME_FORMATTER)}"
+            setPadding(16, 24, 16, 8)
+        }
+
+        val changeButton = MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = "选择时间"
+            setOnClickListener {
+                // 只在“开启”时弹时间选择器；未开启时先打开再选
+                if (!switch.isChecked) {
+                    switch.isChecked = true
+                }
+
+                val picker = MaterialTimePicker.Builder()
+                    .setTimeFormat(TimeFormat.CLOCK_24H)
+                    .setHour(pickedTime.hour)
+                    .setMinute(pickedTime.minute)
+                    .setTitleText("选择提醒时间")
+                    .build()
+
+                picker.addOnPositiveButtonClickListener {
+                    pickedTime = LocalTime.of(picker.hour, picker.minute)
+                    timeText.text = "提醒时间：${pickedTime.format(TIME_FORMATTER)}"
+                }
+
+                picker.show(activity.supportFragmentManager, "habit_alarm_time_$ddlId")
+            }
+            setPadding(16, 0, 16, 0)
+        }
+
+        root.addView(switch)
+        root.addView(timeText)
+        root.addView(changeButton)
+
+        switch.setOnCheckedChangeListener { _, isChecked ->
+            enabled = isChecked
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("习惯提醒: ${habit.name}")
+            .setView(root)
+            .setPositiveButton(R.string.accept) { _, _ ->
+                val updated = habit.copy(
+                    alarmTime = if (enabled) pickedTime.format(TIME_FORMATTER) else null
+                )
+                repo.updateHabit(updated)
+
+                if (enabled) {
+                    DeadlineAlarmScheduler
+                        .scheduleHabitNotifyAlarm(context, ddlId)
+                } else {
+                    DeadlineAlarmScheduler
+                        .cancelHabitNotifyAlarm(context, ddlId)
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 }
