@@ -613,6 +613,9 @@ fun SimplifiedHost(
                             HorizontalFloatingToolbar(
                                 expanded = toolbarExpanded,
                                 colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
+                                expandedShadowElevation = 1.dp,
+                                collapsedShadowElevation = 1.dp,
+                                modifier = Modifier.padding(2.dp),
                                 leadingContent = {
                                     Box(modifier = Modifier.padding(start = 4.dp, end = 12.dp)) {
                                         TextPageIndicator(
@@ -664,7 +667,10 @@ fun SimplifiedHost(
                         } else {
                             HorizontalFloatingToolbar(
                                 expanded = toolbarExpanded,
-                                colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
+                                colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+                                expandedShadowElevation = 1.dp,
+                                collapsedShadowElevation = 1.dp,
+                                modifier = Modifier.padding(2.dp),
                             ) {
                                 IconButton(
                                     onClick = {

@@ -1,8 +1,10 @@
 package com.aritxonly.deadliner.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,21 +26,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.SettingsRoute
 import com.aritxonly.deadliner.ui.SvgCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun InterfaceSettingsScreen(
-    navigateUp: () -> Unit
+fun AppearanceSettingsScreen(
+    nav: NavHostController,
+    navigateUp: () -> Unit,
 ) {
     var progressDirEnabled by remember { mutableStateOf(GlobalUtils.progressDir) }
     var motivationalQuotesEnabled by remember { mutableStateOf(GlobalUtils.motivationalQuotes) }
     var fireworksOnFinishEnabled by remember { mutableStateOf(GlobalUtils.fireworksOnFinish) }
     var detailDisplayEnabled by remember { mutableStateOf(GlobalUtils.detailDisplayMode) }
     var hideDividerEnabled by remember { mutableStateOf(GlobalUtils.hideDivider) }
-    var simplifiedEnabled by remember { mutableStateOf(GlobalUtils.style == "simplified") }
 
     val onProgressDirChange: (Boolean) -> Unit = {
         GlobalUtils.progressDir = it
@@ -59,10 +63,6 @@ fun InterfaceSettingsScreen(
     val onHideDividerChange: (Boolean) -> Unit = {
         GlobalUtils.hideDivider = it
         hideDividerEnabled = it
-    }
-    val onSimplifiedChange: (Boolean) -> Unit = {
-        GlobalUtils.style = if (it) "simplified" else "classic"
-        simplifiedEnabled = it
     }
 
     val expressiveTypeModifier = Modifier
@@ -94,6 +94,24 @@ fun InterfaceSettingsScreen(
         ) {
             SvgCard(R.drawable.svg_interface, modifier = Modifier.padding(16.dp))
 
+            SettingsSection(topLabel = stringResource(R.string.settings_interface_mainscreen)) {
+                SettingsRoute.appearanceThirdRoutes.forEachIndexed { index, route ->
+                    SettingItem(
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .fillMaxWidth()
+                            .clickable { nav.navigate(route.route) },
+                        headlineText = stringResource(route.titleRes),
+                        supportingText = stringResource(route.supportRes!!),
+                        trailingContent = null
+                    )
+
+                    if (index != SettingsRoute.behaviorThirdRoutes.lastIndex) {
+                        SettingsSectionDivider()
+                    }
+                }
+            }
+
             SettingsSection(topLabel = stringResource(R.string.settings_interface_design)) {
                 SettingsDetailSwitchItem(
                     headline = R.string.settings_hide_divider,
@@ -101,18 +119,9 @@ fun InterfaceSettingsScreen(
                     checked = hideDividerEnabled,
                     onCheckedChange = onHideDividerChange
                 )
-
-                SettingsSectionDivider()
-
-                SettingsDetailSwitchItem(
-                    headline = R.string.settings_simplified,
-                    supportingText = R.string.settings_support_simplified,
-                    checked = simplifiedEnabled,
-                    onCheckedChange = onSimplifiedChange
-                )
             }
 
-            SettingsSection(topLabel = stringResource(R.string.settings_interface_mainscreen)) {
+            SettingsSection(topLabel = stringResource(R.string.settings_interface_display)) {
                 SettingsDetailSwitchItem(
                     headline = R.string.settings_progress_dir_main,
                     supportingText = R.string.settings_support_progress_dir,

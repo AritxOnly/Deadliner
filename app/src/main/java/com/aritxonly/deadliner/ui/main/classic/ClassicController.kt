@@ -1645,7 +1645,10 @@ class ClassicController(
     private fun Float.dpToPx(): Float =
         this * Resources.getSystem().displayMetrics.density + 0.5f
 
+    @Deprecated("This API is Deprecated after v4 update of new Intro page")
     private fun showFirstTimeSetupDialog() {
+        return
+
         val dialogView = activity.layoutInflater.inflate(R.layout.dialog_first_time_setup, null)
         dialogFlipper = dialogView.findViewById<ViewFlipper>(R.id.vf_steps)
 

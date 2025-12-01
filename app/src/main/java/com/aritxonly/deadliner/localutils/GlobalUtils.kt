@@ -163,9 +163,9 @@ object GlobalUtils {
         }
 
     var showIntroPage: Boolean
-        get() = sharedPreferences.getBoolean("show_intro_page_v3", true)
+        get() = sharedPreferences.getBoolean("show_intro_page_v4", true)
         set(value) {
-            sharedPreferences.edit { putBoolean("show_intro_page_v3", value) }
+            sharedPreferences.edit { putBoolean("show_intro_page_v4", value) }
         }
 
     var detailDisplayMode: Boolean
@@ -241,11 +241,10 @@ object GlobalUtils {
             sharedPreferences.edit { putStringSet("custom_filter_list_selected", value) }
         }
 
+    @Deprecated("Deprecated after v4 update")
     var permissionSetupDone: Boolean
-        get() = sharedPreferences.getBoolean("permission_setup_done", false)
-        set(value) {
-            sharedPreferences.edit { putBoolean("permission_setup_done", value) }
-        }
+        get() = true
+        set(_) {}
 
     var mdWidgetAddBtn: Boolean
         get() = sharedPreferences.getBoolean("show_add_button_multi_ddl_widget", false)

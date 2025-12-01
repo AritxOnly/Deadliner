@@ -32,8 +32,8 @@ import com.aritxonly.deadliner.ui.settings.AISettingsScreen
 import com.aritxonly.deadliner.ui.settings.LabSettingsScreen
 import com.aritxonly.deadliner.ui.settings.DonateScreen
 import com.aritxonly.deadliner.ui.settings.FeedbackScreen
-import com.aritxonly.deadliner.ui.settings.GeneralSettingsScreen
-import com.aritxonly.deadliner.ui.settings.InterfaceSettingsScreen
+import com.aritxonly.deadliner.ui.settings.BehaviorSettingsScreen
+import com.aritxonly.deadliner.ui.settings.AppearanceSettingsScreen
 import com.aritxonly.deadliner.ui.settings.LicenseScreen
 import com.aritxonly.deadliner.ui.settings.MainSettingsScreen
 import com.aritxonly.deadliner.ui.settings.ModelSettingsScreen
@@ -48,6 +48,7 @@ import com.aritxonly.deadliner.ui.settings.WikiScreen
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
+import com.aritxonly.deadliner.ui.settings.UiSettingsScreen
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -66,8 +67,8 @@ sealed class SettingsRoute(
     object Main : SettingsRoute("main", R.string.settings_title, null, null)
 
     // region: 二级界面
-    object General : SettingsRoute("general", R.string.settings_general, R.string.settings_support_general, R.drawable.ic_general_settings)
-    object Interface : SettingsRoute("interface", R.string.settings_interface_display, R.string.settings_support_interface_display, R.drawable.ic_palette)
+    object Behavior : SettingsRoute("behavior", R.string.settings_behavior, R.string.settings_support_behavior, R.drawable.ic_tune)
+    object Appearance : SettingsRoute("appearance", R.string.settings_interface_display, R.string.settings_support_interface_display, R.drawable.ic_palette)
     object Notification : SettingsRoute("notification", R.string.settings_notification, R.string.settings_support_notification, R.drawable.ic_notification_settings)
     object Backup : SettingsRoute("backup", R.string.settings_backup, R.string.settings_support_backup, R.drawable.ic_backup_settings)
     object AI : SettingsRoute("ai", R.string.settings_deadliner_ai, R.string.settings_support_deadliner_ai,
@@ -83,10 +84,12 @@ sealed class SettingsRoute(
 
     // region:三级界面
     object Vibration : SettingsRoute("vibration", R.string.settings_vibration_title, R.string.settings_support_vibration, null)
-    object Badge : SettingsRoute("badge", R.string.settings_tasks_badge_title, R.string.settings_support_tasks_badge, null)
     object Archive : SettingsRoute("archive", R.string.settings_auto_archive_title, R.string.settings_support_auto_archive, null)
     object Model : SettingsRoute("model", R.string.settings_model_endpoint, R.string.settings_support_model_endpoint, null)
     object Prompt : SettingsRoute("prompt", R.string.settings_ai_custom_prompt, R.string.settings_support_ai_custom_prompt, null)
+
+    object Badge : SettingsRoute("badge", R.string.settings_tasks_badge_title, R.string.settings_support_tasks_badge, null)
+    object UI : SettingsRoute("ui", R.string.settings_ui_mode_title, R.string.settings_support_ui_mode, null)
 
     object Update : SettingsRoute("update", R.string.settings_check_for_updates, R.string.settings_check_for_updates, R.drawable.ic_update)
     object License : SettingsRoute("license", R.string.settings_license, R.string.settings_license_summary, R.drawable.ic_license)
@@ -97,8 +100,8 @@ sealed class SettingsRoute(
     companion object {
         val allSubRoutes = listOf(
             listOf(
-                General,
-                Interface,
+                Appearance,
+                Behavior,
                 Notification,
                 Backup,
             ),
@@ -115,8 +118,12 @@ sealed class SettingsRoute(
             )
         )
 
-        val generalThirdRoutes = listOf(
-            Vibration, Badge, Archive
+        val behaviorThirdRoutes = listOf(
+            Vibration, Archive
+        )
+
+        val appearanceThirdRoutes = listOf(
+            UI, Badge
         )
 
         val aboutThirdRoutes = listOf(
@@ -182,10 +189,10 @@ class SettingsActivity : AppCompatActivity() {
                         MainSettingsScreen(navController, onClose = { finishAfterTransition() })
                     }
 
-                    composable(SettingsRoute.General.route) { GeneralSettingsScreen(
+                    composable(SettingsRoute.Appearance.route) { AppearanceSettingsScreen(navController) { navController.navigateUp() } }
+                    composable(SettingsRoute.Behavior.route) { BehaviorSettingsScreen(
                         navController, handleRestart = { showDialogRestartAppTablet() }
                     ) { navController.navigateUp() } }
-                    composable(SettingsRoute.Interface.route) { InterfaceSettingsScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Notification.route) { NotificationSettingsScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Backup.route) {
                         BackupSettingsScreen(
@@ -285,9 +292,9 @@ class SettingsActivity : AppCompatActivity() {
                     composable(SettingsRoute.About.route) { AboutSettingsScreen(navController) { navController.navigateUp() } }
 
                     composable(SettingsRoute.Vibration.route) { VibrationSettingsScreen { navController.navigateUp() } }
-                    composable(SettingsRoute.Badge.route) { BadgeSettingsScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Archive.route) { ArchiveSettingsScreen { navController.navigateUp() } }
-
+                    composable(SettingsRoute.Badge.route) { BadgeSettingsScreen { navController.navigateUp() } }
+                    composable(SettingsRoute.UI.route) { UiSettingsScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Model.route) { ModelSettingsScreen { navController.navigateUp() } }
                     composable(SettingsRoute.Prompt.route) { PromptSettingsScreen { navController.navigateUp() } }
 

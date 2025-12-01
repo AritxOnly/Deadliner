@@ -23,8 +23,8 @@
 
     <string name="settings_archive">Archive</string>
     <string name="settings_title">Settings</string>
-    <string name="settings_general">General</string>
-    <string name="settings_interface_display">Personalization</string>
+    <string name="settings_behavior">Behavior</string>
+    <string name="settings_interface_display">Appearance</string>
     <string name="settings_widget">Widgets</string>
     <string name="settings_notification">Notifications</string>
     <string name="settings_backup">Backup</string>
@@ -32,8 +32,8 @@
     <string name="settings_feedback">Help &amp; feedback</string>
     <string name="settings_about">About</string>
 
-    <string name="settings_support_general">Interface · UI interaction</string>
-    <string name="settings_support_interface_display">Personalize your Deadliner</string>
+    <string name="settings_support_behavior">Interaction feedback · App background actions</string>
+    <string name="settings_support_interface_display">Main screen layout · Display style</string>
     <string name="settings_support_notification">Deadline reminder · Daily scheduled notification</string>
     <string name="settings_support_backup">Import &amp; export user database</string>
     <string name="settings_support_deadliner_ai">Deadliner AI · API integration · Custom prompt</string>
@@ -130,8 +130,8 @@
     <string name="app_sh_widget_description">Habit widget</string>
     <string name="unfinished_settings">Experimental feature, not fully tested</string>
     <string name="go_next">Continue</string>
-    <string name="welcome">Meet\nYour Deadliner</string>
-    <string name="welcome_version">New Deadliner v3.0, ready for you to experience</string>
+    <string name="welcome">Your Day,\nEnhanced by AI</string>
+    <string name="welcome_version">New Deadliner v4, ready for you to experience</string>
     <string name="finish_notice">No tasks remaining</string>
     <string name="add_ddl_tile_label">Add new task</string>
     <string name="unselected">Please specify a time</string>
@@ -316,7 +316,7 @@
     <string name="settings_developer_options">Developer options</string>
     <string name="settings_donate_emotional">Broke student asking for a treat 🥹</string>
     <string name="settings_donate_thanks">Your support is my biggest motivation~</string>
-    <string name="settings_general_main">Main settings</string>
+    <string name="settings_general_main">Interaction settings</string>
     <string name="settings_general_others">Misc settings</string>
     <string name="settings_interface_mainscreen">Main screen</string>
     <string name="settings_interface_design">Design</string>
@@ -614,4 +614,72 @@
     <string name="copy_list">Copy list</string>
     <string name="ai_empty_hint">Try describing your task, today’s plan, or let me break your goal into steps.</string>
     <string name="linked_task">Linked: %s</string>
+    <string name="settings_support_ui_mode">Adjust Deadliner’s layout and display style</string>
+    <string name="ui_style_classic">Classic</string>
+    <string name="ui_style_simplified">Simplified</string>
+    <string name="settings_ui_mode_title">Main screen layout</string>
+    <string name="ui_style_simplified_support">Focuses on core task and habit management with a cleaner, more straightforward layout.</string>
+    <string name="ui_style_classic_support">Retains the classic v2 layout for a more comprehensive, at-a-glance task management experience.</string>
+
+    <string name="intro_cover_title">Reinvent Your Task Management</string>
+    <string name="intro_cover_desc">Deadliner v4 · Your Intelligent Task Assistant</string>
+
+    <string name="wizard_add_a_task">Add a Task</string>
+    <string name="wizard_add_a_task_desc">Tap the “+” button at the bottom center to open the task creation screen.</string>
+
+    <string name="wizard_mark_as_complete">Mark as Complete</string>
+    <string name="wizard_mark_as_complete_desc">Swipe right to complete a task.</string>
+
+    <string name="wizard_delete">Delete Task</string>
+    <string name="wizard_delete_desc">Swipe left to delete a task.</string>
+
+    <string name="wizard_deadliner_ai">Open Deadliner AI</string>
+    <string name="wizard_deadliner_ai_classic_desc">In Classic Mode, tap the AI icon on the left side of the bottom bar.</string>
+    <string name="wizard_deadliner_ai_simplified_desc">In Simplified Mode, swipe up from the bottom bar to launch Deadliner AI.</string>
+
+    <string name="wizard_add_a_task_info">Add a Task</string>
+    <string name="wizard_add_a_task_info_desc">Tap the “+” button in the lower right, then fill in the title, deadline, and other details to create a new task.</string>
+
+    <string name="i_know_and_continue">Got it, continue</string>
+
+    <string name="wizard_deadliner_ai_info">Using Deadliner AI</string>
+    <string name="wizard_deadliner_ai_info_desc">Describe your tasks in natural language, and Deadliner AI will help break them down, generate subtasks, and plan your schedule.</string>
+
+    <string name="finish_wizard">Finish Tutorial</string>
+
+    <string name="wizard_simplified_title_sample">Deadliner Home · Simplified Mode Demo</string>
+    <string name="wizard_classic_demo_title">Deadliner Home · Classic Mode Demo</string>
+
+    <string name="wizard_swipe_right_title">Swipe Right on This Task</string>
+    <string name="wizard_swipe_left_title">Swipe Left on This Task</string>
+    <string name="wizard_sample_task_title">Complete Sample Task A</string>
+
+    <string name="wizard_main_time_today">Today · 18:00</string>
+    <string name="wizard_main_remaining_time">4 hours remaining</string>
+    <string name="wizard_main_demo_note">This is a demo task. In the real interface, swipe left or right to complete or delete it.</string>
+
+    <string name="wizard_secondary_task_title">Prepare Lab Report</string>
+    <string name="wizard_secondary_time_tomorrow">Tomorrow · 23:59</string>
+    <string name="wizard_secondary_remaining_time">1 day 5 hours remaining</string>
+    <string name="wizard_secondary_demo_note">This is another demo task.</string>
+
+    <string name="permissions_intro_title">We recommend completing the following settings to ensure Deadliner runs properly:</string>
+
+    <string name="permissions_notification_title">Notification Permission</string>
+    <string name="permissions_notification_desc">Allow Deadliner to send deadline reminders and habit notifications.</string>
+
+    <string name="permissions_calendar_title">Calendar Permission</string>
+    <string name="permissions_calendar_desc">Used to sync deadlines to your system calendar or read events from it.</string>
+
+    <string name="permissions_battery_title">Disable Battery Optimization</string>
+    <string name="permissions_battery_desc">Prevent the system from killing Deadliner in the background to ensure reliable scheduling and notifications.</string>
+
+    <string name="permissions_wiki_title">Permission Guide</string>
+    <string name="permissions_wiki_desc">If you’re unsure how to configure these permissions, open the guide for step-by-step instructions.</string>
+
+    <string name="intro_theme_title">Choose Your Preferred Interface Style</string>
+    <string name="intro_theme_description">Select your preferred look for Deadliner. You can change it anytime in Settings.</string>
+
+    <string name="wizard_header_title">Tutorial · Step %1$d of 3</string>
+    <string name="wizard_header_skip">Skip Tutorial</string>
 </resources>

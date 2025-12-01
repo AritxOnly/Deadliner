@@ -263,60 +263,6 @@ fun MainDisplay(
                             }
                         }
                     )
-
-                    // region old
-//                    LazyVerticalStaggeredGrid(
-//                        columns = StaggeredGridCells.Fixed(2), // 👉 手机上固定两列
-//                        verticalItemSpacing = 10.dp,
-//                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-//                        contentPadding = PaddingValues(16.dp),
-//                        modifier = Modifier.fillMaxSize()
-//                    ) {
-//                        itemsIndexed(
-//                            items = ddlList,
-//                            key = { _, it -> it.id }
-//                        ) { index, item ->
-//                            AnimatedItem(
-//                                item = item,
-//                                index = index
-//                            ) {
-//                                HabitItem(
-//                                    item = item,
-//                                    onRefresh = { vm.loadData(selectedPage) },
-//                                    updateDDL = { newItem ->
-//                                        DDLRepository().updateDDL(newItem)
-//                                        vm.loadData(selectedPage)
-//                                    },
-//                                    onCheckInFailed = {
-//                                        Toast.makeText(
-//                                            context,
-//                                            context.getString(R.string.snackbar_already_checkin),
-//                                            Toast.LENGTH_SHORT).show()
-//                                    },
-//                                    onCheckInSuccess = { updatedHabit, habitMeta ->
-//                                        GlobalUtils.triggerVibration(activity, 100)
-//                                        val count = updatedHabit.habitCount
-//                                        val frequency = habitMeta.frequency
-//                                        if (habitMeta.frequencyType == DeadlineFrequency.DAILY) {
-//                                            if (count >= frequency && GlobalUtils.fireworksOnFinish) {
-//                                                if (GlobalUtils.fireworksOnFinish) onCelebrate?.invoke()
-//                                            }
-//                                        } else {
-//                                            if (GlobalUtils.fireworksOnFinish) {
-//                                                if (GlobalUtils.fireworksOnFinish) onCelebrate?.invoke()
-//                                            }
-//                                        }
-//                                        onShowUndoSnackbar(updatedHabit)
-//                                    },
-//                                    selectionMode = selectionMode,
-//                                    selected = isSelected(item.id),
-//                                    onLongPressSelect = { onItemLongPress(item.id) },
-//                                    onToggleSelect = { onItemClickInSelection(item.id) }
-//                                )
-//                            }
-//                        }
-//                    }
-                    // endregion
                 }
             }
         }
@@ -395,7 +341,7 @@ fun MainSearchBar(
     onMoreAnchorChange: (androidx.compose.ui.geometry.Rect) -> Unit = {},
     useAvatar: Boolean = false,
     avatarPainter: Painter? = null,
-    activity: MainActivity,
+    activity: MainActivity? = null,
     expanded: Boolean,
     onExpandedChangeExternal: (Boolean) -> Unit = {},
     selectedPage: DeadlineType
@@ -630,7 +576,7 @@ fun MainSearchBar(
                                     onClick = {
                                         val intent =
                                             DeadlineDetailActivity.newIntent(context, item)
-                                        activity.startActivity(intent)
+                                        activity?.startActivity(intent)
                                     }
                                 )
                             }

@@ -42,7 +42,7 @@ import com.aritxonly.deadliner.localutils.GlobalUtils
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun GeneralSettingsScreen(
+fun BehaviorSettingsScreen(
     nav: NavHostController,
     handleRestart: () -> Unit,
     navigateUp: () -> Unit
@@ -85,7 +85,7 @@ fun GeneralSettingsScreen(
         .padding(8.dp)
 
     CollapsingTopBarScaffold(
-        title = stringResource(R.string.settings_general),
+        title = stringResource(R.string.settings_behavior),
         navigationIcon = {
             IconButton(
                 onClick = navigateUp,
@@ -108,7 +108,7 @@ fun GeneralSettingsScreen(
             SvgCard(R.drawable.svg_general, modifier = Modifier.padding(16.dp))
 
             SettingsSection(topLabel = stringResource(R.string.settings_general_main)) {
-                SettingsRoute.generalThirdRoutes.forEachIndexed { index, route ->
+                SettingsRoute.behaviorThirdRoutes.forEachIndexed { index, route ->
                     SettingItem(
                         modifier = Modifier
                             .padding(horizontal = 8.dp)
@@ -119,7 +119,7 @@ fun GeneralSettingsScreen(
                         trailingContent = null
                     )
 
-                    if (index != SettingsRoute.generalThirdRoutes.lastIndex) {
+                    if (index != SettingsRoute.behaviorThirdRoutes.lastIndex) {
                         SettingsSectionDivider()
                     }
                 }
