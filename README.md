@@ -4,7 +4,9 @@ Deadliner，一款简洁高效的Deadline记录管理软件，灵感来自于作
 
 ### Related works 相关工作 
 
-- [**Deadliner-Client**](https://github.com/XiaoChennnng/Deadliner-Client)
+- [**Deadliner-Client**](https://github.com/XiaoChennnng/Deadliner-Client): 基于 Electron+React 开发的 Deadliner 桌面客户端，兼容 **Windows, macOS, Linux**
+- [**DeadlinerNEXT**](https://github.com/AritxOnly/DeadlinerNEXT): 基于 ArkTS 开发的**原生鸿蒙** Deadliner 客户端，目前处于早期验证阶段
+- [**Deadliner-Web**](https://github.com/AritxOnly/Deadliner-Web): 基于 Flutter 开发的 Deadliner 网页前端与基于 Node.js 开发的网页后端，现已归档
 
 > [!IMPORTANT]
 > Since this is my first Android project, I may have used hardcoded strings in some places, which could make translation into other languages more difficult. If you’re interested in localizing this app, feel free to contact me at aritxonly@qq.com for further support.
