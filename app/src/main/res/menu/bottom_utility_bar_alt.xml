@@ -17,9 +17,9 @@
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/star"
-        android:icon="@drawable/ic_star"
-        android:title="星标"
+        android:id="@+id/alarm"
+        android:icon="@drawable/ic_notification_add"
+        android:title="提醒"
         android:iconTint="?attr/colorControlNormal"
         app:showAsAction="ifRoom" />
 

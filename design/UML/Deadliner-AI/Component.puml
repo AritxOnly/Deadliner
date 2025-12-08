@@ -1,0 +1,73 @@
+@startuml Component
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "App Layer" {
+  [UI/Compose & Activities]
+  [GlobalUtils]
+  [KeystorePreferenceManager]
+  [ProfileStore]
+}
+
+package "AI Core (Kotlin)" {
+  component AIUtils
+  component "IntentClassifier" as Intent
+  component "SchemaValidator" as Schema
+  component "TimeResolver" as Time
+  component "RuleBasedParser" as Rule
+  component "Planner" as Planner
+  component "CalendarAdapter" as Cal
+  component "ReminderAdapter" as Rem
+  component "CostRouter" as Cost
+  component "MetricsLogger" as Metrics
+}
+
+package "LLM Transport" {
+  component "LlmTransportFactory" as Factory
+  interface "LlmTransport" as Transport
+  component "DeadlinerProxyClient" as Proxy
+  component "DirectBearerClient" as Direct
+}
+
+package "Models / DTOs" {
+  [LlmPreset]
+  [BackendPreset]
+  [BackendType]
+  [ChatRequest]
+  [ChatResponse]
+  [Message]
+  [GeneratedDDL]
+  [AITask/PlanBlock/...]
+}
+
+[UI/Compose & Activities] --> AIUtils : 调用API
+AIUtils --> Intent : 判定 intent
+AIUtils --> Cost : 选择模型/后端
+AIUtils --> Schema : 校验/重试
+AIUtils --> Time : 相对时间解析→绝对时间
+AIUtils --> Rule : 失败兜底
+AIUtils --> Planner : 生成日程块
+Planner --> Cal : 读本地/系统日历(可选)
+AIUtils --> Rem : 生成提醒
+AIUtils --> Metrics : 上报事件/延迟/费用
+
+AIUtils --> Factory : 创建传输
+Factory --> Transport
+Transport <|.. Proxy
+Transport <|.. Direct
+
+AIUtils --> Transport : ChatRequest
+Transport --> ChatResponse
+
+AIUtils --> [GeneratedDDL]
+AIUtils --> [AITask/PlanBlock/...]
+
+AIUtils ..> [LlmPreset]
+AIUtils ..> [BackendPreset]
+AIUtils ..> [BackendType]
+AIUtils ..> [Message]
+
+AIUtils ..> [GlobalUtils]
+AIUtils ..> [KeystorePreferenceManager]
+AIUtils ..> [ProfileStore]
+@enduml

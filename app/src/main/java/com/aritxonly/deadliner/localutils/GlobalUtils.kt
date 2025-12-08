@@ -7,14 +7,20 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.Settings
 import android.util.Log
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
+import com.aritxonly.deadliner.BuildConfig
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.R
@@ -23,23 +29,34 @@ import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.UiStyle
+import com.aritxonly.deadliner.model.toJson
 import com.aritxonly.deadliner.model.updateNoteWithDate
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.DateValidatorPointForward
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
+import java.util.UUID
 
 object GlobalUtils {
 
@@ -49,7 +66,7 @@ object GlobalUtils {
 
     fun init(context: Context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, AppCompatActivity.MODE_PRIVATE)
-        loadSettings()  // 初始化时加载设置
+        loadSettings(context)  // 初始化时加载设置
     }
 
     fun getDeadlinerAIConfig(): DeadlinerAIConfig {
@@ -90,6 +107,12 @@ object GlobalUtils {
         get() = sharedPreferences.getLong("deadline_notify_before", 12L)
         set(value) {
             sharedPreferences.edit { putLong("deadline_notify_before", value) }
+        }
+
+    var liveUpdatesInAdvance: Int
+        get() = sharedPreferences.getInt("live_updates_in_advance", 10)
+        set(value) {
+            sharedPreferences.edit { putInt("live_updates_in_advance", value) }
         }
 
     var dailyStatsNotification: Boolean
@@ -140,9 +163,9 @@ object GlobalUtils {
         }
 
     var showIntroPage: Boolean
-        get() = sharedPreferences.getBoolean("show_intro_page_v3", true)
+        get() = sharedPreferences.getBoolean("show_intro_page_v4", true)
         set(value) {
-            sharedPreferences.edit { putBoolean("show_intro_page_v3", value) }
+            sharedPreferences.edit { putBoolean("show_intro_page_v4", value) }
         }
 
     var detailDisplayMode: Boolean
@@ -218,11 +241,10 @@ object GlobalUtils {
             sharedPreferences.edit { putStringSet("custom_filter_list_selected", value) }
         }
 
+    @Deprecated("Deprecated after v4 update")
     var permissionSetupDone: Boolean
-        get() = sharedPreferences.getBoolean("permission_setup_done", false)
-        set(value) {
-            sharedPreferences.edit { putBoolean("permission_setup_done", value) }
-        }
+        get() = true
+        set(_) {}
 
     var mdWidgetAddBtn: Boolean
         get() = sharedPreferences.getBoolean("show_add_button_multi_ddl_widget", false)
@@ -246,11 +268,10 @@ object GlobalUtils {
     var hideDividerUi by mutableStateOf(false)
         private set
 
+    @Deprecated("Deadliner AI is enable by default. This api would always return TRUE.")
     var deadlinerAIEnable: Boolean
-        get() = sharedPreferences.getBoolean("deepseek_master", false)
-        set(value) {
-            sharedPreferences.edit { putBoolean("deepseek_master", value) }
-        }
+        get() = true
+        set(_) {  }
 
     var customPrompt: String?
         get() = sharedPreferences.getString("custom_prompt", null)
@@ -318,6 +339,39 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("clipboard", value) }
         }
 
+    private var _styleFlow: MutableStateFlow<UiStyle>? = null
+    val styleFlow: StateFlow<UiStyle>
+        get() = _styleFlow ?: MutableStateFlow(UiStyle.Simplified).also {
+            _styleFlow = it
+        }
+
+    var style: String
+        get() = if (::sharedPreferences.isInitialized)
+            sharedPreferences.getString("style", UiStyle.Simplified.key) ?: UiStyle.Simplified.key
+        else
+            UiStyle.Simplified.key
+        set(value) {
+            check(::sharedPreferences.isInitialized) { "GlobalUtils not initialized" }
+            sharedPreferences.edit { putString("style", value) }
+        }
+
+    fun setStyle(newStyle: UiStyle) {
+        style = newStyle.key
+        _styleFlow?.value = newStyle
+    }
+
+    var addDeadlineGuide: Boolean
+        get() = sharedPreferences.getBoolean("add_deadline_guide", true)
+        set(value) {
+            sharedPreferences.edit { putBoolean("add_deadline_guide", value) }
+        }
+
+    var advancedAISettings: Boolean
+        get() = sharedPreferences.getBoolean("advanced_ai_settings", false)
+        set(value) {
+            sharedPreferences.edit { putBoolean("advanced_ai_settings", value) }
+        }
+
     object OverviewSettings {
         var monthlyCount: Int
             get() = sharedPreferences.getInt("monthly_count(overview)", 12)
@@ -382,12 +436,33 @@ object GlobalUtils {
     var timeNull: LocalDateTime
         get() = parseDateTime(sharedPreferences.getString("time_null", LocalDateTime.now().toString())?: LocalDateTime.now().toString())!!
         set(value) {
-            sharedPreferences.edit().putString("time_null", value.toString()).apply()
+            sharedPreferences.edit { putString("time_null", value.toString()) }
         }
 
-    private fun loadSettings() {
+    fun getOrCreateDeviceId(context: Context): String {
+        sharedPreferences.getString("device_id", null)?.let { return it }
+
+        val newId = UUID.randomUUID().toString()
+
+        sharedPreferences.edit { putString("device_id", newId) }
+        return newId
+    }
+
+    fun getDeadlinerAppSecret(context: Context): String {
+        return BuildConfig.DEADLINER_APP_SECRET
+    }
+
+
+    private fun loadSettings(context: Context) {
         Log.d("GlobalUtils", "Settings loaded from SharedPreferences")
         hideDividerUi = hideDivider
+
+        val current = UiStyle.fromKey(style)
+        if (_styleFlow == null) {
+            _styleFlow = MutableStateFlow(current)
+        } else {
+            _styleFlow!!.value = current
+        }
     }
 
     fun dpToPx(dp: Float, context: Context): Float {
@@ -574,6 +649,7 @@ object GlobalUtils {
 
         pendingTasks.forEach { ddlItem ->
             DeadlineAlarmScheduler.scheduleExactAlarm(context, ddlItem)
+            DeadlineAlarmScheduler.scheduleUpcomingDDLAlarm(context, ddlItem)
         }
     }
 
@@ -698,5 +774,229 @@ object GlobalUtils {
                 vibrationAmplitude
             )
         )
+    }
+
+    /**
+     * 生成展示用的“剩余/开始于/已过期”文案。
+     * - startTimeStr / endTimeStr：你的字符串时间（与 GlobalUtils.safeParseDateTime 同源）
+     * - displayFullContent：对应旧逻辑中的 full/short 文案选择
+     *
+     * 依赖的 string 资源需与旧版保持一致：
+     *  - R.string.ddl_overdue_full / ddl_overdue_short
+     *  - R.string.starts_in_prefix / remaining_prefix
+     *  - R.string.remaining_days / _hours / _minutes
+     *  - R.string.remaining_days_short / _hours_short / _minutes_short
+     *  - R.string.starts_in_compact_days / _short
+     *  - R.string.remaining_compact_days / _short
+     */
+    fun buildRemainingTime(
+        context: Context,
+        startTime: LocalDateTime?,
+        endTime: LocalDateTime?,
+        displayFullContent: Boolean,
+        now: LocalDateTime = LocalDateTime.now(),
+    ): String {
+        val afterEnd = endTime?.isBefore(now) == true              // 已过结束
+        val beforeStart = startTime?.isAfter(now) == true          // 尚未开始
+
+        if (afterEnd) {
+            return if (displayFullContent)
+                context.getString(R.string.ddl_overdue_full)
+            else
+                context.getString(R.string.ddl_overdue_short)
+        }
+
+        // 需要展示正向“还有多久”（到开始 或 到结束）
+        val target = if (beforeStart && startTime != null) startTime else (endTime ?: now)
+        val remainMin = Duration.between(now, target).toMinutes().coerceAtLeast(0).toInt()
+
+        val days = remainMin / (24 * 60)
+        val hours = (remainMin % (24 * 60)) / 60
+        val minutesPart = remainMin % 60
+        val compactDays = remainMin.toFloat() / (24f * 60f)
+
+        return if (beforeStart) {
+            // —— 到开始 —— //
+            if (displayFullContent) {
+                if (GlobalUtils.detailDisplayMode) {
+                    buildString {
+                        append(context.getString(R.string.starts_in_prefix))
+                        if (days != 0) append(context.getString(R.string.remaining_days, days))
+                        if (hours != 0) append(context.getString(R.string.remaining_hours, hours))
+                        append(context.getString(R.string.remaining_minutes, minutesPart))
+                    }
+                } else {
+                    context.getString(R.string.starts_in_compact_days, compactDays)
+                }
+            } else {
+                if (GlobalUtils.detailDisplayMode) {
+                    buildString {
+                        append(context.getString(R.string.starts_in_prefix))
+                        if (days != 0) append(context.getString(R.string.remaining_days_short, days))
+                        if (hours != 0) append(context.getString(R.string.remaining_hours_short, hours))
+                        if (days == 0) append(context.getString(R.string.remaining_minutes_short, minutesPart))
+                    }
+                } else {
+                    context.getString(R.string.starts_in_compact_days_short, compactDays)
+                }
+            }
+        } else {
+            // —— 到结束 —— //
+            if (displayFullContent) {
+                if (GlobalUtils.detailDisplayMode) {
+                    buildString {
+                        append(context.getString(R.string.remaining_prefix))
+                        if (days != 0) append(context.getString(R.string.remaining_days, days))
+                        if (hours != 0) append(context.getString(R.string.remaining_hours, hours))
+                        append(context.getString(R.string.remaining_minutes, minutesPart))
+                    }
+                } else {
+                    context.getString(R.string.remaining_compact_days, compactDays)
+                }
+            } else {
+                if (GlobalUtils.detailDisplayMode) {
+                    buildString {
+                        if (days != 0) append(context.getString(R.string.remaining_days_short, days))
+                        if (hours != 0) append(context.getString(R.string.remaining_hours_short, hours))
+                        if (days == 0) append(context.getString(R.string.remaining_minutes_short, minutesPart))
+                    }
+                } else {
+                    context.getString(R.string.remaining_compact_days_short, compactDays)
+                }
+            }
+        }
+    }
+
+
+
+    /**
+     * 辅助函数：自动清零
+     */
+    fun refreshCount(habitItem: DDLItem, habitMeta: HabitMetaData, onRefresh: () -> Unit) {
+        val month = YearMonth.now()
+        val presetDuration = when (habitMeta.frequencyType) {
+            DeadlineFrequency.DAILY -> 1    // 1天清空一次
+            DeadlineFrequency.WEEKLY -> 7
+            DeadlineFrequency.MONTHLY -> month.lengthOfMonth()
+            DeadlineFrequency.TOTAL -> return
+        }
+
+        val duration = ChronoUnit.DAYS.between(LocalDate.parse(habitMeta.refreshDate), LocalDate.now())
+        if (duration >= presetDuration) {
+            // refresh
+            val updatedNote = habitMeta.copy(
+                refreshDate = LocalDate.now().toString()
+            ).toJson()
+
+            val updatedHabit = habitItem.copy(
+                note = updatedNote,
+                habitCount = 0
+            )
+
+            DDLRepository().updateDDL(updatedHabit)
+
+            onRefresh()
+        }
+    }
+
+    private val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    fun showHabitReminderDialog(context: Context, ddlId: Long, onCancel: () -> Unit = {}) {
+        val activity = context as? FragmentActivity ?: return
+        val repo = com.aritxonly.deadliner.data.HabitRepository()
+        val habit = repo.getHabitByDdlId(ddlId) ?: return
+
+        // 当前是否已开启提醒
+        var enabled = !habit.alarmTime.isNullOrBlank()
+        // 当前时间：已有则解析，否则给个默认 20:00
+        var pickedTime: LocalTime = try {
+            habit.alarmTime?.let { LocalTime.parse(it) } ?: LocalTime.of(20, 0)
+        } catch (_: Exception) {
+            LocalTime.of(20, 0)
+        }
+
+        // 简单构建一个纵向布局：Switch + 时间 + 修改按钮
+        val root = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(32, 24, 32, 8)
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val switch = MaterialSwitch(context).apply {
+            textSize = 16f
+            text = context.getString(R.string.habit_enable_notification)
+            isChecked = enabled
+            thumbIconDrawable = ContextCompat.getDrawable(context, R.drawable.switch_thumb_icon)
+            setPadding(16, 0, 16, 0)
+        }
+
+        val timeText = TextView(context).apply {
+            textSize = 16f
+            text = context.getString(R.string.habit_notify_at, pickedTime.format(TIME_FORMATTER))
+            setPadding(16, 24, 16, 8)
+        }
+
+        val changeButton = MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = context.getString(R.string.set_time)
+            setOnClickListener {
+                // 只在“开启”时弹时间选择器；未开启时先打开再选
+                if (!switch.isChecked) {
+                    switch.isChecked = true
+                }
+
+                val picker = MaterialTimePicker.Builder()
+                    .setTimeFormat(TimeFormat.CLOCK_24H)
+                    .setHour(pickedTime.hour)
+                    .setMinute(pickedTime.minute)
+                    .setTitleText(R.string.habit_set_notification_time)
+                    .build()
+
+                picker.addOnPositiveButtonClickListener {
+                    pickedTime = LocalTime.of(picker.hour, picker.minute)
+                    timeText.text = context.getString(R.string.habit_notify_at, pickedTime.format(TIME_FORMATTER))
+                }
+
+                picker.show(activity.supportFragmentManager, "habit_alarm_time_$ddlId")
+            }
+            setPadding(16, 0, 16, 0)
+        }
+
+        root.addView(switch)
+        root.addView(timeText)
+        root.addView(changeButton)
+
+        switch.setOnCheckedChangeListener { _, isChecked ->
+            enabled = isChecked
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(context.getString(R.string.habit_notification_title, habit.name))
+            .setView(root)
+            .setPositiveButton(R.string.accept) { _, _ ->
+                val updated = habit.copy(
+                    alarmTime = if (enabled) pickedTime.format(TIME_FORMATTER) else null
+                )
+                repo.updateHabit(updated)
+
+                if (enabled) {
+                    DeadlineAlarmScheduler
+                        .scheduleHabitNotifyAlarm(context, ddlId)
+                } else {
+                    DeadlineAlarmScheduler
+                        .cancelHabitNotifyAlarm(context, ddlId)
+                }
+
+                onCancel()
+            }
+            .setNegativeButton(R.string.cancel) { _, _ ->
+                onCancel()
+            }
+            .setOnCancelListener {
+                onCancel()
+            }
+            .show()
     }
 }

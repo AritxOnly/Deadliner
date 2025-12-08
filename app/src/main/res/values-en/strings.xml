@@ -23,8 +23,8 @@
 
     <string name="settings_archive">Archive</string>
     <string name="settings_title">Settings</string>
-    <string name="settings_general">General</string>
-    <string name="settings_interface_display">Personalization</string>
+    <string name="settings_behavior">Behavior</string>
+    <string name="settings_interface_display">Appearance</string>
     <string name="settings_widget">Widgets</string>
     <string name="settings_notification">Notifications</string>
     <string name="settings_backup">Backup</string>
@@ -32,8 +32,8 @@
     <string name="settings_feedback">Help &amp; feedback</string>
     <string name="settings_about">About</string>
 
-    <string name="settings_support_general">Interface · UI interaction</string>
-    <string name="settings_support_interface_display">Personalize your Deadliner</string>
+    <string name="settings_support_behavior">Interaction feedback · App background actions</string>
+    <string name="settings_support_interface_display">Main screen layout · Display style</string>
     <string name="settings_support_notification">Deadline reminder · Daily scheduled notification</string>
     <string name="settings_support_backup">Import &amp; export user database</string>
     <string name="settings_support_deadliner_ai">Deadliner AI · API integration · Custom prompt</string>
@@ -65,7 +65,7 @@
     <string name="settings_auto_archive_title">Auto archive</string>
     <string name="settings_support_auto_archive">Auto-archive completed tasks after a period</string>
     <string name="settings_auto_archive">Enable auto archive</string>
-    <string name="settings_auto_archive_time">Custom auto archive duration</string>
+    <string name="settings_auto_archive_time">Custom auto archive duration (days)</string>
     <string name="settings_tasks_badge_title">Task badges</string>
     <string name="settings_support_tasks_badge">Show badges for upcoming tasks on tabs</string>
     <string name="settings_tasks_badge">Enable tab badges</string>
@@ -130,8 +130,8 @@
     <string name="app_sh_widget_description">Habit widget</string>
     <string name="unfinished_settings">Experimental feature, not fully tested</string>
     <string name="go_next">Continue</string>
-    <string name="welcome">Meet\nYour Deadliner</string>
-    <string name="welcome_version">New Deadliner v3.0, ready for you to experience</string>
+    <string name="welcome">Your Day,\nEnhanced by AI</string>
+    <string name="welcome_version">New Deadliner v4, ready for you to experience</string>
     <string name="finish_notice">No tasks remaining</string>
     <string name="add_ddl_tile_label">Add new task</string>
     <string name="unselected">Please specify a time</string>
@@ -197,7 +197,7 @@
     <string name="duration_less_than_hour">&lt;1 hour</string>
     <string name="show_clipboard_ai_snackbar">Clipboard content detected. Use Deadliner AI to quickly add?</string>
     <string name="add">Add</string>
-    <string name="selected_items">%1$d deadlines selected</string>
+    <string name="selected_items">%1$d selected</string>
     <string name="habit_success">Check-in successful 🎉</string>
     <string name="undo">Undo</string>
     <string name="none_selected">No items selected</string>
@@ -316,7 +316,7 @@
     <string name="settings_developer_options">Developer options</string>
     <string name="settings_donate_emotional">Broke student asking for a treat 🥹</string>
     <string name="settings_donate_thanks">Your support is my biggest motivation~</string>
-    <string name="settings_general_main">Main settings</string>
+    <string name="settings_general_main">Interaction settings</string>
     <string name="settings_general_others">Misc settings</string>
     <string name="settings_interface_mainscreen">Main screen</string>
     <string name="settings_interface_design">Design</string>
@@ -450,4 +450,236 @@
     <string name="settings_ai_icon">Set Deadliner AI Icon</string>
     <string name="settings_support_clipboard">When enabled, Deadliner will notify you to add a task with Deadliner AI whenever the clipboard changes.</string>
     <string name="toast_ai_logo_requires_reboot">Icon set successfully. Please restart Deadliner to apply the changes.</string>
+
+    <!-- Morning -->
+    <string-array name="panel_greeting_morning">
+        <item>Good morning, %s</item>
+        <item>A new day begins, %s</item>
+        <item>Wish you an energetic day, %s</item>
+    </string-array>
+
+    <!-- Noon -->
+    <string-array name="panel_greeting_noon">
+        <item>Good noon, %s</item>
+        <item>Time for a short break, %s</item>
+        <item>Recharge yourself, %s</item>
+    </string-array>
+
+    <!-- Afternoon -->
+    <string-array name="panel_greeting_afternoon">
+        <item>Good afternoon, %s</item>
+        <item>Keep going, %s</item>
+        <item>Take a short stretch, %s</item>
+    </string-array>
+
+    <!-- Evening -->
+    <string-array name="panel_greeting_evening">
+        <item>Good evening, %s</item>
+        <item>The busy day is over, %s</item>
+        <item>Relax and unwind, %s</item>
+    </string-array>
+
+    <!-- Midnight -->
+    <string-array name="panel_greeting_midnight">
+        <item>It’s late, %s</item>
+        <item>Time to rest, %s</item>
+        <item>Don’t stay up too late, %s</item>
+    </string-array>
+
+    <!-- Dawn -->
+    <string-array name="panel_greeting_dawn">
+        <item>Good early morning, %s</item>
+        <item>Still awake, %s?</item>
+        <item>Take care even at this hour, %s</item>
+    </string-array>
+
+    <!-- Default -->
+    <string-array name="panel_greeting_default">
+        <item>Hello, %s</item>
+    </string-array>
+
+    <string name="search_no_result_title">No matching items</string>
+    <string name="search_no_result_suggestion_prefix">Try these examples:</string>
+
+    <string name="search_example_y">Tasks in year 2025</string>
+    <string name="search_example_m">Tasks in October</string>
+    <string name="search_example_d">Tasks on the 15th</string>
+    <string name="search_example_h">Tasks at 8 PM</string>
+
+    <string name="panel_greeting_deadliner">Welcome to Deadliner, your personalized task management assistant</string>
+    <string name="user">User</string>
+    <string name="settings_simplified">Simplified Main Interface</string>
+    <string name="settings_support_simplified">When enabled, the main interface will switch to a brand-new simplified design, bringing you a different task management experience</string>
+    <string name="overview">Overview</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="settings_model_settings_advance">Enable to customize model endpoints and your own API key</string>
+    <string name="settings_model_settings">Advanced model settings</string>
+    <string name="settings_ai_function">Feature settings</string>
+
+    <string name="quota_title">Current quota</string>
+    <string name="quota_identity_vip">VIP</string>
+    <string name="quota_identity_free">Free</string>
+    <string name="quota_identity_unknown">Identity</string>
+    <string name="quota_action_refresh">Refresh</string>
+    <string name="quota_action_refreshing">Refreshing…</string>
+    <string name="quota_action_refresh_cd">Refresh</string>
+    <string name="quota_action_retry">Retry</string>
+    <string name="quota_error_text">Failed to fetch: %s</string>
+    <string name="quota_error_unknown">Unknown error</string>
+    <string name="quota_device_label">Device</string>
+    <string name="quota_month_label">Billing month</string>
+    <string name="quota_used_label">Used</string>
+    <string name="quota_remaining_label">Remaining</string>
+    <string name="quota_reset_label">Reset time</string>
+    <string name="quota_endpoint_label">Service endpoint</string>
+
+    <string name="share">Share</string>
+    <string name="summary_with_text">%s Summary</string>
+    <string name="saved_to_gallery">Image saved to gallery</string>
+    <string name="export_settings">Export settings</string>
+    <string name="light_text">Light text</string>
+    <string name="dark_text">Dark text</string>
+    <string name="text_tone">Text brightness</string>
+    <string name="background_img">Background image</string>
+    <string name="pick_from_gallery">Choose from gallery</string>
+    <string name="clear">Clear</string>
+    <string name="preview">Preview</string>
+    <string name="change_avatar">Change avatar</string>
+    <string name="nickname">Nickname</string>
+    <string name="enter_nickname">Enter nickname</string>
+    <string name="save_change">Save changes</string>
+    <string name="remove_avatar">Remove avatar</string>
+    <string name="crop_avatar">Crop avatar</string>
+
+    <string name="notification_upcoming_task">Your task is due in %d minutes</string>
+    <string name="notification_upcoming_task_soon">Your task is about to expire. Please finish it soon!</string>
+    <string name="control_center_tile">Control center tile</string>
+    <string name="add_ddl_tile">“Create Task” tile</string>
+    <string name="add_ddl_tile_supporting">Add the “Create Task” quick setting to the control center</string>
+    <string name="notification_upcoming_task_overdue">Task is overdue!</string>
+    <string name="notification_upcoming_task_title">Task status: %s</string>
+    <string name="notification_upcoming_critical_soon">Due soon</string>
+    <string name="notification_upcoming_critical">%d minutes left</string>
+    <string name="notification_upcoming_critical_overdue">Overdue</string>
+
+    <string name="copy">Copy</string>
+    <string name="settings_live_updates_in_advance">Real-time reminder lead time (minutes)</string>
+
+    <string name="shortcut_add_task_short">Add task</string>
+    <string name="shortcut_add_task_long">Quick add task</string>
+    <string name="shortcut_overview_short">Overview</string>
+    <string name="shortcut_overview_long">View overview</string>
+    <string name="shortcut_disabled_message">This shortcut is currently unavailable</string>
+
+    <string name="finished_import">All changes applied successfully!</string>
+    <string name="detect_share_link">Share link detected</string>
+    <string name="share_link_parse_failed">Failed to parse share link!</string>
+    <string name="toast_all_habits_done">All habits completed! 🎉</string>
+    <string name="cannot_check_future">You cannot check in for future days!</string>
+
+    <string name="habit_goal_total_with_target">Total goal: %1$d times</string>
+    <string name="habit_goal_total_open">Total goal (unlimited)</string>
+    <string name="avatar">Avatar</string>
+
+    <string name="tile_result_tile_added">Added to quick settings</string>
+    <string name="tile_result_tile_already_added">Already in quick settings</string>
+    <string name="tile_result_tile_not_added">User declined</string>
+    <string name="tile_error_app_not_in_foreground">Must be called in the foreground</string>
+    <string name="tile_error_bad_component">Component not exported or disabled</string>
+    <string name="tile_error_mismatched_package">Package name does not match TileService</string>
+    <string name="tile_error_request_in_progress">A request is already in progress</string>
+    <string name="tile_error_no_status_bar_service">System service unavailable</string>
+    <string name="tile_invalid_android">Quick tile addition is only supported on Android 13+</string>
+
+    <string name="habit_enable_notification">Enable reminder</string>
+    <string name="habit_notify_at">Reminder time: %s</string>
+    <string name="set_time">Select time</string>
+    <string name="habit_set_notification_time">Set reminder time</string>
+    <string name="habit_notification_title">Habit reminder: %s</string>
+    <string name="habit_notification">Habit reminder</string>
+
+    <string name="today">Today</string>
+    <string name="this_week">This week</string>
+    <string name="this_month">This month</string>
+    <string name="total_progress">Total progress</string>
+    <string name="progress_with_postfix">Progress:</string>
+    <string name="all">All</string>
+    <string name="event">Event</string>
+    <string name="steps">Steps</string>
+    <string name="show_monthly_dashboard">Share monthly dashboard</string>
+
+    <string name="import_plan">Import schedule block</string>
+    <string name="apply_all_changes">Apply all changes</string>
+    <string name="convert_to_subtask">Convert to subtask</string>
+    <string name="copy_list">Copy list</string>
+    <string name="ai_empty_hint">Try describing your task, today’s plan, or let me break your goal into steps.</string>
+    <string name="linked_task">Linked: %s</string>
+    <string name="settings_support_ui_mode">Adjust Deadliner’s layout and display style</string>
+    <string name="ui_style_classic">Classic</string>
+    <string name="ui_style_simplified">Simplified</string>
+    <string name="settings_ui_mode_title">Main screen layout</string>
+    <string name="ui_style_simplified_support">Focuses on core task and habit management with a cleaner, more straightforward layout.</string>
+    <string name="ui_style_classic_support">Retains the classic v2 layout for a more comprehensive, at-a-glance task management experience.</string>
+
+    <string name="intro_cover_title">Reinvent Your Task Management</string>
+    <string name="intro_cover_desc">Deadliner v4 · Your Intelligent Task Assistant</string>
+
+    <string name="wizard_add_a_task">Add a Task</string>
+    <string name="wizard_add_a_task_desc">Tap the “+” button at the bottom center to open the task creation screen.</string>
+
+    <string name="wizard_mark_as_complete">Mark as Complete</string>
+    <string name="wizard_mark_as_complete_desc">Swipe right to complete a task.</string>
+
+    <string name="wizard_delete">Delete Task</string>
+    <string name="wizard_delete_desc">Swipe left to delete a task.</string>
+
+    <string name="wizard_deadliner_ai">Open Deadliner AI</string>
+    <string name="wizard_deadliner_ai_classic_desc">In Classic Mode, tap the AI icon on the left side of the bottom bar.</string>
+    <string name="wizard_deadliner_ai_simplified_desc">In Simplified Mode, swipe up from the bottom bar to launch Deadliner AI.</string>
+
+    <string name="wizard_add_a_task_info">Add a Task</string>
+    <string name="wizard_add_a_task_info_desc">Tap the “+” button in the lower right, then fill in the title, deadline, and other details to create a new task.</string>
+
+    <string name="i_know_and_continue">Got it, continue</string>
+
+    <string name="wizard_deadliner_ai_info">Using Deadliner AI</string>
+    <string name="wizard_deadliner_ai_info_desc">Describe your tasks in natural language, and Deadliner AI will help break them down, generate subtasks, and plan your schedule.</string>
+
+    <string name="finish_wizard">Finish Tutorial</string>
+
+    <string name="wizard_simplified_title_sample">Deadliner Home · Simplified Mode Demo</string>
+    <string name="wizard_classic_demo_title">Deadliner Home · Classic Mode Demo</string>
+
+    <string name="wizard_swipe_right_title">Swipe Right on This Task</string>
+    <string name="wizard_swipe_left_title">Swipe Left on This Task</string>
+    <string name="wizard_sample_task_title">Complete Sample Task A</string>
+
+    <string name="wizard_main_time_today">Today · 18:00</string>
+    <string name="wizard_main_remaining_time">4 hours remaining</string>
+    <string name="wizard_main_demo_note">This is a demo task. In the real interface, swipe left or right to complete or delete it.</string>
+
+    <string name="wizard_secondary_task_title">Prepare Lab Report</string>
+    <string name="wizard_secondary_time_tomorrow">Tomorrow · 23:59</string>
+    <string name="wizard_secondary_remaining_time">1 day 5 hours remaining</string>
+    <string name="wizard_secondary_demo_note">This is another demo task.</string>
+
+    <string name="permissions_intro_title">We recommend completing the following settings to ensure Deadliner runs properly:</string>
+
+    <string name="permissions_notification_title">Notification Permission</string>
+    <string name="permissions_notification_desc">Allow Deadliner to send deadline reminders and habit notifications.</string>
+
+    <string name="permissions_calendar_title">Calendar Permission</string>
+    <string name="permissions_calendar_desc">Used to sync deadlines to your system calendar or read events from it.</string>
+
+    <string name="permissions_battery_title">Disable Battery Optimization</string>
+    <string name="permissions_battery_desc">Prevent the system from killing Deadliner in the background to ensure reliable scheduling and notifications.</string>
+
+    <string name="permissions_wiki_title">Permission Guide</string>
+    <string name="permissions_wiki_desc">If you’re unsure how to configure these permissions, open the guide for step-by-step instructions.</string>
+
+    <string name="intro_theme_title">Choose Your Preferred Interface Style</string>
+    <string name="intro_theme_description">Select your preferred look for Deadliner. You can change it anytime in Settings.</string>
+
+    <string name="wizard_header_title">Tutorial · Step %1$d of 3</string>
+    <string name="wizard_header_skip">Skip Tutorial</string>
 </resources>

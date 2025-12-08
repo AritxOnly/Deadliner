@@ -214,7 +214,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         app:singleSelection="true"
-        app:checkedButton="@id/btnTotal"
+        app:checkedButton="@id/btnDaily"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

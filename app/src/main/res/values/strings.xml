@@ -25,8 +25,8 @@
     <string name="settings_archive">归档</string>
 
     <string name="settings_title">设置</string>
-    <string name="settings_general">通用</string>
-    <string name="settings_interface_display">个性化</string>
+    <string name="settings_behavior">交互与行为</string>
+    <string name="settings_interface_display">界面外观</string>
     <string name="settings_widget">小组件</string>
     <string name="settings_notification">通知</string>
     <string name="settings_deadliner_ai" translatable="false">Deadliner AI</string>
@@ -37,8 +37,8 @@
     <string name="settings_webdav" translatable="false">WebDAV</string>
     <string name="settings_about">关于</string>
 
-    <string name="settings_support_general">界面显示 · UI交互</string>
-    <string name="settings_support_interface_display">个性化你的 Deadliner</string>
+    <string name="settings_support_behavior">操作反馈方式 · 应用后台行为</string>
+    <string name="settings_support_interface_display">主界面布局 · 显示风格</string>
     <string name="settings_support_notification">DDL临近通知 · 每日定时通知</string>
     <string name="settings_support_backup">导入与导出用户数据库</string>
     <string name="settings_support_deadliner_ai">Deadliner AI · API接入 · 自定义prompt</string>
@@ -69,7 +69,7 @@
     <string name="settings_auto_archive_title">自动归档</string>
     <string name="settings_support_auto_archive">一段时间后将已完成任务自动放入归档文件夹</string>
     <string name="settings_auto_archive">启用自动归档</string>
-    <string name="settings_auto_archive_time">自定义自动归档时间</string>
+    <string name="settings_auto_archive_time">自定义自动归档时间 (天)</string>
 
     <string name="settings_tasks_badge_title">任务角标</string>
     <string name="settings_support_tasks_badge">在主界面选项卡上显示临近任务角标</string>
@@ -91,7 +91,7 @@
     <string name="settings_support_ldwidget_add_btn">开启后，任务大组件上将会显示一个浮动的\"+\"按钮，用于从小组件快速添加任务</string>
 
     <string name="settings_nearby_notification">Deadline临近通知</string>
-    <string name="settings_everyday_notification">每日Deadline统计通知</string>
+    <string name="settings_everyday_notification">每日摘要通知</string>
 
     <string name="settings_experimental_e2e">系统栏边到边沉浸（实验性）</string>
     <string name="settings_excitement">主菜单鼓励语句</string>
@@ -174,8 +174,8 @@
     <string name="go_next">继续</string>
 
     <!--下面是开始页面的内容-->
-    <string name="welcome">遇见\n你的Deadliner</string>
-    <string name="welcome_version">全新Deadliner v3.0，诚邀您体验</string>
+    <string name="welcome">让我们\n与AI同行</string>
+    <string name="welcome_version">全新Deadliner v4，诚邀您体验</string>
 
     <string name="finish_notice">没有剩余的工作了</string>
     <string name="add_ddl_tile_label">添加新任务</string>
@@ -252,7 +252,7 @@
     <string name="duration_less_than_hour">&lt;1小时</string>
     <string name="show_clipboard_ai_snackbar">检测到剪切板内容，使用 Deadliner AI 快捷添加？</string>
     <string name="add">添加</string>
-    <string name="selected_items">已选中 %1$d 项 Deadline</string>
+    <string name="selected_items">已选中 %1$d 项</string>
     <string name="habit_success">打卡成功 🎉</string>
     <string name="undo">撤销</string>
     <string name="none_selected">未选择任何项</string>
@@ -384,7 +384,7 @@
     <string name="settings_developer_options">开发者选项</string>
     <string name="settings_donate_emotional">穷学生在线求投喂 🥹</string>
     <string name="settings_donate_thanks">你的支持是对我最大的鼓励~</string>
-    <string name="settings_general_main">主要设置</string>
+    <string name="settings_general_main">交互设置</string>
     <string name="settings_general_others">杂项设置</string>
     <string name="settings_interface_mainscreen">主界面</string>
     <string name="settings_interface_design">设计</string>
@@ -504,4 +504,222 @@
     <string name="settings_ai_icon">设置Deadliner AI图标</string>
     <string name="settings_support_clipboard">开启选项后，Deadliner将在剪切板变化时提示你使用Deadliner AI添加任务。</string>
     <string name="toast_ai_logo_requires_reboot">图标设置成功，请重启Deadliner以应用效果</string>
+    <string name="settings_simplified">简洁模式主界面</string>
+    <string name="settings_support_simplified">开启后，主界面将变成全新的简洁设计，带来不一样的待办管理体验</string>
+    <string name="overview">概览</string>
+    <string name="edit_profile">编辑资料</string>
+
+    <!-- 早晨 -->
+    <string-array name="panel_greeting_morning">
+        <item>早上好，%s</item>
+        <item>新的一天开始啦，%s</item>
+        <item>愿你今天充满能量，%s</item>
+    </string-array>
+
+    <!-- 中午 -->
+    <string-array name="panel_greeting_noon">
+        <item>中午好，%s</item>
+        <item>该休息一下啦，%s</item>
+        <item>补充点能量吧，%s</item>
+    </string-array>
+
+    <!-- 下午 -->
+    <string-array name="panel_greeting_afternoon">
+        <item>下午好，%s</item>
+        <item>继续加油，%s</item>
+        <item>别忘了活动一下，%s</item>
+    </string-array>
+
+    <!-- 晚上 -->
+    <string-array name="panel_greeting_evening">
+        <item>晚上好，%s</item>
+        <item>忙碌的一天结束啦，%s</item>
+        <item>放松一下吧，%s</item>
+    </string-array>
+
+    <!-- 深夜 -->
+    <string-array name="panel_greeting_midnight">
+        <item>夜深了，%s</item>
+        <item>早点休息，%s</item>
+        <item>别太熬夜哦，%s</item>
+    </string-array>
+
+    <!-- 凌晨 -->
+    <string-array name="panel_greeting_dawn">
+        <item>凌晨好，%s</item>
+        <item>还没睡呀，%s</item>
+        <item>深夜也要注意身体，%s</item>
+    </string-array>
+
+    <!-- 默认 -->
+    <string-array name="panel_greeting_default">
+        <item>你好，%s</item>
+    </string-array>
+
+    <string name="panel_greeting_deadliner">欢迎使用Deadliner，你的个性化任务管理助手</string>
+    <string name="user">用户</string>
+
+    <string name="search_no_result_title">没有匹配的项</string>
+    <string name="search_no_result_suggestion_prefix">试试以下搜索示例：</string>
+
+    <!-- 示例语义与正则逻辑匹配 -->
+    <string name="search_example_y">搜索年份为 2025 的任务</string>
+    <string name="search_example_m">搜索 10 月的任务</string>
+    <string name="search_example_d">搜索 15 日相关任务</string>
+    <string name="search_example_h">搜索 20 点（晚 8 点）相关任务</string>
+    <string name="settings_model_settings_advance">开启后，可以自定义模型接入点与自己的API Key</string>
+    <string name="settings_model_settings">模型高级设置</string>
+    <string name="settings_ai_function">功能设置</string>
+
+    <string name="quota_title">当前配额</string>
+    <string name="quota_identity_vip">VIP</string>
+    <string name="quota_identity_free">FREE</string>
+    <string name="quota_identity_unknown">身份</string>
+    <string name="quota_action_refresh">刷新</string>
+    <string name="quota_action_refreshing">刷新中…</string>
+    <string name="quota_action_refresh_cd">刷新</string>
+    <string name="quota_action_retry">重试</string>
+    <string name="quota_error_text">获取失败：%s</string>
+    <string name="quota_error_unknown">未知错误</string>
+    <string name="quota_device_label">设备</string>
+    <string name="quota_month_label">结算月</string>
+    <string name="quota_used_label">已用</string>
+    <string name="quota_remaining_label">剩余</string>
+    <string name="quota_reset_label">重置时间</string>
+    <string name="quota_endpoint_label">服务节点</string>
+    <string name="share">分享</string>
+    <string name="summary_with_text">%s总结</string>
+    <string name="saved_to_gallery">图片已保存进相册</string>
+    <string name="export_settings">导出设置</string>
+    <string name="light_text">浅色文字</string>
+    <string name="dark_text">深色文字</string>
+    <string name="text_tone">文字明暗</string>
+    <string name="background_img">背景图片</string>
+    <string name="pick_from_gallery">从相册选择</string>
+    <string name="clear">清除</string>
+    <string name="preview">预览</string>
+    <string name="change_avatar">更换头像</string>
+    <string name="nickname">昵称</string>
+    <string name="enter_nickname">输入昵称</string>
+    <string name="save_change">保存更改</string>
+    <string name="remove_avatar">移除头像</string>
+    <string name="crop_avatar">裁剪头像</string>
+    <string name="notification_upcoming_task">任务将在 %d 分钟后到期</string>
+    <string name="notification_upcoming_task_soon">您的任务即将到期，请尽快完成！</string>
+    <string name="control_center_tile">控制中心图块</string>
+    <string name="add_ddl_tile">“创建任务”图块</string>
+    <string name="add_ddl_tile_supporting">添加“创建任务”快捷设置到控制中心</string>
+    <string name="notification_upcoming_task_overdue">任务已逾期！</string>
+    <string name="notification_upcoming_task_title">任务状态：%s</string>
+    <string name="notification_upcoming_critical_soon">即将到期</string>
+    <string name="notification_upcoming_critical">剩余%d分钟</string>
+    <string name="notification_upcoming_critical_overdue">已逾期</string>
+    <string name="copy">复制</string>
+    <string name="settings_live_updates_in_advance">任务即将到期实时通知时间 (分钟)</string>
+
+    <string name="shortcut_add_task_short">添加任务</string>
+    <string name="shortcut_add_task_long">快速添加任务</string>
+    <string name="shortcut_overview_short">概览统计</string>
+    <string name="shortcut_overview_long">查看概览统计</string>
+    <string name="shortcut_disabled_message">此快捷方式当前不可用</string>
+
+    <string name="finished_import">成功应用全部更改！</string>
+    <string name="detect_share_link">检测到分享链接</string>
+    <string name="share_link_parse_failed">分享链接解析错误！</string>
+    <string name="toast_all_habits_done">成功完成所有习惯打卡！🎉</string>
+    <string name="cannot_check_future">不能打卡本日之后的习惯！</string>
+
+    <string name="habit_goal_total_with_target">总目标 %1$d 次</string>
+    <string name="habit_goal_total_open">总目标（不限次数）</string>
+    <string name="avatar">头像</string>
+    <string name="tile_result_tile_added">已添加到快捷设置</string>
+    <string name="tile_result_tile_already_added">已在快捷设置中</string>
+    <string name="tile_result_tile_not_added">用户拒绝添加</string>
+    <string name="tile_error_app_not_in_foreground">需要在前台界面调用</string>
+    <string name="tile_error_bad_component">组件未导出或未启用</string>
+    <string name="tile_error_mismatched_package">包名与 TileService 不一致</string>
+    <string name="tile_error_request_in_progress">已有请求正在处理</string>
+    <string name="tile_error_no_status_bar_service">系统服务不可用</string>
+    <string name="tile_invalid_android">仅支持 Android 13+ 的磁贴快速添加</string>
+    <string name="habit_enable_notification">开启提醒</string>
+    <string name="habit_notify_at">提醒时间：%s</string>
+    <string name="set_time">选择时间</string>
+    <string name="habit_set_notification_time">选择提醒时间</string>
+    <string name="habit_notification_title">习惯提醒: %s</string>
+    <string name="habit_notification">习惯提醒</string>
+    <string name="today">今天</string>
+    <string name="this_week">本周</string>
+    <string name="this_month">本月</string>
+    <string name="total_progress">总进度</string>
+    <string name="progress_with_postfix">进度：</string>
+    <string name="all">全部</string>
+    <string name="event">日程</string>
+    <string name="steps">步骤</string>
+    <string name="show_monthly_dashboard">分享月度看板</string>
+    <string name="import_plan">导入日程块</string>
+    <string name="apply_all_changes">应用全部更改</string>
+    <string name="convert_to_subtask">转为子任务</string>
+    <string name="copy_list">复制清单</string>
+    <string name="ai_empty_hint">试着描述你的任务、今天的安排，或让我把目标拆成步骤。</string>
+    <string name="linked_task">关联: %s</string>
+    <string name="settings_ui_mode_title">主界面风格</string>
+    <string name="settings_support_ui_mode">调整 Deadliner 的布局与显示风格</string>
+    <string name="ui_style_classic">经典模式</string>
+    <string name="ui_style_simplified">简洁模式</string>
+    <string name="ui_style_simplified_support">聚焦核心任务与习惯管理，提供更清爽、直观的界面布局。</string>
+    <string name="ui_style_classic_support">沿用自 v2 的完整布局，呈现更全面、一触即达的任务管理体验。</string>
+
+    <string name="intro_cover_title">重塑任务管理体验</string>
+    <string name="intro_cover_desc">Deadliner v4 · 你的智能任务助手</string>
+    <string name="wizard_add_a_task">添加一个任务</string>
+    <string name="wizard_add_a_task_desc">点击底部中间的「+」按钮，打开添加任务界面。</string>
+    <string name="wizard_mark_as_complete">将任务标记为完成</string>
+    <string name="wizard_mark_as_complete_desc">向右滑动完成任务。</string>
+    <string name="wizard_delete">删除任务</string>
+    <string name="wizard_delete_desc">向左滑动删除任务。</string>
+    <string name="wizard_deadliner_ai">打开 Deadliner AI</string>
+    <string name="wizard_deadliner_ai_classic_desc">在经典模式下，点击底部栏最左侧的 AI 图标，打开 Deadliner AI。</string>
+    <string name="wizard_deadliner_ai_simplified_desc">在简洁模式下，从底栏向上滑动，即可唤醒 Deadliner AI。</string>
+    <string name="wizard_add_a_task_info">添加一个任务</string>
+    <string name="wizard_add_a_task_info_desc">点击右下角的「+」按钮，填写标题、截止时间等信息，就可以创建一个新的 Deadliner 任务。</string>
+    <string name="i_know_and_continue">我知道了，继续</string>
+    <string name="wizard_deadliner_ai_info">使用 Deadliner AI</string>
+    <string name="wizard_deadliner_ai_info_desc">在 Deadliner AI 中，你可以用自然语言描述待办事项，让 AI 帮你拆解任务、生成子任务和时间规划。</string>
+    <string name="finish_wizard">完成向导</string>
+
+    <string name="wizard_simplified_title_sample">Deadliner 主界面（经典模式示例）</string>
+    <string name="wizard_classic_demo_title">Deadliner 主界面（经典模式示例）</string>
+
+    <string name="wizard_swipe_right_title">向右滑动这条任务</string>
+    <string name="wizard_swipe_left_title">向左滑动这条任务</string>
+    <string name="wizard_sample_task_title">完成示例任务 A</string>
+
+    <string name="wizard_main_time_today">今天 · 18:00</string>
+    <string name="wizard_main_remaining_time">还剩 4 小时截止</string>
+    <string name="wizard_main_demo_note">这是一个演示任务，可以通过左右滑动完成 / 删除。</string>
+
+    <string name="wizard_secondary_task_title">准备实验报告</string>
+    <string name="wizard_secondary_time_tomorrow">明天 · 23:59</string>
+    <string name="wizard_secondary_remaining_time">还剩 1 天 5 小时</string>
+    <string name="wizard_secondary_demo_note">这是另一个演示任务。</string>
+    <string name="permissions_intro_title">推荐完成以下设置，以保证 Deadliner 正常运行：</string>
+
+    <string name="permissions_notification_title">通知权限</string>
+    <string name="permissions_notification_desc">允许 Deadliner 发送截止提醒、习惯打卡提醒等通知。</string>
+
+    <string name="permissions_calendar_title">日历权限</string>
+    <string name="permissions_calendar_desc">用于将截止事项同步到系统日历，或从日历中读取事件。</string>
+
+    <string name="permissions_battery_title">禁止电池优化</string>
+    <string name="permissions_battery_desc">防止系统在后台杀死 Deadliner，以保证定时任务和通知的可靠性。</string>
+
+    <string name="permissions_wiki_title">权限设置向导</string>
+    <string name="permissions_wiki_desc">如果你不确定如何设置上述权限，可以打开使用指南查看图文说明。</string>
+
+    <string name="intro_theme_title">选择你喜欢的界面样式</string>
+    <string name="intro_theme_description">你可以在这里预先选择 Deadliner 的主界面风格，之后也可以在设置中随时更改。</string>
+
+    <!-- Wizard Header -->
+    <string name="wizard_header_title">使用向导 · 第 %1$d / 3 步</string>
+    <string name="wizard_header_skip">跳过向导</string>
 </resources>

@@ -11,10 +11,12 @@ import android.widget.Toast
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.LauncherActivity
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.data.HabitRepository
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.HabitPeriod
 import java.time.LocalDate
 
 class HabitMediumWidget : AppWidgetProvider() {
@@ -52,54 +54,75 @@ internal fun updateMediumAppWidget(
     appWidgetId: Int,
 ) {
     val provider = ComponentName(context, HabitMediumWidget::class.java)
-    val habitId = loadIdPref(context, appWidgetId, provider)
+    val ddlId = loadIdPref(context, appWidgetId, provider)
 
     val views = RemoteViews(context.packageName, R.layout.habit_medium_widget)
 
-    val habit = DatabaseHelper.getInstance(context).getDDLById(habitId)
-    if (habit != null) {
-        views.setTextViewText(R.id.medium_title, habit.name)
-        val habitMeta = com.aritxonly.deadliner.localutils.GlobalUtils.parseHabitMetaData(habit.note)
+    val db = DatabaseHelper.getInstance(context)
+    val ddl = db.getDDLById(ddlId)
+    val habitRepo = HabitRepository(db)
+    val habit = habitRepo.getHabitByDdlId(ddlId)
 
-        val freqDesc = when (habitMeta.frequencyType) {
-            DeadlineFrequency.DAILY ->
-                if (habitMeta.total == 0)
-                    context.getString(R.string.daily_frequency, habitMeta.frequency)
-                else
-                    context.getString(R.string.daily_frequency_with_total, habitMeta.frequency, habitMeta.total)
+    if (ddl != null && habit != null) {
+        // 标题 = DDL 名称
+        views.setTextViewText(R.id.medium_title, ddl.name)
 
-            DeadlineFrequency.WEEKLY ->
-                if (habitMeta.total == 0)
-                    context.getString(R.string.weekly_frequency, habitMeta.frequency)
+        // 频率文案：沿用原本的 string 资源，但用 Habit 的字段
+        val freqDesc = when (habit.period) {
+            HabitPeriod.DAILY ->
+                if (habit.totalTarget == null || habit.totalTarget == 0)
+                    context.getString(R.string.daily_frequency, habit.timesPerPeriod)
                 else
-                    context.getString(R.string.weekly_frequency_with_total, habitMeta.frequency, habitMeta.total)
+                    context.getString(
+                        R.string.daily_frequency_with_total,
+                        habit.timesPerPeriod,
+                        habit.totalTarget
+                    )
 
-            DeadlineFrequency.MONTHLY ->
-                if (habitMeta.total == 0)
-                    context.getString(R.string.monthly_frequency, habitMeta.frequency)
+            HabitPeriod.WEEKLY ->
+                if (habit.totalTarget == null || habit.totalTarget == 0)
+                    context.getString(R.string.weekly_frequency, habit.timesPerPeriod)
                 else
-                    context.getString(R.string.monthly_frequency_with_total, habitMeta.frequency, habitMeta.total)
+                    context.getString(
+                        R.string.weekly_frequency_with_total,
+                        habit.timesPerPeriod,
+                        habit.totalTarget
+                    )
 
-            DeadlineFrequency.TOTAL ->
-                if (habitMeta.total == 0)
-                    context.getString(R.string.total_frequency_persistent)
+            HabitPeriod.MONTHLY ->
+                if (habit.totalTarget == null || habit.totalTarget == 0)
+                    context.getString(R.string.monthly_frequency, habit.timesPerPeriod)
                 else
-                    context.getString(R.string.total_frequency_count, habitMeta.total)
+                    context.getString(
+                        R.string.monthly_frequency_with_total,
+                        habit.timesPerPeriod,
+                        habit.totalTarget
+                    )
         }
         views.setTextViewText(R.id.medium_description, freqDesc)
 
-        val canClick = canPerformClickHelper(habit, habitMeta)
-        val label = if (canClick) context.getString(R.string.check_habit) else context.getString(R.string.complete)
+        // 今天打卡次数 vs 每周期次数
+        val today = LocalDate.now()
+        val recordsToday = habitRepo.getRecordsForHabitOnDate(habit.id, today)
+        val doneToday = recordsToday.sumOf { it.count }
+        val targetPerDay = habit.timesPerPeriod.coerceAtLeast(1)
+
+        val canClick = doneToday < targetPerDay
+        val label = if (canClick) {
+            context.getString(R.string.check_habit)
+        } else {
+            context.getString(R.string.completed)   // 或 R.string.complete，看你现有资源
+        }
         views.setTextViewText(R.id.tv_checkin, label)
 
-        // 点击行为：能打卡 → 发 ACTION_CHECK_IN；否则 → 打开 App（或发一个提示广播）
+        // 点击：能打卡 -> 广播；不能 -> 打开 App
         val pending = if (canClick) {
             PendingIntent.getBroadcast(
                 context, appWidgetId,
                 Intent(context, HabitMiniWidget::class.java).apply {
                     action = ACTION_CHECK_IN
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                    putExtra("extra_habit_id", habitId)
+                    putExtra("extra_habit_id", ddlId)      // 仍传 ddlId，下游按新系统改
                 },
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -114,10 +137,11 @@ internal fun updateMediumAppWidget(
         }
         views.setOnClickPendingIntent(R.id.btn_checkin, pending)
 
-        // 你还可以用 alpha 表达禁用态（可选）
-         views.setFloat(R.id.btn_checkin, "setAlpha", if (canClick) 1f else 0.6f)
+        views.setFloat(R.id.btn_checkin, "setAlpha", if (canClick) 1f else 0.6f)
     } else {
+        // 没配好 / 已被删
         views.setTextViewText(R.id.medium_title, context.getString(R.string.app_name))
+        views.setTextViewText(R.id.medium_description, "")
         views.setTextViewText(R.id.tv_checkin, context.getString(R.string.add_widget))
         views.setOnClickPendingIntent(
             R.id.btn_checkin,
@@ -129,7 +153,7 @@ internal fun updateMediumAppWidget(
         )
     }
 
-    // 容器点击 → 打开 App
+    // 容器点击 → 打开 App（保持不变）
     views.setOnClickPendingIntent(
         R.id.widget_container,
         PendingIntent.getActivity(

@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.viewpager2.widget.ViewPager2
+import com.aritxonly.deadliner.intro.IntroPageType
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.PartyPresets
@@ -31,39 +32,38 @@ class IntroActivity : AppCompatActivity() {
     private lateinit var buttonNext: MaterialButton
     private lateinit var tabLayout: TabLayout
     private lateinit var pageIndicator: LinearProgressIndicator
+    private lateinit var adapter: IntroViewPagerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdgeForAllDevices()
-
         setContentView(R.layout.activity_intro)
 
         normalizeRootInsets()
-
         DynamicColors.applyToActivityIfAvailable(this)
 
         pageIndicator = findViewById(R.id.pageIndicator)
-
         viewPager = findViewById(R.id.viewPager_intro)
+        tabLayout = findViewById(R.id.tabLayout)
+        buttonNext = findViewById(R.id.buttonNext)
 
-        val adapter = IntroViewPagerAdapter(this)
+        adapter = IntroViewPagerAdapter(this)
         viewPager.adapter = adapter
 
-        tabLayout = findViewById(R.id.tabLayout)
-        // 将 TabLayout 和 ViewPager2 绑定
+        // 进度条最大值 = 最后一页的 index
+        pageIndicator.max = adapter.itemCount - 1
+        pageIndicator.progress = 0
+
+        // 将 TabLayout 和 ViewPager2 绑定（Tab 仅做指示，不可点击）
         TabLayoutMediator(tabLayout, viewPager) { tab, _ ->
-            // 设置 Tab 不可点击
             tab.view.isClickable = false
         }.attach()
 
-        buttonNext = findViewById(R.id.buttonNext)
         buttonNext.setOnClickListener {
             val currentItem = viewPager.currentItem
-            // 如果还没到最后一页，就让 ViewPager 跳到下一页
             if (currentItem < adapter.itemCount - 1) {
                 viewPager.setCurrentItem(currentItem + 1, true)
             } else {
-                // 如果已经是最后一页，跳转到主界面
                 goToMainActivity()
             }
         }
@@ -73,40 +73,63 @@ class IntroActivity : AppCompatActivity() {
                 super.onPageSelected(position)
                 pageIndicator.progress = position
 
-                // 如果滑到最后一页，你可以把箭头图标/文字换成“完成”
-                if (position == adapter.itemCount - 1) {
-                    viewPager.isUserInputEnabled = false
-                    buttonNext.visibility = View.GONE
-                    pageIndicator.animate().setDuration(1000).alpha(0f).start()
-                } else {
-                    viewPager.isUserInputEnabled = true
-                    buttonNext.visibility = View.VISIBLE
+                val pageType = adapter.getPageType(position)
+
+                when (pageType) {
+                    IntroPageType.Wizard -> {
+                        viewPager.isUserInputEnabled = false
+                        buttonNext.visibility = View.GONE
+                    }
+
+                    IntroPageType.Final -> {
+                        viewPager.isUserInputEnabled = false
+                        buttonNext.visibility = View.GONE
+                        pageIndicator.animate()
+                            .setDuration(1000)
+                            .alpha(0f)
+                            .start()
+                    }
+
+                    else -> {
+                        // 其他页：正常显示 Next，允许滑动
+                        viewPager.isUserInputEnabled = true
+                        buttonNext.visibility = View.VISIBLE
+                        if (pageIndicator.alpha < 1f) {
+                            pageIndicator.alpha = 1f
+                        }
+                    }
                 }
             }
         })
 
-        // 监听 Fragment 按钮事件
+        // Welcome Fragment “开始使用”按钮
         supportFragmentManager.setFragmentResultListener("buttonClick", this) { _, _ ->
-            goToMainActivity() // 调用跳转逻辑
+            goToMainActivity()
+        }
+
+        // Wizard 完成：直接跳到最终欢迎页
+        supportFragmentManager.setFragmentResultListener("wizardFinished", this) { _, _ ->
+            viewPager.currentItem = IntroPageType.Final.index
+        }
+
+        // Wizard 跳过：同样跳到最终欢迎页
+        supportFragmentManager.setFragmentResultListener("wizardSkipped", this) { _, _ ->
+            viewPager.currentItem = IntroPageType.Final.index
         }
     }
 
     private fun goToMainActivity() {
-        // 开始播放烟花动画
         val konfettiView: KonfettiView = findViewById(R.id.konfetti_view)
         konfettiView.start(PartyPresets.explode())
 
         GlobalUtils.firstRun = false
         GlobalUtils.showIntroPage = false
 
-        // 延迟关闭当前 Activity，与动画同步
         Handler(Looper.getMainLooper()).postDelayed({
-            // 启动 MainActivity 并设置过渡动画
             val intent = Intent(this, MainActivity::class.java)
-
             startActivity(intent)
             finish()
-        }, 1000)
+        }, 1000L)
     }
 
     private fun normalizeRootInsets() {

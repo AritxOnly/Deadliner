@@ -43,7 +43,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             }
 
             ACTION_LATER -> {
-                DeadlineAlarmScheduler.cancelAlarm(context, ddlId.toLong())
+                DeadlineAlarmScheduler.cancelExactAlarm(context, ddlId.toLong())
                 GlobalUtils.NotificationStatusManager.clearNotified(ddlId)
 
                 val endTime = GlobalUtils.safeParseDateTime(item.endTime)

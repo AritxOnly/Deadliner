@@ -1,0 +1,19 @@
+@startuml Sequence1
+actor User
+participant UI as "UI/Compose"
+participant AIU as "AIUtils"
+participant Trans as "LlmTransport"
+entity Model as "LLM(Model)"
+collections DTO as "ChatResponse/GeneratedDDL"
+
+User -> UI : 输入自然语言描述
+UI -> AIU : generateDeadline(rawText)
+AIU -> AIU : 构造 system/user messages (语言/时区/日期)
+AIU -> Trans : chat(ChatRequest)
+Trans -> Model : HTTP POST /chat
+Model --> Trans : ChatResponse(JSON/Markdown)
+Trans --> AIU : ChatResponse
+AIU -> AIU : extractJsonFromMarkdown()
+AIU -> AIU : parseGeneratedDDL(gson+adapter)
+AIU --> UI : JSON字符串 或 GeneratedDDL
+@enduml

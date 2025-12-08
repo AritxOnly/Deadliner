@@ -1,0 +1,28 @@
+@startuml UseCase
+left to right direction
+actor User
+rectangle "Deadliner AI" {
+  usecase UC1 as "自然语言→任务抽取\n(ExtractTasks)"
+  usecase UC2 as "日程规划\n(PlanDay)"
+  usecase UC3 as "任务拆解\n(SplitToSteps)"
+  usecase UC4 as "复发与提醒解析\n(Recurrence/Reminders)"
+  usecase UC5 as "意图识别与路由\n(Intent Routing)"
+  usecase UC6 as "个人化对齐\n(User Profiling)"
+  usecase UC7 as "本地规则兜底\n(Rule-based Fallback)"
+  usecase UC8 as "成本与模型路由\n(Cost Router)"
+  usecase UC9 as "调试与度量\n(Metrics/Debug)"
+}
+User --> UC5
+User --> UC1
+User --> UC2
+User --> UC3
+UC1 ..> UC4
+UC2 ..> UC4
+UC5 ..> UC8
+UC5 ..> UC7
+UC5 ..> UC1
+UC5 ..> UC2
+UC5 ..> UC3
+UC6 ..> UC5
+UC9 ..> UC5
+@enduml

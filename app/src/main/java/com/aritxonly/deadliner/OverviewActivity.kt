@@ -13,14 +13,11 @@ import android.view.LayoutInflater
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,7 +38,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -53,12 +49,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.aritxonly.deadliner.composable.expressiveTypeModifier
-import com.aritxonly.deadliner.composable.overview.DashboardScreen
-import com.aritxonly.deadliner.composable.overview.OverviewStatsScreen
-import com.aritxonly.deadliner.composable.overview.TrendAnalysisScreen
+import com.aritxonly.deadliner.ui.expressiveTypeModifier
+import com.aritxonly.deadliner.ui.overview.DashboardScreen
+import com.aritxonly.deadliner.ui.overview.OverviewStatsScreen
+import com.aritxonly.deadliner.ui.overview.TrendAnalysisScreen
 import com.aritxonly.deadliner.data.DDLRepository
-import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.AppColorScheme
@@ -174,6 +169,7 @@ class OverviewActivity : ComponentActivity() {
 
                     OverviewScreen(
                         items = items,
+                        activity = this,
                         colorScheme = appColorScheme
                     ) {
                         finish()
@@ -210,6 +206,7 @@ fun hashColor(key: String) : Color {
 fun OverviewScreen(
     items: List<DDLItem>,
     colorScheme: AppColorScheme,
+    activity: OverviewActivity,
     onClose: () -> Unit
 ) {
     val context = LocalContext.current
@@ -358,6 +355,7 @@ fun OverviewScreen(
                     DashboardScreen(
                         items,
                         colorScheme,
+                        activity,
                         Modifier
                             .background(Color(colorScheme.surface))
                     )
@@ -403,94 +401,5 @@ fun OverviewScreen(
                 }
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun OverviewPreview() {
-    DeadlinerTheme {
-        val items = listOf<DDLItem>(
-            DDLItem(
-                id = 1,
-                name = "提交报告",
-                startTime = "2025-06-07 09:00",
-                endTime = "2025-06-07 12:00",
-                isCompleted = true,
-                completeTime = "2025-06-07 11:30",
-                note = "按时完成",
-                type = DeadlineType.TASK
-            ),
-            DDLItem(
-                id = 2,
-                name = "团队会议准备",
-                startTime = "2025-06-08 14:00",
-                endTime = "2025-06-08 16:00",
-                isCompleted = true,
-                completeTime = "2025-06-08 15:45",
-                note = "幻灯片已更新",
-                type = DeadlineType.TASK
-            ),
-            DDLItem(
-                id = 3,
-                name = "代码重构",
-                startTime = "2025-06-10 10:00",
-                endTime = "2025-06-10 18:00",
-                isCompleted = false,
-                completeTime = "",
-                note = "进行中",
-                type = DeadlineType.TASK
-            ),
-            DDLItem(
-                id = 4,
-                name = "发布新版本",
-                startTime = "2025-06-12 08:00",
-                endTime = "2025-06-12 12:00",
-                isCompleted = true,
-                completeTime = "2025-06-12 11:50",
-                note = "已部署至服务器",
-                type = DeadlineType.TASK
-            ),
-            DDLItem(
-                id = 5,
-                name = "撰写周报",
-                startTime = "2025-06-13 17:00",
-                endTime = "2025-06-13 19:00",
-                isCompleted = false,
-                completeTime = "",
-                note = "待完成",
-                type = DeadlineType.TASK
-            ),
-            // 逾期任务示例
-            DDLItem(
-                id = 6,
-                name = "更新文档",
-                startTime = "2025-06-05 09:00",
-                endTime = "2025-06-09 17:00",
-                isCompleted = false,
-                completeTime = "",
-                note = "过期未完成",
-                type = DeadlineType.TASK
-            )
-        )
-        OverviewScreen(
-            items = items,
-            colorScheme = AppColorScheme(
-                primary = MaterialTheme.colorScheme.primary.toArgb(),
-                onPrimary = MaterialTheme.colorScheme.onPrimary.toArgb(),
-                primaryContainer = MaterialTheme.colorScheme.primaryContainer.toArgb(),
-                surface = MaterialTheme.colorScheme.surface.toArgb(),
-                onSurface = MaterialTheme.colorScheme.onSurface.toArgb(),
-                surfaceContainer = MaterialTheme.colorScheme.surfaceContainer.toArgb(),
-                secondary = MaterialTheme.colorScheme.secondary.toArgb(),
-                onSecondary = MaterialTheme.colorScheme.onSecondary.toArgb(),
-                secondaryContainer = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
-                onSecondaryContainer = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
-                tertiary = MaterialTheme.colorScheme.tertiary.toArgb(),
-                onTertiary = MaterialTheme.colorScheme.onTertiary.toArgb(),
-                tertiaryContainer = MaterialTheme.colorScheme.tertiaryContainer.toArgb(),
-                onTertiaryContainer = MaterialTheme.colorScheme.onTertiaryContainer.toArgb(),
-            )
-        ) {}
     }
 }

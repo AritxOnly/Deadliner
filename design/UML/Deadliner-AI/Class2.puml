@@ -1,0 +1,35 @@
+' ======================================================
+' Data Structures (建议向后兼容)
+' ======================================================
+@startuml Class2
+class AITask {
+  + name: String
+  + dueTime: String  <<yyyy-MM-dd HH:mm>>
+  + note: String
+  + priority: Int?
+  + reminders: List<Int>?
+  + tags: List<String>?
+  + recurrence: String?   <<RRULE subset>>
+  + checklist: List<String>?
+  + dependsOn: List<String>?
+}
+
+class ExtractTasksResult {
+  + tasks: List<AITask>
+  + timezone: String
+  + resolvedAt: String
+}
+
+class PlanBlock {
+  + title: String
+  + start: String
+  + end: String
+  + location: String?
+  + energy: String?  <<low/med/high>>
+  + linkTask: String?
+}
+
+interface AIResult
+AIResult <|.. ExtractTasksResult
+AIResult <|.. PlanBlock
+@enduml

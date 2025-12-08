@@ -1,0 +1,45 @@
+@startuml
+title: Deadliner 添加向导设计活动图
+
+start
+:打开“添加”入口;
+
+:点击“任务” 或 “习惯”;
+
+if (选择 == 任务) then (任务)
+    :Draft.type = DeadlineType.TASK;
+else (习惯)
+    :Draft.type = DeadlineType.HABIT;
+endif
+
+:选择“从文本获取(Deadliner AI)”、“从日历导入”或“手动添加”;
+
+split
+  :从文本获取(Deadliner AI);
+  :输入/粘贴自然语言文本;
+  :用户确认“开始解析”;
+  if (确认解析?) then (是)
+      :调用Deadliner AI解析文本;
+      :生成初步任务/习惯草案;
+      :展示解析结果供编辑;
+  else (否)
+      :返回上一步;
+  endif
+  :进入字段补全页(时间/备注等);
+split again
+  :从日历导入;
+  :选择事件;
+  :导入事件标题、时间、备注等;
+  :映射为任务/习惯草案;
+  :进入字段补全页;
+split again
+  :手动添加;
+  :展示空白表单;
+  :用户逐项填写字段;
+  :进入字段补全页;
+endsplit
+
+:确认信息并保存;
+
+stop
+@enduml

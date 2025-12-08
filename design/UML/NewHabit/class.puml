@@ -1,0 +1,102 @@
+@startuml
+
+' =========================
+' 核心实体
+' =========================
+
+class DDLItem {
+  +id: Long
+  +name: String
+  +startTime: String
+  +endTime: String
+  +isCompleted: Boolean
+  +completeTime: String
+  +note: String
+  +isArchived: Boolean
+  +isStared: Boolean
+  +type: DeadlineType
+  +habitCount: Int
+  +habitTotalCount: Int
+  +calendarEventId: Long?
+  +timeStamp: String
+  +uid: String
+  +deleted: Boolean
+  +verTs: String
+  +verCtr: Int
+  +verDev: String
+}
+
+class Habit {
+  +id: Long
+  +ddlId: Long          ' 外键 → DDLItem.id
+  +name: String
+  +description: String?
+  +color: Int?
+  +iconKey: String?
+  +period: HabitPeriod
+  +timesPerPeriod: Int
+  +goalType: HabitGoalType
+  +totalTarget: Int?
+  +createdAt: LocalDateTime
+  +updatedAt: LocalDateTime
+  +status: HabitStatus
+  +sortOrder: Int
+}
+
+class HabitRecord {
+  +id: Long
+  +habitId: Long        ' 外键 → Habit.id
+  +date: LocalDate      ' yyyy-MM-dd
+  +count: Int
+  +status: HabitRecordStatus
+  +createdAt: LocalDateTime
+}
+
+' =========================
+' 枚举类型
+' =========================
+
+enum DeadlineType {
+  TASK
+  HABIT
+}
+
+enum HabitPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum HabitGoalType {
+  PER_PERIOD
+  TOTAL
+}
+
+enum HabitStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum HabitRecordStatus {
+  COMPLETED
+  SKIPPED
+}
+
+' =========================
+' 关系
+' =========================
+
+' 一条 DDLItem（type = HABIT）最多对应一条 Habit
+DDLItem "1" o-- "0..1" Habit : ddlId / id
+
+' 一条 Habit 对应 0..* 条打卡记录
+Habit "1" o-- "0..*" HabitRecord : habitId / id
+
+' 类型关系（作为属性类型）
+DDLItem --> DeadlineType
+Habit --> HabitPeriod
+Habit --> HabitGoalType
+Habit --> HabitStatus
+HabitRecord --> HabitRecordStatus
+
+@enduml

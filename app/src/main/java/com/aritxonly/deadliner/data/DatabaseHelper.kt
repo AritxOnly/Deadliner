@@ -35,7 +35,7 @@ class DatabaseHelper private constructor(context: Context) :
         }
 
         const val DATABASE_NAME = "deadliner.db"
-        private const val DATABASE_VERSION = 11
+        private const val DATABASE_VERSION = 13
         private const val TABLE_NAME = "ddl_items"
         private const val COLUMN_ID = "id"
         private const val COLUMN_NAME = "name"
@@ -51,11 +51,41 @@ class DatabaseHelper private constructor(context: Context) :
         private const val COLUMN_HABIT_TOTAL_COUNT = "habit_total_count"
         private const val COLUMN_CALENDAR_EVENT_ID = "calendar_event"
         private const val COLUMN_TIMESTAMP = "timestamp"
+
         private const val COLUMN_UID = "uid"               // 跨端稳定ID，例如 "a83f05:24"
         private const val COLUMN_DELETED = "deleted"       // 0/1，软删墓碑
         private const val COLUMN_VER_TS = "ver_ts"         // 版本时间（UTC ISO8601）
         private const val COLUMN_VER_CTR = "ver_ctr"       // 版本计数（HLC counter）
         private const val COLUMN_VER_DEV = "ver_dev"       // 版本设备ID
+
+        // —— 新增 habits / habit_records —— //
+        private const val TABLE_HABIT = "habits"
+        private const val TABLE_HABIT_RECORD = "habit_records"
+
+        // habits 表字段
+        private const val HABIT_ID = "id"
+        private const val HABIT_DDL_ID = "ddl_id"
+        private const val HABIT_NAME = "name"
+        private const val HABIT_DESC = "description"
+        private const val HABIT_COLOR = "color"
+        private const val HABIT_ICON_KEY = "icon_key"
+        private const val HABIT_PERIOD = "period"
+        private const val HABIT_TIMES_PER_PERIOD = "times_per_period"
+        private const val HABIT_GOAL_TYPE = "goal_type"
+        private const val HABIT_TOTAL_TARGET = "total_target"
+        private const val HABIT_CREATED_AT = "created_at"
+        private const val HABIT_UPDATED_AT = "updated_at"
+        private const val HABIT_STATUS = "status"
+        private const val HABIT_SORT_ORDER = "sort_order"
+        private const val HABIT_ALARM_TIME = "alarm_time"
+
+        // habit_records 表字段
+        private const val HR_ID = "id"
+        private const val HR_HABIT_ID = "habit_id"
+        private const val HR_DATE = "date"
+        private const val HR_COUNT = "count"
+        private const val HR_STATUS = "status"
+        private const val HR_CREATED_AT = "created_at"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -93,6 +123,45 @@ class DatabaseHelper private constructor(context: Context) :
         )
     """.trimIndent())
         db.execSQL("INSERT OR IGNORE INTO sync_state(id, device_id) VALUES(1, hex(randomblob(3)))")
+
+
+        // Habit 表
+        db.execSQL(
+            """
+        CREATE TABLE $TABLE_HABIT (
+            $HABIT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            $HABIT_DDL_ID INTEGER NOT NULL UNIQUE,
+            $HABIT_NAME TEXT NOT NULL,
+            $HABIT_DESC TEXT,
+            $HABIT_COLOR INTEGER,
+            $HABIT_ICON_KEY TEXT,
+            $HABIT_PERIOD TEXT NOT NULL,
+            $HABIT_TIMES_PER_PERIOD INTEGER NOT NULL DEFAULT 1,
+            $HABIT_GOAL_TYPE TEXT NOT NULL DEFAULT 'PER_PERIOD',
+            $HABIT_TOTAL_TARGET INTEGER,
+            $HABIT_CREATED_AT TEXT NOT NULL,
+            $HABIT_UPDATED_AT TEXT NOT NULL,
+            $HABIT_STATUS TEXT NOT NULL DEFAULT 'ACTIVE',
+            $HABIT_SORT_ORDER INTEGER NOT NULL DEFAULT 0,
+            $HABIT_ALARM_TIME TEXT,
+            FOREIGN KEY($HABIT_DDL_ID) REFERENCES $TABLE_NAME($COLUMN_ID) ON DELETE CASCADE
+        )
+        """.trimIndent()
+        )
+        db.execSQL(
+            """
+        CREATE TABLE $TABLE_HABIT_RECORD (
+            $HR_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            $HR_HABIT_ID INTEGER NOT NULL,
+            $HR_DATE TEXT NOT NULL,
+            $HR_COUNT INTEGER NOT NULL DEFAULT 1,
+            $HR_STATUS TEXT NOT NULL DEFAULT 'COMPLETED',
+            $HR_CREATED_AT TEXT NOT NULL,
+            FOREIGN KEY($HR_HABIT_ID) REFERENCES $TABLE_HABIT($HABIT_ID) ON DELETE CASCADE
+        )
+        """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_hr_habit_date ON $TABLE_HABIT_RECORD($HR_HABIT_ID, $HR_DATE)")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -182,6 +251,62 @@ class DatabaseHelper private constructor(context: Context) :
                     // 唯一索引
                     execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_ddl_uid ON $TABLE_NAME($COLUMN_UID)")
                 } finally {
+                }
+            }
+        }
+        if (oldVersion < 12) {
+            db.transaction {
+                // habits
+                execSQL(
+                    """
+            CREATE TABLE IF NOT EXISTS $TABLE_HABIT (
+                $HABIT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $HABIT_DDL_ID INTEGER NOT NULL UNIQUE,
+                $HABIT_NAME TEXT NOT NULL,
+                $HABIT_DESC TEXT,
+                $HABIT_COLOR INTEGER,
+                $HABIT_ICON_KEY TEXT,
+                $HABIT_PERIOD TEXT NOT NULL,
+                $HABIT_TIMES_PER_PERIOD INTEGER NOT NULL DEFAULT 1,
+                $HABIT_GOAL_TYPE TEXT NOT NULL DEFAULT 'PER_PERIOD',
+                $HABIT_TOTAL_TARGET INTEGER,
+                $HABIT_CREATED_AT TEXT NOT NULL,
+                $HABIT_UPDATED_AT TEXT NOT NULL,
+                $HABIT_STATUS TEXT NOT NULL DEFAULT 'ACTIVE',
+                $HABIT_SORT_ORDER INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY($HABIT_DDL_ID) REFERENCES $TABLE_NAME($COLUMN_ID) ON DELETE CASCADE
+            )
+            """.trimIndent()
+                )
+
+                // habit_records
+                execSQL(
+                    """
+            CREATE TABLE IF NOT EXISTS $TABLE_HABIT_RECORD (
+                $HR_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $HR_HABIT_ID INTEGER NOT NULL,
+                $HR_DATE TEXT NOT NULL,
+                $HR_COUNT INTEGER NOT NULL DEFAULT 1,
+                $HR_STATUS TEXT NOT NULL DEFAULT 'COMPLETED',
+                $HR_CREATED_AT TEXT NOT NULL,
+                FOREIGN KEY($HR_HABIT_ID) REFERENCES $TABLE_HABIT($HABIT_ID) ON DELETE CASCADE
+            )
+            """.trimIndent()
+                )
+
+                execSQL("CREATE INDEX IF NOT EXISTS idx_hr_habit_date ON $TABLE_HABIT_RECORD($HR_HABIT_ID, $HR_DATE)")
+
+                migrateLegacyHabits(this)
+            }
+        }
+        if (oldVersion < 13) {
+            db.transaction {
+                try {
+                    execSQL(
+                        "ALTER TABLE $TABLE_HABIT ADD COLUMN $HABIT_ALARM_TIME TEXT"
+                    )
+                } catch (e: Exception) {
+                    Log.e("DatabaseHelper", "Add alarm_time to habits failed", e)
                 }
             }
         }
@@ -335,6 +460,420 @@ class DatabaseHelper private constructor(context: Context) :
             put(COLUMN_VER_TS, v.ts); put(COLUMN_VER_CTR, v.ctr); put(COLUMN_VER_DEV, v.dev)
         }
         db.update(TABLE_NAME, values, "$COLUMN_ID = ?", arrayOf(id.toString()))
+    }
+    // endregion
+
+    // region Habit数据库
+    fun insertHabit(habit: com.aritxonly.deadliner.model.Habit): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(HABIT_DDL_ID, habit.ddlId)
+            put(HABIT_NAME, habit.name)
+            put(HABIT_DESC, habit.description)
+            habit.color?.let { put(HABIT_COLOR, it) } ?: putNull(HABIT_COLOR)
+            put(HABIT_ICON_KEY, habit.iconKey)
+            put(HABIT_PERIOD, habit.period.name)              // DAILY / WEEKLY / MONTHLY
+            put(HABIT_TIMES_PER_PERIOD, habit.timesPerPeriod)
+            put(HABIT_GOAL_TYPE, habit.goalType.name)         // PER_PERIOD / TOTAL
+            habit.totalTarget?.let { put(HABIT_TOTAL_TARGET, it) } ?: putNull(HABIT_TOTAL_TARGET)
+            put(HABIT_CREATED_AT, habit.createdAt.toString()) // ISO-8601
+            put(HABIT_UPDATED_AT, habit.updatedAt.toString())
+            put(HABIT_STATUS, habit.status.name)              // ACTIVE / ARCHIVED
+            put(HABIT_SORT_ORDER, habit.sortOrder)
+            habit.alarmTime?.let { put(HABIT_ALARM_TIME, it) } ?: putNull(HABIT_ALARM_TIME)
+        }
+        return db.insert(TABLE_HABIT, null, values)
+    }
+
+    fun updateHabit(habit: com.aritxonly.deadliner.model.Habit) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            // ddlId 一般不变，不更新
+            put(HABIT_NAME, habit.name)
+            put(HABIT_DESC, habit.description)
+            habit.color?.let { put(HABIT_COLOR, it) } ?: putNull(HABIT_COLOR)
+            put(HABIT_ICON_KEY, habit.iconKey)
+            put(HABIT_PERIOD, habit.period.name)
+            put(HABIT_TIMES_PER_PERIOD, habit.timesPerPeriod)
+            put(HABIT_GOAL_TYPE, habit.goalType.name)
+            habit.totalTarget?.let { put(HABIT_TOTAL_TARGET, it) } ?: putNull(HABIT_TOTAL_TARGET)
+            put(HABIT_UPDATED_AT, habit.updatedAt.toString())
+            put(HABIT_STATUS, habit.status.name)
+            put(HABIT_SORT_ORDER, habit.sortOrder)
+            habit.alarmTime?.let { put(HABIT_ALARM_TIME, it) } ?: putNull(HABIT_ALARM_TIME)
+        }
+        db.update(TABLE_HABIT, values, "$HABIT_ID = ?", arrayOf(habit.id.toString()))
+    }
+
+    fun getHabitByDdlId(ddlId: Long): com.aritxonly.deadliner.model.Habit? {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_HABIT,
+            null,
+            "$HABIT_DDL_ID = ?",
+            arrayOf(ddlId.toString()),
+            null,
+            null,
+            null
+        )
+        val list = parseHabitCursor(cursor)
+        return list.firstOrNull()
+    }
+
+    fun getHabitById(id: Long): com.aritxonly.deadliner.model.Habit? {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_HABIT,
+            null,
+            "$HABIT_ID = ?",
+            arrayOf(id.toString()),
+            null,
+            null,
+            null
+        )
+        val list = parseHabitCursor(cursor)
+        return list.firstOrNull()
+    }
+
+    fun getAllHabits(): List<com.aritxonly.deadliner.model.Habit> {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_HABIT,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "$HABIT_SORT_ORDER ASC, $HABIT_ID ASC"
+        )
+        return parseHabitCursor(cursor)
+    }
+
+    fun deleteHabitByDdlId(ddlId: Long) {
+        val db = writableDatabase
+        db.delete(TABLE_HABIT, "$HABIT_DDL_ID = ?", arrayOf(ddlId.toString()))
+    }
+
+    /**
+     * 内部帮助函数：把 cursor 解析成 Habit 列表
+     */
+    private fun parseHabitCursor(cursor: Cursor): List<com.aritxonly.deadliner.model.Habit> {
+        val result = mutableListOf<com.aritxonly.deadliner.model.Habit>()
+        with(cursor) {
+            while (moveToNext()) {
+                val id = getLong(getColumnIndexOrThrow(HABIT_ID))
+                val ddlId = getLong(getColumnIndexOrThrow(HABIT_DDL_ID))
+                val name = getString(getColumnIndexOrThrow(HABIT_NAME))
+                val desc = getString(getColumnIndexOrThrow(HABIT_DESC))
+                val colorIdx = getColumnIndexOrThrow(HABIT_COLOR)
+                val color = if (isNull(colorIdx)) null else getInt(colorIdx)
+                val iconKey = getString(getColumnIndexOrThrow(HABIT_ICON_KEY))
+                val period = com.aritxonly.deadliner.model.HabitPeriod.valueOf(
+                    getString(getColumnIndexOrThrow(HABIT_PERIOD))
+                )
+                val timesPerPeriod = getInt(getColumnIndexOrThrow(HABIT_TIMES_PER_PERIOD))
+                val goalType = com.aritxonly.deadliner.model.HabitGoalType.valueOf(
+                    getString(getColumnIndexOrThrow(HABIT_GOAL_TYPE))
+                )
+                val totalTargetIdx = getColumnIndexOrThrow(HABIT_TOTAL_TARGET)
+                val totalTarget = if (isNull(totalTargetIdx)) null else getInt(totalTargetIdx)
+                val createdAt = java.time.LocalDateTime.parse(
+                    getString(getColumnIndexOrThrow(HABIT_CREATED_AT))
+                )
+                val updatedAt = java.time.LocalDateTime.parse(
+                    getString(getColumnIndexOrThrow(HABIT_UPDATED_AT))
+                )
+                val status = com.aritxonly.deadliner.model.HabitStatus.valueOf(
+                    getString(getColumnIndexOrThrow(HABIT_STATUS))
+                )
+                val sortOrder = getInt(getColumnIndexOrThrow(HABIT_SORT_ORDER))
+
+                val alarmIdx = getColumnIndexOrThrow(HABIT_ALARM_TIME)
+                val alarmTime = if (isNull(alarmIdx)) null else getString(alarmIdx)
+
+                result.add(
+                    com.aritxonly.deadliner.model.Habit(
+                        id = id,
+                        ddlId = ddlId,
+                        name = name,
+                        description = desc,
+                        color = color,
+                        iconKey = iconKey,
+                        period = period,
+                        timesPerPeriod = timesPerPeriod,
+                        goalType = goalType,
+                        totalTarget = totalTarget,
+                        createdAt = createdAt,
+                        updatedAt = updatedAt,
+                        status = status,
+                        sortOrder = sortOrder,
+                        alarmTime = alarmTime
+                    )
+                )
+            }
+            close()
+        }
+        return result
+    }
+    // endregion
+
+    // region Habit记录
+    fun insertHabitRecord(record: com.aritxonly.deadliner.model.HabitRecord): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(HR_HABIT_ID, record.habitId)
+            put(HR_DATE, record.date.toString())           // LocalDate → "yyyy-MM-dd"
+            put(HR_COUNT, record.count)
+            put(HR_STATUS, record.status.name)
+            put(HR_CREATED_AT, record.createdAt.toString())
+        }
+        return db.insert(TABLE_HABIT_RECORD, null, values)
+    }
+
+    fun getHabitRecordsForHabitOnDate(habitId: Long, date: java.time.LocalDate): List<com.aritxonly.deadliner.model.HabitRecord> {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_HABIT_RECORD,
+            null,
+            "$HR_HABIT_ID = ? AND $HR_DATE = ?",
+            arrayOf(habitId.toString(), date.toString()),
+            null,
+            null,
+            null
+        )
+        return parseHabitRecordCursor(cursor)
+    }
+
+    fun getHabitRecordsForDate(date: java.time.LocalDate): List<com.aritxonly.deadliner.model.HabitRecord> {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_HABIT_RECORD,
+            null,
+            "$HR_DATE = ?",
+            arrayOf(date.toString()),
+            null,
+            null,
+            null
+        )
+        return parseHabitRecordCursor(cursor)
+    }
+
+    fun getHabitRecordsForHabitInRange(
+        habitId: Long,
+        startDate: java.time.LocalDate,
+        endDateInclusive: java.time.LocalDate
+    ): List<com.aritxonly.deadliner.model.HabitRecord> {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_HABIT_RECORD,
+            null,
+            "$HR_HABIT_ID = ? AND $HR_DATE BETWEEN ? AND ?",
+            arrayOf(habitId.toString(), startDate.toString(), endDateInclusive.toString()),
+            null,
+            null,
+            "$HR_DATE ASC"
+        )
+        return parseHabitRecordCursor(cursor)
+    }
+
+    fun deleteHabitRecordsForHabitOnDate(habitId: Long, date: java.time.LocalDate) {
+        val db = writableDatabase
+        db.delete(
+            TABLE_HABIT_RECORD,
+            "$HR_HABIT_ID = ? AND $HR_DATE = ?",
+            arrayOf(habitId.toString(), date.toString())
+        )
+    }
+
+    /**
+     * 内部帮助函数：把 cursor 解析成 HabitRecord 列表
+     */
+    private fun parseHabitRecordCursor(cursor: Cursor): List<com.aritxonly.deadliner.model.HabitRecord> {
+        val result = mutableListOf<com.aritxonly.deadliner.model.HabitRecord>()
+        with(cursor) {
+            while (moveToNext()) {
+                val id = getLong(getColumnIndexOrThrow(HR_ID))
+                val habitId = getLong(getColumnIndexOrThrow(HR_HABIT_ID))
+                val date = java.time.LocalDate.parse(getString(getColumnIndexOrThrow(HR_DATE)))
+                val count = getInt(getColumnIndexOrThrow(HR_COUNT))
+                val status = com.aritxonly.deadliner.model.HabitRecordStatus.valueOf(
+                    getString(getColumnIndexOrThrow(HR_STATUS))
+                )
+                val createdAt = java.time.LocalDateTime.parse(
+                    getString(getColumnIndexOrThrow(HR_CREATED_AT))
+                )
+
+                result.add(
+                    com.aritxonly.deadliner.model.HabitRecord(
+                        id = id,
+                        habitId = habitId,
+                        date = date,
+                        count = count,
+                        status = status,
+                        createdAt = createdAt
+                    )
+                )
+            }
+            close()
+        }
+        return result
+    }
+    // endregion
+
+    // region Habit旧版本迁移
+    private fun migrateLegacyHabits(db: SQLiteDatabase) {
+        Log.d("DatabaseHelper", "migrateLegacyHabits: start")
+
+        // 只处理 type = 'habit' 且未删除的
+        val cursor = db.query(
+            TABLE_NAME,
+            arrayOf(COLUMN_ID, COLUMN_NAME, COLUMN_NOTE, COLUMN_TIMESTAMP, COLUMN_TYPE),
+            "$COLUMN_DELETED = 0 AND $COLUMN_TYPE = ?",
+            arrayOf(DeadlineType.HABIT.toString()),    // toString() 返回小写 "habit"
+            null,
+            null,
+            null
+        )
+
+        cursor.use { c ->
+            while (c.moveToNext()) {
+                val ddlId = c.getLong(c.getColumnIndexOrThrow(COLUMN_ID))
+                val name = c.getString(c.getColumnIndexOrThrow(COLUMN_NAME))
+                val note = c.getString(c.getColumnIndexOrThrow(COLUMN_NOTE)) ?: ""
+                val ts = c.getString(c.getColumnIndexOrThrow(COLUMN_TIMESTAMP)) ?: ""
+
+                // 如果该 ddl 已经有 Habit 记录，跳过（避免重复）
+                db.rawQuery(
+                    "SELECT $HABIT_ID FROM $TABLE_HABIT WHERE $HABIT_DDL_ID = ? LIMIT 1",
+                    arrayOf(ddlId.toString())
+                ).use { hc ->
+                    if (hc.moveToFirst()) {
+                        return
+                    }
+                }
+
+                // note 为空或明显不是 JSON，跳过
+                if (note.isBlank() || !note.trimStart().startsWith("{")) {
+                    continue
+                }
+
+                try {
+                    // 尝试按旧 HabitMetaData JSON 解析
+                    val habitId = migrateOneHabitFromNote(db, ddlId, name, note, ts)
+                    if (habitId != null) {
+                        Log.d("DatabaseHelper", "migrateLegacyHabits: migrated ddlId=$ddlId -> habitId=$habitId")
+                    }
+                } catch (e: Exception) {
+                    Log.e("DatabaseHelper", "migrateLegacyHabits: failed for ddlId=$ddlId", e)
+                    // 出错就跳过这条，避免整个升级挂掉
+                }
+            }
+        }
+
+        Log.d("DatabaseHelper", "migrateLegacyHabits: done")
+    }
+
+    private fun migrateOneHabitFromNote(
+        db: SQLiteDatabase,
+        ddlId: Long,
+        ddlName: String,
+        note: String,
+        timestamp: String
+    ): Long? {
+        // 用 org.json 解析，避免依赖 Gson/Moshi
+        val obj = org.json.JSONObject(note)
+
+        // 频率类型（枚举序列化后一般就是 "DAILY"/"WEEKLY"/"MONTHLY"/"TOTAL"）
+        val freqTypeStr = obj.optString("frequencyType", "DAILY").uppercase()
+        val frequency = obj.optInt("frequency", 1)
+        val total = obj.optInt("total", 0)
+
+        // 映射到字符串形式（直接写入 DB，不用依赖 HabitPeriod/HabitGoalType 枚举）
+        val habitPeriod: String = when (freqTypeStr) {
+            "DAILY" -> "DAILY"
+            "WEEKLY" -> "WEEKLY"
+            "MONTHLY" -> "MONTHLY"
+            "TOTAL" -> "DAILY"       // 没有 TOTAL 周期，用 DAILY 兜底
+            else -> "DAILY"
+        }
+
+        val goalType: String
+        val totalTarget: Int?
+
+        if (freqTypeStr == "TOTAL") {
+            goalType = "TOTAL"
+            totalTarget = if (total > 0) total else null
+        } else {
+            goalType = "PER_PERIOD"
+            totalTarget = null
+        }
+
+        val nowStr = java.time.LocalDateTime.now().toString()
+        val createdAt = if (timestamp.isNotBlank()) timestamp else nowStr
+        val updatedAt = nowStr
+
+        // 1) 插入 habits
+        val habitValues = ContentValues().apply {
+            put(HABIT_DDL_ID, ddlId)
+            put(HABIT_NAME, ddlName)
+            put(HABIT_DESC, "")                    // 先不从 note 拆备注，避免误伤
+            putNull(HABIT_COLOR)
+            put(HABIT_ICON_KEY, null as String?)
+            put(HABIT_PERIOD, habitPeriod)
+            put(HABIT_TIMES_PER_PERIOD, frequency)
+            put(HABIT_GOAL_TYPE, goalType)
+            if (totalTarget != null) put(HABIT_TOTAL_TARGET, totalTarget) else putNull(HABIT_TOTAL_TARGET)
+            put(HABIT_CREATED_AT, createdAt)
+            put(HABIT_UPDATED_AT, updatedAt)
+            put(HABIT_STATUS, "ACTIVE")
+            put(HABIT_SORT_ORDER, 0)
+        }
+
+        val habitId = db.insert(TABLE_HABIT, null, habitValues)
+        if (habitId <= 0L) {
+            // 插入失败就不继续
+            return null
+        }
+
+        // 2) 展开 completedDates → habit_records
+        val completed = mutableListOf<String>()
+        val datesArray = obj.optJSONArray("completedDates")
+        if (datesArray != null) {
+            for (i in 0 until datesArray.length()) {
+                val d = datesArray.optString(i, null)
+                if (!d.isNullOrBlank()) {
+                    completed.add(d)
+                }
+            }
+        }
+
+        fun parseToLocalDateString(raw: String): String? {
+            return try {
+                java.time.LocalDate.parse(raw).toString()
+            } catch (_: Exception) {
+                try {
+                    java.time.LocalDateTime.parse(raw).toLocalDate().toString()
+                } catch (_: Exception) {
+                    null
+                }
+            }
+        }
+
+        for (raw in completed) {
+            val localDateStr = parseToLocalDateString(raw) ?: continue
+
+            val recordValues = ContentValues().apply {
+                put(HR_HABIT_ID, habitId)
+                put(HR_DATE, localDateStr)               // "yyyy-MM-dd"
+                put(HR_COUNT, 1)
+                put(HR_STATUS, "COMPLETED")
+                put(HR_CREATED_AT, nowStr)
+            }
+
+            db.insert(TABLE_HABIT_RECORD, null, recordValues)
+        }
+
+        return habitId
     }
     // endregion
 

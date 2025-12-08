@@ -43,7 +43,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:layout_marginHorizontal="16dp"
-                android:text="@string/settings_general"
+                android:text="@string/settings_behavior"
                 android:textStyle="bold"
                 android:textSize="@dimen/settings_title_font_size"
                 android:textColor="?attr/colorOnSurface"
