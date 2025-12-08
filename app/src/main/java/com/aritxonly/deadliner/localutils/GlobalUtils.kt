@@ -341,15 +341,15 @@ object GlobalUtils {
 
     private var _styleFlow: MutableStateFlow<UiStyle>? = null
     val styleFlow: StateFlow<UiStyle>
-        get() = _styleFlow ?: MutableStateFlow(UiStyle.Classic).also {
+        get() = _styleFlow ?: MutableStateFlow(UiStyle.Simplified).also {
             _styleFlow = it
         }
 
     var style: String
         get() = if (::sharedPreferences.isInitialized)
-            sharedPreferences.getString("style", UiStyle.Classic.key) ?: UiStyle.Classic.key
+            sharedPreferences.getString("style", UiStyle.Simplified.key) ?: UiStyle.Simplified.key
         else
-            UiStyle.Classic.key
+            UiStyle.Simplified.key
         set(value) {
             check(::sharedPreferences.isInitialized) { "GlobalUtils not initialized" }
             sharedPreferences.edit { putString("style", value) }

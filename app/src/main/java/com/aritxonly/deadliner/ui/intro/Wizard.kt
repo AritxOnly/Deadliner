@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -103,62 +104,85 @@ internal fun InfoStepScreen(
     title: String,
     description: String,
     primaryButtonText: String,
-    @DrawableRes screenshot: Int?,   // ← 新增
+    @DrawableRes screenshot: Int?,
     onPrimaryClick: () -> Unit
 ) {
+    val painter = screenshot?.let { painterResource(id = it) }
+
+    // 动态算一下图片宽高比，算不出来就用 16:9 兜底
+    val aspectRatio = remember(painter) {
+        if (painter == null) {
+            16f / 9f
+        } else {
+            val size = painter.intrinsicSize
+            if (!size.isUnspecified && size.height > 0f) {
+                size.width / size.height
+            } else {
+                16f / 9f
+            }
+        }
+    }
+
     Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceBetween
+        modifier = Modifier
+            .fillMaxSize()
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        // 顶部文字 + 截图区域（不再用 weight，避免 fillMaxSize 盖住别人）
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(16.dp))
+                // 按图片比例给高度；兜底 16:9
+                .aspectRatio(aspectRatio)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+            contentAlignment = Alignment.Center
         ) {
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (screenshot != null) {
-                    Image(
-                        painter = painterResource(id = screenshot),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Text(
-                        text = "在这里放截图（TODO）",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            if (painter != null) {
+                Image(
+                    painter = painter,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    // 尽量铺满 Box，但保持比例；边缘多一点空白没问题
+                    contentScale = ContentScale.Fit
+                )
+            } else {
+                Text(
+                    text = "在这里放截图（TODO）",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
-        Button(
-            onClick = onPrimaryClick,
-            modifier = Modifier
-                .align(Alignment.End)
-                .padding(top = 16.dp)
+        // 中间留空，把按钮顶到底部
+        Spacer(modifier = Modifier.weight(1f))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
         ) {
-            Text(primaryButtonText)
+            Button(
+                onClick = onPrimaryClick,
+            ) {
+                Text(primaryButtonText)
+            }
         }
     }
 }

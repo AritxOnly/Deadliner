@@ -15,53 +15,71 @@ import com.google.android.material.button.MaterialButton
 
 class IntroFragmentWelcome : Fragment() {
 
+    private lateinit var circularButton: MaterialButton
+    private lateinit var welcomeText: TextView
+    private lateinit var welcomeTextAlt: TextView
+
+    private var hasAnimated = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val view = inflater.inflate(R.layout.fragment_intro_welcome, container, false)
 
-        // 获取按钮
-        val circularButton: MaterialButton = view.findViewById(R.id.circularButton)
-        val welcomeText: TextView = view.findViewById(R.id.welcomeText)
-        val welcomeTextAlt: TextView = view.findViewById(R.id.welcomeTextAlt)
+        circularButton = view.findViewById(R.id.circularButton)
+        welcomeText = view.findViewById(R.id.welcomeText)
+        welcomeTextAlt = view.findViewById(R.id.welcomeTextAlt)
 
-        // TextAlt 动画效果（从下往上上浮）
-        val textAltAnimator = ObjectAnimator.ofFloat(welcomeTextAlt, "translationY", 500f, 0f)
-        val textAltAlphaAnimator = ObjectAnimator.ofFloat(welcomeTextAlt, "alpha", 0f, 1f)
-        textAltAnimator.duration = 1000
-        textAltAlphaAnimator.duration = 500
-        textAltAnimator.start()
-        textAltAlphaAnimator.start()
+        // 初始化状态：一开始看不到
+        welcomeText.text = ""
+        welcomeTextAlt.translationY = 500f
+        welcomeTextAlt.alpha = 0f
+        circularButton.alpha = 0f
 
-        // CircularButton 渐显动画
-        val buttonAlphaAnimator = ObjectAnimator.ofFloat(circularButton, "alpha", 0f, 1f)
-        buttonAlphaAnimator.duration = 1000
-        buttonAlphaAnimator.start()
+        // 按钮点击监听可以提前绑好
+        circularButton.setOnClickListener {
+            if (hasAnimated) {
+                setFragmentResult("buttonClick", Bundle())
+            }
+        }
 
-        // 打字机效果：逐字显示文本
+        return view
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // 只在第一次真正显示这个 Fragment 时跑一遍动画
+        if (!hasAnimated) {
+            startAnimations()
+            hasAnimated = true
+        }
+    }
+
+    private fun startAnimations() {
+        // TextAlt 动画
+        welcomeTextAlt.animate()
+            .translationY(0f)
+            .alpha(1f)
+            .setDuration(1000L)
+            .start()
+
+        // Button 渐显
+        circularButton.animate()
+            .alpha(1f)
+            .setDuration(1000L)
+            .start()
+
+        // 打字机效果
         val text = resources.getString(R.string.welcome)
-        val textAnimator = ValueAnimator.ofInt(0, text.length)
-        textAnimator.duration = 2000 // 控制打字机速度
-        textAnimator.addUpdateListener { animator ->
-            val currentLength = animator.animatedValue as Int
-            welcomeText.text = text[0].toString()
-            if (welcomeText.text.isNotEmpty()) { // 保证有内容
-                // 逐步显示文本
-                welcomeText.text = text.substring(0, currentLength)
+        val textAnimator = ValueAnimator.ofInt(0, text.length).apply {
+            duration = 2000L
+            addUpdateListener { animator ->
+                val len = animator.animatedValue as Int
+                welcomeText.text = text.substring(0, len)
             }
         }
         textAnimator.start()
-
-        // 设置按钮点击事件，使用 FragmentResult 传递事件
-        Handler().postDelayed({
-            circularButton.setOnClickListener {
-                setFragmentResult("buttonClick", Bundle()) // 通知 Activity 按钮被点击
-            }
-        }, 2000)
-
-
-        return view
     }
 }
