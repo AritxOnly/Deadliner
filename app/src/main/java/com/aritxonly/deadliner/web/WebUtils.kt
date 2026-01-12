@@ -107,14 +107,12 @@ class WebUtils(
 
     /** 目录是否存在（优先 HEAD；部分服务对目录 HEAD 不友好就退回 PROPFIND） */
     suspend fun dirExists(dir: String): Boolean = withContext(Dispatchers.IO) {
-        val url = joinUrl(baseUrl, dir.trimEnd('/') + "/")
-        // 尝试 HEAD
-        runCatching {
-            val req = auth(Request.Builder().url(url).head()).build()
-            client.newCall(req).execute().use { resp ->
-                return@use resp.code in listOf(200, 204, 207) // 207=Multi-Status(PROPFIND), 有些也会给 200/204
-            }
-        }.getOrDefault(false)
+        val code = runCatching {
+            propfind(dir, "0")
+        }.getOrDefault(404)
+
+        // 207 是 WebDAV 的标准存在返回码，200/301 也算
+        return@withContext code in listOf(200, 207, 301, 302)
     }
 
     /** MKCOL 创建目录。已存在时部分服务返回 405/409，按“成功”处理。 */
@@ -129,6 +127,25 @@ class WebUtils(
                 405, 409 -> true               // 已存在 / 冲突（很多实现会这么回）
                 else -> false
             }
+        }
+    }
+
+    private suspend fun propfind(path: String, depth: String = "0"): Int = withContext(Dispatchers.IO) {
+        ensureSyncEnabled() // 同样加上开关检查
+        val url = joinUrl(baseUrl, path.trimEnd('/') + "/") // 目录通常带斜杠
+
+        // OkHttp 允许自定义 Method
+        // PROPFIND 不需要 Body，但 OkHttp 的 method() 可能要求 nullable body，这里传 null 即可，或者空 body
+        val rb = Request.Builder()
+            .url(url)
+            .method("PROPFIND", null) // method 字符串大写
+            .header("Depth", depth)
+        // .header("Content-Type", "application/xml") // 可选
+
+        auth(rb)
+
+        client.newCall(rb.build()).execute().use { resp ->
+            return@use resp.code
         }
     }
 
@@ -157,14 +174,12 @@ class WebUtils(
 
     suspend fun ensureDir(dirname: String): Boolean = withContext(Dispatchers.IO) {
         if (!GlobalUtils.cloudSyncEnable) return@withContext false
-        val dir = dirname.trim('/')
 
-        // 1) HEAD 试探
-        val (code, _, _) = head("$dir/")
-        if (code in listOf(200, 204, 301, 302)) return@withContext true
-        if (code == 401 || code == 403) return@withContext false
+        // 1. 使用 PROPFIND 检测
+        // 如果存在（包括坚果云的 207），直接返回 true
+        if (dirExists(dirname)) return@withContext true
 
-        // 2) MKCOL（部分服务会把已存在也回 405/409，这里当成功）
+        // 2. 如果不存在，尝试 MKCOL
         return@withContext runCatching {
             mkcol(dirname)
         }.getOrDefault(false)
