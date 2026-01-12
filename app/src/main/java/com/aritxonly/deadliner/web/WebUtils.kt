@@ -1,6 +1,8 @@
 package com.aritxonly.deadliner.web
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -150,6 +152,7 @@ class WebUtils(
     }
 
     /** 确保父目录链存在，比如 Deadliner/changes-2025-08.ndjson -> 逐级保证 Deadliner/ */
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     suspend fun ensureParents(filePath: String): Boolean {
         // 只处理目录部分
         val cleaned = filePath.trim().trimStart('/')
