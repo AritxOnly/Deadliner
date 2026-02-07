@@ -1,8 +1,6 @@
 package com.aritxonly.deadliner.web
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -109,12 +107,14 @@ class WebUtils(
 
     /** 目录是否存在（优先 HEAD；部分服务对目录 HEAD 不友好就退回 PROPFIND） */
     suspend fun dirExists(dir: String): Boolean = withContext(Dispatchers.IO) {
-        val code = runCatching {
-            propfind(dir, "0")
-        }.getOrDefault(404)
-
-        // 207 是 WebDAV 的标准存在返回码，200/301 也算
-        return@withContext code in listOf(200, 207, 301, 302)
+        val url = joinUrl(baseUrl, dir.trimEnd('/') + "/")
+        // 尝试 HEAD
+        runCatching {
+            val req = auth(Request.Builder().url(url).head()).build()
+            client.newCall(req).execute().use { resp ->
+                return@use resp.code in listOf(200, 204, 207) // 207=Multi-Status(PROPFIND), 有些也会给 200/204
+            }
+        }.getOrDefault(false)
     }
 
     /** MKCOL 创建目录。已存在时部分服务返回 405/409，按“成功”处理。 */
@@ -132,27 +132,7 @@ class WebUtils(
         }
     }
 
-    private suspend fun propfind(path: String, depth: String = "0"): Int = withContext(Dispatchers.IO) {
-        ensureSyncEnabled() // 同样加上开关检查
-        val url = joinUrl(baseUrl, path.trimEnd('/') + "/") // 目录通常带斜杠
-
-        // OkHttp 允许自定义 Method
-        // PROPFIND 不需要 Body，但 OkHttp 的 method() 可能要求 nullable body，这里传 null 即可，或者空 body
-        val rb = Request.Builder()
-            .url(url)
-            .method("PROPFIND", null) // method 字符串大写
-            .header("Depth", depth)
-        // .header("Content-Type", "application/xml") // 可选
-
-        auth(rb)
-
-        client.newCall(rb.build()).execute().use { resp ->
-            return@use resp.code
-        }
-    }
-
     /** 确保父目录链存在，比如 Deadliner/changes-2025-08.ndjson -> 逐级保证 Deadliner/ */
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     suspend fun ensureParents(filePath: String): Boolean {
         // 只处理目录部分
         val cleaned = filePath.trim().trimStart('/')
@@ -166,24 +146,19 @@ class WebUtils(
         for (seg in parts) {
             if (seg.isBlank()) continue
             cur = if (cur.isEmpty()) seg else "$cur/$seg"
-            val exists = dirExists(cur)
-            if (!exists) {
-                val ok = mkcol(cur)
-                if (!ok) return false
-            }
+            // 跳过dirExists检查，直接尝试创建目录，因为有些WebDAV服务器对目录HEAD请求返回403
+            val ok = mkcol(cur)
+            // mkcol返回true表示目录已存在或创建成功，false表示真正的错误
+            if (!ok) return false
         }
         return true
     }
 
     suspend fun ensureDir(dirname: String): Boolean = withContext(Dispatchers.IO) {
         if (!GlobalUtils.cloudSyncEnable) return@withContext false
-
-        // 1. 使用 PROPFIND 检测
-        // 如果存在（包括坚果云的 207），直接返回 true
-        if (dirExists(dirname)) return@withContext true
-
-        // 2. 如果不存在，尝试 MKCOL
-        return@withContext runCatching {
+        // 直接使用 MKCOL，避免 HEAD 请求被某些服务器（如坚果云）拦截返回 403
+        // MKCOL 对已存在的目录会返回 405/409，按成功处理
+        runCatching {
             mkcol(dirname)
         }.getOrDefault(false)
     }
