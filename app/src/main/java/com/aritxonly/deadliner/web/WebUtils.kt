@@ -146,26 +146,19 @@ class WebUtils(
         for (seg in parts) {
             if (seg.isBlank()) continue
             cur = if (cur.isEmpty()) seg else "$cur/$seg"
-            val exists = dirExists(cur)
-            if (!exists) {
-                val ok = mkcol(cur)
-                if (!ok) return false
-            }
+            // 跳过dirExists检查，直接尝试创建目录，因为有些WebDAV服务器对目录HEAD请求返回403
+            val ok = mkcol(cur)
+            // mkcol返回true表示目录已存在或创建成功，false表示真正的错误
+            if (!ok) return false
         }
         return true
     }
 
     suspend fun ensureDir(dirname: String): Boolean = withContext(Dispatchers.IO) {
         if (!GlobalUtils.cloudSyncEnable) return@withContext false
-        val dir = dirname.trim('/')
-
-        // 1) HEAD 试探
-        val (code, _, _) = head("$dir/")
-        if (code in listOf(200, 204, 301, 302)) return@withContext true
-        if (code == 401 || code == 403) return@withContext false
-
-        // 2) MKCOL（部分服务会把已存在也回 405/409，这里当成功）
-        return@withContext runCatching {
+        // 直接使用 MKCOL，避免 HEAD 请求被某些服务器（如坚果云）拦截返回 403
+        // MKCOL 对已存在的目录会返回 405/409，按成功处理
+        runCatching {
             mkcol(dirname)
         }.getOrDefault(false)
     }

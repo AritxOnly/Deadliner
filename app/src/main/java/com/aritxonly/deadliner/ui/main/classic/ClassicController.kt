@@ -145,6 +145,7 @@ import kotlin.collections.forEach
 import kotlin.getValue
 import androidx.core.view.isVisible
 import com.aritxonly.deadliner.data.HabitRepository
+import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
 import com.aritxonly.deadliner.localutils.GlobalUtils.showHabitReminderDialog
 
 class ClassicController(
@@ -244,6 +245,73 @@ class ClassicController(
         if (newText.isNotBlank() && newText != viewModel.lastClipboardText) {
             viewModel.lastClipboardText = newText
             triggerFeatureBasedOnClipboard(newText)
+        }
+    }
+
+    private fun extractPendingUrl(intent: Intent?): String? {
+        if (intent == null) return null
+
+        // 1) deep link: deadliner://...
+        intent.data?.toString()?.let { return it }
+
+        // 2) share: ACTION_SEND / EXTRA_TEXT
+        val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+        if (!text.isNullOrBlank()) return text.trim()
+
+        return null
+    }
+
+    private var lastHandledUrl: String? = null
+
+    private fun handleDeepLinkFromIntent(intent: Intent?) {
+        val url = extractPendingUrl(intent) ?: return
+        if (url == lastHandledUrl) return
+        lastHandledUrl = url
+
+        // 可选：只接受你的 deep link 格式，避免把普通分享文本误判
+         if (!(url.startsWith("deadliner://") || url.startsWith("https://www.aritxonly.top/deadliner/share"))) return
+
+        val snackBarParent = if (isBottomBarVisible)
+            viewHolderWithAppBar
+        else viewHolderWithNoAppBar
+
+        val snackbar = Snackbar.make(
+            snackBarParent,
+            getString(R.string.detect_share_link),
+            Snackbar.LENGTH_LONG
+        ).setAction(getString(R.string.add)) {
+            val item = DeadlinerURLScheme.decodeWithPassphrase(
+                url,
+                "deadliner-2025".toCharArray()
+            )
+            val i = Intent(activity, AddDDLActivity::class.java).apply {
+                putExtra("EXTRA_FULL_DDL", item)
+            }
+            startActivity(i)
+        }.setAnchorView(bottomAppBar)
+
+        // 保持你经典模式的圆角风格
+        val bg = snackbar.view.background
+        if (bg is MaterialShapeDrawable) {
+            snackbar.view.background = bg.apply {
+                shapeAppearanceModel = shapeAppearanceModel
+                    .toBuilder()
+                    .setAllCornerSizes(16f.dpToPx())
+                    .build()
+            }
+        }
+
+        snackbar.show()
+
+        // 避免同一个 Intent 在 onResume / 旋转重建时重复触发
+        clearDeepLinkIntent()
+    }
+
+    private fun clearDeepLinkIntent() {
+        // 关键：把 data/extras 清掉，防止生命周期回来的时候又解析到同一条
+        activity.intent = Intent(activity.intent).apply {
+            data = null
+            removeExtra(Intent.EXTRA_TEXT)
         }
     }
 
@@ -1055,6 +1123,12 @@ class ClassicController(
         if (intent.getBooleanExtra("EXTRA_SHOW_SEARCH", false) == true) {
             showSearchOverlay()
         }
+
+        handleDeepLinkFromIntent(intent)
+    }
+
+    fun onFirstIntent(intent: Intent?) {
+        handleDeepLinkFromIntent(intent)
     }
 
     fun onDestroy() {

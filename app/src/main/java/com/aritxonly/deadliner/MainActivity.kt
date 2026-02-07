@@ -104,6 +104,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
+        setIntent(intent)
+
         val style = UiStyle.fromKey(GlobalUtils.style)
 
         when (style) {
@@ -151,6 +153,7 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         classicController = c
         c?.let {
             c.normalizeRootInsets()
+            it.onNewIntent(intent)
         }
     }
 
