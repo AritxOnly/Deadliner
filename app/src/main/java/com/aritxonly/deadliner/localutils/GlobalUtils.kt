@@ -54,6 +54,7 @@ import java.time.LocalTime
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 import java.util.UUID
@@ -469,29 +470,54 @@ object GlobalUtils {
         return dp * context.resources.displayMetrics.density
     }
 
+    private val dateTimeFormatters: List<DateTimeFormatter> = listOf(
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+    )
+
+    private val dateFormatters: List<DateTimeFormatter> = listOf(
+        DateTimeFormatter.ISO_LOCAL_DATE,
+        DateTimeFormatter.ofPattern("yyyy/M/d"),
+        DateTimeFormatter.ofPattern("yyyy-MM-d"),
+        DateTimeFormatter.ofPattern("yyyy-M-dd"),
+        DateTimeFormatter.ofPattern("yyyy-M-d")
+    )
+
+    /**
+     * 严格解析（但支持 date-only）
+     * date-only 默认补 23:59（deadline 语义更合理）
+     */
     fun parseDateTime(dateTimeString: String): LocalDateTime? {
-        if (dateTimeString == "null" || dateTimeString == "") return null
+        val s = dateTimeString.trim()
+        if (s.isEmpty() || s.equals("null", ignoreCase = true)) return null
 
-        val formatters = listOf(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-        )
-
-        for (formatter in formatters) {
+        for (formatter in dateTimeFormatters) {
             try {
-                return LocalDateTime.parse(dateTimeString, formatter)
-            } catch (e: Exception) {
-                // 尝试下一个格式
+                return LocalDateTime.parse(s, formatter)
+            } catch (_: DateTimeParseException) {
             }
         }
+
+        for (formatter in dateFormatters) {
+            try {
+                val d = LocalDate.parse(s, formatter)
+                return d.atTime(23, 59)
+            } catch (_: DateTimeParseException) {
+            }
+        }
+
         throw IllegalArgumentException("Invalid date format: $dateTimeString")
     }
 
     fun safeParseDateTime(dateTimeString: String): LocalDateTime {
-        return parseDateTime(dateTimeString)?: timeNull
+        return try {
+            parseDateTime(dateTimeString)?: timeNull
+        } catch (_: Exception) {
+            timeNull
+        }
     }
 
     fun filterArchived(item: DDLItem): Boolean {
