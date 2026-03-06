@@ -18,6 +18,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import com.aritxonly.deadliner.localutils.DynamicColorsExtension
+import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 
 /**
@@ -60,7 +62,7 @@ class HabitWidgetConfigureActivity : ComponentActivity() {
 
         super.onCreate(icicle)
 
-        DynamicColors.applyToActivityIfAvailable(this)
+        DynamicColorsExtension.apply(this, GlobalUtils.seedColor)
 
         // Set the result to CANCELED.  This will cause the widget host to cancel
         // out of the widget placement if the user presses the back button.

@@ -16,7 +16,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.core.graphics.toColorInt
 import com.aritxonly.deadliner.data.HabitViewModel
+import com.aritxonly.deadliner.localutils.DynamicColorsExtension
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.UiStyle
@@ -28,8 +30,11 @@ import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.aritxonly.deadliner.widgets.HabitMiniWidget
 import com.aritxonly.deadliner.widgets.LargeDeadlineWidget
 import com.aritxonly.deadliner.widgets.MultiDeadlineWidget
+import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.DynamicColorsOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlin.apply
 
 class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
     private var classicController: ClassicController? = null
@@ -65,6 +70,8 @@ class MainActivity : AppCompatActivity(), CustomAdapter.SwipeListener {
         }
 
         enableEdgeToEdgeForAllDevices()
+
+        DynamicColorsExtension.apply(this, GlobalUtils.seedColor)
 
         _showSearch.value = intent.getBooleanExtra("EXTRA_SHOW_SEARCH", false)
 

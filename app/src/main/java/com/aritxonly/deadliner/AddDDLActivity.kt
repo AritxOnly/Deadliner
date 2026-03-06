@@ -43,6 +43,7 @@ import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ai.GeneratedDDL
 import com.aritxonly.deadliner.data.HabitRepository
+import com.aritxonly.deadliner.localutils.DynamicColorsExtension
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.Habit
 import com.aritxonly.deadliner.model.HabitGoalType
@@ -115,8 +116,8 @@ class AddDDLActivity : AppCompatActivity() {
         val generatedDDL = intent.getParcelableExtra<GeneratedDDL>("EXTRA_GENERATE_DDL")
         val fullDDL = intent.getParcelableExtra<DDLItem>("EXTRA_FULL_DDL")
 
-        DynamicColors.applyToActivitiesIfAvailable(this.application)
-        DynamicColors.applyToActivityIfAvailable(this)
+        DynamicColorsExtension.applyApp(this.application, GlobalUtils.seedColor)
+        DynamicColorsExtension.apply(this, GlobalUtils.seedColor)
 
         GlobalUtils.decideHideFromRecent(this, this@AddDDLActivity)
 
@@ -477,7 +478,7 @@ class AddDDLActivity : AppCompatActivity() {
         }
 
         // 原始条目文本
-        val items = calendarEvents.map(::EventItem)
+        val items = calendarEvents.map { EventItem(it) }
 
         // Inflate 布局
         val dialogView = LayoutInflater.from(this)

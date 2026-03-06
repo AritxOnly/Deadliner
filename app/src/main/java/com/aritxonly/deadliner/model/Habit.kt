@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 enum class HabitPeriod {
     DAILY,
     WEEKLY,
-    MONTHLY
+    MONTHLY,
 }
 
 enum class HabitGoalType {

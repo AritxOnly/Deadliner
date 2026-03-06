@@ -43,6 +43,7 @@ fun AppearanceSettingsScreen(
     var fireworksOnFinishEnabled by remember { mutableStateOf(GlobalUtils.fireworksOnFinish) }
     var detailDisplayEnabled by remember { mutableStateOf(GlobalUtils.detailDisplayMode) }
     var hideDividerEnabled by remember { mutableStateOf(GlobalUtils.hideDivider) }
+    var selectedColorState by remember { mutableStateOf(GlobalUtils.seedColor) }
 
     val onProgressDirChange: (Boolean) -> Unit = {
         GlobalUtils.progressDir = it
@@ -63,6 +64,10 @@ fun AppearanceSettingsScreen(
     val onHideDividerChange: (Boolean) -> Unit = {
         GlobalUtils.hideDivider = it
         hideDividerEnabled = it
+    }
+    val onThemeChange: (String?) -> Unit = {
+        GlobalUtils.seedColor = it
+        selectedColorState = it
     }
 
     val expressiveTypeModifier = Modifier
@@ -110,6 +115,13 @@ fun AppearanceSettingsScreen(
                         SettingsSectionDivider()
                     }
                 }
+            }
+
+            SettingsSection(topLabel = stringResource(R.string.theme)) {
+                ThemeColorPicker(
+                    currentSeed = selectedColorState,
+                    onColorSelected = onThemeChange
+                )
             }
 
             SettingsSection(topLabel = stringResource(R.string.settings_interface_design)) {

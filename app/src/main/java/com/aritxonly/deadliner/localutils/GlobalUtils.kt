@@ -361,6 +361,27 @@ object GlobalUtils {
         _styleFlow?.value = newStyle
     }
 
+    private var _seedColorFlow: MutableStateFlow<String?>? = null
+
+    val seedColorFlow: StateFlow<String?>
+        get() = _seedColorFlow ?: MutableStateFlow(
+            if (::sharedPreferences.isInitialized) sharedPreferences.getString("seed_color", null) else null
+        ).also { _seedColorFlow = it }
+
+    var seedColor: String?
+        get() = if (::sharedPreferences.isInitialized) sharedPreferences.getString("seed_color", null) else null
+        set(value) {
+            if (::sharedPreferences.isInitialized) {
+                sharedPreferences.edit { putString("seed_color", value) }
+            }
+            // 核心：当值改变时，向流发送新值，触发 Compose 重组
+            if (_seedColorFlow == null) {
+                _seedColorFlow = MutableStateFlow(value)
+            } else {
+                _seedColorFlow!!.value = value
+            }
+        }
+
     var addDeadlineGuide: Boolean
         get() = sharedPreferences.getBoolean("add_deadline_guide", true)
         set(value) {
@@ -458,11 +479,18 @@ object GlobalUtils {
         Log.d("GlobalUtils", "Settings loaded from SharedPreferences")
         hideDividerUi = hideDivider
 
-        val current = UiStyle.fromKey(style)
+        val currentStyle = UiStyle.fromKey(style)
         if (_styleFlow == null) {
-            _styleFlow = MutableStateFlow(current)
+            _styleFlow = MutableStateFlow(currentStyle)
         } else {
-            _styleFlow!!.value = current
+            _styleFlow!!.value = currentStyle
+        }
+
+        val currentSeedColor = sharedPreferences.getString("seed_color", null)
+        if (_seedColorFlow == null) {
+            _seedColorFlow = MutableStateFlow(currentSeedColor)
+        } else {
+            _seedColorFlow!!.value = currentSeedColor
         }
     }
 

@@ -16,6 +16,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.aritxonly.deadliner.intro.IntroPageType
+import com.aritxonly.deadliner.localutils.DynamicColorsExtension
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.model.PartyPresets
@@ -40,7 +41,7 @@ class IntroActivity : AppCompatActivity() {
         setContentView(R.layout.activity_intro)
 
         normalizeRootInsets()
-        DynamicColors.applyToActivityIfAvailable(this)
+        DynamicColorsExtension.apply(this)
 
         pageIndicator = findViewById(R.id.pageIndicator)
         viewPager = findViewById(R.id.viewPager_intro)

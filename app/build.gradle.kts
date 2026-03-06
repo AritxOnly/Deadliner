@@ -17,8 +17,8 @@ android {
         applicationId = "com.aritxonly.deadliner"
         minSdk = 31
         targetSdk = 36
-        versionCode = 30
-        versionName = "4.0.1"
+        versionCode = 31
+        versionName = "4.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -59,11 +59,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         viewBinding = true
@@ -97,6 +97,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.9.1")
     implementation("androidx.datastore:datastore-preferences-android:1.1.7")
     implementation("io.github.rroohit:ImageCropView:3.1.1")
+    implementation("com.materialkolor:material-kolor:4.1.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

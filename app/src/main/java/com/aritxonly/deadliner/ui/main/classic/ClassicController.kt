@@ -147,6 +147,7 @@ import androidx.core.view.isVisible
 import com.aritxonly.deadliner.data.HabitRepository
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
 import com.aritxonly.deadliner.localutils.GlobalUtils.showHabitReminderDialog
+import com.google.android.material.color.DynamicColorsOptions
 
 class ClassicController(
     private val activity: MainActivity,
@@ -398,8 +399,6 @@ class ClassicController(
             tertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorTertiaryContainer),
             onTertiaryContainer = getMaterialThemeColor(com.google.android.material.R.attr.colorOnTertiaryContainer),
         )
-
-        DynamicColors.applyToActivityIfAvailable(activity)
 
         GlobalUtils.decideHideFromRecent(activity, activity)
 

@@ -722,4 +722,5 @@
     <!-- Wizard Header -->
     <string name="wizard_header_title">使用向导 · 第 %1$d / 3 步</string>
     <string name="wizard_header_skip">跳过向导</string>
+    <string name="theme">主题</string>
 </resources>
