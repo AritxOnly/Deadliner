@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.data.HabitViewModel
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ui.main.shared.MainSearchResultsContent
@@ -27,6 +28,7 @@ fun ModernSearchPageContent(
     onQueryChange: (String) -> Unit,
     searchResults: List<DDLItem>,
     selectedPage: DeadlineType,
+    habitViewModel: HabitViewModel,
     activity: MainActivity,
     modifier: Modifier = Modifier,
 ) {
@@ -57,6 +59,7 @@ fun ModernSearchPageContent(
             MainSearchResultsContent(
                 searchResults = searchResults,
                 selectedPage = selectedPage,
+                habitViewModel = habitViewModel,
                 activity = activity,
                 horizontalPadding = 0.dp,
             )

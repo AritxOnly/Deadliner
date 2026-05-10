@@ -424,6 +424,7 @@ fun SimplifiedHost(
                         useAvatar = useAvatar,
                         avatarPainter = avatarPainter,
                         activity = activity,
+                        habitViewModel = habitVm,
                         expanded = searchActive,
                         onExpandedChangeExternal = onSearchActiveChange,
                         selectedPage = hostState.selectedPage,

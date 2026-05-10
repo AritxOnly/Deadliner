@@ -65,6 +65,8 @@ object GlobalUtils {
 
     private lateinit var sharedPreferences: SharedPreferences
 
+    private const val DEADLINER_DONATE_TRIGGER_USAGE = 10
+
     fun init(context: Context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, AppCompatActivity.MODE_PRIVATE)
         loadSettings(context)  // 初始化时加载设置
@@ -73,6 +75,45 @@ object GlobalUtils {
     fun getDeadlinerAIConfig(): DeadlinerAIConfig {
         return DeadlinerAIConfig(sharedPreferences)
     }
+
+    fun incrementLifiModelUsageCount(): Int {
+        val current = sharedPreferences.getInt("lifi_model_usage_count", 0)
+        val next = current + 1
+        sharedPreferences.edit { putInt("lifi_model_usage_count", next) }
+        return next
+    }
+
+    fun getLifiModelUsageCount(): Int = sharedPreferences.getInt("lifi_model_usage_count", 0)
+
+    fun shouldShowDeadlinerDonatePrompt(nowDate: LocalDate = LocalDate.now()): Boolean {
+        if (isDeadlinerDonateOrderSubmitted()) return false
+        if (getLifiModelUsageCount() < DEADLINER_DONATE_TRIGGER_USAGE) return false
+        val today = nowDate.toString()
+        val lastShown = sharedPreferences.getString("deadliner_donate_last_prompt_date", null)
+        return lastShown != today
+    }
+
+    fun markDeadlinerDonatePromptShown(nowDate: LocalDate = LocalDate.now()) {
+        sharedPreferences.edit {
+            putString("deadliner_donate_last_prompt_date", nowDate.toString())
+        }
+    }
+
+    fun submitDeadlinerDonateOrder(orderId: String) {
+        val trimmed = orderId.trim()
+        if (trimmed.isEmpty()) return
+        sharedPreferences.edit {
+            putBoolean("deadliner_donate_order_submitted", true)
+            putString("deadliner_donate_order_id", trimmed)
+        }
+    }
+
+    fun isDeadlinerDonateOrderSubmitted(): Boolean {
+        return sharedPreferences.getBoolean("deadliner_donate_order_submitted", false)
+    }
+
+    fun getDeadlinerDonateOrderId(): String =
+        sharedPreferences.getString("deadliner_donate_order_id", "") ?: ""
 
     var vibration: Boolean
         get() = sharedPreferences.getBoolean("vibration", true)
@@ -176,9 +217,9 @@ object GlobalUtils {
         }
 
     var showIntroPage: Boolean
-        get() = sharedPreferences.getBoolean("show_intro_page_v4", true)
+        get() = sharedPreferences.getBoolean("show_intro_page_v5.test3", true)
         set(value) {
-            sharedPreferences.edit { putBoolean("show_intro_page_v4", value) }
+            sharedPreferences.edit { putBoolean("show_intro_page_v5.test3", value) }
         }
 
     var detailDisplayMode: Boolean

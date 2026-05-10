@@ -342,6 +342,7 @@ primaryIntent 只能为 "ExtractTasks" | "PlanDay" | "SplitToSteps"。${candidat
             onThinking = onThinking,
             onLifecycle = onLifecycle,
         )
+        GlobalUtils.incrementLifiModelUsageCount()
         return output.mixed
     }
 

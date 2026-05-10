@@ -39,6 +39,7 @@ val syncDeadlinerCoreAndroid by tasks.registering(Exec::class) {
 
     inputs.file(syncScript)
     outputs.dir(rootProject.file(".deadliner-core/android"))
+    outputs.upToDateWhen { false }
     onlyIf { deadlinerCoreSyncEnabled.get() }
 }
 
@@ -50,8 +51,8 @@ android {
         applicationId = "com.aritxonly.deadliner"
         minSdk = 31
         targetSdk = 36
-        versionCode = 32
-        versionName = "4.1.0"
+        versionCode = 33
+        versionName = "5.0.0-Beta1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

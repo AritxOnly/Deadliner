@@ -3,6 +3,8 @@ package com.aritxonly.deadliner.ui.agent
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.provider.CalendarContract
+import com.aritxonly.deadliner.SettingsActivity
+import com.aritxonly.deadliner.SettingsRoute
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -19,6 +21,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,11 +39,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
@@ -53,6 +58,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -114,7 +121,10 @@ import com.aritxonly.deadliner.ai.ToolDecision
 import com.aritxonly.deadliner.ai.UserProfile
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
 import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.ui.iconResource
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -212,6 +222,7 @@ fun AIOverlay(
     val focusManager = LocalFocusManager.current
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
+    var showDonatePrompt by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val messages = remember { mutableStateListOf<ChatDisplayItem>() }
     var pendingToolApproval by remember { mutableStateOf<PendingToolApproval?>(null) }
@@ -230,6 +241,13 @@ fun AIOverlay(
         )
     }
 
+    LaunchedEffect(Unit) {
+        if (GlobalUtils.shouldShowDeadlinerDonatePrompt()) {
+            GlobalUtils.markDeadlinerDonatePromptShown()
+            showDonatePrompt = true
+        }
+    }
+
     fun appendAssistantCards(cards: List<UiCard>) {
         cards.forEach { card ->
             when (card) {
@@ -238,6 +256,31 @@ fun AIOverlay(
                 is UiCard.StepsCard -> messages.add(ChatDisplayItem.AISteps(card))
             }
         }
+    }
+
+    if (showDonatePrompt) {
+        AlertDialog(
+            onDismissRequest = { showDonatePrompt = false },
+            title = { Text(stringResource(R.string.deadliner_donate_plan_title)) },
+            text = { Text(stringResource(R.string.deadliner_donate_plan_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDonatePrompt = false
+                    context.startActivity(
+                        Intent(context, SettingsActivity::class.java).apply {
+                            putExtra(SettingsActivity.EXTRA_INITIAL_ROUTE, SettingsRoute.Donate.route)
+                        }
+                    )
+                }) {
+                    Text(stringResource(R.string.deadliner_donate_go))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDonatePrompt = false }) {
+                    Text(stringResource(R.string.later))
+                }
+            }
+        )
     }
 
     fun appendStreamChunk(chunk: String) {
@@ -323,6 +366,13 @@ fun AIOverlay(
         }
     }
 
+    fun removeThinkingBubble(thinkingId: String) {
+        val idx = messages.indexOfFirst { it.id == thinkingId && it is ChatDisplayItem.AIThinking }
+        if (idx >= 0) {
+            messages.removeAt(idx)
+        }
+    }
+
     fun mapThinkingLabel(agent: String?, phase: String?, fallback: String?): String {
         val name = agent?.trim().takeUnless { it.isNullOrBlank() } ?: "Lifi AI"
         return when (phase?.trim()?.lowercase()) {
@@ -352,6 +402,10 @@ fun AIOverlay(
         Log.d("AIOverlay", "submitQuery(core-only): $query")
         val submittedToolsThisTurn = mutableSetOf<String>()
 
+        // 防止上一轮遗留的待确认状态阻塞新一轮会话。
+        pendingToolApproval?.deferred?.complete(ToolDecision.Reject("stale_session"))
+        pendingToolApproval = null
+
         focusManager.clearFocus()
         textState = TextFieldValue("")
         messages.add(ChatDisplayItem.UserQuery(query))
@@ -377,6 +431,11 @@ fun AIOverlay(
                         }
                     },
                     onToolRequest = { request ->
+                        val normalizedTool = request.tool.trim()
+                            .replace("-", "")
+                            .replace("_", "")
+                            .lowercase()
+
                         val deferred = CompletableDeferred<ToolDecision>()
                         withContext(Dispatchers.Main) {
                             messages.add(ChatDisplayItem.AIToolRequestCard(request))
@@ -429,7 +488,7 @@ fun AIOverlay(
                 } else {
                     cards0
                 }
-                messages.remove(thinking)
+                removeThinkingBubble(thinking.id)
                 val chat = mixed.chatResponse?.trim().orEmpty()
                 if (chat.isNotEmpty()) {
                     if (streamBubbleId != null) finalizeStreamBubble(chat) else messages.add(ChatDisplayItem.AIChat(chat))
@@ -445,12 +504,13 @@ fun AIOverlay(
                 }
                 appendAssistantCards(cards)
             } catch (t: Throwable) {
-                messages.remove(thinking)
+                removeThinkingBubble(thinking.id)
                 finalizeStreamBubble(null)
                 val err = t.message ?: context.getString(R.string.ai_parse_failed)
                 messages.add(ChatDisplayItem.AIError(err))
             } finally {
                 isLoading = false
+                pendingToolApproval = null
             }
         }
     }
@@ -476,11 +536,22 @@ fun AIOverlay(
     val density = LocalDensity.current
     var parentHeightPx by remember { mutableIntStateOf(0) }
     var hintBottomPx by remember { mutableFloatStateOf(0f) }
-    var toolbarTopPx by remember { mutableFloatStateOf(Float.POSITIVE_INFINITY) }
+    var closeBottomPx by remember { mutableFloatStateOf(0f) }
+    var toolbarHeightPx by remember { mutableIntStateOf(0) }
 
-    val topSafePadding = with(density) { (hintBottomPx + 16.dp.toPx()).toDp() }
+    val topSafePadding = with(density) {
+        val closeBased = closeBottomPx + 8.dp.toPx()
+        val closeFallback = 84.dp.toPx()
+        val minTop = max(closeBased, closeFallback)
+        if (messages.isEmpty() && !isLoading) {
+            val hintBased = hintBottomPx + 8.dp.toPx()
+            max(minTop, hintBased).toDp()
+        } else {
+            minTop.toDp()
+        }
+    }
     val bottomSafePadding = with(density) {
-        val padPx = (parentHeightPx.toFloat() - toolbarTopPx) + 16.dp.toPx()
+        val padPx = toolbarHeightPx.toFloat() + 4.dp.toPx()
         max(0f, padPx).toDp()
     }
 
@@ -489,7 +560,10 @@ fun AIOverlay(
             .fillMaxSize()
             .then(if (respondIme) Modifier.imePadding() else Modifier)
             .onGloballyPositioned { parentHeightPx = it.size.height }
-            .clickable {
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
                 focusManager.clearFocus()
             }
     ) {
@@ -508,23 +582,25 @@ fun AIOverlay(
             freqBreathe = 0.125f
         )
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 80.dp)
-                .graphicsLayer { alpha = hintAlpha.value }
-                .onGloballyPositioned { hintBottomPx = it.boundsInParent().bottom }
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(16.dp)
+        if (messages.isEmpty() && !isLoading) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 80.dp)
+                    .graphicsLayer { alpha = hintAlpha.value }
+                    .onGloballyPositioned { hintBottomPx = it.boundsInParent().bottom }
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.ai_overlay_hint_top),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.ai_overlay_hint_top),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            }
         }
 
         IconButton(
@@ -540,79 +616,12 @@ fun AIOverlay(
                     shape = CircleShape
                 )
                 .size(36.dp)
+                .onGloballyPositioned { closeBottomPx = it.boundsInParent().bottom }
         ) {
             Icon(
                 imageVector = iconResource(R.drawable.ic_close),
                 contentDescription = "Close",
                 tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
-
-        val toolbarShape = RoundedCornerShape(percent = 50)
-        HorizontalFloatingToolbar(
-            expanded = true,
-            colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
-            modifier = Modifier
-                .padding(horizontal = 4.dp)
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp, vertical = 40.dp)
-                .graphicsLayer {
-                    alpha = panelAlpha.value
-                    translationY = panelTranslate.value
-                }
-                .onGloballyPositioned { toolbarTopPx = it.boundsInParent().top }
-                .glowingWobbleBorder(
-                    shape = toolbarShape,
-                    colors = glowColors,
-                    stroke = borderThickness,
-                    wobblePx = wobblePx,
-                    breatheAmp = 0.10f
-                ),
-            trailingContent = {
-                IconButton(
-                    onClick = { submitQuery() },
-                    enabled = !isLoading && textState.text.isNotBlank()
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.ic_send),
-                        contentDescription = stringResource(R.string.send),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        ) {
-            val configuration = LocalConfiguration.current
-            val screenWidthDp = configuration.screenWidthDp.dp
-            val buttonWidth = 48.dp
-            val horizontalPadding = 32.dp
-            val textFieldWidth = screenWidthDp - buttonWidth - horizontalPadding * 2
-
-            BasicTextField(
-                value = textState,
-                onValueChange = { textState = it },
-                textStyle = LocalTextStyle.current.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = MaterialTheme.typography.bodyMedium.fontSize
-                ),
-                modifier = Modifier
-                    .width(textFieldWidth)
-                    .padding(start = 8.dp)
-                    .heightIn(max = 80.dp)
-                    .focusRequester(focusRequester),
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
-                keyboardActions = KeyboardActions(onSend = { submitQuery() }),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-                decorationBox = { innerTextField ->
-                    if (textState.text.isEmpty()) {
-                        Text(
-                            text = hintText,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                        )
-                    }
-                    innerTextField()
-                }
             )
         }
 
@@ -631,12 +640,13 @@ fun AIOverlay(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(start = 16.dp, end = 16.dp)
+                    .padding(top = topSafePadding, bottom = bottomSafePadding)
                     .fillMaxSize()
                     .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
                     .edgeFade(top = 16.dp, bottom = 16.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    top = topSafePadding + 12.dp,
-                    bottom = bottomSafePadding + 12.dp
+                    top = 8.dp,
+                    bottom = 8.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -738,6 +748,74 @@ fun AIOverlay(
                 item { Spacer(modifier = Modifier.height(4.dp)) }
             }
         }
+
+        val toolbarShape = RoundedCornerShape(percent = 50)
+        HorizontalFloatingToolbar(
+            expanded = true,
+            colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
+            modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp, vertical = 40.dp)
+                .graphicsLayer {
+                    alpha = panelAlpha.value
+                    translationY = panelTranslate.value
+                }
+                .onGloballyPositioned { toolbarHeightPx = it.size.height }
+                .glowingWobbleBorder(
+                    shape = toolbarShape,
+                    colors = glowColors,
+                    stroke = borderThickness,
+                    wobblePx = wobblePx,
+                    breatheAmp = 0.10f
+                ),
+            trailingContent = {
+                IconButton(
+                    onClick = { submitQuery() },
+                    enabled = !isLoading && textState.text.isNotBlank()
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_send),
+                        contentDescription = stringResource(R.string.send),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        ) {
+            val configuration = LocalConfiguration.current
+            val screenWidthDp = configuration.screenWidthDp.dp
+            val buttonWidth = 48.dp
+            val horizontalPadding = 32.dp
+            val textFieldWidth = screenWidthDp - buttonWidth - horizontalPadding * 2
+
+            BasicTextField(
+                value = textState,
+                onValueChange = { textState = it },
+                textStyle = LocalTextStyle.current.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = MaterialTheme.typography.bodyMedium.fontSize
+                ),
+                modifier = Modifier
+                    .width(textFieldWidth)
+                    .padding(start = 8.dp)
+                    .heightIn(max = 80.dp)
+                    .focusRequester(focusRequester),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = { submitQuery() }),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+                decorationBox = { innerTextField ->
+                    if (textState.text.isEmpty()) {
+                        Text(
+                            text = hintText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                    }
+                    innerTextField()
+                }
+            )
+        }
     }
 }
 
@@ -773,6 +851,7 @@ private fun ToolRequestCard(
         "createhabit" -> "我将根据你的需求创建一个新习惯。"
         else -> "为了继续完成你的请求，我需要执行一次工具调用。"
     }
+    val requestItems = parseCreateRequestItems(item.request.rawArgsJson, toolKey)
 
     Column(
         modifier = Modifier
@@ -788,6 +867,19 @@ private fun ToolRequestCard(
         Text(item.request.reason ?: fallbackReason, style = MaterialTheme.typography.bodyMedium)
         if (toolKey == "readtasks") {
             Text(rangeText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (requestItems.isNotEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 220.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                requestItems.forEach { line ->
+                    Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
         Text(statusText, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
 
@@ -809,7 +901,50 @@ private fun ToolRequestCard(
                 }
             }
         }
+
     }
+}
+
+private fun parseCreateRequestItems(rawArgsJson: String?, toolKey: String): List<String> {
+    if (rawArgsJson.isNullOrBlank()) return emptyList()
+    val obj = runCatching { JsonParser.parseString(rawArgsJson).asJsonObject }.getOrNull() ?: return emptyList()
+    val args = if (obj.has("args") && obj.get("args").isJsonObject) obj.getAsJsonObject("args") else obj
+    return when (toolKey) {
+        "createtask" -> {
+            val fromBatch = if (args.has("tasks") && args.get("tasks").isJsonArray) args.getAsJsonArray("tasks").toList() else emptyList()
+            val source = if (fromBatch.isNotEmpty()) fromBatch else listOf(args)
+            source.mapNotNull { node ->
+                if (!node.isJsonObject) return@mapNotNull null
+                val task = node.asJsonObject
+                val name = task.getString("name")
+                val due = task.getString("dueTime")
+                val note = task.getString("note")
+                "• ${name.ifBlank { "(未命名)" }} ｜ 截止：${due.ifBlank { "-" }} ｜ 备注：${if (note.isBlank()) "-" else note}"
+            }
+        }
+        "createhabit" -> {
+            val fromBatch = if (args.has("habits") && args.get("habits").isJsonArray) args.getAsJsonArray("habits").toList() else emptyList()
+            val source = if (fromBatch.isNotEmpty()) fromBatch else listOf(args)
+            source.mapNotNull { node ->
+                if (!node.isJsonObject) return@mapNotNull null
+                val habit = node.asJsonObject
+                val name = habit.getString("name")
+                val period = habit.getString("period")
+                val times = habit.getString("timesPerPeriod")
+                val goalType = habit.getString("goalType")
+                val totalTarget = habit.getString("totalTarget")
+                val totalText = if (goalType.trim().equals("total", true)) " ｜ totalTarget：${totalTarget.ifBlank { "-" }}" else ""
+                "• ${name.ifBlank { "(未命名)" }} ｜ 周期：${period.ifBlank { "-" }} ｜ 频次：${times.ifBlank { "-" }} ｜ 目标：${goalType.ifBlank { "-" }}$totalText"
+            }
+        }
+        else -> emptyList()
+    }
+}
+
+private fun JsonObject.getString(field: String): String {
+    return runCatching {
+        if (has(field) && !get(field).isJsonNull) get(field).asString else ""
+    }.getOrDefault("")
 }
 
 @Composable

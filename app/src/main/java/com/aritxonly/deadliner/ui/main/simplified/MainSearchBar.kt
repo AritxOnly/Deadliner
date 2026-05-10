@@ -55,6 +55,7 @@ import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
 
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.MainActivity
+import com.aritxonly.deadliner.data.HabitViewModel
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DDLState
@@ -80,6 +81,7 @@ fun MainSearchBar(
     useAvatar: Boolean = false,
     avatarPainter: Painter? = null,
     activity: MainActivity? = null,
+    habitViewModel: HabitViewModel,
     expanded: Boolean,
     onExpandedChangeExternal: (Boolean) -> Unit = {},
     selectedPage: DeadlineType,
@@ -182,6 +184,7 @@ fun MainSearchBar(
                     searchResults = searchResults,
                     selectedPage = selectedPage,
                     activity = activity,
+                    habitViewModel = habitViewModel,
                     horizontalPadding = resultsHorizontalPadding,
                     mixedResultTypes = mixedResultTypes,
                 )
@@ -222,6 +225,7 @@ fun MainSearchBar(
                 searchResults = searchResults,
                 selectedPage = selectedPage,
                 activity = activity,
+                habitViewModel = habitViewModel,
                 horizontalPadding = resultsHorizontalPadding,
                 mixedResultTypes = mixedResultTypes,
             )
@@ -234,6 +238,7 @@ private fun SearchResultContent(
     searchResults: List<DDLItem>,
     selectedPage: DeadlineType,
     activity: MainActivity?,
+    habitViewModel: HabitViewModel,
     horizontalPadding: Dp,
     mixedResultTypes: Boolean,
 ) {
@@ -241,6 +246,7 @@ private fun SearchResultContent(
     MainSearchResultsContent(
         searchResults = searchResults,
         selectedPage = selectedPage,
+        habitViewModel = habitViewModel,
         activity = targetActivity,
         horizontalPadding = horizontalPadding,
         mixedResultTypes = mixedResultTypes,

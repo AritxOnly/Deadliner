@@ -42,9 +42,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.data.HabitViewModel
+import com.aritxonly.deadliner.data.HabitViewModelFactory
 import com.aritxonly.deadliner.intro.IntroWizardViewModel
 import com.aritxonly.deadliner.intro.WizardStep
 import com.aritxonly.deadliner.model.DDLItem
@@ -285,12 +289,15 @@ fun SimplifiedMainWizardScreen(
 
 @Composable
 private fun SimplifiedWizardTopBar() {
+    val context = LocalContext.current
+    val habitViewModel: HabitViewModel = viewModel(factory = HabitViewModelFactory(context))
     val textFieldState = rememberTextFieldState()
 
     MainSearchBar(
         textFieldState = textFieldState,
         onQueryChanged = {},
         searchResults = listOf(),
+        habitViewModel = habitViewModel,
         expanded = false,
         selectedPage = DeadlineType.TASK,
     )

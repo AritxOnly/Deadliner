@@ -19,9 +19,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
@@ -31,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.DeadlineDetailActivity
 import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.data.HabitViewModel
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DDLState
@@ -38,17 +42,25 @@ import com.aritxonly.deadliner.model.DDLStatus
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ui.main.DDLItemCardSimplified
 import com.aritxonly.deadliner.ui.main.simplified.AnimatedItem
-import com.aritxonly.deadliner.ui.main.simplified.HabitItem
+import com.aritxonly.deadliner.ui.main.simplified.HabitRow
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Composable
 fun MainSearchResultsContent(
     searchResults: List<DDLItem>,
     selectedPage: DeadlineType,
+    habitViewModel: HabitViewModel,
     activity: MainActivity,
     horizontalPadding: Dp = 16.dp,
     mixedResultTypes: Boolean = false,
 ) {
+    val context = LocalContext.current
+    val selectedDate by habitViewModel.selectedDate.collectAsState()
+    val habitsForSelectedDate by habitViewModel.habitsForSelectedDate.collectAsState()
+    val statusByDdlId = habitsForSelectedDate.associateBy { it.habit.ddlId }
+    val canToggleOnThisDate = !selectedDate.isAfter(LocalDate.now())
+
     if (searchResults.isEmpty()) {
         Column(
             modifier = Modifier
@@ -117,12 +129,16 @@ fun MainSearchResultsContent(
                     index = index
                 ) {
                     if (item.type == DeadlineType.HABIT) {
-                        HabitItem(
+                        HabitSearchItem(
                             item = item,
-                            onRefresh = { },
-                            updateDDL = { },
-                            onCheckInFailed = { },
-                            onCheckInSuccess = { _, _ -> },
+                            activity = activity,
+                            canToggle = canToggleOnThisDate,
+                            onToggle = {
+                                statusByDdlId[item.id]?.let { status ->
+                                    habitViewModel.onToggleHabit(status.habit.id)
+                                }
+                            },
+                            statusByDdlId = statusByDdlId
                         )
                     } else {
                         TaskSearchItem(
@@ -189,18 +205,59 @@ fun MainSearchResultsContent(
                         item = item,
                         index = index
                     ) {
-                        HabitItem(
+                        HabitSearchItem(
                             item = item,
-                            onRefresh = { },
-                            updateDDL = { },
-                            onCheckInFailed = { },
-                            onCheckInSuccess = { _, _ -> },
+                            activity = activity,
+                            canToggle = canToggleOnThisDate,
+                            onToggle = {
+                                statusByDdlId[item.id]?.let { status ->
+                                    habitViewModel.onToggleHabit(status.habit.id)
+                                }
+                            },
+                            statusByDdlId = statusByDdlId
                         )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun HabitSearchItem(
+    item: DDLItem,
+    activity: MainActivity,
+    canToggle: Boolean,
+    onToggle: () -> Unit,
+    statusByDdlId: Map<Long, com.aritxonly.deadliner.model.HabitWithDailyStatus>,
+) {
+    val data = statusByDdlId[item.id] ?: return
+    val context = LocalContext.current
+    val st = GlobalUtils.parseDateTime(item.startTime)
+    val et = GlobalUtils.parseDateTime(item.endTime)
+    val status = DDLStatus.calculateStatus(st, et, isCompleted = item.isCompleted)
+    val remainingText = et?.let {
+        GlobalUtils.buildRemainingTime(
+            context,
+            st,
+            et,
+            false,
+            LocalDateTime.now()
+        )
+    }
+
+    HabitRow(
+        data = data,
+        status = status,
+        isSelected = false,
+        canToggle = canToggle,
+        onToggle = onToggle,
+        onLongPress = {
+            val intent = DeadlineDetailActivity.newIntent(activity, item)
+            activity.startActivity(intent)
+        },
+        remainingText = remainingText
+    )
 }
 
 @Composable

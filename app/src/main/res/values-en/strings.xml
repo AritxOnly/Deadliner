@@ -316,6 +316,14 @@
     <string name="settings_developer_options">Developer options</string>
     <string name="settings_donate_emotional">Broke student asking for a treat 🥹</string>
     <string name="settings_donate_thanks">Your support is my biggest motivation~</string>
+    <string name="deadliner_donate_plan_title">Deadliner Donate Plan</string>
+    <string name="deadliner_donate_plan_message">You have used Lifi AI more than 10 times. If Deadliner helps you, please consider donating. After you open the donate page and submit an order ID, this reminder will never show again.</string>
+    <string name="deadliner_donate_go">Go to donate</string>
+    <string name="deadliner_donate_order_id">Order ID</string>
+    <string name="deadliner_donate_submit_order">Submit order ID</string>
+    <string name="deadliner_donate_order_id_empty">Please enter an order ID first</string>
+    <string name="deadliner_donate_order_saved">Order ID saved. This reminder will not appear again.</string>
+    <string name="deadliner_donate_no_more_prompt">Order ID submitted. Deadliner Donate reminder is permanently disabled.</string>
     <string name="settings_general_main">Interaction settings</string>
     <string name="settings_general_others">Misc settings</string>
     <string name="settings_interface_mainscreen">Main screen</string>
@@ -617,6 +625,9 @@
     <string name="linked_task">Linked: %s</string>
     <string name="settings_support_ui_mode">Adjust Deadliner’s layout and display style</string>
     <string name="settings_support_profile">Edit avatar and nickname</string>
+    <string name="intro_guide_title">Feature Guide</string>
+    <string name="intro_guide_next">Next</string>
+    <string name="intro_guide_page_indicator">Guide %1$d / %2$d</string>
     <string name="ui_style_classic">Classic</string>
     <string name="ui_style_simplified">Simplified</string>
     <string name="settings_ui_mode_title">Main screen layout</string>

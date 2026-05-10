@@ -3,6 +3,7 @@ package com.aritxonly.deadliner
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.text.Editable
@@ -192,6 +193,7 @@ class AddDDLActivity : AppCompatActivity() {
         val autoRunAi = intent.getBooleanExtra(EXTRA_AUTO_RUN_AI, false)
 
         applyInitialData(generatedDDL, fullDDL, prefillText, autoRunAi)
+        promptDeadlinerDonateIfNeeded()
 
         setContent {
             DeadlinerTheme {
@@ -256,6 +258,23 @@ class AddDDLActivity : AppCompatActivity() {
                 autoRunAiOnAppear = true
             }
         }
+    }
+
+    private fun promptDeadlinerDonateIfNeeded() {
+        if (!GlobalUtils.shouldShowDeadlinerDonatePrompt()) return
+        GlobalUtils.markDeadlinerDonatePromptShown()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.deadliner_donate_plan_title))
+            .setMessage(getString(R.string.deadliner_donate_plan_message))
+            .setPositiveButton(getString(R.string.deadliner_donate_go)) { _, _ ->
+                startActivity(
+                    Intent(this, SettingsActivity::class.java).apply {
+                        putExtra(SettingsActivity.EXTRA_INITIAL_ROUTE, SettingsRoute.Donate.route)
+                    }
+                )
+            }
+            .setNegativeButton(getString(R.string.later), null)
+            .show()
     }
 
     @OptIn(ExperimentalMaterial3Api::class)

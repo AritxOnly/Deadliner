@@ -398,6 +398,14 @@
     <string name="settings_developer_options">开发者选项</string>
     <string name="settings_donate_emotional">穷学生在线求投喂 🥹</string>
     <string name="settings_donate_thanks">你的支持是对我最大的鼓励~</string>
+    <string name="deadliner_donate_plan_title">Deadliner Donate 捐赠计划</string>
+    <string name="deadliner_donate_plan_message">你已经使用 Lifi AI 超过 10 次啦。如果 Deadliner 帮到了你，欢迎支持一下开发者。进入捐赠页并上传订单号后，将不再弹出此提醒。</string>
+    <string name="deadliner_donate_go">前往捐赠</string>
+    <string name="deadliner_donate_order_id">订单号</string>
+    <string name="deadliner_donate_submit_order">提交订单号</string>
+    <string name="deadliner_donate_order_id_empty">请先输入订单号</string>
+    <string name="deadliner_donate_order_saved">订单号已记录，后续将不再弹出提醒</string>
+    <string name="deadliner_donate_no_more_prompt">已提交订单号，Deadliner Donate 提醒已永久关闭。</string>
     <string name="settings_general_main">交互设置</string>
     <string name="settings_general_others">杂项设置</string>
     <string name="settings_interface_mainscreen">主界面</string>
@@ -682,6 +690,9 @@
     <string name="settings_ui_mode_title">主界面风格</string>
     <string name="settings_support_ui_mode">调整 Deadliner 的布局与显示风格</string>
     <string name="settings_support_profile">编辑头像与昵称</string>
+    <string name="intro_guide_title">功能引导</string>
+    <string name="intro_guide_next">下一步</string>
+    <string name="intro_guide_page_indicator">引导 %1$d / %2$d</string>
     <string name="ui_style_classic">经典模式</string>
     <string name="ui_style_simplified">简洁模式</string>
     <string name="ui_style_miuix">现代模式</string>

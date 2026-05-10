@@ -10,6 +10,8 @@ import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.HabitPeriod
 import com.aritxonly.deadliner.model.toJson
 import com.google.gson.Gson
+import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -29,8 +31,103 @@ internal interface ToolCallAdapter {
     suspend fun execute(call: ToolCallExecution): ToolExecutionResult
 }
 
+internal interface TaskCreator {
+    fun createTask(name: String, due: LocalDateTime, note: String): Long
+}
+
+internal interface HabitCreator {
+    fun createHabit(input: CreateHabitInput, now: LocalDateTime): CreatedHabit
+}
+
+internal data class CreatedHabit(
+    val id: Long,
+    val ddlId: Long,
+    val name: String,
+    val period: HabitPeriod,
+    val timesPerPeriod: Int,
+    val goalType: HabitGoalType,
+    val totalTarget: Int?,
+)
+
+internal data class CreateTaskInput(
+    val name: String,
+    val due: LocalDateTime,
+    val note: String,
+)
+
+internal data class CreateHabitInput(
+    val name: String,
+    val period: HabitPeriod,
+    val timesPerPeriod: Int,
+    val goalType: HabitGoalType,
+    val totalTarget: Int?,
+    val description: String?,
+)
+
 internal class AndroidToolCallAdapter(
     private val gson: Gson,
+    private val taskCreatorFactory: () -> TaskCreator = {
+        val repo = DDLRepository()
+        object : TaskCreator {
+            override fun createTask(name: String, due: LocalDateTime, note: String): Long {
+                val start = LocalDateTime.now()
+                return repo.insertDDL(
+                    name = name,
+                    startTime = start.toString(),
+                    endTime = due.toString(),
+                    note = note,
+                    type = DeadlineType.TASK,
+                )
+            }
+        }
+    },
+    private val habitCreatorFactory: () -> HabitCreator = {
+        val ddlRepo = DDLRepository()
+        val habitRepo = HabitRepository()
+        object : HabitCreator {
+            override fun createHabit(input: CreateHabitInput, now: LocalDateTime): CreatedHabit {
+                val habitFrequencyType = when {
+                    input.goalType == HabitGoalType.TOTAL -> DeadlineFrequency.TOTAL
+                    input.period == HabitPeriod.WEEKLY -> DeadlineFrequency.WEEKLY
+                    input.period == HabitPeriod.MONTHLY -> DeadlineFrequency.MONTHLY
+                    else -> DeadlineFrequency.DAILY
+                }
+                val meta = HabitMetaData(
+                    completedDates = emptySet(),
+                    frequencyType = habitFrequencyType,
+                    frequency = if (input.goalType == HabitGoalType.TOTAL) 1 else input.timesPerPeriod,
+                    total = input.totalTarget ?: 0,
+                    refreshDate = LocalDate.now().toString(),
+                )
+                val ddlId = ddlRepo.insertDDL(
+                    name = input.name,
+                    startTime = now.toString(),
+                    endTime = now.toString(),
+                    note = meta.toJson(),
+                    type = DeadlineType.HABIT,
+                )
+                val habitId = habitRepo.createHabitForDdl(
+                    ddlId = ddlId,
+                    name = input.name,
+                    period = input.period,
+                    timesPerPeriod = if (input.goalType == HabitGoalType.TOTAL) 1 else input.timesPerPeriod,
+                    goalType = input.goalType,
+                    totalTarget = if (input.goalType == HabitGoalType.TOTAL) input.totalTarget else null,
+                    description = input.description,
+                )
+                val created = habitRepo.getHabitById(habitId)
+                return CreatedHabit(
+                    id = habitId,
+                    ddlId = ddlId,
+                    name = created?.name ?: input.name,
+                    period = created?.period ?: input.period,
+                    timesPerPeriod = created?.timesPerPeriod ?: input.timesPerPeriod,
+                    goalType = created?.goalType ?: input.goalType,
+                    totalTarget = created?.totalTarget ?: input.totalTarget,
+                )
+            }
+        }
+    },
 ) : ToolCallAdapter {
     override suspend fun execute(call: ToolCallExecution): ToolExecutionResult {
         val resultJson = when (call.toolName) {
@@ -69,44 +166,103 @@ internal class AndroidToolCallAdapter(
     }
 
     private fun executeCreateTask(argsJson: String): Map<String, Any?> {
-        val repo = DDLRepository()
         val argsObj = extractArgsObject(argsJson)
-        val name = argsObj?.get("name")?.asString?.trim().orEmpty()
-        if (name.isBlank()) {
+        val (itemsNode, isBatchMode) = extractBatchOrSingleItems(argsObj, "tasks")
+            ?: return mapOf(
+                "ok" to false,
+                "errorCode" to "INVALID_ARGUMENT",
+                "message" to "create_task requires either non-empty tasks[] or single fields: name, dueTime",
+            )
+        if (itemsNode.isEmpty()) {
             return mapOf(
                 "ok" to false,
                 "errorCode" to "INVALID_ARGUMENT",
-                "message" to "create_task.name is required",
+                "message" to "create_task.tasks cannot be empty",
             )
         }
-        val note = runCatching {
-            if (argsObj?.has("note") == true && !argsObj.get("note").isJsonNull) argsObj.get("note").asString else ""
-        }.getOrDefault("")
-
-        val dueText = runCatching {
-            if (argsObj?.has("dueTime") == true && !argsObj.get("dueTime").isJsonNull) argsObj.get("dueTime").asString else ""
-        }.getOrDefault("")
-
-        val due = parseFlexibleDue(dueText)
-            ?: LocalDateTime.now().plusDays(1).withHour(20).withMinute(0).withSecond(0).withNano(0)
-        val start = LocalDateTime.now()
-
-        val id = repo.insertDDL(
-            name = name,
-            startTime = start.toString(),
-            endTime = due.toString(),
-            note = note,
-            type = DeadlineType.TASK,
-        )
-
-        return mapOf(
-            "ok" to true,
-            "task" to mapOf(
-                "id" to id,
-                "name" to name,
-                "dueTime" to due.format(DUE_FMT),
-                "note" to note,
+        val creator = taskCreatorFactory()
+        val itemResults = itemsNode.mapIndexed { index, node ->
+            val parsed = parseCreateTaskItem(node)
+            if (parsed == null) {
+                mapOf(
+                    "index" to index,
+                    "ok" to false,
+                    "errorCode" to "INVALID_ARGUMENT",
+                    "message" to "task item must be an object",
+                )
+            } else {
+                val (name, dueText, note) = parsed
+                when {
+                    name.isBlank() -> mapOf(
+                        "index" to index,
+                        "ok" to false,
+                        "errorCode" to "INVALID_ARGUMENT",
+                        "message" to "create_task.name is required",
+                    )
+                    dueText.isBlank() -> mapOf(
+                        "index" to index,
+                        "ok" to false,
+                        "errorCode" to "INVALID_ARGUMENT",
+                        "message" to "create_task.dueTime is required",
+                    )
+                    else -> {
+                        val due = parseFlexibleDue(dueText)
+                        if (due == null) {
+                            mapOf(
+                                "index" to index,
+                                "ok" to false,
+                                "errorCode" to "INVALID_ARGUMENT",
+                                "message" to "create_task.dueTime format is invalid",
+                            )
+                        } else {
+                            runCatching {
+                                val id = creator.createTask(name = name, due = due, note = note)
+                                mapOf(
+                                    "index" to index,
+                                    "ok" to true,
+                                    "task" to mapOf(
+                                        "id" to id,
+                                        "name" to name,
+                                        "dueTime" to due.format(DUE_FMT),
+                                        "note" to note,
+                                    )
+                                )
+                            }.getOrElse { e ->
+                                mapOf(
+                                    "index" to index,
+                                    "ok" to false,
+                                    "errorCode" to "CREATE_FAILED",
+                                    "message" to (e.message ?: "create task failed"),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        val successItems = itemResults.mapNotNull { if (it["ok"] == true) it["task"] else null }
+        val failCount = itemResults.size - successItems.size
+        if (!isBatchMode && successItems.isEmpty()) {
+            val firstFailure = itemResults.firstOrNull()
+            return mapOf(
+                "ok" to false,
+                "errorCode" to (firstFailure?.get("errorCode") ?: "INVALID_ARGUMENT"),
+                "message" to (firstFailure?.get("message") ?: "create_task failed"),
+                "items" to itemResults,
+                "summary" to mapOf("total" to itemResults.size, "successCount" to 0, "failureCount" to itemResults.size),
             )
+        }
+        return mapOf(
+            "ok" to (failCount == 0),
+            "partialSuccess" to (successItems.isNotEmpty() && failCount > 0),
+            "task" to successItems.firstOrNull(),
+            "createdTasks" to successItems,
+            "items" to itemResults,
+            "summary" to mapOf(
+                "total" to itemResults.size,
+                "successCount" to successItems.size,
+                "failureCount" to failCount,
+            ),
         )
     }
 
@@ -148,79 +304,89 @@ internal class AndroidToolCallAdapter(
     }
 
     private fun executeCreateHabit(argsJson: String): Map<String, Any?> {
-        val ddlRepo = DDLRepository()
-        val habitRepo = HabitRepository()
         val argsObj = extractArgsObject(argsJson)
-        val name = argsObj?.get("name")?.asString?.trim().orEmpty()
-        if (name.isBlank()) {
+        val (itemsNode, isBatchMode) = extractBatchOrSingleItems(argsObj, "habits")
+            ?: return mapOf(
+                "ok" to false,
+                "errorCode" to "INVALID_ARGUMENT",
+                "message" to "create_habit requires either non-empty habits[] or single fields: name, period, timesPerPeriod, goalType",
+            )
+        if (itemsNode.isEmpty()) {
             return mapOf(
                 "ok" to false,
                 "errorCode" to "INVALID_ARGUMENT",
-                "message" to "create_habit.name is required",
+                "message" to "create_habit.habits cannot be empty",
             )
         }
-        val periodRaw = argsObj?.get("period")?.asString.orEmpty()
-        val period = toHabitPeriod(periodRaw)
-        val timesPerPeriod = runCatching { argsObj?.get("timesPerPeriod")?.asInt ?: 1 }
-            .getOrDefault(1)
-            .coerceAtLeast(1)
-        val goalTypeRaw = argsObj?.get("goalType")?.asString.orEmpty()
-        val goalType = toHabitGoalType(goalTypeRaw)
-        val totalTarget = runCatching {
-            if (argsObj?.has("totalTarget") == true && !argsObj.get("totalTarget").isJsonNull) {
-                argsObj.get("totalTarget").asInt
-            } else null
-        }.getOrNull()
-
-        val description = runCatching {
-            if (argsObj?.has("description") == true && !argsObj.get("description").isJsonNull) {
-                argsObj.get("description").asString
-            } else null
-        }.getOrNull()
-
+        val creator = habitCreatorFactory()
         val now = LocalDateTime.now()
-        val habitFrequencyType = when {
-            goalType == HabitGoalType.TOTAL -> DeadlineFrequency.TOTAL
-            period == HabitPeriod.WEEKLY -> DeadlineFrequency.WEEKLY
-            period == HabitPeriod.MONTHLY -> DeadlineFrequency.MONTHLY
-            else -> DeadlineFrequency.DAILY
+        val itemResults = itemsNode.mapIndexed { index, node ->
+            val parsed = parseCreateHabitItem(node)
+            if (parsed == null) {
+                mapOf(
+                    "index" to index,
+                    "ok" to false,
+                    "errorCode" to "INVALID_ARGUMENT",
+                    "message" to "habit item must be an object",
+                )
+            } else {
+                val validationErr = validateCreateHabitInput(parsed)
+                if (validationErr != null) {
+                    mapOf(
+                        "index" to index,
+                        "ok" to false,
+                        "errorCode" to "INVALID_ARGUMENT",
+                        "message" to validationErr,
+                    )
+                } else {
+                    runCatching {
+                        val created = creator.createHabit(parsed, now)
+                        mapOf(
+                            "index" to index,
+                            "ok" to true,
+                            "habit" to mapOf(
+                                "id" to created.id,
+                                "ddlId" to created.ddlId,
+                                "name" to created.name,
+                                "period" to created.period.name.lowercase(),
+                                "timesPerPeriod" to created.timesPerPeriod,
+                                "goalType" to if (created.goalType == HabitGoalType.TOTAL) "total" else "frequency",
+                                "totalTarget" to created.totalTarget,
+                            ),
+                        )
+                    }.getOrElse { e ->
+                        mapOf(
+                            "index" to index,
+                            "ok" to false,
+                            "errorCode" to "CREATE_FAILED",
+                            "message" to (e.message ?: "create habit failed"),
+                        )
+                    }
+                }
+            }
         }
-        val meta = HabitMetaData(
-            completedDates = emptySet(),
-            frequencyType = habitFrequencyType,
-            frequency = if (goalType == HabitGoalType.TOTAL) 1 else timesPerPeriod,
-            total = totalTarget ?: 0,
-            refreshDate = LocalDate.now().toString(),
-        )
-
-        val ddlId = ddlRepo.insertDDL(
-            name = name,
-            startTime = now.toString(),
-            endTime = now.toString(),
-            note = meta.toJson(),
-            type = DeadlineType.HABIT,
-        )
-        val habitId = habitRepo.createHabitForDdl(
-            ddlId = ddlId,
-            name = name,
-            period = period,
-            timesPerPeriod = if (goalType == HabitGoalType.TOTAL) 1 else timesPerPeriod,
-            goalType = goalType,
-            totalTarget = if (goalType == HabitGoalType.TOTAL) (totalTarget ?: 1) else null,
-            description = description,
-        )
-        val created = habitRepo.getHabitById(habitId)
-
+        val successItems = itemResults.mapNotNull { if (it["ok"] == true) it["habit"] else null }
+        val failCount = itemResults.size - successItems.size
+        if (!isBatchMode && successItems.isEmpty()) {
+            val firstFailure = itemResults.firstOrNull()
+            return mapOf(
+                "ok" to false,
+                "errorCode" to (firstFailure?.get("errorCode") ?: "INVALID_ARGUMENT"),
+                "message" to (firstFailure?.get("message") ?: "create_habit failed"),
+                "items" to itemResults,
+                "summary" to mapOf("total" to itemResults.size, "successCount" to 0, "failureCount" to itemResults.size),
+            )
+        }
         return mapOf(
-            "ok" to true,
-            "habit" to mapOf(
-                "id" to habitId,
-                "ddlId" to ddlId,
-                "name" to (created?.name ?: name),
-                "period" to (created?.period?.name?.lowercase() ?: period.name.lowercase()),
-                "timesPerPeriod" to (created?.timesPerPeriod ?: timesPerPeriod),
-                "goalType" to if ((created?.goalType ?: goalType) == HabitGoalType.TOTAL) "total" else "frequency",
-                "totalTarget" to (created?.totalTarget ?: if (goalType == HabitGoalType.TOTAL) (totalTarget ?: 1) else null),
+            "ok" to (failCount == 0),
+            "partialSuccess" to (successItems.isNotEmpty() && failCount > 0),
+            "habit" to successItems.firstOrNull(),
+            "createdHabits" to successItems,
+            "items" to itemResults,
+            "summary" to mapOf(
+                "total" to itemResults.size,
+                "successCount" to successItems.size,
+                "failureCount" to failCount,
             ),
         )
     }
@@ -362,6 +528,66 @@ internal class AndroidToolCallAdapter(
         return runCatching { LocalDateTime.parse(text) }.getOrNull()
             ?: runCatching { LocalDateTime.parse(text, DUE_FMT) }.getOrNull()
             ?: runCatching { LocalDate.parse(text).atTime(20, 0) }.getOrNull()
+    }
+
+    private fun extractBatchOrSingleItems(
+        argsObj: JsonObject?,
+        batchField: String,
+    ): Pair<List<JsonElement>, Boolean>? {
+        if (argsObj == null) return null
+        if (argsObj.has(batchField)) {
+            val array = runCatching { argsObj.getAsJsonArray(batchField) }.getOrNull() ?: JsonArray()
+            return array.toList() to true
+        }
+        val hasSingleFields = argsObj.entrySet().any { it.key != "args" }
+        return if (hasSingleFields) listOf(argsObj) to false else null
+    }
+
+    private fun parseCreateTaskItem(node: JsonElement): Triple<String, String, String>? {
+        if (!node.isJsonObject) return null
+        val obj = node.asJsonObject
+        val name = obj.getAsStringOrEmpty("name").trim()
+        val dueText = obj.getAsStringOrEmpty("dueTime").trim()
+        val note = obj.getAsStringOrEmpty("note")
+        return Triple(name, dueText, note)
+    }
+
+    private fun parseCreateHabitItem(node: JsonElement): CreateHabitInput? {
+        if (!node.isJsonObject) return null
+        val obj = node.asJsonObject
+        val name = obj.getAsStringOrEmpty("name").trim()
+        val period = toHabitPeriod(obj.getAsStringOrEmpty("period"))
+        val timesPerPeriod = runCatching { obj.get("timesPerPeriod")?.asInt ?: 1 }.getOrDefault(1).coerceAtLeast(1)
+        val goalType = toHabitGoalType(obj.getAsStringOrEmpty("goalType"))
+        val totalTarget = runCatching {
+            if (obj.has("totalTarget") && !obj.get("totalTarget").isJsonNull) obj.get("totalTarget").asInt else null
+        }.getOrNull()
+        val description = runCatching {
+            if (obj.has("description") && !obj.get("description").isJsonNull) obj.get("description").asString else null
+        }.getOrNull()
+        return CreateHabitInput(
+            name = name,
+            period = period,
+            timesPerPeriod = timesPerPeriod,
+            goalType = goalType,
+            totalTarget = totalTarget,
+            description = description,
+        )
+    }
+
+    private fun validateCreateHabitInput(input: CreateHabitInput): String? {
+        if (input.name.isBlank()) return "create_habit.name is required"
+        if (input.timesPerPeriod <= 0) return "create_habit.timesPerPeriod must be > 0"
+        if (input.goalType == HabitGoalType.TOTAL && (input.totalTarget == null || input.totalTarget <= 0)) {
+            return "create_habit.totalTarget is required when goalType is TOTAL"
+        }
+        return null
+    }
+
+    private fun JsonObject.getAsStringOrEmpty(field: String): String {
+        return runCatching {
+            if (has(field) && !get(field).isJsonNull) get(field).asString else ""
+        }.getOrDefault("")
     }
 
     private companion object {

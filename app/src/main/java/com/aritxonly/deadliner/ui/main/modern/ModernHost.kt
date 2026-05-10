@@ -733,6 +733,7 @@ fun ModernHost(
                 },
                 searchResults = suggestions,
                 activity = activity,
+                habitViewModel = habitVm,
                 expanded = true,
                 onExpandedChangeExternal = { expanded ->
                     if (!expanded) {
