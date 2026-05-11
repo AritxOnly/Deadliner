@@ -10,7 +10,6 @@ import android.view.MotionEvent
 import android.view.Window
 import android.widget.ImageButton
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -22,7 +21,7 @@ import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-class ArchiveActivity : AppCompatActivity() {
+class ArchiveActivity : DeadlinerAppCompatActivity() {
 
     private lateinit var dropPageButton: ImageButton
     private lateinit var archiveRecyclerView: RecyclerView

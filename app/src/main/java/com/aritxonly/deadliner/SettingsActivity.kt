@@ -10,7 +10,6 @@ import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -29,10 +28,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.aritxonly.deadliner.ui.settings.AboutSettingsScreen
+import com.aritxonly.deadliner.ui.settings.AppIconSettingsScreen
 import com.aritxonly.deadliner.ui.settings.ArchiveSettingsScreen
 import com.aritxonly.deadliner.ui.settings.BackupSettingsScreen
 import com.aritxonly.deadliner.ui.settings.BadgeSettingsScreen
 import com.aritxonly.deadliner.ui.settings.AISettingsScreen
+import com.aritxonly.deadliner.ui.settings.CustomDisplayScaleSettingsScreen
+import com.aritxonly.deadliner.ui.settings.DisplayScaleSettingsScreen
 import com.aritxonly.deadliner.ui.settings.LabSettingsScreen
 import com.aritxonly.deadliner.ui.settings.DonateScreen
 import com.aritxonly.deadliner.ui.settings.FeedbackScreen
@@ -52,6 +54,7 @@ import com.aritxonly.deadliner.ui.settings.WidgetSettingsScreen
 import com.aritxonly.deadliner.ui.settings.WikiScreen
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.localutils.DisplayScaleManager
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.ui.settings.UiSettingsScreen
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
@@ -95,6 +98,9 @@ sealed class SettingsRoute(
 
     object Badge : SettingsRoute("badge", R.string.settings_tasks_badge_title, R.string.settings_support_tasks_badge, null)
     object UI : SettingsRoute("ui", R.string.settings_ui_mode_title, R.string.settings_support_ui_mode, null)
+    object DisplayScale : SettingsRoute("display_scale", R.string.settings_display_size_title, R.string.settings_support_display_size_menu, null)
+    object DisplayScaleCustom : SettingsRoute("display_scale_custom", R.string.settings_display_size_custom_title, R.string.settings_support_display_size_lab, null)
+    object AppIcon : SettingsRoute("app_icon", R.string.settings_app_icon_title, R.string.settings_app_icon_summary, null)
     object Profile : SettingsRoute("profile", R.string.edit_profile, R.string.settings_support_profile, null)
 
     object Update : SettingsRoute("update", R.string.settings_check_for_updates, R.string.settings_check_for_updates, R.drawable.ic_update)
@@ -129,7 +135,7 @@ sealed class SettingsRoute(
         )
 
         val appearanceThirdRoutes = listOf(
-            UI, Badge
+            UI, Badge, DisplayScale, AppIcon
         )
 
         val aboutThirdRoutes = listOf(
@@ -138,7 +144,7 @@ sealed class SettingsRoute(
     }
 }
 
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : DeadlinerAppCompatActivity() {
     companion object {
         private const val EXPORT_REQUEST_CODE = 1001
         private const val IMPORT_REQUEST_CODE = 1002
@@ -237,6 +243,9 @@ class SettingsActivity : AppCompatActivity() {
 
                         composable(SettingsRoute.Lab.route) {
                             LabSettingsScreen(
+                                onClickCustomDisplayScale = {
+                                    navController.navigate(SettingsRoute.DisplayScaleCustom.route)
+                                },
                                 onClickCustomFilter = {
                                     // 原始数据源
                                     val allItems =
@@ -341,6 +350,9 @@ class SettingsActivity : AppCompatActivity() {
                         composable(SettingsRoute.Vibration.route) { VibrationSettingsScreen { navController.navigateUp() } }
                         composable(SettingsRoute.Archive.route) { ArchiveSettingsScreen { navController.navigateUp() } }
                         composable(SettingsRoute.Badge.route) { BadgeSettingsScreen { navController.navigateUp() } }
+                        composable(SettingsRoute.DisplayScale.route) { DisplayScaleSettingsScreen { navController.navigateUp() } }
+                        composable(SettingsRoute.DisplayScaleCustom.route) { CustomDisplayScaleSettingsScreen { navController.navigateUp() } }
+                        composable(SettingsRoute.AppIcon.route) { AppIconSettingsScreen { navController.navigateUp() } }
                         composable(SettingsRoute.UI.route) { UiSettingsScreen { navController.navigateUp() } }
                         composable(SettingsRoute.Model.route) { ModelSettingsScreen { navController.navigateUp() } }
                         composable(SettingsRoute.Prompt.route) { PromptSettingsScreen { navController.navigateUp() } }
@@ -473,11 +485,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun restartApp() {
-        val intent = packageManager.getLaunchIntentForPackage(packageName)
-        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-        startActivity(intent)
-        finishAffinity()
-        Runtime.getRuntime().exit(0)
+        DisplayScaleManager.restartApp(this)
     }
 
     private fun showToast(message: String) {

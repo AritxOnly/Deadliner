@@ -63,6 +63,8 @@ import com.aritxonly.deadliner.capture.model.InspirationItem
 import com.aritxonly.deadliner.ui.base.Scaffold
 import com.aritxonly.deadliner.ui.base.TopAppBar
 import com.aritxonly.deadliner.ui.base.TopAppBarStyle
+import com.aritxonly.deadliner.ui.expressiveTypeModifier
+import com.aritxonly.deadliner.ui.main.shared.mainListContainerClip
 import com.aritxonly.deadliner.ui.settings.RoundedTextField
 import com.aritxonly.deadliner.ui.settings.RoundedTextFieldMetrics
 import java.time.Duration
@@ -88,7 +90,8 @@ fun CaptureTopBar(
                     IconButton(onClick = onClose) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_close),
-                            contentDescription = stringResource(R.string.close)
+                            contentDescription = stringResource(R.string.close),
+                            modifier = expressiveTypeModifier,
                         )
                     }
                 }
@@ -105,7 +108,8 @@ fun CaptureTopBar(
                 IconButton(onClick = vm::exitMultiSelect) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_close),
-                        contentDescription = stringResource(R.string.close)
+                        contentDescription = stringResource(R.string.close),
+                        modifier = expressiveTypeModifier,
                     )
                 }
             },
@@ -290,7 +294,8 @@ fun CaptureContent(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(contentPadding),
+            .padding(contentPadding)
+            .mainListContainerClip(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
             item {
@@ -426,18 +431,6 @@ private fun CaptureInputCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedButton(
-                    onClick = {
-                        Toast.makeText(context, context.getString(R.string.capture_voice_reserved_toast), Toast.LENGTH_SHORT).show()
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_mic),
-                        contentDescription = null
-                    )
-                    Text(" ${stringResource(R.string.capture_voice_input)}")
-                }
                 Button(
                     onClick = onSave,
                     modifier = Modifier.weight(1f)
@@ -619,7 +612,8 @@ private fun CaptureDetailSheet(
                 IconButton(onClick = onClose) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_close),
-                        contentDescription = stringResource(R.string.close)
+                        contentDescription = stringResource(R.string.close),
+                        modifier = expressiveTypeModifier,
                     )
                 }
                 Text(

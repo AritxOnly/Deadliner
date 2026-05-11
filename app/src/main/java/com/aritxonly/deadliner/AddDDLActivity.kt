@@ -15,7 +15,6 @@ import android.widget.ListView
 import android.widget.RadioButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -100,7 +99,7 @@ import com.aritxonly.deadliner.ai.AIUtils
 import com.aritxonly.deadliner.ui.iconResource
 
 @SuppressLint("SimpleDateFormat")
-class AddDDLActivity : AppCompatActivity() {
+class AddDDLActivity : DeadlinerAppCompatActivity() {
 
     private val repo = DDLRepository()
     private val habitRepo = HabitRepository()

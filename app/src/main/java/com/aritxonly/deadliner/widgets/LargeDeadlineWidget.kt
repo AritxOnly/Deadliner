@@ -135,7 +135,7 @@ internal fun updateLargeAppWidget(
     val allDdls: List<DDLItem> = DatabaseHelper.Companion
         .getInstance(context)
         .getDDLsByType(DeadlineType.TASK)
-        .filter { !it.isCompleted && !it.isArchived }
+        .filter { it.state.isActionable() }
 
     // 解析并排序
     val now = LocalDateTime.now()

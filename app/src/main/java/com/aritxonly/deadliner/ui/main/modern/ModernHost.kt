@@ -19,8 +19,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -74,6 +75,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -127,6 +129,21 @@ import java.time.LocalDate
 import org.json.JSONArray
 import org.json.JSONObject
 
+private fun LazyListState.hasScrolledPastHeader(threshold: Int = 12): Boolean {
+    return firstVisibleItemIndex > 0 || firstVisibleItemScrollOffset > threshold
+}
+
+private enum class ModernTopBarState {
+    HIDDEN,
+    LIST_DEFAULT,
+    LIST_SELECTION,
+    OVERVIEW,
+    CAPTURE,
+}
+
+private const val WideLayoutMinWidthDp = 840
+private const val FlattenedOverviewMinWidthDp = 1100
+
 @OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
 @Composable
 fun ModernHost(
@@ -137,7 +154,8 @@ fun ModernHost(
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
-    val isWideLayout = configuration.screenWidthDp >= 840
+    val isWideLayout = configuration.screenWidthDp >= WideLayoutMinWidthDp
+    val useFlattenedOverview = configuration.screenWidthDp >= FlattenedOverviewMinWidthDp
     val vm: MainViewModel = viewModel(factory = MainViewModelFactory(context))
     val habitVm: HabitViewModel = viewModel(factory = HabitViewModelFactory(context))
     val captureVm: CaptureViewModel = viewModel()
@@ -155,7 +173,8 @@ fun ModernHost(
     var parties by remember { mutableStateOf<List<Party>>(emptyList()) }
     var fireKey by remember { mutableIntStateOf(0) }
 
-    val listState = rememberLazyListState()
+    val taskListState = rememberLazyListState()
+    val habitListState = rememberLazyListState()
     val textFieldState = rememberTextFieldState()
     var suggestions by rememberSaveable { mutableStateOf(emptyList<DDLItem>()) }
     var base by remember { mutableStateOf<List<DDLItem>>(emptyList()) }
@@ -284,6 +303,40 @@ fun ModernHost(
         MainSection.OVERVIEW -> "overview"
         MainSection.CAPTURE -> "capture"
     }
+    val topBarState = when {
+        showSearchPage -> ModernTopBarState.HIDDEN
+        hostState.selectedSection == MainSection.LIST && hostState.selectionMode ->
+            ModernTopBarState.LIST_SELECTION
+        hostState.selectedSection == MainSection.LIST -> ModernTopBarState.LIST_DEFAULT
+        hostState.selectedSection == MainSection.OVERVIEW -> ModernTopBarState.OVERVIEW
+        else -> ModernTopBarState.CAPTURE
+    }
+    val shouldCollapseHeaderAccessories by remember(
+        isWideLayout,
+        hostState.selectedSection,
+        hostState.selectedPage,
+        hostState.selectionMode,
+        showSearchPage,
+        taskListState,
+        habitListState,
+    ) {
+        androidx.compose.runtime.derivedStateOf {
+            if (
+                hostState.selectedSection != MainSection.LIST ||
+                hostState.selectionMode ||
+                showSearchPage
+            ) {
+                false
+            } else if (isWideLayout) {
+                taskListState.hasScrolledPastHeader() || habitListState.hasScrolledPastHeader()
+            } else {
+                when (hostState.selectedPage) {
+                    DeadlineType.TASK -> taskListState.hasScrolledPastHeader()
+                    DeadlineType.HABIT -> habitListState.hasScrolledPastHeader()
+                }
+            }
+        }
+    }
 
     val ddlList by vm.ddlListFlow.collectAsStateWithLifecycle()
     val taskList by vm.taskListFlow.collectAsStateWithLifecycle()
@@ -384,109 +437,117 @@ fun ModernHost(
             activeSelectionPane = null
         },
         topBar = {
-            when (hostState.selectedSection) {
-                MainSection.LIST -> {
-                    if (!showSearchPage) {
-                        AnimatedContent(
-                            targetState = hostState.selectionMode,
-                            transitionSpec = {
-                                (fadeIn(animationSpec = tween(180, delayMillis = 60)) +
-                                    scaleIn(initialScale = 0.98f, animationSpec = tween(180)))
-                                    .togetherWith(
-                                        fadeOut(animationSpec = tween(120)) +
-                                            scaleOut(targetScale = 0.98f, animationSpec = tween(120))
-                                    )
-                                    .using(SizeTransform(clip = false))
-                            },
-                            label = "modern-topbar-switch",
-                        ) { isSelection ->
-                            if (isSelection) {
-                                TopAppBar(
-                                    title = context.getString(R.string.selected_items, hostState.selectedIds.size),
-                                    mode = TopAppBarStyle.SMALL,
-                                    navigationIcon = {
-                                        IconButton(onClick = {
-                                            hostState.clearSelection()
-                                            activeSelectionPane = null
-                                        }) {
-                                            Icon(
-                                                ImageVector.vectorResource(R.drawable.ic_close),
-                                                contentDescription = stringResource(R.string.close),
-                                            )
-                                        }
-                                    },
-                                    actions = {
-                                        IconButton(onClick = {
-                                            selectionActions.onDoneClick(
-                                                ddlList = ddlList,
-                                                onCelebrate = {
-                                                    if (com.aritxonly.deadliner.localutils.GlobalUtils.fireworksOnFinish) {
-                                                        celebrate()
-                                                    }
-                                                },
-                                            )
-                                        }) {
-                                            Icon(
-                                                ImageVector.vectorResource(R.drawable.ic_done),
-                                                contentDescription = stringResource(R.string.accept)
-                                            )
-                                        }
-                                        if (hostState.selectedPage == DeadlineType.TASK) {
-                                            IconButton(onClick = { selectionActions.onArchiveClick(ddlList = ddlList) }) {
-                                                Icon(
-                                                    ImageVector.vectorResource(R.drawable.ic_archiving),
-                                                    contentDescription = stringResource(R.string.archive)
-                                                )
-                                            }
-                                        } else {
-                                            IconButton(onClick = { selectionActions.onReminderClick(ddlList = ddlList) }) {
-                                                Icon(
-                                                    ImageVector.vectorResource(R.drawable.ic_notification_add),
-                                                    contentDescription = stringResource(R.string.settings_more)
-                                                )
-                                            }
-                                        }
-                                        IconButton(onClick = { selectionActions.onDeleteClick() }) {
-                                            Icon(
-                                                ImageVector.vectorResource(R.drawable.ic_delete),
-                                                contentDescription = stringResource(R.string.delete)
-                                            )
-                                        }
-                                        IconButton(onClick = { selectionActions.onEditClick(ddlList = ddlList) }) {
-                                            Icon(
-                                                ImageVector.vectorResource(R.drawable.ic_edit),
-                                                contentDescription = stringResource(R.string.edit)
-                                            )
-                                        }
-                                    },
-                                )
-                            } else {
-                                ModernMainHeader(
-                                    activity = activity,
-                                    selectedPage = hostState.selectedPage,
-                                    onSelectedPageChange = { hostState.selectedPage = it },
-                                    avatarPainter = avatarPainter,
-                                    onShowAiOverlay = { hostState.showOverlay = true },
-                                    showPageTabs = !isWideLayout,
-                                )
-                            }
-                        }
+            AnimatedContent(
+                targetState = topBarState,
+                transitionSpec = {
+                    val enter =
+                        fadeIn(animationSpec = tween(180, delayMillis = 20)) +
+                            slideInVertically(
+                                initialOffsetY = { fullHeight -> fullHeight / 6 },
+                                animationSpec = tween(240, easing = FastOutSlowInEasing),
+                            )
+                    val exit =
+                        fadeOut(animationSpec = tween(120)) +
+                            slideOutVertically(
+                                targetOffsetY = { fullHeight -> -fullHeight / 10 },
+                                animationSpec = tween(180, easing = FastOutSlowInEasing),
+                            )
+
+                    enter.togetherWith(exit).using(SizeTransform(clip = false))
+                },
+                label = "modern-topbar-transition",
+            ) { currentTopBarState ->
+                when (currentTopBarState) {
+                    ModernTopBarState.HIDDEN -> Unit
+                    ModernTopBarState.LIST_DEFAULT -> {
+                        ModernMainHeader(
+                            activity = activity,
+                            selectedPage = hostState.selectedPage,
+                            onSelectedPageChange = { hostState.selectedPage = it },
+                            avatarPainter = avatarPainter,
+                            onShowAiOverlay = { hostState.showOverlay = true },
+                            showPageTabs = !isWideLayout,
+                            showAccessoryRow = !isWideLayout && !shouldCollapseHeaderAccessories,
+                            showAiActionInTopBar = isWideLayout,
+                        )
                     }
-                }
-                MainSection.OVERVIEW -> {
-                    OverviewTopBar(
-                        showNavigationIcon = false,
-                        onShowSettings = { showOverviewSettings = true },
-                        mode = TopAppBarStyle.SMALL,
-                    )
-                }
-                MainSection.CAPTURE -> {
-                    CaptureTopBar(
-                        vm = captureVm,
-                        onClose = { hostState.selectedSection = MainSection.LIST },
-                        showNavigationIcon = false,
-                        onRequestMerge = { showCaptureMergeSheet = true },
-                    )
+                    ModernTopBarState.LIST_SELECTION -> {
+                        TopAppBar(
+                            title = context.getString(R.string.selected_items, hostState.selectedIds.size),
+                            mode = TopAppBarStyle.SMALL,
+                            titleTextStyle = MaterialTheme.typography.titleLarge,
+                            navigationIcon = {
+                                IconButton(onClick = {
+                                    hostState.clearSelection()
+                                    activeSelectionPane = null
+                                }) {
+                                    Icon(
+                                        ImageVector.vectorResource(R.drawable.ic_close),
+                                        contentDescription = stringResource(R.string.close),
+                                    )
+                                }
+                            },
+                            actions = {
+                                IconButton(onClick = {
+                                    selectionActions.onDoneClick(
+                                        ddlList = ddlList,
+                                        onCelebrate = {
+                                            if (com.aritxonly.deadliner.localutils.GlobalUtils.fireworksOnFinish) {
+                                                celebrate()
+                                            }
+                                        },
+                                    )
+                                }) {
+                                    Icon(
+                                        ImageVector.vectorResource(R.drawable.ic_done),
+                                        contentDescription = stringResource(R.string.accept)
+                                    )
+                                }
+                                if (hostState.selectedPage == DeadlineType.TASK) {
+                                    IconButton(onClick = { selectionActions.onArchiveClick(ddlList = ddlList) }) {
+                                        Icon(
+                                            ImageVector.vectorResource(R.drawable.ic_archiving),
+                                            contentDescription = stringResource(R.string.archive)
+                                        )
+                                    }
+                                } else {
+                                    IconButton(onClick = { selectionActions.onReminderClick(ddlList = ddlList) }) {
+                                        Icon(
+                                            ImageVector.vectorResource(R.drawable.ic_notification_add),
+                                            contentDescription = stringResource(R.string.settings_more)
+                                        )
+                                    }
+                                }
+                                IconButton(onClick = { selectionActions.onDeleteClick() }) {
+                                    Icon(
+                                        ImageVector.vectorResource(R.drawable.ic_delete),
+                                        contentDescription = stringResource(R.string.delete)
+                                    )
+                                }
+                                IconButton(onClick = { selectionActions.onEditClick(ddlList = ddlList) }) {
+                                    Icon(
+                                        ImageVector.vectorResource(R.drawable.ic_edit),
+                                        contentDescription = stringResource(R.string.edit)
+                                    )
+                                }
+                            },
+                        )
+                    }
+                    ModernTopBarState.OVERVIEW -> {
+                        OverviewTopBar(
+                            showNavigationIcon = false,
+                            onShowSettings = { showOverviewSettings = true },
+                            mode = TopAppBarStyle.SMALL,
+                        )
+                    }
+                    ModernTopBarState.CAPTURE -> {
+                        CaptureTopBar(
+                            vm = captureVm,
+                            onClose = { hostState.selectedSection = MainSection.LIST },
+                            showNavigationIcon = false,
+                            onRequestMerge = { showCaptureMergeSheet = true },
+                        )
+                    }
                 }
             }
         },
@@ -503,6 +564,7 @@ fun ModernHost(
                     }
                     FloatingActionButton(
                         onClick = onFabClick,
+                        forceMaterial3 = true,
                     ) {
                         Icon(
                             ImageVector.vectorResource(R.drawable.ic_add),
@@ -516,9 +578,13 @@ fun ModernHost(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.surface),
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            ) {
 
             when (hostState.selectedSection) {
                 MainSection.LIST -> {
@@ -555,8 +621,6 @@ fun ModernHost(
                         }
 
                         if (isWideLayout) {
-                            val taskListState = rememberLazyListState()
-                            val habitListState = rememberLazyListState()
                             val taskPaneBlocked = hostState.selectionMode && activeSelectionPane == DeadlineType.HABIT
                             val habitPaneBlocked = hostState.selectionMode && activeSelectionPane == DeadlineType.TASK
                             Row(
@@ -672,7 +736,11 @@ fun ModernHost(
                                 selectedPage = hostState.selectedPage,
                                 activity = activity,
                                 vm = vm,
-                                listState = listState,
+                                listState = if (hostState.selectedPage == DeadlineType.TASK) {
+                                    taskListState
+                                } else {
+                                    habitListState
+                                },
                                 moreExpanded = false,
                                 moreAnchorRect = null,
                                 useAvatar = avatarPainter != null,
@@ -696,7 +764,7 @@ fun ModernHost(
                     OverviewContent(
                         items = overviewItems,
                         activity = activity,
-                        flattenedLayout = isWideLayout,
+                        flattenedLayout = useFlattenedOverview,
                     )
                 }
                 MainSection.CAPTURE -> {
@@ -708,7 +776,7 @@ fun ModernHost(
                     )
                 }
             }
-        }
+            }
 
         AnimatedVisibility(
             visible = showSearchPage,
@@ -722,7 +790,9 @@ fun ModernHost(
                     animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
                     shrinkTowards = Alignment.Top,
                 ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter),
             label = "modern-searchbar-visibility",
         ) {
             MainSearchBar(
@@ -755,6 +825,7 @@ fun ModernHost(
                     parties = parties
                 )
             }
+        }
         }
     }
 

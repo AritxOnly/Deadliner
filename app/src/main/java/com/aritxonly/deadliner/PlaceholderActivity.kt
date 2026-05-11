@@ -2,14 +2,13 @@ package com.aritxonly.deadliner
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.aritxonly.deadliner.localutils.DynamicColorsExtension
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 
-class PlaceholderActivity : AppCompatActivity() {
+class PlaceholderActivity : DeadlinerAppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdgeForAllDevices()

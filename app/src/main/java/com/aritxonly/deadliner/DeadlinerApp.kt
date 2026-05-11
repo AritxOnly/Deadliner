@@ -2,6 +2,7 @@ package com.aritxonly.deadliner
 
 import android.annotation.SuppressLint
 import android.app.Application
+import android.os.Bundle
 import android.content.ComponentName
 import android.content.Intent
 import androidx.window.WindowSdkExtensions
@@ -14,6 +15,7 @@ import androidx.window.embedding.SplitPairRule
 import androidx.window.embedding.SplitPlaceholderRule
 import androidx.window.embedding.SplitRule
 import com.aritxonly.deadliner.data.UserProfileRepository
+import com.aritxonly.deadliner.localutils.AppIconManager
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.ApiKeystore
 import com.aritxonly.deadliner.sync.SyncScheduler
@@ -27,6 +29,26 @@ class DeadlinerApp : Application() {
         AIUtils.init(this)
         AppSingletons.init(this)
         UserProfileRepository.init(this)
+        AppIconManager.applyCurrentMode(this)
+        var startedActivityCount = 0
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityStarted(activity: android.app.Activity) {
+                if (startedActivityCount == 0) {
+                    AppIconManager.applyCurrentMode(this@DeadlinerApp)
+                }
+                startedActivityCount++
+            }
+
+            override fun onActivityStopped(activity: android.app.Activity) {
+                startedActivityCount = (startedActivityCount - 1).coerceAtLeast(0)
+            }
+
+            override fun onActivityCreated(activity: android.app.Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityResumed(activity: android.app.Activity) = Unit
+            override fun onActivityPaused(activity: android.app.Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: Bundle) = Unit
+            override fun onActivityDestroyed(activity: android.app.Activity) = Unit
+        })
 
         if (GlobalUtils.cloudSyncEnable) {
             SyncScheduler.enqueuePeriodic(this)

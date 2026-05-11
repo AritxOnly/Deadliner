@@ -93,7 +93,8 @@ internal fun updateAppMultiDeadlineWidget(
     appWidgetManager.updateAppWidget(appWidgetId, views)
 
     val dbHelper = DatabaseHelper.Companion.getInstance(context)
-    val allDDLs = dbHelper.getDDLsByType(DeadlineType.TASK)
+    val activeTasks = dbHelper.getDDLsByType(DeadlineType.TASK)
+        .filter { it.state.isActionable() }
 
     val color = getThemeColor(context, android.R.attr.textColorPrimary)
     views.setInt(R.id.widgetFinishIcon, "setColorFilter", color)
@@ -112,7 +113,7 @@ internal fun updateAppMultiDeadlineWidget(
     views.setViewVisibility(R.id.btn_add_ddl, addButtonVisibility)
 
     val now = LocalDateTime.now()
-    val parsedDDLs = allDDLs.map { ddl ->
+    val parsedDDLs = activeTasks.map { ddl ->
         val startTime = GlobalUtils.safeParseDateTime(ddl.startTime)
         val endTime = GlobalUtils.safeParseDateTime(ddl.endTime)
         val remainingMillis = ChronoUnit.MILLIS.between(now, endTime)
@@ -122,8 +123,7 @@ internal fun updateAppMultiDeadlineWidget(
     }
 
     // 按剩余时间排序
-    val sortedDDLs = parsedDDLs.sortedWith(compareBy<ParsedDDL> { it.isCompleted }
-        .thenBy { !it.isStared }
+    val sortedDDLs = parsedDDLs.sortedWith(compareBy<ParsedDDL> { !it.isStared }
         .thenBy {
             it.remainingMillis
         })
@@ -160,10 +160,6 @@ internal fun updateAppMultiDeadlineWidget(
         val (containerId, titleId, progressId) = itemContainers[index]
         val progressTextId = progressTextIds[index]
         val starIconId = starIconIds[index]
-
-        if (parsed.isCompleted) {
-            continue    // 设置已完成的不显示
-        }
 
         views.setViewVisibility(
             starIconId,

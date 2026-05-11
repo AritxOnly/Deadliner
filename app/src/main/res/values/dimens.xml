@@ -2,6 +2,13 @@
 <resources>
     <dimen name="icon_margin">16dp</dimen>
     <dimen name="item_corner_radius">24dp</dimen> <!-- 圆角半径 -->
+    <dimen name="overview_bottom_safe_area">80dp</dimen>
+    <dimen name="overview_corner_radius_xs">2dp</dimen>
+    <dimen name="overview_corner_radius_sm">10dp</dimen>
+    <dimen name="overview_corner_radius_md">16dp</dimen>
+    <dimen name="overview_corner_radius_pill">999dp</dimen>
+    <dimen name="overview_heatmap_cell_max_size">44dp</dimen>
+    <dimen name="overview_contribution_heatmap_cell_max_size">16dp</dimen>
     <dimen name="settings_title_font_size">28sp</dimen>
     <!--
 Refer to App Widget Documentation for margin information

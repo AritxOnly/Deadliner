@@ -13,8 +13,8 @@ object DynamicColorsExtension {
     fun apply(
         activity: Activity,
         seed: String? = null,
-        isMiuixMode: Boolean = GlobalUtils.miuixMode,
-        isMiuixColor: Boolean = GlobalUtils.miuixColor // 新增状态获取
+        isMiuixMode: Boolean = GlobalUtils.appearancePreferences.usesMiuixTheme,
+        isMiuixColor: Boolean = GlobalUtils.appearancePreferences.usePureMiuixAccent
     ) {
         val builder = DynamicColorsOptions.Builder()
 
@@ -43,8 +43,8 @@ object DynamicColorsExtension {
     fun applyApp(
         app: Application,
         seed: String? = null,
-        isMiuixMode: Boolean = GlobalUtils.miuixMode,
-        isMiuixColor: Boolean = GlobalUtils.miuixColor
+        isMiuixMode: Boolean = GlobalUtils.appearancePreferences.usesMiuixTheme,
+        isMiuixColor: Boolean = GlobalUtils.appearancePreferences.usePureMiuixAccent
     ) {
         val builder = DynamicColorsOptions.Builder()
 

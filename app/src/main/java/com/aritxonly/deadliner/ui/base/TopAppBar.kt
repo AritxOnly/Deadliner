@@ -1,81 +1,67 @@
 package com.aritxonly.deadliner.ui.base
 
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.ui.theme.AppDesignSystem
 import com.aritxonly.deadliner.ui.theme.LocalAppDesignSystem
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
-import top.yukonga.miuix.kmp.theme.Colors
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.theme.darkColorScheme
-import top.yukonga.miuix.kmp.theme.lightColorScheme
-
 import top.yukonga.miuix.kmp.basic.TopAppBar as MiuixTopAppBar
+import androidx.compose.material3.TopAppBar as MaterialTopAppBar
 
 enum class TopAppBarStyle {
     CENTER, LARGE, SMALL
 }
 
-/**
- * 应用级 TopAppBar：统一 Material3 / MIUIX 两套实现。
- */
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 fun TopAppBar(
     title: String,
+    subtitle: String? = null,
     navigationIcon: @Composable (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     mode: TopAppBarStyle = TopAppBarStyle.CENTER,
-    forceMiuix: Boolean = false
+    isMainTitle: Boolean = false,
+    titleTextStyle: TextStyle? = null,
 ) {
-    if (forceMiuix) {
-        when (mode) {
-            TopAppBarStyle.LARGE ->
-                MiuixTopAppBar(
-                    title = title,
-                    color = MaterialTheme.colorScheme.surface,
-                    navigationIcon = navigationIcon ?: {},
-                    actions = actions,
-                    titleColor = MaterialTheme.colorScheme.onSurface,
-                    largeTitleColor = MaterialTheme.colorScheme.onSurface,
-                )
+    val topBarColors = TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.surface,
+        scrolledContainerColor = MaterialTheme.colorScheme.surface,
+    )
 
-            else ->
-                SmallTopAppBar(
-                    title = title,
-                    color = MaterialTheme.colorScheme.surface,
-                    navigationIcon = navigationIcon ?: {},
-                    actions = actions,
-                    titleColor = MaterialTheme.colorScheme.onSurface,
-                )
-        }
-    } else when (LocalAppDesignSystem.current) {
+    when (LocalAppDesignSystem.current) {
         AppDesignSystem.MATERIAL3 -> {
             when (mode) {
                 TopAppBarStyle.CENTER ->
                     CenterAlignedTopAppBar(
                         title = {
-                            Text(
-                                text = title,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
+                            if (titleTextStyle != null) {
+                                Text(
+                                    text = title,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    style = titleTextStyle,
+                                )
+                            } else {
+                                Text(
+                                    text = title,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
                         },
                         navigationIcon = { navigationIcon?.invoke() },
                         actions = actions,
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            scrolledContainerColor = MaterialTheme.colorScheme.surface,
-                        ),
+                        colors = topBarColors,
                     )
 
                 TopAppBarStyle.LARGE ->
@@ -88,27 +74,53 @@ fun TopAppBar(
                         },
                         navigationIcon = { navigationIcon?.invoke() },
                         actions = actions,
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            scrolledContainerColor = MaterialTheme.colorScheme.surface,
-                        ),
+                        colors = topBarColors,
                     )
 
                 else ->
-                    TopAppBar(
-                        title = {
-                            Text(
-                                text = title,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        },
-                        navigationIcon = { navigationIcon?.invoke() },
-                        actions = actions,
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            scrolledContainerColor = MaterialTheme.colorScheme.surface,
-                        ),
-                    )
+                    if (!isMainTitle) {
+                        MaterialTopAppBar(
+                            title = {
+                                Text(
+                                    text = title,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    style = titleTextStyle ?: MaterialTheme.typography.headlineMedium
+                                )
+                            },
+                            navigationIcon = { navigationIcon?.invoke() },
+                            actions = actions,
+                            colors = topBarColors,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    } else {
+                        MaterialTopAppBar(
+                            title = {
+                                Column {
+                                    Text(
+                                        text = title,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        style = if (subtitle != null)
+                                            MaterialTheme.typography.headlineSmallEmphasized
+                                        else MaterialTheme.typography.headlineMediumEmphasized
+                                    )
+
+                                    if (subtitle != null) {
+                                        Text(
+                                            text = subtitle,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            style = MaterialTheme.typography.titleSmall
+                                        )
+                                    }
+                                }
+                            },
+                            actions = {
+                                navigationIcon?.invoke()
+                                actions()
+                            },
+                            colors = topBarColors,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
             }
         }
 

@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.compose.setContent
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,7 +17,7 @@ import com.aritxonly.deadliner.ui.detail.DeadlineDetailScreen
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-class DeadlineDetailActivity : AppCompatActivity() {
+class DeadlineDetailActivity : DeadlinerAppCompatActivity() {
 
     companion object {
         const val EXTRA_DEADLINE = "com.aritxonly.deadliner.deadline"

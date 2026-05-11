@@ -29,7 +29,7 @@ import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLStatus
 import com.aritxonly.deadliner.model.DayOverview
 import com.aritxonly.deadliner.model.HabitWithDailyStatus
-import com.aritxonly.deadliner.ui.main.shared.fadingTopEdge
+import com.aritxonly.deadliner.ui.main.shared.mainListContainerClip
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -117,7 +117,7 @@ fun HabitDisplayLayout(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
                 .fillMaxSize()
-                .fadingTopEdge(height = 16.dp),
+                .mainListContainerClip(),
             state = listState,
         ) {
             itemsIndexed(

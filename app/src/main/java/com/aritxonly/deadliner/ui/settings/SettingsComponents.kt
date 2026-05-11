@@ -168,7 +168,7 @@ fun SettingsSection(
 ) {
     val radiusDimen = if (mainContent) 48.dp else dimensionResource(R.dimen.item_corner_radius)
     val containerColor = customColor
-        ?: if (enabled && mainContent && !GlobalUtils.miuixColor) {
+        ?: if (enabled && mainContent) {
             MaterialTheme.colorScheme.primaryContainer
         } else {
             MaterialTheme.colorScheme.surfaceContainer
@@ -311,7 +311,7 @@ fun SettingsSwitchItem(
                 text = stringResource(label),
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLargeEmphasized,
-                color = if (!mainSwitch || !checked || GlobalUtils.miuixColor)
+                color = if (!mainSwitch || !checked)
                     MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.onPrimaryContainer
             )

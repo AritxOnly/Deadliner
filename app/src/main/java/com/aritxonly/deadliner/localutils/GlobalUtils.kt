@@ -26,6 +26,11 @@ import com.aritxonly.deadliner.DeadlineAlarmScheduler
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.data.DDLRepository
 import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.model.AppIconMode
+import com.aritxonly.deadliner.model.AppThemeStyle
+import com.aritxonly.deadliner.model.AppearanceColorSource
+import com.aritxonly.deadliner.model.AppearancePreferences
+import com.aritxonly.deadliner.model.DisplayScalePreset
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
@@ -51,6 +56,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -252,44 +258,142 @@ object GlobalUtils {
             sharedPreferences.edit { putBoolean("developer_mode", value) }
         }
 
-    var miuixMode: Boolean
-        get() = if (::sharedPreferences.isInitialized) sharedPreferences.getBoolean("miuix_mode", false) else false
-        set(value) {
-            if (::sharedPreferences.isInitialized) {
-                sharedPreferences.edit { putBoolean("miuix_mode", value) }
-            }
-            if (_miuixModeFlow == null) {
-                _miuixModeFlow = MutableStateFlow(value)
+    private var _appearanceFlow: MutableStateFlow<AppearancePreferences>? = null
+
+    val appearanceFlow: StateFlow<AppearancePreferences>
+        get() = _appearanceFlow ?: MutableStateFlow(readAppearancePreferences()).also {
+            _appearanceFlow = it
+        }
+
+    val appearancePreferences: AppearancePreferences
+        get() = readAppearancePreferences()
+
+    private fun readAppearancePreferences(): AppearancePreferences {
+        if (!::sharedPreferences.isInitialized) {
+            return AppearancePreferences()
+        }
+
+        val style = UiStyle.fromKey(sharedPreferences.getString("style", UiStyle.Simplified.key))
+        val themeStyle = sharedPreferences.getString("theme_style", null)?.let(AppThemeStyle::fromKey)
+            ?: if (sharedPreferences.getBoolean("miuix_mode", false)) {
+                AppThemeStyle.Miuix
             } else {
-                _miuixModeFlow!!.value = value
+                AppThemeStyle.Material3
             }
+        val seedColor = sharedPreferences.getString("seed_color", null)
+        val displayScale = DisplayScalePreset.fromKey(
+            sharedPreferences.getString("display_scale_preset", DisplayScalePreset.FollowSystem.key)
+        )
+        val customDisplayScaleMultiplier = sharedPreferences
+            .getFloat("display_scale_custom_multiplier", 1.00f)
+            .coerceIn(0.85f, 1.25f)
+        val miuixNeutralSurfaces = sharedPreferences.getBoolean("miuix_neutral_surfaces", true)
+        val advancedMaterial = sharedPreferences.getBoolean("advanced_material", false)
+        val appIconMode = AppIconMode.fromKey(sharedPreferences.getString("app_icon_mode", AppIconMode.Default.key))
+
+        return AppearancePreferences(
+            uiStyle = style,
+            themeStyle = themeStyle,
+            colorSource = if (seedColor.isNullOrBlank()) {
+                AppearanceColorSource.SystemDynamic
+            } else {
+                AppearanceColorSource.SeedColor
+            },
+            seedColorHex = seedColor,
+            displayScalePreset = displayScale,
+            customDisplayScaleMultiplier = customDisplayScaleMultiplier,
+            usePureMiuixAccent = false,
+            useMiuixNeutralSurfaces = miuixNeutralSurfaces,
+            useAdvancedMaterial = advancedMaterial,
+            appIconMode = appIconMode,
+        )
+    }
+
+    private fun persistAppearance(
+        appearance: AppearancePreferences,
+        commit: Boolean = false
+    ) {
+        check(::sharedPreferences.isInitialized) { "GlobalUtils not initialized" }
+        sharedPreferences.edit(commit = commit) {
+            putString("style", appearance.uiStyle.key)
+            putString("theme_style", appearance.themeStyle.key)
+            putBoolean("miuix_mode", appearance.usesMiuixThemePreference)
+            putBoolean("miuix_color", false)
+            putBoolean("miuix_neutral_surfaces", appearance.useMiuixNeutralSurfaces)
+            putBoolean("advanced_material", appearance.useAdvancedMaterial)
+            putString("seed_color", appearance.seedColorHex)
+            putString("display_scale_preset", appearance.displayScalePreset.key)
+            putFloat("display_scale_custom_multiplier", appearance.customDisplayScaleMultiplier)
+            putString("app_icon_mode", appearance.appIconMode.key)
+        }
+        syncAppearanceFlows(appearance)
+    }
+
+    private fun syncAppearanceFlows(appearance: AppearancePreferences) {
+        val style = appearance.uiStyle
+        if (_appearanceFlow == null) {
+            _appearanceFlow = MutableStateFlow(appearance)
+        } else {
+            _appearanceFlow!!.value = appearance
+        }
+
+        if (_styleFlow == null) {
+            _styleFlow = MutableStateFlow(style)
+        } else {
+            _styleFlow!!.value = style
+        }
+
+        if (_seedColorFlow == null) {
+            _seedColorFlow = MutableStateFlow(appearance.seedColorHex)
+        } else {
+            _seedColorFlow!!.value = appearance.seedColorHex
+        }
+
+        if (_miuixModeFlow == null) {
+            _miuixModeFlow = MutableStateFlow(appearance.usesMiuixThemePreference)
+        } else {
+            _miuixModeFlow!!.value = appearance.usesMiuixThemePreference
+        }
+
+        if (_miuixColorFlow == null) {
+            _miuixColorFlow = MutableStateFlow(false)
+        } else {
+            _miuixColorFlow!!.value = false
+        }
+    }
+
+    fun updateAppearance(
+        commit: Boolean = false,
+        transform: (AppearancePreferences) -> AppearancePreferences
+    ) {
+        val updated = transform(readAppearancePreferences())
+        persistAppearance(updated, commit = commit)
+    }
+
+    var miuixMode: Boolean
+        get() = appearancePreferences.usesMiuixThemePreference
+        set(value) {
+            updateAppearance { current -> current.copy(themeStyle = if (value) AppThemeStyle.Miuix else AppThemeStyle.Material3) }
         }
 
     private var _miuixModeFlow: MutableStateFlow<Boolean>? = null
 
     val miuixModeFlow: StateFlow<Boolean>
         get() = _miuixModeFlow ?: MutableStateFlow(
-            if (::sharedPreferences.isInitialized) sharedPreferences.getBoolean("miuix_mode", false) else false
+            appearancePreferences.usesMiuixThemePreference
         ).also { _miuixModeFlow = it }
 
     var miuixColor: Boolean
-        get() = if (::sharedPreferences.isInitialized) sharedPreferences.getBoolean("miuix_color", false) else false
+        get() = false
         set(value) {
-            if (::sharedPreferences.isInitialized) {
-                sharedPreferences.edit { putBoolean("miuix_color", value) }
-            }
-            if (_miuixColorFlow == null) {
-                _miuixColorFlow = MutableStateFlow(value)
-            } else {
-                _miuixColorFlow!!.value = value
-            }
+            updateAppearance { it.copy(usePureMiuixAccent = false) }
         }
 
     private var _miuixColorFlow: MutableStateFlow<Boolean>? = null
 
     val miuixColorFlow: StateFlow<Boolean>
         get() = _miuixColorFlow ?: MutableStateFlow(
-            if (::sharedPreferences.isInitialized) sharedPreferences.getBoolean("miuix_color", false) else false
+            false
         ).also { _miuixColorFlow = it }
 
     var presetIndicatorColor: Boolean
@@ -433,43 +537,60 @@ object GlobalUtils {
 
     private var _styleFlow: MutableStateFlow<UiStyle>? = null
     val styleFlow: StateFlow<UiStyle>
-        get() = _styleFlow ?: MutableStateFlow(UiStyle.Simplified).also {
+        get() = _styleFlow ?: MutableStateFlow(appearancePreferences.uiStyle).also {
             _styleFlow = it
         }
 
     var style: String
-        get() = if (::sharedPreferences.isInitialized)
-            sharedPreferences.getString("style", UiStyle.Simplified.key) ?: UiStyle.Simplified.key
-        else
-            UiStyle.Simplified.key
+        get() = appearancePreferences.uiStyle.key
         set(value) {
-            check(::sharedPreferences.isInitialized) { "GlobalUtils not initialized" }
-            sharedPreferences.edit { putString("style", value) }
+            setStyle(UiStyle.fromKey(value))
         }
 
     fun setStyle(newStyle: UiStyle) {
-        style = newStyle.key
-        _styleFlow?.value = newStyle
+        updateAppearance { it.copy(uiStyle = newStyle) }
     }
+
+    var displayScalePreset: DisplayScalePreset
+        get() = appearancePreferences.displayScalePreset
+        set(value) {
+            updateAppearance(commit = true) { it.copy(displayScalePreset = value) }
+        }
+
+    var customDisplayScaleMultiplier: Float
+        get() = appearancePreferences.customDisplayScaleMultiplier
+        set(value) {
+            updateAppearance(commit = true) {
+                it.copy(customDisplayScaleMultiplier = value.coerceIn(0.85f, 1.25f))
+            }
+        }
+
+    var appIconMode: AppIconMode
+        get() = appearancePreferences.appIconMode
+        set(value) {
+            updateAppearance { it.copy(appIconMode = value) }
+        }
 
     private var _seedColorFlow: MutableStateFlow<String?>? = null
 
     val seedColorFlow: StateFlow<String?>
         get() = _seedColorFlow ?: MutableStateFlow(
-            if (::sharedPreferences.isInitialized) sharedPreferences.getString("seed_color", null) else null
+            appearancePreferences.seedColorHex
         ).also { _seedColorFlow = it }
 
     var seedColor: String?
-        get() = if (::sharedPreferences.isInitialized) sharedPreferences.getString("seed_color", null) else null
+        get() = appearancePreferences.seedColorHex
         set(value) {
-            if (::sharedPreferences.isInitialized) {
-                sharedPreferences.edit { putString("seed_color", value) }
-            }
-            // 核心：当值改变时，向流发送新值，触发 Compose 重组
-            if (_seedColorFlow == null) {
-                _seedColorFlow = MutableStateFlow(value)
-            } else {
-                _seedColorFlow!!.value = value
+            val normalized = value?.takeIf { it.isNotBlank() }
+            updateAppearance {
+                it.copy(
+                    colorSource = if (normalized == null) {
+                        AppearanceColorSource.SystemDynamic
+                    } else {
+                        AppearanceColorSource.SeedColor
+                    },
+                    seedColorHex = normalized,
+                )
             }
         }
 
@@ -486,16 +607,22 @@ object GlobalUtils {
         }
 
     object OverviewSettings {
-        var monthlyCount: Int
-            get() = sharedPreferences.getInt("monthly_count(overview)", 12)
-            set(value) {
-                sharedPreferences.edit { putInt("monthly_count(overview)", value) }
-            }
-
         var showOverdueInDaily: Boolean
             get() = sharedPreferences.getBoolean("show_overdue_in_daily(overview)", true)
             set(value) {
                 sharedPreferences.edit { putBoolean("show_overdue_in_daily(overview)", value) }
+            }
+
+        var monthlyAnalysisJson: String?
+            get() = sharedPreferences.getString("monthly_analysis_json(overview)", null)
+            set(value) {
+                sharedPreferences.edit { putString("monthly_analysis_json(overview)", value) }
+            }
+
+        var lastAnalyzedMonth: String?
+            get() = sharedPreferences.getString("last_analyzed_month(overview)", null)
+            set(value) {
+                sharedPreferences.edit { putString("last_analyzed_month(overview)", value) }
             }
     }
 
@@ -569,27 +696,7 @@ object GlobalUtils {
     private fun loadSettings(context: Context) {
         Log.d("GlobalUtils", "Settings loaded from SharedPreferences")
         hideDividerUi = hideDivider
-
-        val currentStyle = UiStyle.fromKey(style)
-        if (_styleFlow == null) {
-            _styleFlow = MutableStateFlow(currentStyle)
-        } else {
-            _styleFlow!!.value = currentStyle
-        }
-
-        val currentSeedColor = sharedPreferences.getString("seed_color", null)
-        if (_seedColorFlow == null) {
-            _seedColorFlow = MutableStateFlow(currentSeedColor)
-        } else {
-            _seedColorFlow!!.value = currentSeedColor
-        }
-
-        val currentMiuixMode = sharedPreferences.getBoolean("miuix_mode", false)
-        if (_miuixModeFlow == null) {
-            _miuixModeFlow = MutableStateFlow(currentMiuixMode)
-        } else {
-            _miuixModeFlow!!.value = currentMiuixMode
-        }
+        syncAppearanceFlows(readAppearancePreferences())
     }
 
     fun dpToPx(dp: Float, context: Context): Float {
@@ -633,6 +740,20 @@ object GlobalUtils {
                 return d.atTime(23, 59)
             } catch (_: DateTimeParseException) {
             }
+        }
+
+        try {
+            return OffsetDateTime.parse(s, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+                .atZoneSameInstant(ZoneId.systemDefault())
+                .toLocalDateTime()
+        } catch (_: DateTimeParseException) {
+        }
+
+        try {
+            return Instant.parse(s)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime()
+        } catch (_: DateTimeParseException) {
         }
 
         throw IllegalArgumentException("Invalid date format: $dateTimeString")

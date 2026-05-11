@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner.ui.settings
 
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -11,23 +12,33 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.model.UiStyle
 import com.aritxonly.deadliner.ui.SvgCard
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.ui.navIconPaddingModifier
 
 @Composable
 fun LabSettingsScreen(
+    onClickCustomDisplayScale: () -> Unit,
     onClickCustomFilter: () -> Unit,
     onClickCancelAll: () -> Unit,
     onClickShowIntro: () -> Unit,
     navigateUp: () -> Unit
 ) {
+    val currentStyle by GlobalUtils.styleFlow.collectAsState()
+    var miuixModeEnabled by remember { mutableStateOf(GlobalUtils.miuixMode) }
 
     CollapsingTopBarScaffold(
         title = stringResource(R.string.settings_lab),
@@ -49,31 +60,44 @@ fun LabSettingsScreen(
             .verticalScroll(rememberScrollState())) {
             SvgCard(R.drawable.svg_developer_avatar, modifier = Modifier.padding(16.dp))
 
-            SettingsSection(topLabel = stringResource(R.string.settings_advance)) {
+            SettingsSection(topLabel = stringResource(R.string.settings_experimental)) {
+                if (currentStyle != UiStyle.Classic) {
+                    SettingsDetailSwitchItem(
+                        headline = R.string.settings_miuix_mode,
+                        supportingText = R.string.settings_support_miuix_mode,
+                        checked = miuixModeEnabled,
+                        onCheckedChange = {
+                            GlobalUtils.miuixMode = it
+                            miuixModeEnabled = it
+                        }
+                    )
+                    SettingsSectionDivider()
+                }
+
                 SettingsDetailTextButtonItem(
-                    headline = R.string.settings_model_endpoint,
-                    supporting = R.string.settings_support_model_endpoint_advance
-                ) {  }
+                    headline = R.string.settings_display_size_custom_title,
+                    supporting = R.string.settings_support_display_size_lab
+                ) { onClickCustomDisplayScale() }
             }
 
-            SettingsSection(topLabel = stringResource(R.string.settings_experimental)) {
+            SettingsSection(topLabel = stringResource(R.string.settings_advance)) {
                 SettingsDetailTextButtonItem(
                     headline = R.string.settings_custom_filter_list,
                     supporting = R.string.settings_support_custom_filter_list
                 ) { onClickCustomFilter() }
             }
 
-            SettingsSection(topLabel = stringResource(R.string.settings_developer_options)) {
-                SettingsTextButtonItem(
-                    text = R.string.clear_all_notification
-                ) { onClickCancelAll() }
-
-                SettingsSectionDivider()
-
-                SettingsTextButtonItem(
-                    text = R.string.settings_show_intro
-                ) { onClickShowIntro() }
-            }
+//            SettingsSection(topLabel = stringResource(R.string.settings_developer_options)) {
+//                SettingsTextButtonItem(
+//                    text = R.string.clear_all_notification
+//                ) { onClickCancelAll() }
+//
+//                SettingsSectionDivider()
+//
+//                SettingsTextButtonItem(
+//                    text = R.string.settings_show_intro
+//                ) { onClickShowIntro() }
+//            }
         }
     }
 }

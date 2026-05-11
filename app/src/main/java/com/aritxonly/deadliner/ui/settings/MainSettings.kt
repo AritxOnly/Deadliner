@@ -114,31 +114,29 @@ fun MainSettingsScreen(
 //            item { ShapeShowcase() }
 
             SettingsRoute.allSubRoutes.forEach { group ->
-                if (!(group.contains(SettingsRoute.Lab) && !GlobalUtils.developerMode)) {
-                    item {
-                        SettingsSection {
-                            group.forEachIndexed { index, route ->
-                                val supportText = (if (route.route == "about") "v${context.getAppVersion()} " else "") +
-                                        stringResource(route.supportRes!!)
-                                SettingItem(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { nav.navigate(route.route) },
-                                    headlineText = stringResource(route.titleRes),
-                                    supportingText = supportText,
-                                    leadingContent = {
-                                        Icon(
-                                            imageVector = ImageVector.vectorResource(
-                                                route.iconRes ?: R.drawable.ic_package
-                                            ),
-                                            contentDescription = null
-                                        )
-                                    }
-                                )
-
-                                if (index != group.lastIndex) {
-                                    SettingsSectionDivider()
+                item {
+                    SettingsSection {
+                        group.forEachIndexed { index, route ->
+                            val supportText = (if (route.route == "about") "v${context.getAppVersion()} " else "") +
+                                    stringResource(route.supportRes!!)
+                            SettingItem(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { nav.navigate(route.route) },
+                                headlineText = stringResource(route.titleRes),
+                                supportingText = supportText,
+                                leadingContent = {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(
+                                            route.iconRes ?: R.drawable.ic_package
+                                        ),
+                                        contentDescription = null
+                                    )
                                 }
+                            )
+
+                            if (index != group.lastIndex) {
+                                SettingsSectionDivider()
                             }
                         }
                     }

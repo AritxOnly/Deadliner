@@ -28,11 +28,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -63,12 +62,10 @@ import com.aritxonly.deadliner.ui.base.RadioButton
 fun UiSettingsScreen(
     navigateUp: () -> Unit
 ) {
-    // 1. 将 Boolean 状态升级为 String 状态，记录当前的具体样式
-    var currentStyle by remember { mutableStateOf(GlobalUtils.style) }
+    val currentStyle by GlobalUtils.styleFlow.collectAsState()
 
     val onStyleChange: (String) -> Unit = {
-        GlobalUtils.style = it
-        currentStyle = it
+        GlobalUtils.setStyle(com.aritxonly.deadliner.model.UiStyle.fromKey(it))
     }
 
     val darkTheme = isSystemInDarkTheme()
@@ -110,7 +107,7 @@ fun UiSettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             UiModeSelectionRow(
-                currentStyle = currentStyle,
+                currentStyle = currentStyle.key,
                 onStyleChange = onStyleChange,
                 invertColorFilter = invertColorFilter,
             )

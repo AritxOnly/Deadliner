@@ -39,7 +39,7 @@ import com.aritxonly.deadliner.hashColor
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.ui.AnimatedItem
-import com.aritxonly.deadliner.ui.main.shared.fadingTopEdge
+import com.aritxonly.deadliner.ui.main.shared.mainListContainerClip
 import java.time.Duration
 import java.time.LocalDateTime
 import kotlin.collections.component1
@@ -50,17 +50,16 @@ fun OverviewStatsScreen(
     activeStats: Map<String, Int>,
     historyStats: Map<String, Int>,
     completionTimeStats: List<Pair<String, Int>>,
-    overdueItems: List<DDLItem>,
     modifier: Modifier,
 ) {
     val overviewItems = listOf<@Composable () -> Unit>(
-        { ActiveStatsCard(activeStats, overdueItems) },
+        { ActiveStatsCard(activeStats) },
         { CompletionTimeCard(completionTimeStats) },
         { HistoryStatsCard(historyStats) }
     )
 
     LazyColumn(
-        modifier = modifier.fadingTopEdge(height = 4.dp),
+        modifier = modifier.mainListContainerClip(),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         itemsIndexed(overviewItems) { index, itemContent ->
@@ -69,7 +68,9 @@ fun OverviewStatsScreen(
             }
         }
 
-        item { Spacer(modifier = Modifier.height(8.dp)) }
+        item {
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.overview_bottom_safe_area)))
+        }
     }
 }
 
@@ -173,7 +174,6 @@ fun CompletionTimeCard(
 @Composable
 fun ActiveStatsCard(
     activeStats: Map<String, Int>,
-    overdueItems: List<DDLItem>
 ) {
     Card(
         colors = CardDefaults.cardColors(
@@ -221,24 +221,6 @@ fun ActiveStatsCard(
                             color = hashColor(key = key),
                             fontWeight = FontWeight.Bold
                         )
-                    }
-                }
-            }
-            val overdueCount = activeStats[stringResource(R.string.today_overdue)] ?: 0
-            if (overdueCount > 0 && overdueItems.isNotEmpty()) {
-                Spacer(Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.today_overdue),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.error,   // 错误色强调
-                    modifier = Modifier.padding(bottom = 8.dp).align(Alignment.CenterHorizontally)
-                )
-
-                // 用 Column 或 LazyColumn 渲染每个逾期条目
-                Column {
-                    overdueItems.forEach { item ->
-                        DeadlineItemXmlRow(item)
                     }
                 }
             }

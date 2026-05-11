@@ -19,10 +19,11 @@ fun FloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.primary,
+    forceMaterial3: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    when (LocalAppDesignSystem.current) {
-        AppDesignSystem.MATERIAL3 -> {
+    when {
+        forceMaterial3 || LocalAppDesignSystem.current == AppDesignSystem.MATERIAL3 -> {
             Material3Fab(
                 onClick = onClick,
                 modifier = modifier,
@@ -32,7 +33,7 @@ fun FloatingActionButton(
             )
         }
 
-        AppDesignSystem.MIUIX -> {
+        else -> {
             MiuixFab(
                 onClick = onClick,
                 modifier = modifier,
@@ -41,4 +42,3 @@ fun FloatingActionButton(
         }
     }
 }
-

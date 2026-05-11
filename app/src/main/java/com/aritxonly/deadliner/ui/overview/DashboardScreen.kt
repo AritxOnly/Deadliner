@@ -1,30 +1,37 @@
 package com.aritxonly.deadliner.ui.overview
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
-import android.provider.MediaStore
 import android.widget.Toast
-import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import com.aritxonly.deadliner.ui.base.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -53,123 +60,111 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.aritxonly.deadliner.model.DDLItem
-import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.R
+import com.aritxonly.deadliner.ai.AIUtils
+import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.ui.AnimatedItem
 import com.aritxonly.deadliner.ui.TintedGradientImage
+import com.aritxonly.deadliner.ui.base.Button
 import com.aritxonly.deadliner.ui.iconResource
-import com.aritxonly.deadliner.ui.main.shared.fadingTopEdge
 import com.aritxonly.deadliner.ui.poster.ExportDashboardData
 import com.aritxonly.deadliner.ui.poster.ShareDashboardPoster
 import com.aritxonly.deadliner.ui.poster.renderPosterToCacheUri
 import com.aritxonly.deadliner.ui.poster.saveImageToGallery
 import com.aritxonly.deadliner.ui.poster.shareImage
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
-import java.time.Duration
 import java.time.LocalDateTime
-import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
-import kotlin.math.abs
 
-@OptIn(ExperimentalFoundationApi::class)
+private val overviewAnalysisGson = Gson()
+
 @Composable
 fun DashboardScreen(
-    items: List<DDLItem>,
+    snapshot: OverviewSnapshot,
     activity: Activity,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val now = LocalDateTime.now()
-    // 计算上一个日历月的起始和结束时间
-    val lastMonthYearMonth = YearMonth.from(now).minusMonths(1)
-    val lastMonthStart = lastMonthYearMonth.atDay(1).atStartOfDay()
-    val lastMonthEnd = lastMonthYearMonth.atEndOfMonth().atTime(23, 59, 59)
-    // 计算前上一个日历月的起始和结束时间
-    val prevMonthYearMonth = lastMonthYearMonth.minusMonths(1)
-    val prevMonthStart = prevMonthYearMonth.atDay(1).atStartOfDay()
-    val prevMonthEnd = prevMonthYearMonth.atEndOfMonth().atTime(23, 59, 59)
+    var analysis by remember(snapshot.lastMonthKey) {
+        mutableStateOf(loadCachedMonthlyAnalysis(snapshot.lastMonthKey))
+    }
+    var isAnalyzing by remember(snapshot.lastMonthKey) {
+        mutableStateOf(analysis == null)
+    }
 
-    // 计算特定月份统计
-    val lastStats = collectStatsInRange(items, lastMonthStart, lastMonthEnd)
-    val prevStats = collectStatsInRange(items, prevMonthStart, prevMonthEnd)
+    LaunchedEffect(snapshot.lastMonthKey, snapshot.metricsSummary, snapshot.completedTaskNames) {
+        val cached = loadCachedMonthlyAnalysis(snapshot.lastMonthKey)
+        if (cached != null) {
+            analysis = cached
+            isAnalyzing = false
+            return@LaunchedEffect
+        }
 
-    // 指标列表
-    val (totalChange, totalDown) = computeChange(lastStats.total, prevStats.total)
-    val (completedChange, completedDown) = computeChange(lastStats.completed, prevStats.completed)
-    val (overdueChange, overdueDown) = computeChange(lastStats.overdue, prevStats.overdue)
+        isAnalyzing = true
+        val generated = runCatching {
+            AIUtils.generateMonthlyAnalysis(
+                monthKey = snapshot.lastMonthKey,
+                monthName = snapshot.lastMonthName,
+                metricsSummary = snapshot.metricsSummary,
+                completedTaskNames = snapshot.completedTaskNames,
+            )
+        }.getOrNull()
 
-    val (rateChange, rateDown) = formatRateChange(
-        lastStats.completed, lastStats.total,
-        prevStats.completed, prevStats.total
-    )
-    val (overdueRateChange, overdueRateDown) = formatRateChange(
-        lastStats.overdue, lastStats.total,
-        prevStats.overdue, prevStats.total
-    )
-
-    val monthName = lastMonthYearMonth.month.getDisplayName(
-        TextStyle.FULL, Locale.getDefault()
-    )
-
-    val metrics = listOf(
-        Metric(
-            label = stringResource(R.string.year_format, lastMonthYearMonth.year),
-            value = "$monthName"
-        ),
-        Metric(
-            label = stringResource(R.string.total_tasks_numbers),
-            value = lastStats.total.toString(),
-            change = totalChange,
-            isDown = totalDown
-        ),
-        Metric(
-            label = stringResource(R.string.completed_number),
-            value = lastStats.completed.toString(),
-            change = completedChange,
-            isDown = completedDown
-        ),
-        Metric(
-            label = stringResource(R.string.overdue_number),
-            value = lastStats.overdue.toString(),
-            change = overdueChange,
-            isDown = overdueDown
-        ),
-        Metric(
-            label = stringResource(R.string.complete_rate),
-            value = formatRate(lastStats.completed, lastStats.total),
-            change = rateChange,
-            isDown = rateDown
-        ),
-        Metric(
-            label = stringResource(R.string.overdue_rate),
-            value = formatRate(lastStats.overdue, lastStats.total),
-            change = overdueRateChange,
-            isDown = overdueRateDown
-        ),
-        Metric(
-            label = stringResource(R.string.average_ddl_time),
-            value = formatDuration(lastStats.avgCompletionTime, context)
-        )
-    )
+        if (generated != null && generated.summary.isNotBlank()) {
+            analysis = generated
+            GlobalUtils.OverviewSettings.monthlyAnalysisJson =
+                overviewAnalysisGson.toJson(generated)
+            GlobalUtils.OverviewSettings.lastAnalyzedMonth = snapshot.lastMonthKey
+        }
+        isAnalyzing = false
+    }
 
     var exporting by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var chosenTone by remember { mutableStateOf(TextTone.Light) }
     var chosenBg by remember { mutableStateOf<Bitmap?>(null) }
 
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(16.dp, 0.dp)
+            .padding(horizontal = 16.dp)
     ) {
-        SummaryGrid(metrics) {
-            if (!exporting) showExportDialog = true
+        item {
+            DashboardHeaderSection(monthName = snapshot.lastMonthName)
+        }
+        item {
+            when {
+                isAnalyzing -> LoadingInsightCard()
+                analysis != null -> AIAnalysisCard(analysis = analysis!!)
+                else -> AIUnavailableCard()
+            }
+        }
+        item {
+            DashboardMetricsSection(metrics = snapshot.metrics)
+        }
+        if (snapshot.lastMonthDailyStats.isNotEmpty()) {
+            item {
+                LastMonthActivityMapCard(
+                    monthName = snapshot.lastMonthName,
+                    dailyStats = snapshot.lastMonthDailyStats,
+                )
+            }
+        }
+        item {
+            ShareButtonSection(
+                onShare = {
+                    if (!exporting) {
+                        showExportDialog = true
+                    }
+                }
+            )
+        }
+        item {
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.overview_bottom_safe_area)))
         }
     }
 
@@ -187,8 +182,8 @@ fun DashboardScreen(
                 try {
                     val generatedTime = LocalDateTime.now()
                     val exportData = ExportDashboardData(
-                        monthText = context.getString(R.string.summary_with_text, monthName),
-                        metrics = metrics.drop(1),
+                        monthText = context.getString(R.string.summary_with_text, snapshot.lastMonthName),
+                        metrics = snapshot.metrics,
                         generatedAt = generatedTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                     )
                     val uri = renderPosterToCacheUri(
@@ -209,187 +204,144 @@ fun DashboardScreen(
     )
 }
 
-// 数据模型
-private data class MonthStats(
-    val total: Int,
-    val completed: Int,
-    val overdue: Int,
-    val avgCompletionTime: Duration
-)
-
-private fun collectStatsInRange(
-    items: List<DDLItem>,
-    start: LocalDateTime,
-    end: LocalDateTime
-): MonthStats {
-    val filtered = items.mapNotNull { item ->
-        val ctStr = item.completeTime.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-        val ct = GlobalUtils.safeParseDateTime(ctStr)
-        Pair(item, ct)
-    }.filter { (_, ct) ->
-        !ct.isBefore(start) && !ct.isAfter(end)
-    }
-
-    val total = filtered.size
-    val completed = filtered.count { it.first.isCompleted }
-    val overdue = filtered.count { isOverdue(it.first) }
-
-    val durations = filtered.mapNotNull { (item, ct) ->
-        GlobalUtils.safeParseDateTime(item.startTime).let { st ->
-            Duration.between(st, ct)
-        }
-    }
-    val avgDuration = if (durations.isNotEmpty()) durations.reduce { a, b -> a.plus(b) }.dividedBy(durations.size.toLong())
-    else Duration.ZERO
-
-    return MonthStats(total, completed, overdue, avgDuration)
+private fun loadCachedMonthlyAnalysis(monthKey: String): MonthlyAnalysisResult? {
+    val json = GlobalUtils.OverviewSettings.monthlyAnalysisJson ?: return null
+    val analyzedMonth = GlobalUtils.OverviewSettings.lastAnalyzedMonth
+    val cached = runCatching {
+        overviewAnalysisGson.fromJson(json, MonthlyAnalysisResult::class.java)
+    }.getOrNull() ?: return null
+    return cached.takeIf { it.month == monthKey || analyzedMonth == monthKey }
 }
 
-private fun computeChange(current: Int, previous: Int): Pair<String?, Boolean?> {
-    var isDown: Boolean? = null
-    return when {
-        previous == 0 && current > 0 -> ""
-        previous == 0 -> null
-        else -> {
-            val diff = current - previous
-            isDown = if (diff == 0) null else (diff < 0)
-            "${abs(diff)}"
-        }
-    } to isDown
-}
-
-private fun formatRate(part: Int, total: Int): String =
-    if (total > 0) "${(part * 100 / total)}%" else "--"
-
-private fun formatRateChange(
-    part: Int,
-    total: Int,
-    prevPart: Int,
-    prevTotal: Int
-): Pair<String?, Boolean?> {
-    val rateNow = if (total > 0) part * 100 / total else return null to null
-    val ratePrev = if (prevTotal > 0) prevPart * 100 / prevTotal else return null to null
-    val diff = rateNow - ratePrev
-    return when {
-        diff > 0 -> "${diff}%"
-        diff < 0 -> "${-diff}%"
-        else -> ""
-    } to when {
-        diff > 0 -> false
-        diff < 0 -> true
-        else -> null
-    }
-}
-
-private fun formatDuration(duration: Duration, context: Context): String {
-    val days = duration.toDaysPart()
-    val hours = duration.toHoursPart()
-    return when {
-        days > 0 -> context.getString(R.string.duration_days_hours, days, hours)
-        hours > 0 -> context.getString(R.string.duration_hours, hours)
-        else -> context.getString(R.string.duration_less_than_hour)
-    }
-}
-
-// 瀑布流网格
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun SummaryGrid(
-    metrics: List<Metric>,
-    onShare: () -> Unit,
+private fun DashboardHeaderSection(
+    monthName: String,
 ) {
-    val visibleState = remember { MutableTransitionState(false) }
-    LaunchedEffect(Unit) { visibleState.targetState = true }
+    AnimatedItem(delayMillis = 0) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        ) {
+            DashboardHeader(monthName = monthName)
+        }
+    }
+}
 
-    LazyVerticalStaggeredGrid(
-        columns = StaggeredGridCells.Fixed(2),
-        verticalItemSpacing = 8.dp,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fadingTopEdge(height = 4.dp)
+@Composable
+private fun DashboardMetricsSection(
+    metrics: List<Metric>,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
     ) {
-        item(span = StaggeredGridItemSpan.FullLine) {
-            AnimatedItem(delayMillis = 0) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .fillMaxWidth()
-                        .height(192.dp)
-                        .clipToBounds()
-                        .clip(RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius)))
+        metrics.chunked(2).forEachIndexed { rowIndex, rowMetrics ->
+            AnimatedItem(delayMillis = rowIndex * 100L) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    TintedGradientImage(
-                        R.drawable.dashboard_background,
-                        tintColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.matchParentSize(),
-                        contentDescription = stringResource(R.string.background)
-                    )
-                    Text(
-                        text = stringResource(R.string.last_month_summary),
-                        style = MaterialTheme.typography.headlineLargeEmphasized,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(24.dp)
-                    )
-                }
-            }
-        }
-
-        itemsIndexed(metrics) { index, metric ->
-            AnimatedItem(delayMillis = (index + 1) * 100L) {
-                SummaryCard(metric)
-            }
-        }
-
-        item(span = StaggeredGridItemSpan.FullLine) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    Button(
-                        onClick = onShare,
-                        colors = ButtonDefaults.textButtonColors().copy(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    rowMetrics.forEach { metric ->
+                        SummaryCard(
+                            metric = metric,
+                            modifier = Modifier.weight(1f),
                         )
-                    ) {
-                        Row {
-                            Icon(
-                                iconResource(R.drawable.ic_share),
-                                contentDescription = stringResource(R.string.share),
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .align(Alignment.CenterVertically)
-                            )
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Text(stringResource(R.string.share))
-                        }
+                    }
+                    if (rowMetrics.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
         }
-
-        item(span = StaggeredGridItemSpan.FullLine) { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }
 
-// 单个卡片
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ShareButtonSection(
+    onShare: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Button(
+            onClick = onShare,
+            colors = ButtonDefaults.textButtonColors().copy(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        ) {
+            Icon(
+                iconResource(R.drawable.ic_share),
+                contentDescription = stringResource(R.string.share),
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.share))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun DashboardHeader(
+    monthName: String,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(152.dp)
+            .clipToBounds()
+            .clip(RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius)))
+    ) {
+        TintedGradientImage(
+            R.drawable.dashboard_background,
+            tintColor = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.matchParentSize(),
+            contentDescription = stringResource(R.string.background)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(24.dp)
+        ) {
+            Text(
+                text = monthName,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.84f),
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.last_month_summary),
+                style = MaterialTheme.typography.headlineLargeEmphasized,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SummaryCard(
     metric: Metric,
+    modifier: Modifier = Modifier,
 ) {
     Card(
         shape = RoundedCornerShape(dimensionResource(id = R.dimen.item_corner_radius)),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 100.dp)
     ) {
         Column(
-            modifier = Modifier
-                .padding(16.dp),
+            modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
@@ -405,18 +357,17 @@ private fun SummaryCard(
                 color = MaterialTheme.colorScheme.onSurface
             )
             metric.change?.takeIf { it.isNotEmpty() }?.let { change ->
-                val isDown = metric.isDown
-
                 Spacer(modifier = Modifier.height(8.dp))
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (isDown != null) {
-                        val arrow =
-                            if (isDown) ImageVector.vectorResource(R.drawable.ic_arrow_down) else ImageVector.vectorResource(R.drawable.ic_arrow_up)
+                    metric.isDown?.let { isDown ->
                         Icon(
-                            imageVector = arrow,
+                            imageVector = if (isDown) {
+                                ImageVector.vectorResource(R.drawable.ic_arrow_down)
+                            } else {
+                                ImageVector.vectorResource(R.drawable.ic_arrow_up)
+                            },
                             contentDescription = null,
-                            tint = if (isDown) colorResource(R.color.chart_red) else colorResource(R.color.chart_green),
+                            tint = summaryTrendColor(metric.label, isDown),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -424,11 +375,8 @@ private fun SummaryCard(
                     Text(
                         text = change,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = when (isDown) {
-                            true -> colorResource(R.color.chart_red)
-                            false -> colorResource(R.color.chart_green)
-                            null -> colorResource(R.color.chart_blue)
-                        }
+                        color = metric.isDown?.let { summaryTrendColor(metric.label, it) }
+                            ?: colorResource(R.color.chart_blue)
                     )
                 }
             }
@@ -436,19 +384,260 @@ private fun SummaryCard(
     }
 }
 
-data class Metric(
-    val label: String,
-    val value: String,
-    val change: String? = null,
-    val isDown: Boolean? = null
-)
+@Composable
+private fun summaryTrendColor(label: String, isDown: Boolean): Color {
+    val isOverdueMetric = label == stringResource(R.string.metric_last_month_overdue)
+    return when {
+        isOverdueMetric && isDown -> colorResource(R.color.chart_green)
+        isOverdueMetric -> colorResource(R.color.chart_red)
+        isDown -> colorResource(R.color.chart_red)
+        else -> colorResource(R.color.chart_green)
+    }
+}
 
-// 逾期判断
-private fun isOverdue(item: DDLItem): Boolean {
-    if (!item.isCompleted) return true
-    val end = GlobalUtils.safeParseDateTime(item.endTime)
-    val complete = GlobalUtils.safeParseDateTime(item.completeTime)
-    return end.isBefore(complete)
+@Composable
+private fun LoadingInsightCard() {
+    InsightCard {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            Text(
+                text = stringResource(R.string.monthly_ai_analyzing),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AIUnavailableCard() {
+    InsightCard {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = stringResource(R.string.monthly_ai_insight_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = stringResource(R.string.monthly_ai_unavailable),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AIAnalysisCard(
+    analysis: MonthlyAnalysisResult,
+) {
+    InsightCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    iconResource(R.drawable.ic_ai),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.monthly_ai_insight_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+
+            Text(
+                text = analysis.summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            if (analysis.keywords.isNotEmpty()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    analysis.keywords.forEach { keyword ->
+                        Surface(
+                            shape = RoundedCornerShape(dimensionResource(R.dimen.overview_corner_radius_pill)),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                        ) {
+                            Text(
+                                text = keyword,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InsightCard(
+    content: @Composable () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .fillMaxWidth()
+    ) {
+        Box(modifier = Modifier.padding(16.dp)) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun LastMonthActivityMapCard(
+    monthName: String,
+    dailyStats: List<DailyStat>,
+) {
+    Card(
+        shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.last_month_activity_distribution, monthName),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = stringResource(R.string.last_month_activity_frequency),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            ResponsiveActivityHeatmapGrid(dailyStats = dailyStats)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            HeatLegend(
+                lowLabel = stringResource(R.string.heatmap_low_frequency),
+                highLabel = stringResource(R.string.heatmap_high_frequency),
+                levels = List(5) { level -> colorForLastMonthActivity(level * 2) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ResponsiveActivityHeatmapGrid(
+    dailyStats: List<DailyStat>,
+) {
+    val horizontalSpacing = 6.dp
+    val verticalSpacing = 6.dp
+    val cellMaxSize = dimensionResource(R.dimen.overview_heatmap_cell_max_size)
+    val rows = dailyStats.chunked(7)
+
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val cellSize = ((maxWidth - horizontalSpacing * 6) / 7).coerceAtMost(cellMaxSize)
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(verticalSpacing),
+        ) {
+            rows.forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    repeat(7) { index ->
+                        val stat = row.getOrNull(index)
+                        if (stat != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(cellSize)
+                                    .clip(RoundedCornerShape(dimensionResource(R.dimen.overview_corner_radius_sm)))
+                                    .background(colorForLastMonthActivity(stat.completedCount)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = stat.label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (stat.completedCount > 0) {
+                                        colorResource(R.color.overview_heatmap_text_active)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                )
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.size(cellSize))
+                        }
+
+                        if (index < 6) {
+                            Spacer(modifier = Modifier.width(horizontalSpacing))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun colorForLastMonthActivity(count: Int): Color {
+    return when {
+        count <= 0 -> MaterialTheme.colorScheme.surfaceVariant
+        count < 2 -> colorResource(R.color.chart_blue).copy(alpha = 0.30f)
+        count < 4 -> colorResource(R.color.chart_blue).copy(alpha = 0.50f)
+        count < 6 -> colorResource(R.color.chart_blue).copy(alpha = 0.72f)
+        else -> colorResource(R.color.chart_blue)
+    }
+}
+
+@Composable
+private fun HeatLegend(
+    lowLabel: String,
+    highLabel: String,
+    levels: List<Color>,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = lowLabel,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        levels.forEach { color ->
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 2.dp)
+                    .size(10.dp)
+                    .clip(RoundedCornerShape(dimensionResource(R.dimen.overview_corner_radius_xs)))
+                    .background(color)
+            )
+        }
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = highLabel,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 enum class TextTone {
@@ -499,29 +688,31 @@ fun ExportOptionsDialog(
                 Spacer(Modifier.height(8.dp))
                 Text(stringResource(R.string.background_img))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(onClick = { pickImage.launch("image/*") }) { Text(stringResource(R.string.pick_from_gallery)) }
+                    Button(onClick = { pickImage.launch("image/*") }) {
+                        Text(stringResource(R.string.pick_from_gallery))
+                    }
                     OutlinedButton(
                         onClick = { bgBitmap = null },
                         enabled = bgBitmap != null
                     ) { Text(stringResource(R.string.clear)) }
                 }
 
-                // 简易预览（可选）
                 Spacer(Modifier.height(12.dp))
                 Surface(
                     tonalElevation = 2.dp,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(dimensionResource(R.dimen.overview_corner_radius_md)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // 小尺寸预览，避免内存压力
                     ShareDashboardPoster(
                         data = ExportDashboardData(
-                            monthText = stringResource(R.string.preview), metrics = emptyList(),
-                            brand = "Deadliner", generatedAt = "—"
+                            monthText = stringResource(R.string.preview),
+                            metrics = emptyList(),
+                            brand = "Deadliner",
+                            generatedAt = "—"
                         ),
                         backgroundBitmap = bgBitmap,
                         textTone = tone,
-                        widthPx = 720 // 预览缩小
+                        widthPx = 720
                     )
                 }
             }
@@ -539,12 +730,12 @@ fun decodeUriAsSoftwareBitmap(context: Context, uri: Uri, maxWidth: Int? = null)
     return if (Build.VERSION.SDK_INT >= 28) {
         val src = ImageDecoder.createSource(context.contentResolver, uri)
         ImageDecoder.decodeBitmap(src) { decoder, info, _ ->
-            // 关键：强制软件分配，避免 Config.HARDWARE
             decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE)
-            // 可选：降采样，避免超大图 OOM
             maxWidth?.let { mw ->
-                val w = info.size.width
-                if (w > mw) decoder.setTargetSize(mw, (info.size.height * mw / w.toFloat()).toInt())
+                val width = info.size.width
+                if (width > mw) {
+                    decoder.setTargetSize(mw, (info.size.height * mw / width.toFloat()).toInt())
+                }
             }
         }
     } else {

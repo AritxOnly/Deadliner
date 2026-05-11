@@ -41,6 +41,7 @@ import com.aritxonly.deadliner.model.DDLState
 import com.aritxonly.deadliner.model.DDLStatus
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.ui.main.DDLItemCardSimplified
+import com.aritxonly.deadliner.ui.main.shared.mainListContainerClip
 import com.aritxonly.deadliner.ui.main.simplified.AnimatedItem
 import com.aritxonly.deadliner.ui.main.simplified.HabitRow
 import java.time.LocalDate
@@ -118,7 +119,7 @@ fun MainSearchResultsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
-                .fadingTopEdge(height = 16.dp),
+                .mainListContainerClip(),
         ) {
             itemsIndexed(
                 items = searchResults,
@@ -165,7 +166,7 @@ fun MainSearchResultsContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface)
-                    .fadingTopEdge(height = 16.dp),
+                    .mainListContainerClip(),
             ) {
                 itemsIndexed(
                     items = searchResults,

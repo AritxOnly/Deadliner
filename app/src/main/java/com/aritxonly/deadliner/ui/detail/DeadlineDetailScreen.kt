@@ -384,7 +384,6 @@ fun DeadlineDetailScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 modifier = Modifier
-                    .navigationBarsPadding()
                     .semantics {
                         contentDescription = activityContext.getString(R.string.detail_plan_add)
                     },

@@ -33,8 +33,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -610,7 +612,8 @@ fun AIOverlay(
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = 34.dp, end = 20.dp)
+                .statusBarsPadding()
+                .padding(end = 20.dp)
                 .background(
                     color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.75f),
                     shape = CircleShape

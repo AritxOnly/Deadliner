@@ -18,7 +18,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.localutils.GlobalUtils
-import com.aritxonly.deadliner.localutils.OverviewUtils.MonthlyStat
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.extensions.format
@@ -65,7 +64,7 @@ internal val DefaultPopupProperties
 
 @Composable
 fun DailyBarChart(
-    data: List<Triple<LocalDate, Int, Int>>,
+    data: List<DailyStat>,
     modifier: Modifier = Modifier,
     barColor: Color = MaterialTheme.colorScheme.primary,
     overdueColor: Color = MaterialTheme.colorScheme.error
@@ -83,20 +82,20 @@ fun DailyBarChart(
     val overdueDoneText = stringResource(R.string.overdue_done)
 
     val chartData = remember(data) {
-        data.map { (date, count, overdue) ->
+        data.map { stat ->
             Bars(
-                label = date.dayOfMonth.toString(),
+                label = stat.date.dayOfMonth.toString(),
                 values = if (GlobalUtils.OverviewSettings.showOverdueInDaily) listOf(
-                    Bars.Data(value = count.toDouble(), color = Brush.verticalGradient(
+                    Bars.Data(value = stat.completedCount.toDouble(), color = Brush.verticalGradient(
                         listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
                     ), label = completedText),
-                    Bars.Data(value = overdue.toDouble(), color = Brush.verticalGradient(
+                    Bars.Data(value = stat.overdueCount.toDouble(), color = Brush.verticalGradient(
                         listOf<Color>(overdueColor, overdueColor.copy(alpha = 0.5f))
                     ), label = overdueDoneText)
                 ) else listOf(
-                    Bars.Data(value = count.toDouble(), color = Brush.verticalGradient(
+                    Bars.Data(value = stat.completedCount.toDouble(), color = Brush.verticalGradient(
                         listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
-                    ), label = overdueDoneText)
+                    ), label = completedText)
                 )
             )
         }
@@ -116,7 +115,7 @@ fun DailyBarChart(
             animationMode = AnimationMode.Together(delayBuilder = { it * 100L }),
             popupProperties = DefaultPopupProperties.copy(
                 contentBuilder = { dataIndex, valueIndex, value ->
-                    "${data[dataIndex].first}: ${value.format(0)}"
+                    "${data[dataIndex].label}: ${value.format(0)}"
                 }
             ),
             indicatorProperties = HorizontalIndicatorProperties(enabled = false),
@@ -153,7 +152,7 @@ fun MonthlyTrendChart(
         listOf(
             Line(
                 label = totalTasksText,
-                values = stats.map { it.total.toDouble() },
+                values = stats.map { it.totalCount.toDouble() },
                 color = Brush.verticalGradient(
                     listOf<Color>(totalColor, totalColor.copy(alpha = .5f))
                 ),
@@ -170,7 +169,7 @@ fun MonthlyTrendChart(
             ),
             Line(
                 label = completedText,
-                values = stats.map { it.completed.toDouble() },
+                values = stats.map { it.completedCount.toDouble() },
                 color = Brush.verticalGradient(
                     listOf<Color>(completedColor, completedColor.copy(alpha = .5f))
                 ),
@@ -187,7 +186,7 @@ fun MonthlyTrendChart(
             ),
             Line(
                 label = overdueDoneText,
-                values = stats.map { it.overdueCompleted.toDouble() },
+                values = stats.map { it.overdueCompletedCount.toDouble() },
                 color = Brush.verticalGradient(
                     listOf<Color>(overdueColor, overdueColor.copy(alpha = .5f))
                 ),
@@ -227,7 +226,7 @@ fun MonthlyTrendChart(
 
 @Composable
 fun WeeklyBarChart(
-    data: List<Pair<String, Int>>,
+    data: List<WeeklyStat>,
     modifier: Modifier = Modifier,
     barColor: Color = MaterialTheme.colorScheme.secondary
 ) {
@@ -240,12 +239,12 @@ fun WeeklyBarChart(
     val completedText = stringResource(R.string.completed)
 
     val chartData = remember(data) {
-        data.map { (label, count) ->
+        data.map { stat ->
             Bars(
-                label = label,
+                label = stat.weekLabel,
                 values = listOf(
                     Bars.Data(
-                        value = count.toDouble(),
+                        value = stat.completedCount.toDouble(),
                         color = Brush.verticalGradient(
                             listOf<Color>(barColor, barColor.copy(alpha = 0.5f))
                         ),
@@ -271,7 +270,7 @@ fun WeeklyBarChart(
             labelHelperProperties = DefaultLabelHelperProperties,
             popupProperties = DefaultPopupProperties.copy(
                 contentBuilder = { dataIndex, valueIndex, value ->
-                    "${data[valueIndex].first}: ${value.format(0)}"
+                    "${data[dataIndex].weekLabel}: ${value.format(0)}"
                 }
             ),
             indicatorProperties = HorizontalIndicatorProperties(enabled = false),

@@ -21,6 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aritxonly.deadliner.intro.IntroWizardViewModel
 import com.aritxonly.deadliner.intro.WizardStep
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.model.UiStyle
 import com.aritxonly.deadliner.ui.iconResource
 
 
@@ -58,7 +59,8 @@ fun IntroWizardRoot(
 ) {
     val state by vm.state.collectAsState()
     val step = state.currentStep
-    val isSimplified = remember { GlobalUtils.style == "simplified" }
+    val uiStyle by GlobalUtils.styleFlow.collectAsState()
+    val isSimplified = uiStyle == UiStyle.Simplified
 
     LaunchedEffect(step) {
         if (step is WizardStep.Done) {

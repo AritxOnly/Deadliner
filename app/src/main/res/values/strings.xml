@@ -62,6 +62,15 @@
     <string name="settings_progress_dir_main">主界面正向进度条</string>
     <string name="settings_fireworks">完成时显示动画效果</string>
     <string name="settings_detail_display">剩余时间详细显示</string>
+    <string name="settings_display_size_title">显示大小</string>
+    <string name="settings_display_size_follow_system">跟随系统</string>
+    <string name="settings_display_size_compact">更紧凑</string>
+    <string name="settings_display_size_slightly_compact">稍紧凑</string>
+    <string name="settings_display_size_standard">标准</string>
+    <string name="settings_display_size_slightly_large">稍大</string>
+    <string name="settings_display_size_large">更大</string>
+    <string name="settings_support_display_size_menu">选择预设显示大小档位</string>
+    <string name="settings_display_size_custom_title">自定义显示大小缩放比例</string>
 
     <string name="settings_support_progress_dir">主界面任务进度条显示项目进行进度</string>
     <string name="settings_support_excitement">在主界面标题栏下方显示个性化鼓励语句</string>
@@ -249,9 +258,10 @@
     <string name="overdue_rate">逾期率</string>
     <string name="average_ddl_time">平均完成时长</string>
     <string name="background">背景</string>
-    <string name="last_month_summary">上月总结</string>
+    <string name="last_month_summary">数据汇总</string>
 
     <string name="duration_days_hours">%1$d天 %2$d小时</string>
+    <string name="duration_minutes">%1$d分钟</string>
     <string name="duration_hours">%1$d小时</string>
     <string name="duration_less_than_hour">&lt;1小时</string>
     <string name="show_clipboard_ai_snackbar">检测到剪切板内容，使用 Lifi AI 快捷添加？</string>
@@ -278,9 +288,9 @@
     <string name="task_complete_time_summary">任务完成时间段统计</string>
     <string name="today_task_summary">今日任务状态统计</string>
     <string name="today_overdue">今日逾期</string>
-    <string name="prev4weeks">最近4周完成量</string>
-    <string name="monthly_trend">月度趋势</string>
-    <string name="weekly_completed">周完成量</string>
+    <string name="prev4weeks">近4周完成</string>
+    <string name="monthly_trend">每月趋势</string>
+    <string name="weekly_completed">本周完成情况</string>
     <string name="overdue">逾期</string>
     <string name="today_completed">今日完成</string>
     <string name="completed">已完成</string>
@@ -288,6 +298,29 @@
     <string name="no_data_yet">暂无数据</string>
     <string name="overdue_done">逾期完成</string>
     <string name="total_tasks">总任务</string>
+    <string name="pending_tasks">待办任务</string>
+    <string name="current_pending">当前待办</string>
+    <string name="cumulative_completed">累计完成</string>
+    <string name="cumulative_abandoned">累计放弃</string>
+    <string name="cumulative_overdue">累计逾期</string>
+    <string name="contribution_heatmap">活跃热力图</string>
+    <string name="contribution_heatmap_days">%1$d天内</string>
+    <string name="heatmap_less">少</string>
+    <string name="heatmap_more">多</string>
+    <string name="heatmap_low_frequency">低频率</string>
+    <string name="heatmap_high_frequency">高频率</string>
+    <string name="metric_last_month_total">上月任务数</string>
+    <string name="metric_last_month_completed">上月完成</string>
+    <string name="metric_last_month_completion_rate">上月完成率</string>
+    <string name="metric_last_month_overdue">上月逾期数</string>
+    <string name="metric_most_active_period">最活跃时段</string>
+    <string name="metric_average_duration">平均耗时</string>
+    <string name="metric_bucket_completed_count">完成 %1$d 个</string>
+    <string name="monthly_ai_insight_title">AI 月度洞察</string>
+    <string name="monthly_ai_analyzing">AI 正在深度分析上月数据…</string>
+    <string name="monthly_ai_unavailable">本月还没有可展示的 AI 洞察，稍后再回来看看。</string>
+    <string name="last_month_activity_distribution">%1$s活动分布</string>
+    <string name="last_month_activity_frequency">每日完成频率</string>
     <string name="permission_calendar_error">请检查日历权限：%s$1</string>
     <string name="add_calendar_success">已添加至日历</string>
     <string name="add_calendar_failed">添加至日历失败: %s$1</string>
@@ -374,9 +407,9 @@
     <string name="time_bucket_evening">晚上</string>
     <string name="time_bucket_unknown">未知</string>
 
-    <string name="tab_overview">概览统计</string>
-    <string name="tab_trend">趋势分析</string>
-    <string name="tab_summary">上月总结</string>
+    <string name="tab_overview">总览</string>
+    <string name="tab_trend">趋势</string>
+    <string name="tab_summary">上月</string>
     <string name="xx_months">%1$d 个月</string>
     <string name="destroy_alarms">已成功销毁所有闹钟时间</string>
     <string name="select_filter_calendar">请选择要显示的日历过滤器</string>
@@ -507,7 +540,9 @@
     <string name="search_events">搜索事件</string>
     <string name="search">搜索</string>
     <string name="overview_settings_month">查看的月度数</string>
-    <string name="overview_settings_weekly_show_overdue_complete">每周视图显示逾期完成</string>
+    <string name="overview_settings_weekly_show_overdue_complete">本周完成情况显示逾期</string>
+    <string name="overview_settings_show_overdue_series">显示逾期柱状</string>
+    <string name="overview_settings_show_overdue_series_support">在“本周完成情况”中叠加显示按到期日归属的逾期未完成任务。</string>
 
     <string name="settings_model">模型设置</string>
     <string name="settings_model_endpoint">模型接入点</string>
@@ -595,6 +630,8 @@
     <string name="settings_model_settings_advance">开启后，可以自定义模型接入点与自己的API Key</string>
     <string name="settings_model_settings">模型高级设置</string>
     <string name="settings_ai_function">功能设置</string>
+    <string name="settings_advanced_material">高级材质</string>
+    <string name="settings_support_advanced_material">为顶部栏和导航栏启用统一的模糊玻璃材质效果</string>
 
     <string name="quota_title">当前配额</string>
     <string name="quota_identity_vip">VIP</string>
@@ -759,6 +796,27 @@
     <string name="settings_support_miuix_mode">开启 HyperOS 风格的主题与组件库（实验性）</string>
     <string name="settings_miuix_color">MIUIX 颜色</string>
     <string name="settings_support_miuix_color">使用 HyperOS 的默认颜色（需要在主界面风格中开启 现代模式 以避免界面显示问题）</string>
+    <string name="settings_support_display_size_lab">预设档位与自定义缩放比例（实验性）</string>
+    <string name="settings_display_size_custom">自定义比例</string>
+    <string name="settings_display_size_custom_ratio">自定义缩放比例</string>
+    <string name="settings_apply_custom_display_scale">应用自定义缩放</string>
+    <string name="settings_support_apply_custom_display_scale">当前将使用 %1$d%% 的显示大小，应用后会重启</string>
+    <string name="settings_app_icon_title">应用图标</string>
+    <string name="settings_app_icon_summary">切换默认图标或四季图标</string>
+    <string name="settings_app_icon_description">选择你喜欢的 Deadliner 图标。切换后桌面图标通常会很快刷新，少数系统可能会有轻微延迟。</string>
+    <string name="settings_app_icon_applied_hint">图标设置已更新，桌面可能会稍后刷新</string>
+    <string name="settings_app_icon_default">默认</string>
+    <string name="settings_app_icon_default_summary">使用默认图标</string>
+    <string name="settings_app_icon_auto">四季</string>
+    <string name="settings_app_icon_auto_summary">根据当前节气季节自动切换图标</string>
+    <string name="settings_app_icon_spring">春</string>
+    <string name="settings_app_icon_spring_summary">固定使用春季图标</string>
+    <string name="settings_app_icon_summer">夏</string>
+    <string name="settings_app_icon_summer_summary">固定使用夏季图标</string>
+    <string name="settings_app_icon_autumn">秋</string>
+    <string name="settings_app_icon_autumn_summary">固定使用秋季图标</string>
+    <string name="settings_app_icon_winter">冬</string>
+    <string name="settings_app_icon_winter_summary">固定使用冬季图标</string>
     <string name="settings_preset_indicator">多彩任务指示标</string>
     <string name="settings_support_preset_indicator">替换来自鸿蒙版本的多彩任务进度指示标</string>
     <string name="capture_title">灵感</string>

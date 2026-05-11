@@ -8,13 +8,11 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
+import com.aritxonly.deadliner.DeadlinerComponentActivity
 import com.aritxonly.deadliner.data.DatabaseHelper
 import com.aritxonly.deadliner.databinding.HabitMiniWidgetConfigureBinding
 import com.aritxonly.deadliner.model.DeadlineType
 import androidx.core.content.edit
-import com.google.android.material.color.DynamicColors
-import androidx.activity.ComponentActivity
-import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -25,7 +23,7 @@ import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 /**
  * The configuration screen for the [HabitMiniWidget] AppWidget.
  */
-class HabitWidgetConfigureActivity : ComponentActivity() {
+class HabitWidgetConfigureActivity : DeadlinerComponentActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     private var provider: ComponentName? = null
 

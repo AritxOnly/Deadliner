@@ -2,6 +2,10 @@ package com.aritxonly.deadliner.ui.main
 
 import android.content.Intent
 import android.util.Log
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -103,12 +107,42 @@ fun TextPageIndicator(
     tag: String,
     badgeConfig: Triple<Boolean, Int, Boolean>
 ) {
-    val containerColor = if (selected == tag) MaterialTheme.colorScheme.primaryContainer else Color.Companion.Transparent
+    val isSelected = selected == tag
+    val containerColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            Color.Transparent
+        },
+        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+        label = "text-page-indicator-container",
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "text-page-indicator-content",
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1f else 0.985f,
+        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+        label = "text-page-indicator-scale",
+    )
     val (enabled, num, detail) = badgeConfig
 
     Button(
         onClick = onClick,
-        colors = ButtonDefaults.textButtonColors(containerColor = containerColor)
+        modifier = Modifier.graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        },
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        )
     ) {
         BadgedBox(
             badge = {
@@ -127,8 +161,8 @@ fun TextPageIndicator(
         ) {
             Text(
                 text,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                textAlign = TextAlign.Companion.Center
+                color = contentColor,
+                textAlign = TextAlign.Center
             )
         }
     }

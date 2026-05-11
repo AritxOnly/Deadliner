@@ -216,7 +216,7 @@ fun MainDisplay(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier
                             .fillMaxSize()
-                            .fadingTopEdge(height = 16.dp),
+                            .mainListContainerClip(),
                         state = listState
                     ) {
                         itemsIndexed(
@@ -439,6 +439,10 @@ fun MorePanelFromAnchor(
 // -------- 小工具 --------
 private fun lerp(start: Float, stop: Float, fraction: Float): Float =
     start + (stop - start) * fraction
+
+private val MainListContainerShape = RoundedCornerShape(12.dp)
+
+fun Modifier.mainListContainerClip(): Modifier = clip(MainListContainerShape)
 
 /**
  * 给可滚动容器的「可视区域顶部」添加原生式渐隐（fading edge）。

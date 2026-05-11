@@ -31,6 +31,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -81,7 +83,7 @@ private fun IntroWizardScreen(
     onWizardFinished: () -> Unit,
     onWizardSkipped: () -> Unit
 ) {
-    val style = remember { UiStyle.fromKey(GlobalUtils.style) }
+    val style by GlobalUtils.styleFlow.collectAsState()
     val scenes = remember(style) { IntroGuideScenes.forStyle(style) }
     val pagerState = rememberPagerState(pageCount = { scenes.size })
     val scope = androidx.compose.runtime.rememberCoroutineScope()

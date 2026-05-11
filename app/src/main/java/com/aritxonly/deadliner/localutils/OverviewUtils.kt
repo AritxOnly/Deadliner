@@ -3,198 +3,467 @@ package com.aritxonly.deadliner.localutils
 import android.content.Context
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.model.DDLItem
+import com.aritxonly.deadliner.ui.overview.ContributionDay
+import com.aritxonly.deadliner.ui.overview.DailyStat
+import com.aritxonly.deadliner.ui.overview.Metric
+import com.aritxonly.deadliner.ui.overview.MonthlyStat
+import com.aritxonly.deadliner.ui.overview.OverviewSnapshot
+import com.aritxonly.deadliner.ui.overview.WeeklyStat
+import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.temporal.WeekFields
+import java.time.format.TextStyle
 import java.util.Locale
+import kotlin.math.abs
 
 object OverviewUtils {
 
-    data class MonthlyStat(
-        val month: String,         // 格式 "yyyy-MM"
-        val total: Int,            // 当月到期任务数
-        val completed: Int,        // 当月完成任务数
-        val overdueCompleted: Int  // 当月逾期完成任务数
+    private data class ParsedItem(
+        val item: DDLItem,
+        val startTime: LocalDateTime?,
+        val endTime: LocalDateTime?,
+        val completeTime: LocalDateTime?,
     )
 
-    /**
-     * 返回过去 months 个月的标签，格式 "yyyy-MM"，按时间升序。
-     * 默认 12 个月：从 11 个月前 一直到本月。
-     */
-    fun getLastNMonthLabels(months: Int = 12): List<String> {
-        val now = LocalDate.now()
-        val fmt = DateTimeFormatter.ofPattern("yy-MM")
-        return (0 until months).map { offset ->
-            now.minusMonths((months - 1 - offset).toLong()).format(fmt)
-        }
-    }
-
-    /**
-     * 返回过去 12 个月内，每月的任务总数、完成数、逾期完成数。
-     * months 参数可改来取 N 个月。
-     */
-    fun computeMonthlyTaskStats(
-        items: List<DDLItem>,
-        months: Int = 12
-    ): List<MonthlyStat> {
-        val now = LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-
-        // 构建过去 months 个月的 (year, month) 列表
-        val monthList = (0 until months).map { offset ->
-            val date = now.minusMonths((months - 1 - offset).toLong())
-            date.year to date.monthValue
-        }
-
-        return monthList.map { (year, month) ->
-            val label = "%04d-%02d".format(year, month)
-
-            // 当月到期任务数
-            val total = items.count { item ->
-                runCatching { GlobalUtils.parseDateTime(item.endTime)?.toLocalDate() }
-                    .getOrNull()?.let { d ->
-                        d.year == year && d.monthValue == month
-                    } ?: false
-            }
-
-            // 当月完成任务数
-            val completed = items.count { item ->
-                if (!item.isCompleted) return@count false
-                runCatching { GlobalUtils.parseDateTime(item.completeTime)?.toLocalDate() }
-                    .getOrNull()?.let { d ->
-                        d.year == year && d.monthValue == month
-                    } ?: false
-            }
-
-            // 当月逾期完成数：完成且完成日 > 截止日，并以完成月为主
-            val overdueCompleted = items.count { item ->
-                if (!item.isCompleted) return@count false
-                val completeDT = runCatching { GlobalUtils.parseDateTime(item.completeTime) }
-                    .getOrNull()
-                val endDT = runCatching { GlobalUtils.parseDateTime(item.endTime) }
-                    .getOrNull()
-
-                if (completeDT != null && endDT != null
-                    && completeDT.year == year
-                    && completeDT.monthValue == month
-                    && completeDT.isAfter(endDT)
-                ) true else false
-            }
-
-            MonthlyStat(label, total, completed, overdueCompleted)
-        }
-    }
-
-    /**
-     * 返回过去 n 天（含 today）每天完成的任务数列表。
-     * 结果按日期升序：[(2025-06-08, 3), (2025-06-09, 5), …, (2025-06-14, 4)]
-     */
-    fun computeDailyCompletedCounts(
-        items: List<DDLItem>,
-        days: Int = 7
-    ): List<Triple<LocalDate, Int, Int>> {
-        val completedDates = items
-            .filter { it.isCompleted && it.completeTime.isNotBlank() }
-            .mapNotNull {
-                runCatching { GlobalUtils.parseDateTime(it.completeTime)?.toLocalDate() }
-                    .getOrNull()
-            }
-        val overdueDates = items
-            .filter {
-                it.isCompleted && it.completeTime.isNotBlank()
-                        && GlobalUtils.safeParseDateTime(it.completeTime).isAfter(
-                            GlobalUtils.safeParseDateTime(it.endTime)
-                        )
-            }
-            .mapNotNull {
-                runCatching { GlobalUtils.parseDateTime(it.completeTime)?.toLocalDate() }
-                    .getOrNull()
-            }
-
-        val today = LocalDate.now()
-        // 对过去 days 天逐日计数
-        return (0 until days).map { offset ->
-            val date = today.minusDays((days - 1 - offset).toLong())
-            val count = completedDates.count { it == date }
-            val overdue = overdueDates.count { it == date }
-            Triple(date, count, overdue)
-        }
-    }
-
-    /**
-     * 过去 days 天内，每天「到期日 = that day 且未完成」的任务数。
-     */
-    fun computeDailyOverdueCounts(
-        items: List<DDLItem>,
-        days: Int = 7
-    ): List<Pair<LocalDate, Int>> {
-        val today = LocalDate.now()
-
-        return (0 until days).map { offset ->
-            val date = today.minusDays((days - 1 - offset).toLong())
-            // 把 endTime parse 成 LocalDate，再筛选
-            val count = items.count { item ->
-                runCatching {
-                    GlobalUtils.parseDateTime(item.completeTime)?.toLocalDate()
-                }.getOrNull()?.let { endDate ->
-                    !item.isCompleted && endDate == date
-                } ?: false
-            }
-            date to count
-        }
-    }
-
-    /**
-     * 过去 days 天内，每天完成率（0.0–1.0）。
-     */
-    fun computeDailyCompletionRate(
-        items: List<DDLItem>,
-        days: Int = 7
-    ): List<Pair<LocalDate, Double>> {
-        val today = LocalDate.now()
-
-        return (0 until days).map { offset ->
-            val date = today.minusDays((days - 1 - offset).toLong())
-            // 当天的任务：endDate == date
-            val dailyTasks = items.filter {
-                runCatching { GlobalUtils.parseDateTime(it.completeTime)?.toLocalDate() }
-                    .getOrNull() == date
-            }
-            val completed = dailyTasks.count { it.isCompleted }
-            val rate = if (dailyTasks.isNotEmpty()) completed.toDouble() / dailyTasks.size else 0.0
-            date to rate
-        }
-    }
-
-    /**
-     * 过去 n 周，每周完成总数。返回 [(2025-W23, 12), (2025-W24, 15), …]
-     */
-    fun computeWeeklyCompletedCounts(
+    fun buildSnapshot(
         context: Context,
         items: List<DDLItem>,
-        weeks: Int = 4
-    ): List<Pair<String, Int>> {
-        val weekOfYear = WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear()
-        val today = LocalDate.now()
+        now: LocalDateTime = LocalDateTime.now(),
+    ): OverviewSnapshot {
+        val parsedItems = items.map { item ->
+            ParsedItem(
+                item = item,
+                startTime = parseDateTimeOrNull(item.startTime),
+                endTime = parseDateTimeOrNull(item.endTime),
+                completeTime = parseDateTimeOrNull(item.completeTime),
+            )
+        }
+        val activeItems = parsedItems.filter { !it.item.isArchived }
+        val today = now.toLocalDate()
 
-        // 先统计每周数
-        val weekBuckets = items
-            .filter { it.isCompleted }
-            .mapNotNull { item ->
-                runCatching {
-                    GlobalUtils.safeParseDateTime(item.completeTime).toLocalDate()
-                        .let { date ->
-                            date.get(weekOfYear) to date.year
-                        }
-                }.getOrNull()
+        val todayCompletedCount = activeItems.count { parsed ->
+            parsed.item.isCompleted && parsed.completeTime?.toLocalDate() == today
+        }
+        val todayTodoCount = activeItems.count { parsed ->
+            !parsed.item.isCompleted &&
+                !parsed.item.isAbandonedLike() &&
+                parsed.endTime?.let { !it.isBefore(now) } == true
+        }
+        val todayOverdueCount = activeItems.count { parsed ->
+            !parsed.item.isCompleted &&
+                !parsed.item.isAbandonedLike() &&
+                parsed.endTime?.toLocalDate() == today &&
+                parsed.endTime.isBefore(now)
+        }
+        val activeAbandonedCount = activeItems.count { it.item.isAbandonedLike() }
+
+        val currentTodoCount = parsedItems.count { !it.item.isCompleted && !it.item.isAbandonedLike() }
+        val historyCompletedCount = parsedItems.count { it.item.isCompleted }
+        val historyAbandonedCount = parsedItems.count { it.item.isAbandonedLike() }
+        val cumulativeOverdueItems = activeItems.filter { parsed ->
+            !parsed.item.isCompleted &&
+                !parsed.item.isAbandonedLike() &&
+                parsed.endTime?.isBefore(now) == true
+        }.sortedBy { it.endTime }
+
+        val activeStats = linkedMapOf(
+            context.getString(R.string.today_completed) to todayCompletedCount,
+            context.getString(R.string.pending_tasks) to todayTodoCount,
+            context.getString(R.string.today_overdue) to todayOverdueCount,
+            context.getString(R.string.abandoned) to activeAbandonedCount,
+        )
+        val historyStats = linkedMapOf(
+            context.getString(R.string.cumulative_completed) to historyCompletedCount,
+            context.getString(R.string.current_pending) to currentTodoCount,
+            context.getString(R.string.cumulative_abandoned) to historyAbandonedCount,
+            context.getString(R.string.cumulative_overdue) to cumulativeOverdueItems.size,
+        )
+
+        val completionTimeStats = buildCompletionTimeStats(context, parsedItems)
+        val dailyStats = computeDailyStats(parsedItems, days = 7, now = now)
+        val monthlyStats = computeMonthlyStats(parsedItems, months = 12, now = now)
+        val weeklyStats = computeWeeklyStats(parsedItems, weeks = 4, now = now)
+        val contributionStats = computeContributionStats(parsedItems, days = 150, now = now)
+        val lastMonthDailyStats = computeLastMonthDailyStats(parsedItems, now = now)
+        val lastMonthName = formatLastMonthName(now, Locale.getDefault())
+        val lastMonthKey = YearMonth.from(now.minusMonths(1)).toString()
+        val metrics = computeMetrics(context, parsedItems, now = now)
+        val completedTaskNames = collectLastMonthCompletedTaskNames(parsedItems, now = now)
+        val metricsSummary = metrics.joinToString(separator = "\n") { metric ->
+            buildString {
+                append(metric.label)
+                append(": ")
+                append(metric.value)
+                metric.change?.let { change ->
+                    if (change.isNotBlank()) {
+                        append(" (")
+                        append(change)
+                        append(")")
+                    }
+                }
             }
-            .groupingBy { (week, year) -> context.getString(R.string.xx_th_weeks, week) }
-            .eachCount()
+        }
 
-        return (0 until weeks).map { offset ->
-            val date = today.minusWeeks((weeks - 1 - offset).toLong())
-            val key = context.getString(R.string.xx_th_weeks, date.get(weekOfYear))
-            key to (weekBuckets[key] ?: 0)
+        return OverviewSnapshot(
+            activeStats = activeStats,
+            historyStats = historyStats,
+            completionTimeStats = completionTimeStats,
+            overdueItems = cumulativeOverdueItems.map { it.item },
+            dailyStats = dailyStats,
+            monthlyStats = monthlyStats,
+            weeklyStats = weeklyStats,
+            contributionStats = contributionStats,
+            lastMonthDailyStats = lastMonthDailyStats,
+            metrics = metrics,
+            lastMonthName = lastMonthName,
+            lastMonthKey = lastMonthKey,
+            completedTaskNames = completedTaskNames,
+            metricsSummary = metricsSummary,
+        )
+    }
+
+    private fun buildCompletionTimeStats(
+        context: Context,
+        items: List<ParsedItem>,
+    ): List<Pair<String, Int>> {
+        val labels = listOf(
+            context.getString(R.string.time_bucket_late_night),
+            context.getString(R.string.time_bucket_morning),
+            context.getString(R.string.time_bucket_afternoon),
+            context.getString(R.string.time_bucket_evening),
+        )
+        val counts = linkedMapOf<String, Int>().apply {
+            labels.forEach { put(it, 0) }
+        }
+        items.forEach { parsed ->
+            val completeTime = parsed.completeTime ?: return@forEach
+            if (!parsed.item.isCompleted) return@forEach
+            val bucket = when (completeTime.hour) {
+                in 0 until 6 -> labels[0]
+                in 6 until 12 -> labels[1]
+                in 12 until 18 -> labels[2]
+                else -> labels[3]
+            }
+            counts[bucket] = (counts[bucket] ?: 0) + 1
+        }
+        return counts.toList()
+    }
+
+    private fun computeDailyStats(
+        items: List<ParsedItem>,
+        days: Int,
+        now: LocalDateTime,
+    ): List<DailyStat> {
+        val completedMap = HashMap<LocalDate, Int>()
+        val overdueMap = HashMap<LocalDate, Int>()
+        items.forEach { parsed ->
+            parsed.completeTime?.takeIf { parsed.item.isCompleted }?.toLocalDate()?.let { date ->
+                completedMap[date] = (completedMap[date] ?: 0) + 1
+            }
+            parsed.endTime?.takeIf { !parsed.item.isCompleted && it.isBefore(now) }?.toLocalDate()?.let { date ->
+                overdueMap[date] = (overdueMap[date] ?: 0) + 1
+            }
+        }
+
+        val today = now.toLocalDate()
+        val labelFormatter = DateTimeFormatter.ofPattern("MM-dd")
+        return (0 until days).map { index ->
+            val date = today.minusDays((days - 1L) - index)
+            DailyStat(
+                date = date,
+                label = date.format(labelFormatter),
+                completedCount = completedMap[date] ?: 0,
+                overdueCount = overdueMap[date] ?: 0,
+            )
         }
     }
+
+    private fun computeMonthlyStats(
+        items: List<ParsedItem>,
+        months: Int,
+        now: LocalDateTime,
+    ): List<MonthlyStat> {
+        val totalMap = HashMap<YearMonth, Int>()
+        val completedMap = HashMap<YearMonth, Int>()
+        val overdueCompletedMap = HashMap<YearMonth, Int>()
+
+        items.forEach { parsed ->
+            val endTime = parsed.endTime ?: return@forEach
+            val bucket = YearMonth.from(endTime)
+            totalMap[bucket] = (totalMap[bucket] ?: 0) + 1
+
+            if (parsed.item.isCompleted) {
+                completedMap[bucket] = (completedMap[bucket] ?: 0) + 1
+                if (parsed.completeTime?.isAfter(endTime) == true) {
+                    overdueCompletedMap[bucket] = (overdueCompletedMap[bucket] ?: 0) + 1
+                }
+            }
+        }
+
+        return (0 until months).map { index ->
+            val bucket = YearMonth.from(now).minusMonths((months - 1L) - index)
+            MonthlyStat(
+                month = "${bucket.monthValue}月",
+                totalCount = totalMap[bucket] ?: 0,
+                completedCount = completedMap[bucket] ?: 0,
+                overdueCompletedCount = overdueCompletedMap[bucket] ?: 0,
+            )
+        }
+    }
+
+    private fun computeWeeklyStats(
+        items: List<ParsedItem>,
+        weeks: Int,
+        now: LocalDateTime,
+    ): List<WeeklyStat> {
+        return (0 until weeks).map { offset ->
+            val endOfWindow = now.minusDays((offset * 7L))
+            val startOfWindow = endOfWindow.minusDays(6).toLocalDate().atStartOfDay()
+            val end = endOfWindow.toLocalDate().atTime(23, 59, 59)
+            val count = items.count { parsed ->
+                parsed.item.isCompleted &&
+                    parsed.completeTime?.let { completedAt ->
+                        !completedAt.isBefore(startOfWindow) && !completedAt.isAfter(end)
+                    } == true
+            }
+            WeeklyStat(
+                weekLabel = if (offset == 0) {
+                    "本周"
+                } else {
+                    "${offset}周前"
+                },
+                completedCount = count,
+            )
+        }.reversed()
+    }
+
+    private fun computeContributionStats(
+        items: List<ParsedItem>,
+        days: Int,
+        now: LocalDateTime,
+    ): List<ContributionDay> {
+        val counts = HashMap<LocalDate, Int>()
+        items.forEach { parsed ->
+            parsed.completeTime?.takeIf { parsed.item.isCompleted }?.toLocalDate()?.let { date ->
+                counts[date] = (counts[date] ?: 0) + 1
+            }
+        }
+
+        val today = now.toLocalDate()
+        return (0 until days).map { index ->
+            val date = today.minusDays((days - 1L) - index)
+            ContributionDay(
+                date = date,
+                count = counts[date] ?: 0,
+            )
+        }
+    }
+
+    private fun computeLastMonthDailyStats(
+        items: List<ParsedItem>,
+        now: LocalDateTime,
+    ): List<DailyStat> {
+        val lastMonth = YearMonth.from(now).minusMonths(1)
+        val start = lastMonth.atDay(1)
+        val labelFormatter = DateTimeFormatter.ofPattern("d")
+        val completedMap = HashMap<LocalDate, Int>()
+        val overdueMap = HashMap<LocalDate, Int>()
+
+        items.forEach { parsed ->
+            parsed.completeTime?.takeIf { parsed.item.isCompleted }?.toLocalDate()?.let { date ->
+                if (YearMonth.from(date) == lastMonth) {
+                    completedMap[date] = (completedMap[date] ?: 0) + 1
+                }
+            }
+            parsed.endTime?.takeIf { !parsed.item.isCompleted && it.isBefore(now) }?.toLocalDate()?.let { date ->
+                if (YearMonth.from(date) == lastMonth) {
+                    overdueMap[date] = (overdueMap[date] ?: 0) + 1
+                }
+            }
+        }
+
+        return (1..lastMonth.lengthOfMonth()).map { day ->
+            val date = start.withDayOfMonth(day)
+            DailyStat(
+                date = date,
+                label = date.format(labelFormatter),
+                completedCount = completedMap[date] ?: 0,
+                overdueCount = overdueMap[date] ?: 0,
+            )
+        }
+    }
+
+    private fun computeMetrics(
+        context: Context,
+        items: List<ParsedItem>,
+        now: LocalDateTime,
+    ): List<Metric> {
+        val lastMonth = YearMonth.from(now).minusMonths(1)
+        val previousMonth = lastMonth.minusMonths(1)
+        val lastMonthItems = items.filter { parsed -> parsed.endTime?.let { YearMonth.from(it) == lastMonth } == true }
+        val previousMonthItems = items.filter { parsed -> parsed.endTime?.let { YearMonth.from(it) == previousMonth } == true }
+
+        data class MonthStats(
+            val total: Int,
+            val completed: Int,
+            val completionRate: Double,
+            val overdue: Int,
+        )
+
+        fun summarize(source: List<ParsedItem>): MonthStats {
+            val total = source.size
+            val completed = source.count { it.item.isCompleted }
+            val completionRate = if (total > 0) completed.toDouble() / total * 100 else 0.0
+            val overdue = source.count { !it.item.isCompleted }
+            return MonthStats(
+                total = total,
+                completed = completed,
+                completionRate = completionRate,
+                overdue = overdue,
+            )
+        }
+
+        fun metricChange(curr: Double, prev: Double): Pair<String?, Boolean?> {
+            if (prev <= 0.0) return null to null
+            val diff = curr - prev
+            val percent = abs(diff) / prev * 100
+            return String.format(Locale.US, "%.1f%%", percent) to (diff < 0)
+        }
+
+        val current = summarize(lastMonthItems)
+        val previous = summarize(previousMonthItems)
+        val result = mutableListOf<Metric>()
+
+        metricChange(current.total.toDouble(), previous.total.toDouble()).let { (change, isDown) ->
+            result += Metric(
+                label = context.getString(R.string.metric_last_month_total),
+                value = current.total.toString(),
+                change = change,
+                isDown = isDown,
+            )
+        }
+        metricChange(current.completed.toDouble(), previous.completed.toDouble()).let { (change, isDown) ->
+            result += Metric(
+                label = context.getString(R.string.metric_last_month_completed),
+                value = current.completed.toString(),
+                change = change,
+                isDown = isDown,
+            )
+        }
+        metricChange(current.completionRate, previous.completionRate).let { (change, isDown) ->
+            result += Metric(
+                label = context.getString(R.string.metric_last_month_completion_rate),
+                value = String.format(Locale.US, "%.1f%%", current.completionRate),
+                change = change,
+                isDown = isDown,
+            )
+        }
+        metricChange(current.overdue.toDouble(), previous.overdue.toDouble()).let { (change, isDown) ->
+            result += Metric(
+                label = context.getString(R.string.metric_last_month_overdue),
+                value = current.overdue.toString(),
+                change = change,
+                isDown = isDown,
+            )
+        }
+
+        val bucketLabels = listOf(
+            context.getString(R.string.time_bucket_late_night),
+            context.getString(R.string.time_bucket_morning),
+            context.getString(R.string.time_bucket_afternoon),
+            context.getString(R.string.time_bucket_evening),
+        )
+        val bucketCounts = linkedMapOf<String, Int>().apply {
+            bucketLabels.forEach { put(it, 0) }
+        }
+        lastMonthItems.filter { it.item.isCompleted }.forEach { parsed ->
+            val completeTime = parsed.completeTime ?: return@forEach
+            val bucket = when (completeTime.hour) {
+                in 0 until 6 -> bucketLabels[0]
+                in 6 until 12 -> bucketLabels[1]
+                in 12 until 18 -> bucketLabels[2]
+                else -> bucketLabels[3]
+            }
+            bucketCounts[bucket] = (bucketCounts[bucket] ?: 0) + 1
+        }
+        bucketCounts.maxByOrNull { it.value }?.takeIf { it.value > 0 }?.let { topBucket ->
+            result += Metric(
+                label = context.getString(R.string.metric_most_active_period),
+                value = topBucket.key,
+                change = context.getString(R.string.metric_bucket_completed_count, topBucket.value),
+                isDown = null,
+            )
+        }
+
+        val durations = lastMonthItems.mapNotNull { parsed ->
+            val start = parsed.startTime ?: return@mapNotNull null
+            val completed = parsed.completeTime ?: return@mapNotNull null
+            if (completed.isBefore(start)) {
+                return@mapNotNull null
+            }
+            Duration.between(start, completed)
+        }
+        if (durations.isNotEmpty()) {
+            val avgSeconds = durations.sumOf { it.seconds } / durations.size
+            result += Metric(
+                label = context.getString(R.string.metric_average_duration),
+                value = formatDuration(context, Duration.ofSeconds(avgSeconds)),
+            )
+        }
+
+        return result
+    }
+
+    private fun collectLastMonthCompletedTaskNames(
+        items: List<ParsedItem>,
+        now: LocalDateTime,
+    ): List<String> {
+        val lastMonth = YearMonth.from(now).minusMonths(1)
+        return items.filter { parsed ->
+            parsed.item.isCompleted &&
+                parsed.endTime?.let { YearMonth.from(it) == lastMonth } == true
+        }.map { it.item.name }
+    }
+
+    private fun formatLastMonthName(
+        now: LocalDateTime,
+        locale: Locale,
+    ): String {
+        val lastMonthDate = now.minusMonths(1)
+        return if (locale.language.startsWith("zh")) {
+            DateTimeFormatter.ofPattern("M月", locale).format(lastMonthDate)
+        } else {
+            lastMonthDate.month.getDisplayName(TextStyle.FULL, locale)
+        }
+    }
+
+    private fun formatDuration(
+        context: Context,
+        duration: Duration,
+    ): String {
+        val totalMinutes = duration.toMinutes()
+        return when {
+            totalMinutes < 60 -> context.getString(
+                R.string.duration_minutes,
+                totalMinutes.coerceAtLeast(1),
+            )
+            totalMinutes < 24 * 60 -> context.getString(
+                R.string.duration_hours,
+                totalMinutes / 60,
+            )
+            else -> context.getString(
+                R.string.duration_days_hours,
+                totalMinutes / (24 * 60),
+                (totalMinutes % (24 * 60)) / 60,
+            )
+        }
+    }
+
+    private fun parseDateTimeOrNull(value: String): LocalDateTime? {
+        return runCatching { GlobalUtils.parseDateTime(value) }.getOrNull()
+    }
+
+    private fun DDLItem.isAbandonedLike(): Boolean = state.isAbandonedFamily()
 }

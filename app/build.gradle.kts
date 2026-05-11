@@ -52,7 +52,7 @@ android {
         minSdk = 31
         targetSdk = 36
         versionCode = 33
-        versionName = "5.0.0-Beta1"
+        versionName = "5.0.0-Beta2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -104,6 +104,9 @@ android {
         compose = true
         buildConfig = true
     }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -144,6 +147,7 @@ dependencies {
     implementation("io.github.rroohit:ImageCropView:3.1.1")
     implementation("com.materialkolor:material-kolor:4.1.1")
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.0")
+    implementation("top.yukonga.miuix.kmp:miuix-blur-android:0.9.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

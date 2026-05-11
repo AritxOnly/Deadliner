@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.aritxonly.deadliner.localutils.ApiKeystore
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.ui.overview.MonthlyAnalysisResult
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
@@ -211,6 +212,68 @@ primaryIntent 只能为 "ExtractTasks" | "PlanDay" | "SplitToSteps"。${candidat
             reason = "core_only"
         )
         return guess to gson.toJson(withReservedCalendarToolCall(mixed))
+    }
+
+    suspend fun generateMonthlyAnalysis(
+        monthKey: String,
+        monthName: String,
+        metricsSummary: String,
+        completedTaskNames: List<String>
+    ): MonthlyAnalysisResult = withContext(Dispatchers.IO) {
+        val systemPrompt = """
+你是 Deadliner 的月度复盘助手。请基于用户上个月的任务统计输出简短、具体、有行动建议的总结。
+仅输出纯 JSON，不允许 Markdown、代码块或额外解释。
+JSON 结构固定为：
+{
+  "summary": "string",
+  "keywords": ["string", "string"]
+}
+
+要求：
+1. `summary` 使用当前输入语言，长度控制在 90-180 字。
+2. 总结要覆盖完成情况、风险或拖延信号、一个积极亮点，以及一个下月建议。
+3. `keywords` 返回 4-6 个简短关键词，每个关键词不超过 8 个汉字或 3 个英文单词。
+4. 如果已完成任务名较少，也不要编造不存在的任务内容。
+        """.trimIndent()
+
+        val userPrompt = buildString {
+            appendLine("月份：$monthName")
+            appendLine("指标：")
+            appendLine(metricsSummary.ifBlank { "暂无指标" })
+            appendLine()
+            appendLine("已完成任务：")
+            if (completedTaskNames.isEmpty()) {
+                append("无")
+            } else {
+                append(completedTaskNames.take(50).joinToString(separator = "、"))
+            }
+        }
+
+        val raw = sendPrompt(
+            messages = listOf(
+                Message(role = "system", content = systemPrompt),
+                Message(role = "user", content = userPrompt),
+            )
+        )
+        data class MonthlyAnalysisPayload(
+            val summary: String = "",
+            val keywords: List<String> = emptyList(),
+        )
+
+        val payload = gson.fromJson(
+            extractJsonFromMarkdown(raw),
+            MonthlyAnalysisPayload::class.java
+        )
+
+        MonthlyAnalysisResult(
+            month = monthKey,
+            summary = payload.summary.trim(),
+            keywords = payload.keywords
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .distinct()
+                .take(6),
+        )
     }
 
     @Suppress("UNUSED_PARAMETER")

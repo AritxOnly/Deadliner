@@ -1,6 +1,5 @@
 package com.aritxonly.deadliner.ui.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -17,12 +15,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -33,7 +31,6 @@ import com.aritxonly.deadliner.ui.SvgCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.ui.navIconPaddingModifier
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -41,15 +38,15 @@ fun AppearanceSettingsScreen(
     nav: NavHostController,
     navigateUp: () -> Unit,
 ) {
+    val appearance by GlobalUtils.appearanceFlow.collectAsState()
     var progressDirEnabled by remember { mutableStateOf(GlobalUtils.progressDir) }
     var motivationalQuotesEnabled by remember { mutableStateOf(GlobalUtils.motivationalQuotes) }
     var fireworksOnFinishEnabled by remember { mutableStateOf(GlobalUtils.fireworksOnFinish) }
     var detailDisplayEnabled by remember { mutableStateOf(GlobalUtils.detailDisplayMode) }
     var hideDividerEnabled by remember { mutableStateOf(GlobalUtils.hideDivider) }
     var presetIndicatorEnabled by remember { mutableStateOf(GlobalUtils.presetIndicatorColor) }
-    var miuixModeEnabled by remember { mutableStateOf(GlobalUtils.miuixMode) }
-    var miuixColorEnabled by remember { mutableStateOf(GlobalUtils.miuixColor) }
     var selectedColorState by remember { mutableStateOf(GlobalUtils.seedColor) }
+    val advancedMaterialEnabled = appearance.useAdvancedMaterial
 
     val onProgressDirChange: (Boolean) -> Unit = {
         GlobalUtils.progressDir = it
@@ -75,22 +72,10 @@ fun AppearanceSettingsScreen(
         GlobalUtils.presetIndicatorColor = it
         presetIndicatorEnabled = it
     }
-    val onMiuixModeChange: (Boolean) -> Unit = {
-        GlobalUtils.miuixMode = it
-        miuixModeEnabled = it
-    }
-    val onMiuixColorChange: (Boolean) -> Unit = {
-        GlobalUtils.miuixColor = it
-        miuixColorEnabled = it
-        if (it) {
-            onPresetIndicatorChange(true)
-        }
-    }
     val onThemeChange: (String?) -> Unit = {
         GlobalUtils.seedColor = it
         selectedColorState = it
     }
-
     CollapsingTopBarScaffold(
         title = stringResource(R.string.settings_interface_display),
         navigationIcon = {
@@ -132,13 +117,11 @@ fun AppearanceSettingsScreen(
                 }
             }
 
-            if (!miuixColorEnabled) {
-                SettingsSection(topLabel = stringResource(R.string.theme)) {
-                    ThemeColorPicker(
-                        currentSeed = selectedColorState,
-                        onColorSelected = onThemeChange
-                    )
-                }
+            SettingsSection(topLabel = stringResource(R.string.theme)) {
+                ThemeColorPicker(
+                    currentSeed = selectedColorState,
+                    onColorSelected = onThemeChange
+                )
             }
 
             SettingsSection(topLabel = stringResource(R.string.settings_interface_design)) {
@@ -156,26 +139,18 @@ fun AppearanceSettingsScreen(
                     checked = presetIndicatorEnabled,
                     onCheckedChange = onPresetIndicatorChange
                 )
-
                 SettingsSectionDivider()
 
                 SettingsDetailSwitchItem(
-                    headline = R.string.settings_miuix_mode,
-                    supportingText = R.string.settings_support_miuix_mode,
-                    checked = miuixModeEnabled,
-                    onCheckedChange = onMiuixModeChange
+                    headline = R.string.settings_advanced_material,
+                    supportingText = R.string.settings_support_advanced_material,
+                    checked = advancedMaterialEnabled,
+                    onCheckedChange = { enabled ->
+                        GlobalUtils.updateAppearance { current ->
+                            current.copy(useAdvancedMaterial = enabled)
+                        }
+                    }
                 )
-
-                if (miuixModeEnabled) {
-                    SettingsSectionDivider()
-
-                    SettingsDetailSwitchItem(
-                        headline = R.string.settings_miuix_color,
-                        supportingText = R.string.settings_support_miuix_color,
-                        checked = miuixColorEnabled,
-                        onCheckedChange = onMiuixColorChange
-                    )
-                }
             }
 
             SettingsSection(topLabel = stringResource(R.string.settings_interface_display)) {
