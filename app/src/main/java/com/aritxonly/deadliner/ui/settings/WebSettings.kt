@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,7 +34,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -56,6 +56,7 @@ import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.ui.SvgCard
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.sync.SyncScheduler
+import com.aritxonly.deadliner.ui.base.TextButton
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.ui.navIconPaddingModifier
 import kotlinx.coroutines.Dispatchers
@@ -462,10 +463,13 @@ fun SyncIntervalBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
                 TextButton(
+                    modifier = Modifier.heightIn(min = 40.dp),
                     enabled = !closing,
+                    miuixText = stringResource(R.string.cancel),
                     onClick = {
                         scope.launch {
                             closing = true
@@ -482,6 +486,7 @@ fun SyncIntervalBottomSheet(
                 Spacer(Modifier.width(8.dp))
 
                 Button(
+                    modifier = Modifier.heightIn(min = 40.dp),
                     enabled = !closing,
                     onClick = {
                         scope.launch {

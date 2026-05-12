@@ -80,11 +80,13 @@ fun CaptureTopBar(
     onClose: () -> Unit,
     showNavigationIcon: Boolean = true,
     onRequestMerge: () -> Unit = {},
+    forceMaterial3: Boolean = false,
 ) {
     val ui by vm.uiState.collectAsState()
     if (!ui.isMultiSelectMode) {
         TopAppBar(
             title = stringResource(R.string.capture_title),
+            forceMaterial3 = forceMaterial3,
             navigationIcon = if (showNavigationIcon) {
                 {
                     IconButton(onClick = onClose) {
@@ -104,6 +106,7 @@ fun CaptureTopBar(
     } else {
         TopAppBar(
             title = stringResource(R.string.capture_selected_count, ui.selectedIds.size),
+            forceMaterial3 = forceMaterial3,
             navigationIcon = {
                 IconButton(onClick = vm::exitMultiSelect) {
                     Icon(

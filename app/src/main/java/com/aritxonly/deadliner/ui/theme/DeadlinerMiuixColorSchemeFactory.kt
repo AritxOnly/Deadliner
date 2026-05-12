@@ -1,6 +1,7 @@
 package com.aritxonly.deadliner.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import top.yukonga.miuix.kmp.theme.Colors
 import top.yukonga.miuix.kmp.theme.darkColorScheme as darkMiuixColorScheme
 import top.yukonga.miuix.kmp.theme.lightColorScheme as lightMiuixColorScheme
@@ -9,7 +10,12 @@ object DeadlinerMiuixColorSchemeFactory {
     fun create(
         tokens: DeadlinerColorTokens,
         darkTheme: Boolean,
-    ): Colors = if (darkTheme) {
+    ): Colors {
+        val sliderBackground = tokens.outlineVariant
+            .copy(alpha = if (darkTheme) 0.48f else 0.28f)
+            .compositeOver(tokens.surfaceContainerHigh)
+
+        return if (darkTheme) {
         darkMiuixColorScheme(
             primary = tokens.primary,
             onPrimary = tokens.onPrimary,
@@ -63,7 +69,7 @@ object DeadlinerMiuixColorSchemeFactory {
             windowDimming = tokens.scrim,
             sliderKeyPoint = tokens.outlineVariant.copy(alpha = 0.35f),
             sliderKeyPointForeground = tokens.primary,
-            sliderBackground = tokens.surfaceVariant.copy(alpha = 0.3f),
+            sliderBackground = sliderBackground,
         )
     } else {
         lightMiuixColorScheme(
@@ -119,7 +125,8 @@ object DeadlinerMiuixColorSchemeFactory {
             windowDimming = tokens.scrim,
             sliderKeyPoint = tokens.outlineVariant.copy(alpha = 0.35f),
             sliderKeyPointForeground = tokens.primary,
-            sliderBackground = tokens.surfaceVariant.copy(alpha = 0.3f),
+            sliderBackground = sliderBackground,
         )
+    }
     }
 }

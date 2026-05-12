@@ -288,6 +288,7 @@ object GlobalUtils {
             .getFloat("display_scale_custom_multiplier", 1.00f)
             .coerceIn(0.85f, 1.25f)
         val miuixNeutralSurfaces = sharedPreferences.getBoolean("miuix_neutral_surfaces", true)
+        val useMaterialTopAppBarInMiuix = sharedPreferences.getBoolean("miuix_material_top_bar", true)
         val advancedMaterial = sharedPreferences.getBoolean("advanced_material", false)
         val appIconMode = AppIconMode.fromKey(sharedPreferences.getString("app_icon_mode", AppIconMode.Default.key))
 
@@ -304,6 +305,7 @@ object GlobalUtils {
             customDisplayScaleMultiplier = customDisplayScaleMultiplier,
             usePureMiuixAccent = false,
             useMiuixNeutralSurfaces = miuixNeutralSurfaces,
+            useMaterialTopAppBarInMiuix = useMaterialTopAppBarInMiuix,
             useAdvancedMaterial = advancedMaterial,
             appIconMode = appIconMode,
         )
@@ -320,6 +322,7 @@ object GlobalUtils {
             putBoolean("miuix_mode", appearance.usesMiuixThemePreference)
             putBoolean("miuix_color", false)
             putBoolean("miuix_neutral_surfaces", appearance.useMiuixNeutralSurfaces)
+            putBoolean("miuix_material_top_bar", appearance.useMaterialTopAppBarInMiuix)
             putBoolean("advanced_material", appearance.useAdvancedMaterial)
             putString("seed_color", appearance.seedColorHex)
             putString("display_scale_preset", appearance.displayScalePreset.key)

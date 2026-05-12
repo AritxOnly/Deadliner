@@ -52,6 +52,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
@@ -97,6 +98,7 @@ import com.aritxonly.deadliner.data.HabitViewModel
 import com.aritxonly.deadliner.data.HabitViewModelFactory
 import com.aritxonly.deadliner.data.UserProfileRepository
 import com.aritxonly.deadliner.localutils.DeadlinerURLScheme
+import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.localutils.SearchFilter
 import com.aritxonly.deadliner.localutils.GlobalUtils.showHabitReminderDialog
 import com.aritxonly.deadliner.model.DDLItem
@@ -153,6 +155,7 @@ fun ModernHost(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val appearance by GlobalUtils.appearanceFlow.collectAsState()
     val configuration = LocalConfiguration.current
     val isWideLayout = configuration.screenWidthDp >= WideLayoutMinWidthDp
     val useFlattenedOverview = configuration.screenWidthDp >= FlattenedOverviewMinWidthDp
@@ -337,6 +340,7 @@ fun ModernHost(
             }
         }
     }
+    val forceMaterialTopBarsInMiuix = appearance.usesMiuixTheme && appearance.useMaterialTopAppBarInMiuix
 
     val ddlList by vm.ddlListFlow.collectAsStateWithLifecycle()
     val taskList by vm.taskListFlow.collectAsStateWithLifecycle()
@@ -469,6 +473,7 @@ fun ModernHost(
                             showPageTabs = !isWideLayout,
                             showAccessoryRow = !isWideLayout && !shouldCollapseHeaderAccessories,
                             showAiActionInTopBar = isWideLayout,
+                            forceMaterialTopAppBar = forceMaterialTopBarsInMiuix,
                         )
                     }
                     ModernTopBarState.LIST_SELECTION -> {
@@ -476,6 +481,7 @@ fun ModernHost(
                             title = context.getString(R.string.selected_items, hostState.selectedIds.size),
                             mode = TopAppBarStyle.SMALL,
                             titleTextStyle = MaterialTheme.typography.titleLarge,
+                            forceMaterial3 = forceMaterialTopBarsInMiuix,
                             navigationIcon = {
                                 IconButton(onClick = {
                                     hostState.clearSelection()
@@ -538,6 +544,7 @@ fun ModernHost(
                             showNavigationIcon = false,
                             onShowSettings = { showOverviewSettings = true },
                             mode = TopAppBarStyle.SMALL,
+                            forceMaterial3 = forceMaterialTopBarsInMiuix,
                         )
                     }
                     ModernTopBarState.CAPTURE -> {
@@ -546,6 +553,7 @@ fun ModernHost(
                             onClose = { hostState.selectedSection = MainSection.LIST },
                             showNavigationIcon = false,
                             onRequestMerge = { showCaptureMergeSheet = true },
+                            forceMaterial3 = forceMaterialTopBarsInMiuix,
                         )
                     }
                 }

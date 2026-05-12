@@ -50,6 +50,8 @@ import com.aritxonly.deadliner.ui.base.TopAppBar
 import com.aritxonly.deadliner.ui.base.TopAppBarStyle
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.ui.main.TextPageIndicator
+import com.aritxonly.deadliner.ui.theme.AppDesignSystem
+import com.aritxonly.deadliner.ui.theme.LocalAppDesignSystem
 
 @Composable
 fun ModernMainHeader(
@@ -61,10 +63,16 @@ fun ModernMainHeader(
     showPageTabs: Boolean = true,
     showAccessoryRow: Boolean = true,
     showAiActionInTopBar: Boolean = false,
+    forceMaterialTopAppBar: Boolean = false,
 ) {
     val pageLabel = when (selectedPage) {
         DeadlineType.TASK -> stringResource(R.string.task)
         DeadlineType.HABIT -> stringResource(R.string.habit)
+    }
+    val tabsTrackColor = if (LocalAppDesignSystem.current == AppDesignSystem.MIUIX) {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLow
     }
 
     Column {
@@ -134,7 +142,8 @@ fun ModernMainHeader(
                 }
             },
             mode = TopAppBarStyle.SMALL,
-            isMainTitle = true
+            isMainTitle = true,
+            forceMaterial3 = forceMaterialTopAppBar,
         )
 
         AnimatedVisibility(
@@ -162,7 +171,7 @@ fun ModernMainHeader(
             ) {
                 if (showPageTabs) {
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        color = tabsTrackColor,
                         shape = RoundedCornerShape(24.dp),
                     ) {
                         Row(

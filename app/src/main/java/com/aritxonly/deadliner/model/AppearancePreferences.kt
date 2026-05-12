@@ -14,6 +14,7 @@ data class AppearancePreferences(
     val customDisplayScaleMultiplier: Float = 1.00f,
     val usePureMiuixAccent: Boolean = false,
     val useMiuixNeutralSurfaces: Boolean = true,
+    val useMaterialTopAppBarInMiuix: Boolean = false,
     val useAdvancedMaterial: Boolean = false,
     val appIconMode: AppIconMode = AppIconMode.Default,
 ) {

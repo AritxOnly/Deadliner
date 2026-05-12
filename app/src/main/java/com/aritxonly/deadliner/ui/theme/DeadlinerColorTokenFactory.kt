@@ -8,6 +8,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.toColorInt
 import com.aritxonly.deadliner.model.AppearanceColorSource
@@ -157,15 +158,25 @@ object DeadlinerColorTokenFactory {
 
     private fun createMiuixNeutralPalette(darkTheme: Boolean): MiuixNeutralPalette {
         val defaults = if (darkTheme) darkMiuixColorScheme() else lightMiuixColorScheme()
+        val supportingTextColor = lerp(
+            defaults.onSurfaceVariantSummary,
+            defaults.onSurface,
+            if (darkTheme) 0.10f else 0.18f,
+        )
+        val backgroundVariantColor = lerp(
+            defaults.onBackgroundVariant,
+            defaults.onBackground,
+            if (darkTheme) 0.08f else 0.12f,
+        )
         return MiuixNeutralPalette(
             background = defaults.background,
             onBackground = defaults.onBackground,
-            onBackgroundVariant = defaults.onBackgroundVariant,
+            onBackgroundVariant = backgroundVariantColor,
             surface = defaults.surface,
             onSurface = defaults.onSurface,
             surfaceVariant = defaults.surfaceVariant,
-            onSurfaceVariant = defaults.onSurfaceContainerVariant,
-            onSurfaceVariantSummary = defaults.onSurfaceVariantSummary,
+            onSurfaceVariant = supportingTextColor,
+            onSurfaceVariantSummary = supportingTextColor,
             onSurfaceVariantActions = defaults.onSurfaceVariantActions,
             surfaceContainer = defaults.surfaceContainer,
             surfaceContainerLow = defaults.surface,

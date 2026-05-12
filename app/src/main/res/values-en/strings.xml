@@ -739,6 +739,8 @@
     <string name="theme">Accent color</string>
     <string name="settings_miuix_mode">MIUIX theme mode</string>
     <string name="settings_support_miuix_mode">Enable HyperOS style themes and components.（Experimental）</string>
+    <string name="settings_miuix_material_top_bar">Use Material 3 top bar in ModernHost</string>
+    <string name="settings_support_miuix_material_top_bar">Keep the MIUIX theme, but switch ModernHost top app bars back to the Material 3 style</string>
     <string name="settings_miuix_color">MIUIX color</string>
     <string name="settings_support_miuix_color">Use HyperOS’s default color palette (requires enabling Modern Mode in the main screen layout to avoid display issues).</string>
     <string name="settings_support_display_size_lab">Preset sizes and a custom scale ratio (Experimental)</string>

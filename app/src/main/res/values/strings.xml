@@ -794,6 +794,8 @@
     <string name="theme">强调色</string>
     <string name="settings_miuix_mode">MIUIX 主题模式</string>
     <string name="settings_support_miuix_mode">开启 HyperOS 风格的主题与组件库（实验性）</string>
+    <string name="settings_miuix_material_top_bar">现代主页顶栏使用 Material 3</string>
+    <string name="settings_support_miuix_material_top_bar">在 MIUIX 主题下，将 ModernHost 的顶部栏样式切回 Material 3</string>
     <string name="settings_miuix_color">MIUIX 颜色</string>
     <string name="settings_support_miuix_color">使用 HyperOS 的默认颜色（需要在主界面风格中开启 现代模式 以避免界面显示问题）</string>
     <string name="settings_support_display_size_lab">预设档位与自定义缩放比例（实验性）</string>

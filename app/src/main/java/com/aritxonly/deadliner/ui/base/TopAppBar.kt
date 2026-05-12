@@ -34,13 +34,19 @@ fun TopAppBar(
     mode: TopAppBarStyle = TopAppBarStyle.CENTER,
     isMainTitle: Boolean = false,
     titleTextStyle: TextStyle? = null,
+    forceMaterial3: Boolean = false,
 ) {
     val topBarColors = TopAppBarDefaults.topAppBarColors(
         containerColor = MaterialTheme.colorScheme.surface,
         scrolledContainerColor = MaterialTheme.colorScheme.surface,
     )
+    val appDesignSystem = if (forceMaterial3) {
+        AppDesignSystem.MATERIAL3
+    } else {
+        LocalAppDesignSystem.current
+    }
 
-    when (LocalAppDesignSystem.current) {
+    when (appDesignSystem) {
         AppDesignSystem.MATERIAL3 -> {
             when (mode) {
                 TopAppBarStyle.CENTER ->

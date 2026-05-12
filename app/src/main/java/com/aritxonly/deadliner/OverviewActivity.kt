@@ -112,10 +112,12 @@ fun OverviewTopBar(
     onClose: () -> Unit = {},
     onShowSettings: () -> Unit = {},
     mode: TopAppBarStyle = TopAppBarStyle.CENTER,
+    forceMaterial3: Boolean = false,
 ) {
     TopAppBar(
         title = stringResource(R.string.title_activity_overview),
         mode = mode,
+        forceMaterial3 = forceMaterial3,
         navigationIcon = if (showNavigationIcon) {
             {
                 IconButton(onClick = onClose) {

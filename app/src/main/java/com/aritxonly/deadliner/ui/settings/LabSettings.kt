@@ -38,6 +38,7 @@ fun LabSettingsScreen(
     navigateUp: () -> Unit
 ) {
     val currentStyle by GlobalUtils.styleFlow.collectAsState()
+    val appearance by GlobalUtils.appearanceFlow.collectAsState()
     var miuixModeEnabled by remember { mutableStateOf(GlobalUtils.miuixMode) }
 
     CollapsingTopBarScaffold(
@@ -69,6 +70,18 @@ fun LabSettingsScreen(
                         onCheckedChange = {
                             GlobalUtils.miuixMode = it
                             miuixModeEnabled = it
+                        }
+                    )
+                    SettingsSectionDivider()
+
+                    SettingsDetailSwitchItem(
+                        headline = R.string.settings_miuix_material_top_bar,
+                        supportingText = R.string.settings_support_miuix_material_top_bar,
+                        checked = appearance.useMaterialTopAppBarInMiuix,
+                        onCheckedChange = { enabled ->
+                            GlobalUtils.updateAppearance { current ->
+                                current.copy(useMaterialTopAppBarInMiuix = enabled)
+                            }
                         }
                     )
                     SettingsSectionDivider()
