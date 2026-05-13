@@ -53,7 +53,6 @@ fun Switch(
                 lightColorScheme()
             }
 
-            // MIUIX 分支：降级处理
             MiuixSwitch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
@@ -61,7 +60,6 @@ fun Switch(
                 enabled = enabled,
 
                 colors = top.yukonga.miuix.kmp.basic.SwitchDefaults.switchColors(
-                    checkedThumbColor = scheme.onPrimary,
                     uncheckedThumbColor = scheme.onSecondary,
                     uncheckedTrackColor = scheme.secondary
                 )

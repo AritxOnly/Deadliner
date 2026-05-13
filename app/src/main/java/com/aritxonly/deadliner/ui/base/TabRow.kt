@@ -7,11 +7,13 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.ui.theme.AppDesignSystem
 import com.aritxonly.deadliner.ui.theme.LocalAppDesignSystem
+import top.yukonga.miuix.kmp.basic.TabRowDefaults
 
 // 别名防止冲突
 import top.yukonga.miuix.kmp.basic.TabRow as MiuixTabRow
@@ -37,7 +39,8 @@ fun TabRow(
             PrimaryTabRow(
                 selectedTabIndex = selectedTabIndex,
                 modifier = modifier,
-                divider = divider
+                divider = divider,
+                containerColor = Color.Transparent
             ) {
                 // 在 M3 分支内部，我们帮你把 forEach 循环写掉
                 tabs.forEachIndexed { index, title ->
@@ -59,6 +62,7 @@ fun TabRow(
                 selectedTabIndex = selectedTabIndex,
                 onTabSelected = onTabSelected,
                 modifier = modifier.padding(horizontal = 8.dp),
+                colors = TabRowDefaults.tabRowColors(backgroundColor = Color.Transparent)
             )
         }
     }

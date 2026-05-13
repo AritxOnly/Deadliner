@@ -7,7 +7,8 @@ import top.yukonga.miuix.kmp.blur.LayerBackdrop
 @Immutable
 data class AdvancedMaterialSpec(
     val enabled: Boolean = false,
-    val blurRadius: Float = 128f,
+    val blurRadius: Float = 96f,
+    val noiseCoefficient: Float = 0.009f,
     val navigationTintAlpha: Float = 0.72f,
     val topBarTintAlpha: Float = 0.68f,
 )

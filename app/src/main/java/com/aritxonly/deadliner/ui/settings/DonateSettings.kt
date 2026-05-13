@@ -59,10 +59,9 @@ fun DonateScreen(
             }
         }
     ) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
         ) {
             SettingsSection(mainContent = true, enabled = true) {
                 Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {

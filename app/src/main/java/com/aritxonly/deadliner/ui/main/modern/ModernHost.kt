@@ -74,10 +74,12 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aritxonly.deadliner.AddDDLActivity
@@ -86,6 +88,7 @@ import com.aritxonly.deadliner.MainActivity
 import com.aritxonly.deadliner.OverviewContent
 import com.aritxonly.deadliner.OverviewSettingsDialog
 import com.aritxonly.deadliner.OverviewTopBar
+import com.aritxonly.deadliner.OverviewTopBarWithTabs
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.SettingsActivity
 import com.aritxonly.deadliner.capture.CaptureViewModel
@@ -170,6 +173,7 @@ fun ModernHost(
     val uiState = rememberMainHostUiState()
     var overviewItems by remember { mutableStateOf<List<DDLItem>>(emptyList()) }
     var showOverviewSettings by rememberSaveable { mutableStateOf(false) }
+    var overviewSelectedTab by rememberSaveable { mutableIntStateOf(0) }
     var showCaptureMergeSheet by rememberSaveable { mutableStateOf(false) }
     var showSearchPage by rememberSaveable { mutableStateOf(false) }
     var activeSelectionPane by rememberSaveable { mutableStateOf<DeadlineType?>(null) }
@@ -181,6 +185,7 @@ fun ModernHost(
     val textFieldState = rememberTextFieldState()
     var suggestions by rememberSaveable { mutableStateOf(emptyList<DDLItem>()) }
     var base by remember { mutableStateOf<List<DDLItem>>(emptyList()) }
+    var overlayTopBarHeightPx by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(isWideLayout) {
         if (isWideLayout && hostState.selectedPage != DeadlineType.TASK) {
@@ -314,6 +319,16 @@ fun ModernHost(
         hostState.selectedSection == MainSection.OVERVIEW -> ModernTopBarState.OVERVIEW
         else -> ModernTopBarState.CAPTURE
     }
+    val useOverlayTopBar = when (hostState.selectedSection) {
+        MainSection.LIST -> !showSearchPage
+        MainSection.OVERVIEW -> !useFlattenedOverview
+        MainSection.CAPTURE -> true
+    }
+    val overlayTopBarPadding = if (useOverlayTopBar) {
+        with(LocalDensity.current) { overlayTopBarHeightPx.toDp() }
+    } else {
+        0.dp
+    }
     val shouldCollapseHeaderAccessories by remember(
         isWideLayout,
         hostState.selectedSection,
@@ -441,120 +456,143 @@ fun ModernHost(
             activeSelectionPane = null
         },
         topBar = {
-            AnimatedContent(
-                targetState = topBarState,
-                transitionSpec = {
-                    val enter =
-                        fadeIn(animationSpec = tween(180, delayMillis = 20)) +
-                            slideInVertically(
-                                initialOffsetY = { fullHeight -> fullHeight / 6 },
-                                animationSpec = tween(240, easing = FastOutSlowInEasing),
-                            )
-                    val exit =
-                        fadeOut(animationSpec = tween(120)) +
-                            slideOutVertically(
-                                targetOffsetY = { fullHeight -> -fullHeight / 10 },
-                                animationSpec = tween(180, easing = FastOutSlowInEasing),
-                            )
-
-                    enter.togetherWith(exit).using(SizeTransform(clip = false))
+            Box(
+                modifier = if (useOverlayTopBar) {
+                    Modifier.onSizeChanged { overlayTopBarHeightPx = it.height }
+                } else {
+                    Modifier
                 },
-                label = "modern-topbar-transition",
-            ) { currentTopBarState ->
-                when (currentTopBarState) {
-                    ModernTopBarState.HIDDEN -> Unit
-                    ModernTopBarState.LIST_DEFAULT -> {
-                        ModernMainHeader(
-                            activity = activity,
-                            selectedPage = hostState.selectedPage,
-                            onSelectedPageChange = { hostState.selectedPage = it },
-                            avatarPainter = avatarPainter,
-                            onShowAiOverlay = { hostState.showOverlay = true },
-                            showPageTabs = !isWideLayout,
-                            showAccessoryRow = !isWideLayout && !shouldCollapseHeaderAccessories,
-                            showAiActionInTopBar = isWideLayout,
-                            forceMaterialTopAppBar = forceMaterialTopBarsInMiuix,
-                        )
-                    }
-                    ModernTopBarState.LIST_SELECTION -> {
-                        TopAppBar(
-                            title = context.getString(R.string.selected_items, hostState.selectedIds.size),
-                            mode = TopAppBarStyle.SMALL,
-                            titleTextStyle = MaterialTheme.typography.titleLarge,
-                            forceMaterial3 = forceMaterialTopBarsInMiuix,
-                            navigationIcon = {
-                                IconButton(onClick = {
-                                    hostState.clearSelection()
-                                    activeSelectionPane = null
-                                }) {
-                                    Icon(
-                                        ImageVector.vectorResource(R.drawable.ic_close),
-                                        contentDescription = stringResource(R.string.close),
-                                    )
-                                }
-                            },
-                            actions = {
-                                IconButton(onClick = {
-                                    selectionActions.onDoneClick(
-                                        ddlList = ddlList,
-                                        onCelebrate = {
-                                            if (com.aritxonly.deadliner.localutils.GlobalUtils.fireworksOnFinish) {
-                                                celebrate()
-                                            }
-                                        },
-                                    )
-                                }) {
-                                    Icon(
-                                        ImageVector.vectorResource(R.drawable.ic_done),
-                                        contentDescription = stringResource(R.string.accept)
-                                    )
-                                }
-                                if (hostState.selectedPage == DeadlineType.TASK) {
-                                    IconButton(onClick = { selectionActions.onArchiveClick(ddlList = ddlList) }) {
+            ) {
+                AnimatedContent(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.TopCenter,
+                    targetState = topBarState,
+                    transitionSpec = {
+                        val enter =
+                            fadeIn(animationSpec = tween(180, delayMillis = 20)) +
+                                slideInVertically(
+                                    initialOffsetY = { fullHeight -> fullHeight / 6 },
+                                    animationSpec = tween(240, easing = FastOutSlowInEasing),
+                                )
+                        val exit =
+                            fadeOut(animationSpec = tween(120)) +
+                                slideOutVertically(
+                                    targetOffsetY = { fullHeight -> -fullHeight / 10 },
+                                    animationSpec = tween(180, easing = FastOutSlowInEasing),
+                                )
+
+                        enter.togetherWith(exit).using(SizeTransform(clip = false))
+                    },
+                    label = "modern-topbar-transition",
+                ) { currentTopBarState ->
+                    when (currentTopBarState) {
+                        ModernTopBarState.HIDDEN -> {
+                            Box(modifier = Modifier.fillMaxWidth())
+                        }
+                        ModernTopBarState.LIST_DEFAULT -> {
+                            ModernMainHeader(
+                                activity = activity,
+                                selectedPage = hostState.selectedPage,
+                                onSelectedPageChange = { hostState.selectedPage = it },
+                                avatarPainter = avatarPainter,
+                                onShowAiOverlay = { hostState.showOverlay = true },
+                                showPageTabs = !isWideLayout,
+                                showAccessoryRow = !isWideLayout && !shouldCollapseHeaderAccessories,
+                                showAiActionInTopBar = isWideLayout,
+                                forceMaterialTopAppBar = forceMaterialTopBarsInMiuix,
+                            )
+                        }
+                        ModernTopBarState.LIST_SELECTION -> {
+                            TopAppBar(
+                                title = context.getString(R.string.selected_items, hostState.selectedIds.size),
+                                mode = TopAppBarStyle.SMALL,
+                                titleTextStyle = MaterialTheme.typography.titleLarge,
+                                forceMaterial3 = forceMaterialTopBarsInMiuix,
+                                navigationIcon = {
+                                    IconButton(onClick = {
+                                        hostState.clearSelection()
+                                        activeSelectionPane = null
+                                    }) {
                                         Icon(
-                                            ImageVector.vectorResource(R.drawable.ic_archiving),
-                                            contentDescription = stringResource(R.string.archive)
+                                            ImageVector.vectorResource(R.drawable.ic_close),
+                                            contentDescription = stringResource(R.string.close),
                                         )
                                     }
-                                } else {
-                                    IconButton(onClick = { selectionActions.onReminderClick(ddlList = ddlList) }) {
+                                },
+                                actions = {
+                                    IconButton(onClick = {
+                                        selectionActions.onDoneClick(
+                                            ddlList = ddlList,
+                                            onCelebrate = {
+                                                if (com.aritxonly.deadliner.localutils.GlobalUtils.fireworksOnFinish) {
+                                                    celebrate()
+                                                }
+                                            },
+                                        )
+                                    }) {
                                         Icon(
-                                            ImageVector.vectorResource(R.drawable.ic_notification_add),
-                                            contentDescription = stringResource(R.string.settings_more)
+                                            ImageVector.vectorResource(R.drawable.ic_done),
+                                            contentDescription = stringResource(R.string.accept)
                                         )
                                     }
-                                }
-                                IconButton(onClick = { selectionActions.onDeleteClick() }) {
-                                    Icon(
-                                        ImageVector.vectorResource(R.drawable.ic_delete),
-                                        contentDescription = stringResource(R.string.delete)
-                                    )
-                                }
-                                IconButton(onClick = { selectionActions.onEditClick(ddlList = ddlList) }) {
-                                    Icon(
-                                        ImageVector.vectorResource(R.drawable.ic_edit),
-                                        contentDescription = stringResource(R.string.edit)
-                                    )
-                                }
-                            },
-                        )
-                    }
-                    ModernTopBarState.OVERVIEW -> {
-                        OverviewTopBar(
-                            showNavigationIcon = false,
-                            onShowSettings = { showOverviewSettings = true },
-                            mode = TopAppBarStyle.SMALL,
-                            forceMaterial3 = forceMaterialTopBarsInMiuix,
-                        )
-                    }
-                    ModernTopBarState.CAPTURE -> {
-                        CaptureTopBar(
-                            vm = captureVm,
-                            onClose = { hostState.selectedSection = MainSection.LIST },
-                            showNavigationIcon = false,
-                            onRequestMerge = { showCaptureMergeSheet = true },
-                            forceMaterial3 = forceMaterialTopBarsInMiuix,
-                        )
+                                    if (hostState.selectedPage == DeadlineType.TASK) {
+                                        IconButton(onClick = { selectionActions.onArchiveClick(ddlList = ddlList) }) {
+                                            Icon(
+                                                ImageVector.vectorResource(R.drawable.ic_archiving),
+                                                contentDescription = stringResource(R.string.archive)
+                                            )
+                                        }
+                                    } else {
+                                        IconButton(onClick = { selectionActions.onReminderClick(ddlList = ddlList) }) {
+                                            Icon(
+                                                ImageVector.vectorResource(R.drawable.ic_notification_add),
+                                                contentDescription = stringResource(R.string.settings_more)
+                                            )
+                                        }
+                                    }
+                                    IconButton(onClick = { selectionActions.onDeleteClick() }) {
+                                        Icon(
+                                            ImageVector.vectorResource(R.drawable.ic_delete),
+                                            contentDescription = stringResource(R.string.delete)
+                                        )
+                                    }
+                                    IconButton(onClick = { selectionActions.onEditClick(ddlList = ddlList) }) {
+                                        Icon(
+                                            ImageVector.vectorResource(R.drawable.ic_edit),
+                                            contentDescription = stringResource(R.string.edit)
+                                        )
+                                    }
+                                },
+                            )
+                        }
+                        ModernTopBarState.OVERVIEW -> {
+                            if (useFlattenedOverview) {
+                                OverviewTopBar(
+                                    showNavigationIcon = false,
+                                    onShowSettings = { showOverviewSettings = true },
+                                    mode = TopAppBarStyle.SMALL,
+                                    forceMaterial3 = forceMaterialTopBarsInMiuix,
+                                )
+                            } else {
+                                OverviewTopBarWithTabs(
+                                    selectedTab = overviewSelectedTab,
+                                    onTabSelected = { overviewSelectedTab = it },
+                                    showNavigationIcon = false,
+                                    onShowSettings = { showOverviewSettings = true },
+                                    mode = TopAppBarStyle.SMALL,
+                                    forceMaterial3 = forceMaterialTopBarsInMiuix,
+                                )
+                            }
+                        }
+                        ModernTopBarState.CAPTURE -> {
+                            CaptureTopBar(
+                                vm = captureVm,
+                                onClose = { hostState.selectedSection = MainSection.LIST },
+                                showNavigationIcon = false,
+                                onRequestMerge = { showCaptureMergeSheet = true },
+                                forceMaterial3 = forceMaterialTopBarsInMiuix,
+                            )
+                        }
                     }
                 }
             }
@@ -673,6 +711,7 @@ fun ModernHost(
                                         },
                                         onShowUndoSnackbar = onUndoSnackbar,
                                         onCelebrate = { celebrate() },
+                                        topOverlayPadding = overlayTopBarPadding,
                                     )
                                     if (taskPaneBlocked) {
                                         Box(
@@ -722,6 +761,7 @@ fun ModernHost(
                                         },
                                         onShowUndoSnackbar = onUndoSnackbar,
                                         onCelebrate = { celebrate() },
+                                        topOverlayPadding = overlayTopBarPadding,
                                     )
                                     if (habitPaneBlocked) {
                                         Box(
@@ -764,6 +804,7 @@ fun ModernHost(
                                 },
                                 onShowUndoSnackbar = onUndoSnackbar,
                                 onCelebrate = { celebrate() },
+                                topOverlayPadding = overlayTopBarPadding,
                             )
                         }
                     }
@@ -773,6 +814,10 @@ fun ModernHost(
                         items = overviewItems,
                         activity = activity,
                         flattenedLayout = useFlattenedOverview,
+                        selectedTab = overviewSelectedTab,
+                        onSelectedTabChange = { overviewSelectedTab = it },
+                        showTabsInContent = useFlattenedOverview,
+                        topContentPadding = if (!useFlattenedOverview) overlayTopBarPadding else 0.dp,
                     )
                 }
                 MainSection.CAPTURE -> {
@@ -781,6 +826,7 @@ fun ModernHost(
                         twoColumnLayout = isWideLayout,
                         showMergeSheet = showCaptureMergeSheet,
                         onShowMergeSheetChange = { showCaptureMergeSheet = it },
+                        topOverlayPadding = overlayTopBarPadding,
                     )
                 }
             }

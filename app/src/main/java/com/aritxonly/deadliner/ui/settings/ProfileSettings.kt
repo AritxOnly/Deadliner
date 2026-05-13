@@ -42,10 +42,9 @@ fun ProfileSettingsScreen(
             }
         }
     ) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
         ) {
             SettingsSection {
                 ProfileEditor(

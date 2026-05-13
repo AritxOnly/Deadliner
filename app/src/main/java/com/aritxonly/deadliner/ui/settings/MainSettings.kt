@@ -78,9 +78,9 @@ fun MainSettingsScreen(
             }
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(innerPadding),
+        SettingsLazyColumn(
+            contentPadding = innerPadding,
+            modifier = Modifier,
         ) {
             item {
                 SettingsSection {

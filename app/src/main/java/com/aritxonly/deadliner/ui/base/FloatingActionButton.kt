@@ -1,5 +1,7 @@
 package com.aritxonly.deadliner.ui.base
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -10,6 +12,8 @@ import com.aritxonly.deadliner.ui.theme.LocalAppDesignSystem
 
 import androidx.compose.material3.FloatingActionButton as Material3Fab
 import top.yukonga.miuix.kmp.basic.FloatingActionButton as MiuixFab
+
+private val DeadlinerFabShape = RoundedCornerShape(20.dp)
 
 /**
  * 应用级 FAB：统一 Material3 / MIUIX 两套实现。
@@ -29,6 +33,7 @@ fun FloatingActionButton(
                 modifier = modifier,
                 containerColor = containerColor,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = DeadlinerFabShape,
                 content = content,
             )
         }
@@ -36,7 +41,7 @@ fun FloatingActionButton(
         else -> {
             MiuixFab(
                 onClick = onClick,
-                modifier = modifier,
+                modifier = modifier.clip(DeadlinerFabShape),
                 content = content,
             )
         }

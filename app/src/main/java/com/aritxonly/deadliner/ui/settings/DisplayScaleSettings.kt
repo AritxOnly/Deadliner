@@ -66,10 +66,9 @@ fun DisplayScaleSettingsScreen(
             }
         }
     ) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
         ) {
             SettingsSection(topLabel = stringResource(R.string.settings_display_size_title)) {
                 SettingsRadioGroupItem(
@@ -113,10 +112,9 @@ fun CustomDisplayScaleSettingsScreen(
             }
         }
     ) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
         ) {
             SettingsSection(topLabel = stringResource(R.string.settings_experimental)) {
                 SettingsSliderItemWithLabel(

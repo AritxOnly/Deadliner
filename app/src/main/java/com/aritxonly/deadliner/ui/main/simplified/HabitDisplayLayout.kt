@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner.ui.main.simplified
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,6 +33,12 @@ import com.aritxonly.deadliner.model.HabitWithDailyStatus
 import com.aritxonly.deadliner.ui.main.shared.mainListContainerClip
 import java.time.LocalDate
 import java.time.LocalDateTime
+
+private data class HabitDisplayItem(
+    val habit: HabitWithDailyStatus,
+    val status: DDLStatus,
+    val remainingText: String?,
+)
 
 @Composable
 fun HabitScreen(
@@ -108,6 +115,42 @@ fun HabitDisplayLayout(
             onSelectDate = habitViewModel::onSelectDate
         )
 
+        val displayHabits = remember(habits) {
+            habits.mapNotNull { item ->
+                val ddl = DDLRepository().getDDLById(item.habit.ddlId)
+                if (ddl == null) {
+                    Log.w(
+                        "HabitDisplayLayout",
+                        "Skipping orphan habit item: habitId=${item.habit.id}, ddlId=${item.habit.ddlId}"
+                    )
+                    return@mapNotNull null
+                }
+
+                val startTime = GlobalUtils.parseDateTime(ddl.startTime)
+                val endTime = GlobalUtils.parseDateTime(ddl.endTime)
+                val status = DDLStatus.calculateStatus(
+                    startTime,
+                    endTime,
+                    isCompleted = ddl.isCompleted
+                )
+                val remainingText = endTime?.let {
+                    GlobalUtils.buildRemainingTime(
+                        context,
+                        startTime,
+                        endTime,
+                        false,
+                        LocalDateTime.now()
+                    )
+                }
+
+                HabitDisplayItem(
+                    habit = item,
+                    status = status,
+                    remainingText = remainingText,
+                )
+            }
+        }
+
         // 习惯列表
         LazyColumn(
             contentPadding = PaddingValues(
@@ -121,65 +164,45 @@ fun HabitDisplayLayout(
             state = listState,
         ) {
             itemsIndexed(
-                items = habits,
-                key = { _, it -> it.habit.id }
+                items = displayHabits,
+                key = { _, it -> it.habit.habit.id }
             ) { index, item ->
-                val selected = isSelected(item.habit.ddlId)
-
-                val ddl = DDLRepository().getDDLById(item.habit.ddlId)?:return@itemsIndexed
-                val st = GlobalUtils.parseDateTime(ddl.startTime)
-                val et = GlobalUtils.parseDateTime(ddl.endTime)
-                val status = DDLStatus.calculateStatus(st, et, isCompleted = ddl.isCompleted)
-
-                val remainingText = et?.let {
-                    GlobalUtils.buildRemainingTime(
-                        context,
-                        st,
-                        et,
-                        false,
-                        LocalDateTime.now()
-                    )
-                }
+                val selected = isSelected(item.habit.habit.ddlId)
 
                 if (!isClassic) {
-                    AnimatedItem(
-                        ddl,
-                        index,
-                    ) {
-                        HabitRow(
-                            data = item,
-                            status = status,
-                            isSelected = selected,
-                            canToggle = canToggleOnThisDate,
-                            onToggle = {
-                                if (selectionMode) {
-                                    onItemClickInSelection(item.habit.ddlId)
-                                } else {
-                                    onToggleHabit(item.habit.id)
-                                }
-                            },
-                            onLongPress = {
-                                onItemLongPress(item.habit.ddlId)
-                            },
-                            remainingText = remainingText
-                        )
-                    }
-                } else {
-                    HabitRowClassic(
-                        data = item,
+                    HabitRow(
+                        data = item.habit,
+                        status = item.status,
                         isSelected = selected,
                         canToggle = canToggleOnThisDate,
                         onToggle = {
                             if (selectionMode) {
-                                onItemClickInSelection(item.habit.ddlId)
+                                onItemClickInSelection(item.habit.habit.ddlId)
                             } else {
-                                onToggleHabit(item.habit.id)
+                                onToggleHabit(item.habit.habit.id)
                             }
                         },
                         onLongPress = {
-                            onItemLongPress(item.habit.ddlId)
+                            onItemLongPress(item.habit.habit.ddlId)
                         },
-                        remainingText = remainingText
+                        remainingText = item.remainingText
+                    )
+                } else {
+                    HabitRowClassic(
+                        data = item.habit,
+                        isSelected = selected,
+                        canToggle = canToggleOnThisDate,
+                        onToggle = {
+                            if (selectionMode) {
+                                onItemClickInSelection(item.habit.habit.ddlId)
+                            } else {
+                                onToggleHabit(item.habit.habit.id)
+                            }
+                        },
+                        onLongPress = {
+                            onItemLongPress(item.habit.habit.ddlId)
+                        },
+                        remainingText = item.remainingText
                     )
                 }
             }

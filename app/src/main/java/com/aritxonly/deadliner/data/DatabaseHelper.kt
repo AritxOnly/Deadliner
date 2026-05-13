@@ -195,9 +195,15 @@ class DatabaseHelper private constructor(context: Context) :
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_hr_habit_date ON $TABLE_HABIT_RECORD($HR_HABIT_ID, $HR_DATE)")
     }
 
+    override fun onConfigure(db: SQLiteDatabase) {
+        super.onConfigure(db)
+        db.setForeignKeyConstraintsEnabled(true)
+    }
+
     override fun onOpen(db: SQLiteDatabase) {
         super.onOpen(db)
         repairCanonicalStateFromLegacy(db)
+        cleanupOrphanHabits(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -669,6 +675,41 @@ class DatabaseHelper private constructor(context: Context) :
             "$HABIT_SORT_ORDER ASC, $HABIT_ID ASC"
         )
         return parseHabitCursor(cursor)
+    }
+
+    fun cleanupOrphanHabits(): Int = cleanupOrphanHabits(writableDatabase)
+
+    private fun cleanupOrphanHabits(database: SQLiteDatabase): Int {
+        val orphanHabitIds = mutableListOf<Long>()
+
+        database.rawQuery(
+            """
+            SELECT h.$HABIT_ID
+              FROM $TABLE_HABIT h
+              LEFT JOIN $TABLE_NAME d
+                ON d.$COLUMN_ID = h.$HABIT_DDL_ID
+             WHERE d.$COLUMN_ID IS NULL
+                OR COALESCE(d.$COLUMN_DELETED, 0) = 1
+                OR d.$COLUMN_TYPE != ?
+            """.trimIndent(),
+            arrayOf(DeadlineType.HABIT.toString().lowercase())
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                orphanHabitIds += cursor.getLong(0)
+            }
+        }
+
+        if (orphanHabitIds.isEmpty()) return 0
+
+        database.transaction {
+            orphanHabitIds.forEach { habitId ->
+                delete(TABLE_HABIT_RECORD, "$HR_HABIT_ID = ?", arrayOf(habitId.toString()))
+                delete(TABLE_HABIT, "$HABIT_ID = ?", arrayOf(habitId.toString()))
+            }
+        }
+
+        Log.w("DatabaseHelper", "Cleaned up ${orphanHabitIds.size} orphan habit(s)")
+        return orphanHabitIds.size
     }
 
     fun getHabitCarrierSyncRows(): List<HabitCarrierSyncRow> {

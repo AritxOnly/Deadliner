@@ -10,14 +10,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.unit.dp
-import androidx.core.R
 import com.aritxonly.deadliner.ui.theme.AppDesignSystem
 import com.aritxonly.deadliner.ui.theme.LocalAppDesignSystem
 
@@ -41,9 +39,11 @@ fun Button(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    forceMaterial3: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
-    when (LocalAppDesignSystem.current) {
+    val designSystem = if (forceMaterial3) AppDesignSystem.MATERIAL3 else LocalAppDesignSystem.current
+    when (designSystem) {
         AppDesignSystem.MATERIAL3 -> {
             Material3Button(
                 onClick = onClick,
@@ -66,9 +66,8 @@ fun Button(
             }
             MiuixButton(
                 onClick = onClick,
-                modifier = modifier.padding(vertical = 8.dp),
                 enabled = enabled,
-                insideMargin = PaddingValues(12.dp),
+                insideMargin = top.yukonga.miuix.kmp.basic.ButtonDefaults.InsideMargin,
                 colors = top.yukonga.miuix.kmp.basic.ButtonDefaults.buttonColors(
                     color = colors.containerColor,
                 ),
@@ -97,13 +96,15 @@ fun TextButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.TextButtonContentPadding,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    forceMaterial3: Boolean = false,
 
     // MIUIX 专属辅助参数
     miuixText: String = "",
 
     content: @Composable RowScope.() -> Unit
 ) {
-    when (LocalAppDesignSystem.current) {
+    val designSystem = if (forceMaterial3) AppDesignSystem.MATERIAL3 else LocalAppDesignSystem.current
+    when (designSystem) {
         AppDesignSystem.MATERIAL3 -> {
             Material3TextButton(
                 onClick = onClick,
@@ -120,12 +121,10 @@ fun TextButton(
         }
         AppDesignSystem.MIUIX -> {
             MiuixTextButton(
-                // 核心差异：MIUIX 直接要 String
                 text = miuixText,
                 onClick = onClick,
-                modifier = modifier,
                 enabled = enabled,
-                insideMargin = contentPadding,
+                insideMargin = top.yukonga.miuix.kmp.basic.ButtonDefaults.InsideMargin,
             )
         }
     }

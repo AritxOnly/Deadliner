@@ -164,6 +164,7 @@ fun MainDisplay(
     onRequestBackdropBlur: (Boolean) -> Unit = {},
     onShowUndoSnackbar: (DDLItem) -> Unit = {},
     onCelebrate: (() -> Unit)? = null,
+    topOverlayPadding: Dp = 0.dp,
 ) {
     val context = LocalContext.current
 
@@ -200,7 +201,9 @@ fun MainDisplay(
                 PullToRefreshDefaults.LoadingIndicator(
                     state = pullToRefreshState,
                     isRefreshing = isRefreshing,
-                    modifier = Modifier.align(Alignment.TopCenter)
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = topOverlayPadding)
                 )
             }
         ) {
@@ -208,7 +211,7 @@ fun MainDisplay(
                 DeadlineType.TASK -> {
                     LazyColumn(
                         contentPadding = PaddingValues(
-                            top = 16.dp,
+                            top = 16.dp + topOverlayPadding,
                             bottom = 96.dp,
                             start = 16.dp,
                             end = 16.dp
@@ -255,6 +258,7 @@ fun MainDisplay(
                     HabitDisplayLayout(
                         weekOverview, selectedDate,
                         habitViewModel = habitViewModel,
+                        modifier = Modifier.padding(top = topOverlayPadding),
                         habits = habits,
                         selectionMode = selectionMode,
                         isSelected = isSelected,

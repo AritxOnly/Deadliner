@@ -67,10 +67,9 @@ fun AppIconSettingsScreen(
             }
         },
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
         ) {
             SettingsSection(topLabel = stringResource(R.string.settings_app_icon_title)) {
                 Text(

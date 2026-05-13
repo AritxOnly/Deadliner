@@ -19,11 +19,15 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -34,18 +38,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
-import androidx.compose.material3.SegmentedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -78,14 +81,18 @@ import com.aritxonly.deadliner.model.HabitGoalType
 import com.aritxonly.deadliner.model.HabitMetaData
 import com.aritxonly.deadliner.model.HabitPeriod
 import com.aritxonly.deadliner.model.toJson
+import com.aritxonly.deadliner.ui.base.AdaptiveMaterialScaffold
 import com.aritxonly.deadliner.ui.base.Button
 import com.aritxonly.deadliner.ui.base.OutlinedTextField
-import com.aritxonly.deadliner.ui.base.Scaffold
 import com.aritxonly.deadliner.ui.base.Switch
 import com.aritxonly.deadliner.ui.base.TabRow
+import com.aritxonly.deadliner.ui.base.TopAppBar
+import com.aritxonly.deadliner.ui.base.TopAppBarStyle
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.ui.navIconPaddingModifier
+import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialBackdrop
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
+import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialSpec
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
@@ -97,6 +104,9 @@ import java.time.format.FormatStyle
 import java.util.Locale
 import com.aritxonly.deadliner.ai.AIUtils
 import com.aritxonly.deadliner.ui.iconResource
+import top.yukonga.miuix.kmp.blur.BlendColorEntry
+import top.yukonga.miuix.kmp.blur.BlurDefaults.blurColors
+import top.yukonga.miuix.kmp.blur.textureBlur
 
 @SuppressLint("SimpleDateFormat")
 class AddDDLActivity : DeadlinerAppCompatActivity() {
@@ -281,6 +291,11 @@ class AddDDLActivity : DeadlinerAppCompatActivity() {
     private fun AddDDLScreen() {
         val tabs = listOf(stringResource(R.string.task), stringResource(R.string.habit))
         val textFieldShape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius))
+        val pageSurfaceColor = MaterialTheme.colorScheme.surface
+        val sectionContainerColor = MaterialTheme.colorScheme.surfaceContainer
+        val emphasizedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        val advancedMaterial = LocalAdvancedMaterialSpec.current
+        val layoutDirection = LocalLayoutDirection.current
         LaunchedEffect(autoRunAiOnAppear, aiInputText, aiAutoTriggered) {
             if (autoRunAiOnAppear && !aiAutoTriggered && aiInputText.isNotBlank()) {
                 aiAutoTriggered = true
@@ -288,48 +303,52 @@ class AddDDLActivity : DeadlinerAppCompatActivity() {
             }
         }
 
-        Scaffold(
+        AdaptiveMaterialScaffold(
             containerColor = Color.Transparent,
             contentColor = contentColorFor(Color.Transparent),
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            text = stringResource(R.string.add_task),
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { finishAfterTransition() }) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_back),
-                                contentDescription = stringResource(R.string.close),
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = expressiveTypeModifier
-                            )
-                        }
-                    },
-                    actions = {
-                        if (selectedPage == 0) {
-                            IconButton(onClick = { onImportFromCalendarClick() }) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(if (advancedMaterial.enabled) Color.Transparent else pageSurfaceColor)
+                ) {
+                    TopAppBar(
+                        title = stringResource(R.string.add_task),
+                        mode = TopAppBarStyle.CENTER,
+                        titleTextStyle = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal),
+                        useParentMaterialContainer = advancedMaterial.enabled,
+                        navigationIcon = {
+                            IconButton(onClick = { finishAfterTransition() }) {
                                 Icon(
-                                    painter = painterResource(R.drawable.ic_event),
-                                    contentDescription = stringResource(R.string.select_calendar_to_import),
+                                    painter = painterResource(R.drawable.ic_back),
+                                    contentDescription = stringResource(R.string.close),
                                     tint = MaterialTheme.colorScheme.onSurface,
                                     modifier = expressiveTypeModifier
                                 )
                             }
+                        },
+                        actions = {
+                            if (selectedPage == 0) {
+                                IconButton(onClick = { onImportFromCalendarClick() }) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_event),
+                                        contentDescription = stringResource(R.string.select_calendar_to_import),
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        modifier = expressiveTypeModifier
+                                    )
+                                }
+                            }
                         }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(horizontal = 8.dp)
-                )
+                    )
+                    TabRow(
+                        tabs = tabs,
+                        selectedTabIndex = selectedPage,
+                        onTabSelected = { selectedPage = it },
+                        divider = { HorizontalDivider(color = Color.Transparent) },
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
             },
             bottomBar = {
                 BottomActions(
@@ -338,195 +357,191 @@ class AddDDLActivity : DeadlinerAppCompatActivity() {
                 )
             }
         ) { padding ->
-            Column(
+            LazyColumn(
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(padding)
+                    .fillMaxSize()
+                    .background(pageSurfaceColor)
+                    .padding(
+                        start = padding.calculateStartPadding(layoutDirection),
+                        end = padding.calculateEndPadding(layoutDirection),
+                        bottom = padding.calculateBottomPadding(),
+                    ),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    top = padding.calculateTopPadding() + 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                TabRow(
-                    tabs = tabs,
-                    selectedTabIndex = selectedPage,
-                    onTabSelected = { selectedPage = it },
-                    divider = { HorizontalDivider(color = MaterialTheme.colorScheme.surface) },
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+                item {
+                    AiQuickAddCard()
+                }
 
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                item {
+                    OutlinedTextField(
+                        value = ddlName,
+                        onValueChange = { ddlName = it },
+                        label = { Text(stringResource(R.string.add_ddl_name)) },
+                        miuixLabel = stringResource(R.string.add_ddl_name),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = textFieldShape
+                    )
+                }
+
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = sectionContainerColor
+                        ),
+                        shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.star),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Switch(
+                                checked = isStarred,
+                                onCheckedChange = { isStarred = it },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                            )
+                        }
+                    }
+                }
+
+                if (selectedPage == 0) {
                     item {
-                        AiQuickAddCard()
+                        DateTimeCard(
+                            title = stringResource(R.string.start_time),
+                            value = formatLocalDateTime(startTime),
+                            onClick = {
+                                GlobalUtils.showDateTimePicker(supportFragmentManager) { selected ->
+                                    startTime = selected
+                                    if (endTime.isBefore(selected)) {
+                                        endTime = selected.plusHours(1)
+                                    }
+                                }
+                            }
+                        )
                     }
 
                     item {
+                        DateTimeCard(
+                            title = stringResource(R.string.end_time),
+                            value = formatLocalDateTime(endTime),
+                            onClick = {
+                                GlobalUtils.showDateTimePicker(
+                                    supportFragmentManager,
+                                    startTime,
+                                    { chosen -> Toast.makeText(this@AddDDLActivity, getString(R.string.please_choose_the_time_after, chosen), Toast.LENGTH_SHORT).show() }
+                                ) { selected ->
+                                    endTime = selected
+                                }
+                            }
+                        )
+                    }
+                }
+
+                if (selectedPage == 0) {
+                    item {
                         OutlinedTextField(
-                            value = ddlName,
-                            onValueChange = { ddlName = it },
-                            label = { Text(stringResource(R.string.add_ddl_name)) },
-                            miuixLabel = stringResource(R.string.add_ddl_name),
+                            value = taskNote,
+                            onValueChange = { taskNote = it },
+                            label = { Text(stringResource(R.string.add_ddl_note)) },
+                            miuixLabel = stringResource(R.string.add_ddl_note),
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
+                            minLines = 3,
+                            maxLines = 6,
+                            shape = textFieldShape
+                        )
+                    }
+                } else {
+                    item {
+                        OutlinedTextField(
+                            value = habitDescription,
+                            onValueChange = { habitDescription = it },
+                            label = { Text(stringResource(R.string.add_ddl_note)) },
+                            miuixLabel = stringResource(R.string.add_ddl_note),
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 2,
+                            maxLines = 5,
                             shape = textFieldShape
                         )
                     }
 
                     item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.7f)
+                        Text(
+                            text = stringResource(R.string.add_ddl_frequency_type),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        FrequencyTypeRow(
+                            selected = frequencyType,
+                            onSelect = { frequencyType = it }
+                        )
+                    }
+
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = frequencyInput,
+                                onValueChange = { frequencyInput = it.filter(Char::isDigit) },
+                                label = { Text(stringResource(R.string.add_ddl_frequency)) },
+                                miuixLabel = stringResource(R.string.add_ddl_frequency),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                shape = textFieldShape
+                            )
+                            OutlinedTextField(
+                                value = totalInput,
+                                onValueChange = { totalInput = it.filter(Char::isDigit) },
+                                label = { Text(stringResource(R.string.add_ddl_total)) },
+                                miuixLabel = stringResource(R.string.add_ddl_total),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                shape = textFieldShape
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = GlobalUtils.generateHabitNote(
+                                this@AddDDLActivity,
+                                frequencyInput.toIntOrNull(),
+                                totalInput.toIntOrNull(),
+                                frequencyType
                             ),
-                            shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius))
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.star),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.weight(1f))
-                                Switch(
-                                    checked = isStarred,
-                                    onCheckedChange = { isStarred = it },
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                        checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                        uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                                    )
-                                )
-                            }
-                        }
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
 
-                    if (selectedPage == 0) {
-                        item {
-                            DateTimeCard(
-                                title = stringResource(R.string.start_time),
-                                value = formatLocalDateTime(startTime),
-                                onClick = {
-                                    GlobalUtils.showDateTimePicker(supportFragmentManager) { selected ->
-                                        startTime = selected
-                                        if (endTime.isBefore(selected)) {
-                                            endTime = selected.plusHours(1)
-                                        }
-                                    }
+                    item {
+                        HabitReminderSection(
+                            enabled = habitReminderEnabled,
+                            onEnabledChange = { habitReminderEnabled = it },
+                            time = habitReminderTime,
+                            onPickTime = {
+                                GlobalUtils.showDateTimePicker(supportFragmentManager) { selected ->
+                                    habitReminderTime = selected.toLocalTime().withSecond(0).withNano(0)
                                 }
-                            )
-                        }
-
-                        item {
-                            DateTimeCard(
-                                title = stringResource(R.string.end_time),
-                                value = formatLocalDateTime(endTime),
-                                onClick = {
-                                    GlobalUtils.showDateTimePicker(
-                                        supportFragmentManager,
-                                        startTime,
-                                        { chosen -> Toast.makeText(this@AddDDLActivity, getString(R.string.please_choose_the_time_after, chosen), Toast.LENGTH_SHORT).show() }
-                                    ) { selected ->
-                                        endTime = selected
-                                    }
-                                }
-                            )
-                        }
-                    }
-
-                    if (selectedPage == 0) {
-                        item {
-                            OutlinedTextField(
-                                value = taskNote,
-                                onValueChange = { taskNote = it },
-                                label = { Text(stringResource(R.string.add_ddl_note)) },
-                                miuixLabel = stringResource(R.string.add_ddl_note),
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 3,
-                                maxLines = 6,
-                                shape = textFieldShape
-                            )
-                        }
-                    } else {
-                        item {
-                            OutlinedTextField(
-                                value = habitDescription,
-                                onValueChange = { habitDescription = it },
-                                label = { Text(stringResource(R.string.add_ddl_note)) },
-                                miuixLabel = stringResource(R.string.add_ddl_note),
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 2,
-                                maxLines = 5,
-                                shape = textFieldShape
-                            )
-                        }
-
-                        item {
-                            Text(
-                                text = stringResource(R.string.add_ddl_frequency_type),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            FrequencyTypeRow(
-                                selected = frequencyType,
-                                onSelect = { frequencyType = it }
-                            )
-                        }
-
-                        item {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OutlinedTextField(
-                                    value = frequencyInput,
-                                    onValueChange = { frequencyInput = it.filter(Char::isDigit) },
-                                    label = { Text(stringResource(R.string.add_ddl_frequency)) },
-                                    miuixLabel = stringResource(R.string.add_ddl_frequency),
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true,
-                                    shape = textFieldShape
-                                )
-                                OutlinedTextField(
-                                    value = totalInput,
-                                    onValueChange = { totalInput = it.filter(Char::isDigit) },
-                                    label = { Text(stringResource(R.string.add_ddl_total)) },
-                                    miuixLabel = stringResource(R.string.add_ddl_total),
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true,
-                                    shape = textFieldShape
-                                )
                             }
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = GlobalUtils.generateHabitNote(
-                                    this@AddDDLActivity,
-                                    frequencyInput.toIntOrNull(),
-                                    totalInput.toIntOrNull(),
-                                    frequencyType
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        item {
-                            HabitReminderSection(
-                                enabled = habitReminderEnabled,
-                                onEnabledChange = { habitReminderEnabled = it },
-                                time = habitReminderTime,
-                                onPickTime = {
-                                    GlobalUtils.showDateTimePicker(supportFragmentManager) { selected ->
-                                        habitReminderTime = selected.toLocalTime().withSecond(0).withNano(0)
-                                    }
-                                }
-                            )
-                        }
+                        )
                     }
                 }
             }
@@ -539,7 +554,7 @@ class AddDDLActivity : DeadlinerAppCompatActivity() {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.7f)
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
             ),
             shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius))
         ) {
@@ -567,7 +582,8 @@ class AddDDLActivity : DeadlinerAppCompatActivity() {
                 ) {
                     Button(
                         onClick = { parseAiInput() },
-                        enabled = !isAiLoading && aiInputText.trim().isNotEmpty()
+                        enabled = !isAiLoading && aiInputText.trim().isNotEmpty(),
+                        forceMaterial3 = true,
                     ) {
                         Text(
                             if (isAiLoading) stringResource(R.string.ai_parsing)
@@ -584,37 +600,64 @@ class AddDDLActivity : DeadlinerAppCompatActivity() {
         onSave: () -> Unit,
         onSaveToCalendar: () -> Unit
     ) {
-        Row(
+        val advancedMaterial = LocalAdvancedMaterialSpec.current
+        val backdrop = LocalAdvancedMaterialBackdrop.current
+        val containerShape = RoundedCornerShape(28.dp)
+        val surfaceTint = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = advancedMaterial.topBarTintAlpha)
+        val materialColors = blurColors(blendColors = listOf(BlendColorEntry(surfaceTint)))
+
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (selectedPage == 0) {
-                Button(
-                    onClick = onSaveToCalendar,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (advancedMaterial.enabled && backdrop != null) {
+                            Modifier.textureBlur(
+                                backdrop = backdrop,
+                                shape = containerShape,
+                                blurRadius = advancedMaterial.blurRadius,
+                                noiseCoefficient = advancedMaterial.noiseCoefficient,
+                                colors = materialColors,
+                            )
+                        } else {
+                            Modifier.background(
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = containerShape,
+                            )
+                        }
                     )
-                ) {
-                    Text(
-                        text = stringResource(R.string.save_and_add_to_calendar),
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            }
-
-            Button(
-                onClick = onSave,
-                modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = stringResource(R.string.save),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (selectedPage == 0) {
+                        Button(
+                            onClick = onSaveToCalendar,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        ) {
+                            Text(text = stringResource(R.string.save_and_add_to_calendar))
+                        }
+                    }
+
+                    Button(
+                        onClick = onSave,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(text = stringResource(R.string.save))
+                    }
+                }
             }
         }
     }
@@ -630,7 +673,7 @@ class AddDDLActivity : DeadlinerAppCompatActivity() {
                 .fillMaxWidth()
                 .clickable(onClick = onClick),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f)
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             ),
             shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius))
         ) {
@@ -660,7 +703,7 @@ class AddDDLActivity : DeadlinerAppCompatActivity() {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.7f)
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
             ),
             shape = RoundedCornerShape(dimensionResource(R.dimen.item_corner_radius))
         ) {

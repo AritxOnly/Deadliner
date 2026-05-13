@@ -2,8 +2,10 @@ package com.aritxonly.deadliner.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -58,14 +60,17 @@ fun PolicyScreen(
             }
         }
     ) { innerPadding ->
-        Box(
+        val outerPadding = rememberSettingsScaffoldOuterPaddingValues(innerPadding)
+        val topOverlayPadding = rememberSettingsScaffoldTopOverlayPadding(innerPadding)
+        Column(
             Modifier
-                .padding(innerPadding)
+                .padding(outerPadding)
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            Spacer(modifier = Modifier.height(topOverlayPadding))
             MarkdownText(
                 markdown = policyText,
                 syntaxHighlightColor = MaterialTheme.colorScheme.surfaceContainer

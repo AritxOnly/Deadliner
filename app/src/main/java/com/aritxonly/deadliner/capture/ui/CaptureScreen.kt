@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -49,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -60,7 +64,7 @@ import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.capture.CaptureEffect
 import com.aritxonly.deadliner.capture.CaptureViewModel
 import com.aritxonly.deadliner.capture.model.InspirationItem
-import com.aritxonly.deadliner.ui.base.Scaffold
+import com.aritxonly.deadliner.ui.base.AdaptiveMaterialScaffold
 import com.aritxonly.deadliner.ui.base.TopAppBar
 import com.aritxonly.deadliner.ui.base.TopAppBarStyle
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
@@ -81,6 +85,7 @@ fun CaptureTopBar(
     showNavigationIcon: Boolean = true,
     onRequestMerge: () -> Unit = {},
     forceMaterial3: Boolean = false,
+    useParentMaterialContainer: Boolean = false,
 ) {
     val ui by vm.uiState.collectAsState()
     if (!ui.isMultiSelectMode) {
@@ -101,7 +106,8 @@ fun CaptureTopBar(
             actions = {
                 TextButton(onClick = vm::toggleMultiSelect) { Text(stringResource(R.string.capture_multi_select)) }
             },
-            mode = if (showNavigationIcon) TopAppBarStyle.CENTER else TopAppBarStyle.SMALL
+            mode = if (showNavigationIcon) TopAppBarStyle.CENTER else TopAppBarStyle.SMALL,
+            useParentMaterialContainer = useParentMaterialContainer,
         )
     } else {
         TopAppBar(
@@ -129,7 +135,8 @@ fun CaptureTopBar(
                 ) {
                     Text(stringResource(R.string.capture_merge_count, ui.selectedIds.size))
                 }
-            }
+            },
+            useParentMaterialContainer = useParentMaterialContainer,
         )
     }
 }
@@ -144,16 +151,18 @@ fun CaptureScreen(
 ) {
     var showMergeSheet by rememberSaveable { mutableStateOf(false) }
 
-    Scaffold(
+    AdaptiveMaterialScaffold(
+        wrapTopBarInMaterialContainer = false,
         topBar = {
-            if (!showTopBar) return@Scaffold
+            if (!showTopBar) return@AdaptiveMaterialScaffold
             CaptureTopBar(
                 vm = vm,
                 onClose = onClose,
                 showNavigationIcon = showNavigationIcon,
                 onRequestMerge = { showMergeSheet = true },
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         CaptureContent(
             vm = vm,
@@ -169,13 +178,20 @@ fun CaptureScreen(
 fun CaptureContent(
     vm: CaptureViewModel,
     contentPadding: PaddingValues = PaddingValues(0.dp),
+    topOverlayPadding: androidx.compose.ui.unit.Dp = 0.dp,
     twoColumnLayout: Boolean = false,
     showMergeSheet: Boolean = false,
     onShowMergeSheetChange: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
+    val layoutDirection = LocalLayoutDirection.current
     val ui by vm.uiState.collectAsState()
     var showDirectConvertMenu by remember { mutableStateOf(false) }
+    val listContentPadding = remember(contentPadding, topOverlayPadding, layoutDirection) {
+        PaddingValues(
+            top = contentPadding.calculateTopPadding() + topOverlayPadding,
+        )
+    }
 
     LaunchedEffect(Unit) {
         vm.updateQuery("")
@@ -297,8 +313,13 @@ fun CaptureContent(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(contentPadding)
+            .padding(
+                start = contentPadding.calculateStartPadding(layoutDirection),
+                end = contentPadding.calculateEndPadding(layoutDirection),
+                bottom = contentPadding.calculateBottomPadding(),
+            )
             .mainListContainerClip(),
+        contentPadding = listContentPadding,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
             item {

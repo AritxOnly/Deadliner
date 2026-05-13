@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.ui.AnimatedItem
@@ -36,6 +37,7 @@ import com.aritxonly.deadliner.ui.main.shared.mainListContainerClip
 fun TrendAnalysisScreen(
     snapshot: OverviewSnapshot,
     modifier: Modifier = Modifier,
+    topContentPadding: Dp = 0.dp,
 ) {
     val trendItems = listOf<@Composable () -> Unit>(
         { ContributionHeatmapCard(snapshot.contributionStats) },
@@ -46,6 +48,7 @@ fun TrendAnalysisScreen(
 
     LazyColumn(
         modifier = modifier.mainListContainerClip(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = topContentPadding),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         itemsIndexed(trendItems) { index, itemComposable ->

@@ -3,6 +3,8 @@ package com.aritxonly.deadliner.ui.base
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CheckboxColors
+import androidx.compose.material3.CheckboxDefaults as Material3CheckboxDefaults
 import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.runtime.Composable
@@ -17,6 +19,7 @@ import top.yukonga.miuix.kmp.theme.darkColorScheme
 import top.yukonga.miuix.kmp.theme.lightColorScheme
 
 // 为官方和 MIUIX 的组件起别名
+import androidx.compose.material3.Checkbox as Material3Checkbox
 import androidx.compose.material3.RadioButton as Material3RadioButton
 import top.yukonga.miuix.kmp.basic.Checkbox as MiuixCheckbox
 
@@ -57,6 +60,49 @@ fun RadioButton(
                 state = toggleState,
                 onClick = onClick,
                 modifier = modifier.padding(vertical = 4.dp),
+                enabled = enabled,
+                colors = CheckboxDefaults.checkboxColors(
+                    uncheckedForegroundColor = scheme.secondary,
+                    uncheckedBackgroundColor = scheme.secondary
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun Checkbox(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    colors: CheckboxColors = Material3CheckboxDefaults.colors(),
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+) {
+    when (LocalAppDesignSystem.current) {
+        AppDesignSystem.MATERIAL3 -> {
+            Material3Checkbox(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                modifier = modifier,
+                enabled = enabled,
+                colors = colors,
+                interactionSource = interactionSource,
+            )
+        }
+
+        AppDesignSystem.MIUIX -> {
+            val toggleState = if (checked) ToggleableState.On else ToggleableState.Off
+            val scheme = if (isSystemInDarkTheme()) {
+                darkColorScheme()
+            } else {
+                lightColorScheme()
+            }
+
+            MiuixCheckbox(
+                state = toggleState,
+                onClick = onCheckedChange?.let { callback -> { callback(!checked) } },
+                modifier = modifier.padding(4.dp),
                 enabled = enabled,
                 colors = CheckboxDefaults.checkboxColors(
                     uncheckedForegroundColor = scheme.secondary,

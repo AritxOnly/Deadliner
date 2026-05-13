@@ -86,11 +86,9 @@ fun VibrationSettingsScreen(
             }
         }
     ) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .padding(vertical = 8.dp)
-                .verticalScroll(rememberScrollState())
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier.padding(vertical = 8.dp),
         ) {
             SettingsSection(
                 mainContent = true,

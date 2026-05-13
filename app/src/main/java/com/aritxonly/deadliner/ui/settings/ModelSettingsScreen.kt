@@ -106,8 +106,10 @@ fun ModelSettingsScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)
-            .verticalScroll(rememberScrollState())) {
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
+        ) {
             Text(
                 stringResource(R.string.settings_endpoint_description),
                 modifier = Modifier.padding(horizontal = 24.dp),

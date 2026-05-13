@@ -63,7 +63,8 @@ data class AdaptiveNavItem(
     val icon: ImageVector,
 )
 
-private val CompactNavigationShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+//private val CompactNavigationShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+private val CompactNavigationShape = RoundedCornerShape(0.dp)
 private val RailNavigationShape = RoundedCornerShape(12.dp)
 private val CompactOverlayHostPadding = 92.dp
 private val RailSlotWidth = 92.dp
@@ -75,6 +76,7 @@ fun AdaptiveNavigationSuiteScaffold(
     onItemSelected: (AdaptiveNavItem) -> Unit,
     modifier: Modifier = Modifier,
     topBar: @Composable () -> Unit = {},
+    legacyTopBar: @Composable () -> Unit = {},
     snackbarHost: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
@@ -94,6 +96,7 @@ fun AdaptiveNavigationSuiteScaffold(
             designSystem = designSystem,
             modifier = modifier,
             topBar = topBar,
+            legacyTopBar = legacyTopBar,
             snackbarHost = snackbarHost,
             floatingActionButton = floatingActionButton,
             content = content,
@@ -110,6 +113,7 @@ fun AdaptiveNavigationSuiteScaffold(
             useHorizontalItems = navigationSuiteType == NavigationSuiteType.ShortNavigationBarMedium,
             modifier = modifier,
             topBar = topBar,
+            legacyTopBar = legacyTopBar,
             snackbarHost = snackbarHost,
             floatingActionButton = floatingActionButton,
             content = content,
@@ -128,6 +132,7 @@ fun AdaptiveNavigationSuiteScaffold(
         backdrop = backdrop,
         modifier = modifier,
         topBar = topBar,
+        legacyTopBar = legacyTopBar,
         snackbarHost = snackbarHost,
         floatingActionButton = floatingActionButton,
         content = content,
@@ -143,13 +148,14 @@ private fun LegacyCompactNavigationScaffold(
     useHorizontalItems: Boolean,
     modifier: Modifier,
     topBar: @Composable () -> Unit,
+    legacyTopBar: @Composable () -> Unit,
     snackbarHost: @Composable () -> Unit,
     floatingActionButton: @Composable () -> Unit,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = topBar,
+        topBar = legacyTopBar,
         snackbarHost = snackbarHost,
         floatingActionButton = floatingActionButton,
         bottomBar = {
@@ -163,7 +169,7 @@ private fun LegacyCompactNavigationScaffold(
                 )
 
                 AppDesignSystem.MIUIX -> MiuixNavigationBar(
-                    color = MiuixTheme.colorScheme.surfaceContainer,
+                    color = MiuixTheme.colorScheme.surface,
                     showDivider = false,
                 ) {
                     items.forEach { item ->
@@ -178,8 +184,18 @@ private fun LegacyCompactNavigationScaffold(
             }
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        content = content,
-    )
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            content(PaddingValues())
+            Box(modifier = Modifier.align(Alignment.TopCenter)) {
+                topBar()
+            }
+        }
+    }
 }
 
 @Composable
@@ -190,6 +206,7 @@ private fun LegacyWideNavigationScaffold(
     designSystem: AppDesignSystem,
     modifier: Modifier,
     topBar: @Composable () -> Unit,
+    legacyTopBar: @Composable () -> Unit,
     snackbarHost: @Composable () -> Unit,
     floatingActionButton: @Composable () -> Unit,
     content: @Composable (PaddingValues) -> Unit,
@@ -243,7 +260,7 @@ private fun LegacyWideNavigationScaffold(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
-            topBar = topBar,
+            topBar = legacyTopBar,
             snackbarHost = snackbarHost,
             floatingActionButton = floatingActionButton,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -254,6 +271,9 @@ private fun LegacyWideNavigationScaffold(
                     .padding(innerPadding),
             ) {
                 content(PaddingValues())
+                Box(modifier = Modifier.align(Alignment.TopCenter)) {
+                    topBar()
+                }
             }
         }
     }
@@ -270,6 +290,7 @@ private fun AdvancedCompactNavigationScaffold(
     backdrop: LayerBackdrop,
     modifier: Modifier,
     topBar: @Composable () -> Unit,
+    legacyTopBar: @Composable () -> Unit,
     snackbarHost: @Composable () -> Unit,
     floatingActionButton: @Composable () -> Unit,
     content: @Composable (PaddingValues) -> Unit,
@@ -278,7 +299,7 @@ private fun AdvancedCompactNavigationScaffold(
         modifier = modifier,
         topBar = {
             CompositionLocalProvider(LocalAdvancedMaterialBackdrop provides backdrop) {
-                topBar()
+                legacyTopBar()
             }
         },
         snackbarHost = {
@@ -304,6 +325,11 @@ private fun AdvancedCompactNavigationScaffold(
                     .layerBackdrop(backdrop),
             ) {
                 content(PaddingValues())
+            }
+            CompositionLocalProvider(LocalAdvancedMaterialBackdrop provides backdrop) {
+                Box(modifier = Modifier.align(Alignment.TopCenter)) {
+                    topBar()
+                }
             }
             when (designSystem) {
                 AppDesignSystem.MATERIAL3 -> Material3BottomNavigationBar(
@@ -350,6 +376,7 @@ private fun Material3BottomNavigationBar(
                 backdrop = backdrop,
                 shape = CompactNavigationShape,
                 blurRadius = advancedMaterial.blurRadius,
+                noiseCoefficient = advancedMaterial.noiseCoefficient,
                 colors = blurColors,
             ),
     ) {
@@ -372,7 +399,7 @@ private fun MiuixBottomNavigationBar(
     backdrop: LayerBackdrop,
     modifier: Modifier = Modifier,
 ) {
-    val tint = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = advancedMaterial.navigationTintAlpha)
+    val tint = MiuixTheme.colorScheme.surface.copy(alpha = advancedMaterial.navigationTintAlpha)
     val blurColors = blurColors(blendColors = listOf(BlendColorEntry(tint)))
 
     Box(
@@ -383,6 +410,7 @@ private fun MiuixBottomNavigationBar(
                 backdrop = backdrop,
                 shape = CompactNavigationShape,
                 blurRadius = advancedMaterial.blurRadius,
+                noiseCoefficient = advancedMaterial.noiseCoefficient,
                 colors = blurColors,
             ),
     ) {
@@ -424,6 +452,7 @@ private fun Material3NavigationRailContainer(
                 backdrop = backdrop,
                 shape = RailNavigationShape,
                 blurRadius = advancedMaterial.blurRadius,
+                noiseCoefficient = advancedMaterial.noiseCoefficient,
                 colors = blurColors,
             ),
     ) {
@@ -473,6 +502,7 @@ private fun MiuixNavigationRailContainer(
                 backdrop = backdrop,
                 shape = RailNavigationShape,
                 blurRadius = advancedMaterial.blurRadius,
+                noiseCoefficient = advancedMaterial.noiseCoefficient,
                 colors = blurColors,
             ),
     ) {

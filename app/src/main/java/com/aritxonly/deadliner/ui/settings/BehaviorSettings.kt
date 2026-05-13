@@ -96,10 +96,9 @@ fun BehaviorSettingsScreen(
             }
         }
     ) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
         ) {
             SvgCard(R.drawable.svg_general, modifier = Modifier.padding(16.dp))
 

@@ -100,9 +100,10 @@ fun AISettingsScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier
-            .padding(padding)
-            .verticalScroll(rememberScrollState())) {
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
+        ) {
 
             SvgCard(
                 svgRes = R.drawable.svg_deadliner_ai,

@@ -53,8 +53,9 @@ fun BackupSettingsScreen(
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier.padding(padding)
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
         ) {
             SvgCard(R.drawable.svg_backup, modifier = Modifier.padding(16.dp))
 

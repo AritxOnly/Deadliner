@@ -57,8 +57,10 @@ fun LabSettingsScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)
-            .verticalScroll(rememberScrollState())) {
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
+        ) {
             SvgCard(R.drawable.svg_developer_avatar, modifier = Modifier.padding(16.dp))
 
             SettingsSection(topLabel = stringResource(R.string.settings_experimental)) {

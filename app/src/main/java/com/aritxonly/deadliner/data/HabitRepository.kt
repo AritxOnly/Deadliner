@@ -1,5 +1,6 @@
 package com.aritxonly.deadliner.data
 
+import android.util.Log
 import com.aritxonly.deadliner.AppSingletons
 import com.aritxonly.deadliner.model.Habit
 import com.aritxonly.deadliner.model.HabitPeriod
@@ -102,7 +103,13 @@ class HabitRepository(
 
     fun getHabitById(id: Long): Habit? = db.getHabitById(id)
 
-    fun getAllHabits(): List<Habit> = db.getAllHabits()
+    fun getAllHabits(): List<Habit> {
+        val cleaned = db.cleanupOrphanHabits()
+        if (cleaned > 0) {
+            Log.w("HabitRepository", "Removed $cleaned orphan habit(s) before loading active habits")
+        }
+        return db.getAllHabits()
+    }
 
     fun updateHabit(habit: Habit) {
         val (_, resolvedUpdatedAt) = reservePayloadVersionAndUpdatedAt(habit.ddlId, habit.updatedAt)

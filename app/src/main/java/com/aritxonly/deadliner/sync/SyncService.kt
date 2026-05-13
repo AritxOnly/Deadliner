@@ -855,6 +855,10 @@ class SyncService(
             }
         }
         archiveMissingRemoteOwnedHabits(seenUids)
+        val cleaned = db.cleanupOrphanHabits()
+        if (cleaned > 0) {
+            Log.w("HabitSync", "Cleaned $cleaned orphan habit(s) after applying habit snapshot")
+        }
     }
 
     private fun shouldForceApplyDespiteAppliedVersion(

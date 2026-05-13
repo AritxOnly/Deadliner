@@ -31,6 +31,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.aritxonly.deadliner.DeadlineDetailActivity
@@ -51,6 +52,7 @@ fun OverviewStatsScreen(
     historyStats: Map<String, Int>,
     completionTimeStats: List<Pair<String, Int>>,
     modifier: Modifier,
+    topContentPadding: Dp = 0.dp,
 ) {
     val overviewItems = listOf<@Composable () -> Unit>(
         { ActiveStatsCard(activeStats) },
@@ -60,6 +62,7 @@ fun OverviewStatsScreen(
 
     LazyColumn(
         modifier = modifier.mainListContainerClip(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = topContentPadding),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         itemsIndexed(overviewItems) { index, itemContent ->

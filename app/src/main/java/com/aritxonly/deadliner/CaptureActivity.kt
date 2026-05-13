@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import com.aritxonly.deadliner.capture.CaptureViewModel
 import com.aritxonly.deadliner.capture.ui.CaptureScreen
 import com.aritxonly.deadliner.localutils.DynamicColorsExtension
+import com.aritxonly.deadliner.localutils.enableEdgeToEdgeForAllDevices
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 
 class CaptureActivity : DeadlinerComponentActivity() {
@@ -14,8 +15,7 @@ class CaptureActivity : DeadlinerComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        window.isNavigationBarContrastEnforced = false
+        enableEdgeToEdgeForAllDevices()
         DynamicColorsExtension.apply(this, null)
 
         setContent {

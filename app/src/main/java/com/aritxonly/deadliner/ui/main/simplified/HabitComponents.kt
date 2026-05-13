@@ -23,7 +23,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -58,6 +57,7 @@ import java.util.Locale
 
 import androidx.compose.ui.res.colorResource
 import com.aritxonly.deadliner.localutils.GlobalUtils
+import com.aritxonly.deadliner.ui.base.Checkbox
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -431,7 +431,10 @@ fun HabitRowClassic(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(72.dp)
+                .padding(start = 4.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)
         ) {
             Checkbox(
                 enabled = canToggle,

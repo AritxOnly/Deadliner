@@ -75,10 +75,9 @@ fun WidgetSettingsScreen(
             }
         }
     ) { innerPadding ->
-        Column(
-            Modifier
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+        SettingsScrollColumn(
+            contentPadding = innerPadding,
+            modifier = Modifier,
         ) {
             SvgCard(R.drawable.svg_space, modifier = Modifier.padding(16.dp))
 

@@ -383,20 +383,12 @@ fun SimplifiedHost(
             }
         },
         topBar = {
-            AnimatedContent(
-                targetState = hostState.selectionMode,
-                transitionSpec = {
-                    (fadeIn(animationSpec = tween(180, delayMillis = 60)) +
-                            scaleIn(initialScale = 0.98f, animationSpec = tween(180)))
-                        .togetherWith(
-                            fadeOut(animationSpec = tween(120)) +
-                                    scaleOut(targetScale = 0.98f, animationSpec = tween(120))
-                        )
-                        .using(SizeTransform(clip = false))
-                },
-                label = "topappbar-switch"
-            ) { isSelection ->
-                if (isSelection) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                if (hostState.selectionMode) {
                     TopAppBar(
                         navigationIcon = {
                             IconButton(

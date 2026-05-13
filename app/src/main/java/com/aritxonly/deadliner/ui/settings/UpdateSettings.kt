@@ -119,8 +119,10 @@ fun UpdateScreen(
             }
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)
-            .verticalScroll(rememberScrollState())) {
+        SettingsScrollColumn(
+            contentPadding = innerPadding,
+            modifier = Modifier,
+        ) {
             SvgCard(R.drawable.svg_update, modifier = Modifier.padding(16.dp))
 
             Box(

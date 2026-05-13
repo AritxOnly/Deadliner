@@ -1,7 +1,6 @@
 package com.aritxonly.deadliner.ui.base
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -13,17 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.ui.theme.AppDesignSystem
 import com.aritxonly.deadliner.ui.theme.LocalAppDesignSystem
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.theme.darkColorScheme
-import top.yukonga.miuix.kmp.theme.lightColorScheme
 
 // 别名防止冲突
 import androidx.compose.material3.OutlinedTextField as Material3OutlinedTextField
@@ -106,11 +98,7 @@ fun OutlinedTextField(
                 maxLines = maxLines,
                 minLines = minLines,
                 interactionSource = interactionSource,
-                backgroundColor = if (isSystemInDarkTheme()) {
-                    darkColorScheme().secondaryContainer
-                } else {
-                    lightColorScheme().secondaryContainer
-                }
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
         }
     }

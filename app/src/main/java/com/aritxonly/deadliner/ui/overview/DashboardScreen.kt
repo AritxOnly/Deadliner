@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -60,6 +61,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.ai.AIUtils
 import com.aritxonly.deadliner.localutils.GlobalUtils
@@ -84,6 +86,7 @@ fun DashboardScreen(
     snapshot: OverviewSnapshot,
     activity: Activity,
     modifier: Modifier = Modifier,
+    topContentPadding: Dp = 0.dp,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -131,7 +134,8 @@ fun DashboardScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(top = topContentPadding)
     ) {
         item {
             DashboardHeaderSection(monthName = snapshot.lastMonthName)

@@ -42,8 +42,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -78,8 +76,10 @@ import com.aritxonly.deadliner.model.DDLItem
 import com.aritxonly.deadliner.model.DDLState
 import com.aritxonly.deadliner.model.SubTask
 import com.aritxonly.deadliner.model.TaskStateAction
+import com.aritxonly.deadliner.ui.base.AdaptiveMaterialScaffold
 import com.aritxonly.deadliner.ui.base.RadioButton
-import com.aritxonly.deadliner.ui.base.Scaffold
+import com.aritxonly.deadliner.ui.base.TopAppBar
+import com.aritxonly.deadliner.ui.base.TopAppBarStyle
 import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.ui.navIconPaddingModifier
 import com.aritxonly.deadliner.ui.iconResource
@@ -283,19 +283,13 @@ fun DeadlineDetailScreen(
         )
     }
 
-    Scaffold(
+    AdaptiveMaterialScaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = deadline.name,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
+                title = deadline.name,
                 navigationIcon = {
                     IconButton(onClick = onClose) {
                         Icon(
@@ -305,6 +299,10 @@ fun DeadlineDetailScreen(
                         )
                     }
                 },
+                titleTextStyle = MaterialTheme.typography.titleLarge,
+                mode = TopAppBarStyle.SMALL,
+                forceMaterial3 = true,
+                useParentMaterialContainer = true,
                 actions = {
                     IconButton(onClick = onEdit) {
                         Icon(
@@ -345,14 +343,7 @@ fun DeadlineDetailScreen(
                             modifier = expressiveTypeModifier
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface
-                ),
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 8.dp)
+                }
             )
         },
         bottomBar = {
@@ -387,6 +378,7 @@ fun DeadlineDetailScreen(
                     .semantics {
                         contentDescription = activityContext.getString(R.string.detail_plan_add)
                     },
+                shape = RoundedCornerShape(20.dp),
                 onClick = {
                     showPlanComposer = true
                     openComposerSignal++

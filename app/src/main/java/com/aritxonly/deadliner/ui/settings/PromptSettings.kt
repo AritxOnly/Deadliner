@@ -66,7 +66,10 @@ fun PromptSettingsScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).verticalScroll(rememberScrollState())) {
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
+        ) {
             SvgCard(R.drawable.svg_prompt, modifier = Modifier.padding(16.dp))
 
             Text(

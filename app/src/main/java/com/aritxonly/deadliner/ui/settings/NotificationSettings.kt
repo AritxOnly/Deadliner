@@ -116,9 +116,10 @@ fun NotificationSettingsScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier
-            .padding(padding)
-            .verticalScroll(rememberScrollState())) {
+        SettingsScrollColumn(
+            contentPadding = padding,
+            modifier = Modifier,
+        ) {
             SvgCard(R.drawable.svg_notifications, modifier = Modifier.padding(16.dp))
 
             SettingsSection(topLabel = stringResource(R.string.settings_nearby_notification_push)) {

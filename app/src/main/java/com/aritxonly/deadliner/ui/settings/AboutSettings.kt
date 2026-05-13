@@ -62,10 +62,9 @@ fun AboutSettingsScreen(
             }
         }
     ) { innerPadding ->
-        Column(
-            Modifier
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+        SettingsScrollColumn(
+            contentPadding = innerPadding,
+            modifier = Modifier,
         ) {
             val isDark: Boolean = isSystemInDarkTheme()
 

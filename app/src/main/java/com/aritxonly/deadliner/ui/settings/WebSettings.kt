@@ -202,7 +202,10 @@ fun WebSettingsScreen(
             }
         }
     ) { innerPadding ->
-        LazyColumn(modifier = Modifier.padding(innerPadding)) {
+        SettingsLazyColumn(
+            contentPadding = innerPadding,
+            modifier = Modifier
+        ) {
             item {
                 SettingsSection(
                     mainContent = true,
@@ -469,6 +472,7 @@ fun SyncIntervalBottomSheet(
                 TextButton(
                     modifier = Modifier.heightIn(min = 40.dp),
                     enabled = !closing,
+                    forceMaterial3 = true,
                     miuixText = stringResource(R.string.cancel),
                     onClick = {
                         scope.launch {
@@ -488,6 +492,7 @@ fun SyncIntervalBottomSheet(
                 Button(
                     modifier = Modifier.heightIn(min = 40.dp),
                     enabled = !closing,
+                    forceMaterial3 = true,
                     onClick = {
                         scope.launch {
                             closing = true
