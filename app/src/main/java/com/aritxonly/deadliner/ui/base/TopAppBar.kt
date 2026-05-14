@@ -13,21 +13,24 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.aritxonly.deadliner.ui.theme.AdvancedMaterialSpec
 import com.aritxonly.deadliner.ui.theme.AppDesignSystem
+import com.aritxonly.deadliner.ui.theme.advancedTextureBlur
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialBackdrop
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialSpec
 import com.aritxonly.deadliner.ui.theme.LocalAppDesignSystem
+import com.aritxonly.deadliner.ui.theme.rememberBlurColors
+import top.yukonga.miuix.kmp.basic.ScrollBehavior as MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
-import top.yukonga.miuix.kmp.blur.BlurDefaults.blurColors
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
-import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.basic.TopAppBar as MiuixTopAppBar
 import androidx.compose.material3.TopAppBar as MaterialTopAppBar
 
@@ -49,6 +52,8 @@ fun TopAppBar(
     titleTextStyle: TextStyle? = null,
     forceMaterial3: Boolean = false,
     useParentMaterialContainer: Boolean = false,
+    material3ScrollBehavior: TopAppBarScrollBehavior? = null,
+    miuixScrollBehavior: MiuixScrollBehavior? = null,
 ) {
     val advancedMaterial = LocalAdvancedMaterialSpec.current
     val backdrop = LocalAdvancedMaterialBackdrop.current
@@ -77,10 +82,9 @@ fun TopAppBar(
 
     when (appDesignSystem) {
         AppDesignSystem.MATERIAL3 -> AdvancedMaterialTopBarContainer(
+            advancedMaterial = advancedMaterial,
             advancedMaterialBlurred = advancedMaterialBlurred,
             backdrop = backdrop,
-            blurRadius = advancedMaterial.blurRadius,
-            noiseCoefficient = advancedMaterial.noiseCoefficient,
             surfaceTint = surfaceTint,
         ) {
             when (mode) {
@@ -116,6 +120,7 @@ fun TopAppBar(
                         navigationIcon = { navigationIcon?.invoke() },
                         actions = actions,
                         colors = topBarColors,
+                        scrollBehavior = material3ScrollBehavior,
                     )
 
                 else ->
@@ -168,10 +173,9 @@ fun TopAppBar(
         }
 
         AppDesignSystem.MIUIX -> AdvancedMaterialTopBarContainer(
+            advancedMaterial = advancedMaterial,
             advancedMaterialBlurred = advancedMaterialBlurred,
             backdrop = backdrop,
-            blurRadius = advancedMaterial.blurRadius,
-            noiseCoefficient = advancedMaterial.noiseCoefficient,
             surfaceTint = surfaceTint,
         ) {
             val miuixContainerColor = when {
@@ -184,11 +188,13 @@ fun TopAppBar(
                 TopAppBarStyle.LARGE ->
                     MiuixTopAppBar(
                         title = title,
+                        largeTitle = title,
                         color = miuixContainerColor,
                         navigationIcon = navigationIcon ?: {},
                         actions = actions,
                         titleColor = MaterialTheme.colorScheme.onSurface,
                         largeTitleColor = MaterialTheme.colorScheme.onSurface,
+                        scrollBehavior = miuixScrollBehavior,
                     )
 
                 else ->
@@ -206,23 +212,21 @@ fun TopAppBar(
 
 @Composable
 private fun AdvancedMaterialTopBarContainer(
+    advancedMaterial: AdvancedMaterialSpec,
     advancedMaterialBlurred: Boolean,
     backdrop: LayerBackdrop? = null,
-    blurRadius: Float,
-    noiseCoefficient: Float,
     surfaceTint: Color,
     content: @Composable () -> Unit,
 ) {
     if (advancedMaterialBlurred && backdrop != null) {
-        val blurColors = blurColors(blendColors = listOf(BlendColorEntry(surfaceTint)))
+        val blurColors = advancedMaterial.rememberBlurColors(listOf(BlendColorEntry(surfaceTint)))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .textureBlur(
+                .advancedTextureBlur(
+                    advancedMaterial = advancedMaterial,
                     backdrop = backdrop,
                     shape = TopAppBarMaterialShape,
-                    blurRadius = blurRadius,
-                    noiseCoefficient = noiseCoefficient,
                     colors = blurColors,
                 ),
         ) {

@@ -123,7 +123,7 @@ fun UpdateScreen(
             contentPadding = innerPadding,
             modifier = Modifier,
         ) {
-            SvgCard(R.drawable.svg_update, modifier = Modifier.padding(16.dp))
+            SvgCard(R.drawable.svg_update, modifier = Modifier.padding(vertical = 8.dp))
 
             Box(
                 Modifier.fillMaxSize()

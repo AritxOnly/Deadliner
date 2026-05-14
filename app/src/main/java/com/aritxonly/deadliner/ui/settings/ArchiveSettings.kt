@@ -77,7 +77,7 @@ fun ArchiveSettingsScreen(
                 )
             }
 
-            SvgCard(R.drawable.svg_archive, modifier = Modifier.padding(16.dp))
+            SvgCard(R.drawable.svg_archive, modifier = Modifier.padding(vertical = 8.dp))
 
             if (archiveEnabled) {
                 SettingsSection {

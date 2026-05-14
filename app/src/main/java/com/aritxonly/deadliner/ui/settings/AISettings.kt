@@ -107,7 +107,7 @@ fun AISettingsScreen(
 
             SvgCard(
                 svgRes = R.drawable.svg_deadliner_ai,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(vertical = 8.dp)
             )
 
             Text(

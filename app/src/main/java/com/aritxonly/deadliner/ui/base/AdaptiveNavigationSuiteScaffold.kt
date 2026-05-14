@@ -40,21 +40,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.ui.theme.AdvancedMaterialSpec
 import com.aritxonly.deadliner.ui.theme.AppDesignSystem
+import com.aritxonly.deadliner.ui.theme.advancedTextureBlur
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialBackdrop
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialSpec
 import com.aritxonly.deadliner.ui.theme.LocalAppDesignSystem
+import com.aritxonly.deadliner.ui.theme.rememberBlurColors
 import top.yukonga.miuix.kmp.basic.NavigationBar as MiuixNavigationBar
 import top.yukonga.miuix.kmp.basic.NavigationBarItem as MiuixNavigationBarItem
 import top.yukonga.miuix.kmp.basic.NavigationRail as MiuixNavigationRail
 import top.yukonga.miuix.kmp.basic.NavigationRailDisplayMode
 import top.yukonga.miuix.kmp.basic.NavigationRailItem as MiuixNavigationRailItem
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
-import top.yukonga.miuix.kmp.blur.BlurDefaults
-import top.yukonga.miuix.kmp.blur.BlurDefaults.blurColors
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
-import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 data class AdaptiveNavItem(
@@ -366,17 +365,16 @@ private fun Material3BottomNavigationBar(
     modifier: Modifier = Modifier,
 ) {
     val tint = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = advancedMaterial.navigationTintAlpha)
-    val blurColors = blurColors(blendColors = listOf(BlendColorEntry(tint)))
+    val blurColors = advancedMaterial.rememberBlurColors(listOf(BlendColorEntry(tint)))
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(CompactNavigationShape)
-            .textureBlur(
+            .advancedTextureBlur(
+                advancedMaterial = advancedMaterial,
                 backdrop = backdrop,
                 shape = CompactNavigationShape,
-                blurRadius = advancedMaterial.blurRadius,
-                noiseCoefficient = advancedMaterial.noiseCoefficient,
                 colors = blurColors,
             ),
     ) {
@@ -400,17 +398,16 @@ private fun MiuixBottomNavigationBar(
     modifier: Modifier = Modifier,
 ) {
     val tint = MiuixTheme.colorScheme.surface.copy(alpha = advancedMaterial.navigationTintAlpha)
-    val blurColors = blurColors(blendColors = listOf(BlendColorEntry(tint)))
+    val blurColors = advancedMaterial.rememberBlurColors(listOf(BlendColorEntry(tint)))
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(CompactNavigationShape)
-            .textureBlur(
+            .advancedTextureBlur(
+                advancedMaterial = advancedMaterial,
                 backdrop = backdrop,
                 shape = CompactNavigationShape,
-                blurRadius = advancedMaterial.blurRadius,
-                noiseCoefficient = advancedMaterial.noiseCoefficient,
                 colors = blurColors,
             ),
     ) {
@@ -440,7 +437,7 @@ private fun Material3NavigationRailContainer(
     backdrop: LayerBackdrop,
 ) {
     val tint = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = advancedMaterial.navigationTintAlpha)
-    val blurColors = blurColors(blendColors = listOf(BlendColorEntry(tint)))
+    val blurColors = advancedMaterial.rememberBlurColors(listOf(BlendColorEntry(tint)))
 
     Box(
         modifier = Modifier
@@ -448,11 +445,10 @@ private fun Material3NavigationRailContainer(
             .width(RailSlotWidth)
             .fillMaxHeight()
             .clip(RailNavigationShape)
-            .textureBlur(
+            .advancedTextureBlur(
+                advancedMaterial = advancedMaterial,
                 backdrop = backdrop,
                 shape = RailNavigationShape,
-                blurRadius = advancedMaterial.blurRadius,
-                noiseCoefficient = advancedMaterial.noiseCoefficient,
                 colors = blurColors,
             ),
     ) {
@@ -490,7 +486,7 @@ private fun MiuixNavigationRailContainer(
     backdrop: LayerBackdrop,
 ) {
     val tint = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = advancedMaterial.navigationTintAlpha)
-    val blurColors = blurColors(blendColors = listOf(BlendColorEntry(tint)))
+    val blurColors = advancedMaterial.rememberBlurColors(listOf(BlendColorEntry(tint)))
 
     Box(
         modifier = Modifier
@@ -498,11 +494,10 @@ private fun MiuixNavigationRailContainer(
             .width(RailSlotWidth)
             .fillMaxHeight()
             .clip(RailNavigationShape)
-            .textureBlur(
+            .advancedTextureBlur(
+                advancedMaterial = advancedMaterial,
                 backdrop = backdrop,
                 shape = RailNavigationShape,
-                blurRadius = advancedMaterial.blurRadius,
-                noiseCoefficient = advancedMaterial.noiseCoefficient,
                 colors = blurColors,
             ),
     ) {

@@ -105,7 +105,7 @@ fun VibrationSettingsScreen(
             SvgCard(
                 if (vibrationEnabled) R.drawable.svg_vibrate
                 else R.drawable.svg_vibrate_off,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(vertical = 8.dp)
             )
 
             if (vibrationEnabled) {

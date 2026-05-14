@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.toColorInt
 import com.aritxonly.deadliner.model.AppearanceColorSource
+import com.aritxonly.deadliner.model.ModernColorPalette
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
@@ -65,6 +66,7 @@ object DeadlinerColorTokenFactory {
         colorSource: AppearanceColorSource,
         darkTheme: Boolean,
         dynamicColor: Boolean,
+        modernColorPalette: ModernColorPalette,
         usePureMiuixAccent: Boolean,
         useMiuixNeutralSurfaces: Boolean,
     ): DeadlinerColorTokens {
@@ -84,7 +86,10 @@ object DeadlinerColorTokenFactory {
             null
         }
         val miuixNeutralPalette = if (useMiuixNeutralSurfaces) {
-            createMiuixNeutralPalette(darkTheme)
+            createModernNeutralPalette(
+                darkTheme = darkTheme,
+                palette = modernColorPalette,
+            )
         } else {
             null
         }
@@ -156,7 +161,68 @@ object DeadlinerColorTokenFactory {
         )
     }
 
-    private fun createMiuixNeutralPalette(darkTheme: Boolean): MiuixNeutralPalette {
+    private fun createModernNeutralPalette(
+        darkTheme: Boolean,
+        palette: ModernColorPalette,
+    ): MiuixNeutralPalette {
+        val defaults = createHyperOsNeutralPalette(darkTheme)
+        if (palette == ModernColorPalette.HyperOs) {
+            return defaults
+        }
+
+        val brandSeed = checkNotNull(if (darkTheme) palette.dark else palette.light) {
+            "Brand palette values are required for non-HyperOS modern color palettes."
+        }
+        val surface = brandSeed.surfaceHex.toDeadlinerColor()
+        val surfaceContainer = brandSeed.surfaceContainerHex.toDeadlinerColor()
+        val searchBar = brandSeed.searchBarHex.toDeadlinerColor()
+        val text = brandSeed.textHex.toDeadlinerColor()
+        val textSecondary = brandSeed.textSecondaryHex.toDeadlinerColor()
+
+        val surfaceContainerHigh = if (searchBar == surfaceContainer) {
+            defaults.surfaceContainerHigh
+        } else {
+            searchBar
+        }
+        val surfaceContainerHighest = lerp(
+            surfaceContainerHigh,
+            if (darkTheme) text else textSecondary,
+            if (darkTheme) 0.08f else 0.12f,
+        )
+        val outlineVariant = lerp(
+            surfaceContainerHigh,
+            defaults.outlineVariant,
+            if (darkTheme) 0.45f else 0.60f,
+        )
+        val outline = lerp(
+            outlineVariant,
+            textSecondary,
+            if (darkTheme) 0.30f else 0.22f,
+        )
+
+        return defaults.copy(
+            background = defaults.background,
+            onBackground = text,
+            onBackgroundVariant = textSecondary,
+            surface = surface,
+            onSurface = text,
+            surfaceVariant = searchBar,
+            onSurfaceVariant = textSecondary,
+            onSurfaceVariantSummary = textSecondary,
+            onSurfaceVariantActions = text,
+            surfaceContainer = surfaceContainer,
+            surfaceContainerLow = surface,
+            surfaceContainerHigh = surfaceContainerHigh,
+            surfaceContainerHighest = surfaceContainerHighest,
+            surfaceContainerLowest = defaults.background,
+            surfaceBright = if (darkTheme) surfaceContainerHighest else surface,
+            surfaceDim = surfaceContainerHigh,
+            outline = outline,
+            outlineVariant = outlineVariant,
+        )
+    }
+
+    private fun createHyperOsNeutralPalette(darkTheme: Boolean): MiuixNeutralPalette {
         val defaults = if (darkTheme) darkMiuixColorScheme() else lightMiuixColorScheme()
         val supportingTextColor = lerp(
             defaults.onSurfaceVariantSummary,
@@ -189,6 +255,11 @@ object DeadlinerColorTokenFactory {
             outlineVariant = defaults.dividerLine,
             scrim = defaults.windowDimming,
         )
+    }
+
+    private fun String.toDeadlinerColor(): Color {
+        val normalized = if (startsWith("#")) this else "#$this"
+        return Color(normalized.toColorInt())
     }
 
     data class MiuixNeutralPalette(

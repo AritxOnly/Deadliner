@@ -100,7 +100,7 @@ fun BehaviorSettingsScreen(
             contentPadding = padding,
             modifier = Modifier,
         ) {
-            SvgCard(R.drawable.svg_general, modifier = Modifier.padding(16.dp))
+            SvgCard(R.drawable.svg_general, modifier = Modifier.padding(vertical = 8.dp))
 
             SettingsSection(topLabel = stringResource(R.string.settings_general_main)) {
                 SettingsRoute.behaviorThirdRoutes.forEachIndexed { index, route ->

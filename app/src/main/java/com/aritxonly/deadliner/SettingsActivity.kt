@@ -237,7 +237,6 @@ class SettingsActivity : DeadlinerAppCompatActivity() {
                         }
 
                         composable(SettingsRoute.Widget.route) { WidgetSettingsScreen { navController.navigateUp() } }
-
                         composable(SettingsRoute.AI.route) { AISettingsScreen(navController) { navController.navigateUp() } }
                         composable(SettingsRoute.WebDAV.route) { WebSettingsScreen { navController.navigateUp() } }
 
@@ -247,11 +246,9 @@ class SettingsActivity : DeadlinerAppCompatActivity() {
                                     navController.navigate(SettingsRoute.DisplayScaleCustom.route)
                                 },
                                 onClickCustomFilter = {
-                                    // 原始数据源
                                     val allItems =
                                         GlobalUtils.customCalendarFilterList?.filterNotNull()
                                             ?.toMutableList() ?: mutableListOf()
-                                    // 用户当前选中的
                                     val selectedItems =
                                         GlobalUtils.customCalendarFilterListSelected?.filterNotNull()
                                             ?.toMutableSet() ?: allItems.toMutableSet()
@@ -259,7 +256,6 @@ class SettingsActivity : DeadlinerAppCompatActivity() {
                                     fun showFilterDialog() {
                                         val itemsArray = allItems.toTypedArray()
                                         val checkedArray = BooleanArray(itemsArray.size) { index ->
-                                            // 默认已选中 current selection（如果第一次打开且 selectedItems 为空，则默认全选）
                                             if (selectedItems.isEmpty()) true
                                             else selectedItems.contains(itemsArray[index])
                                         }
@@ -276,7 +272,6 @@ class SettingsActivity : DeadlinerAppCompatActivity() {
                                             }
                                             .setNeutralButton(R.string.filter_add_one) { dialog, _ ->
                                                 dialog.dismiss()
-                                                // 弹出输入框，添加新选项
                                                 val inputLayout =
                                                     TextInputLayout(this@SettingsActivity).apply {
                                                         hint = getString(R.string.new_filter_name)
@@ -296,7 +291,6 @@ class SettingsActivity : DeadlinerAppCompatActivity() {
                                                                 newItem
                                                             )
                                                         ) {
-                                                            // 更新数据源和选中集
                                                             allItems.add(newItem)
                                                             selectedItems.add(newItem)
                                                             GlobalUtils.customCalendarFilterList =
@@ -305,7 +299,6 @@ class SettingsActivity : DeadlinerAppCompatActivity() {
                                                                 selectedItems.toSet()
                                                         }
                                                         subDialog.dismiss()
-                                                        // 重新打开主多选框
                                                         showFilterDialog()
                                                     }
                                                     .setNegativeButton(R.string.cancel, null)
@@ -320,7 +313,6 @@ class SettingsActivity : DeadlinerAppCompatActivity() {
                                             .show()
                                     }
 
-                                    // 首次打开
                                     showFilterDialog()
                                 },
                                 onClickCancelAll = {
@@ -366,6 +358,7 @@ class SettingsActivity : DeadlinerAppCompatActivity() {
             }
         }
     }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 

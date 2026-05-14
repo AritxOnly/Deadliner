@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.MaterialTheme
@@ -28,14 +29,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import com.aritxonly.deadliner.ui.theme.AppDesignSystem
+import com.aritxonly.deadliner.ui.theme.advancedTextureBlur
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialBackdrop
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialSpec
 import com.aritxonly.deadliner.ui.theme.LocalAppDesignSystem
+import com.aritxonly.deadliner.ui.theme.rememberBlurColors
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
-import top.yukonga.miuix.kmp.blur.BlurDefaults.blurColors
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
-import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val AdaptiveMaterialTopBarShape = RoundedCornerShape(0.dp)
@@ -56,6 +57,7 @@ fun AdaptiveMaterialScaffold(
     wrapTopBarInMaterialContainer: Boolean = true,
     topBarMaterialAlpha: Float = 1f,
     useCurrentTopBarHeightForContentPadding: Boolean = false,
+    applyScaffoldPaddingOutsideBackdrop: Boolean = false,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val advancedMaterial = LocalAdvancedMaterialSpec.current
@@ -77,7 +79,7 @@ fun AdaptiveMaterialScaffold(
         AppDesignSystem.MIUIX -> MiuixTheme.colorScheme.surface
     }
     val surfaceTint = tintBaseColor.copy(alpha = advancedMaterial.topBarTintAlpha)
-    val blurColors = blurColors(blendColors = listOf(BlendColorEntry(surfaceTint)))
+    val blurColors = advancedMaterial.rememberBlurColors(listOf(BlendColorEntry(surfaceTint)))
 
     Scaffold(
         modifier = modifier,
@@ -102,7 +104,7 @@ fun AdaptiveMaterialScaffold(
         snackbarHost = snackbarHost,
         floatingActionButton = floatingActionButton,
         floatingActionButtonPosition = floatingActionButtonPosition,
-        containerColor = containerColor,
+        containerColor = Color.Transparent,
         contentColor = contentColor,
         contentWindowInsets = contentWindowInsets,
     ) { innerPadding ->
@@ -112,10 +114,21 @@ fun AdaptiveMaterialScaffold(
             end = innerPadding.calculateEndPadding(layoutDirection),
             bottom = innerPadding.calculateBottomPadding(),
         )
+        val contentPadding = if (applyScaffoldPaddingOutsideBackdrop) {
+            PaddingValues(top = topBarHeight)
+        } else {
+            mergedPadding
+        }
+        val hostModifier = if (applyScaffoldPaddingOutsideBackdrop) {
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        } else {
+            Modifier.fillMaxSize()
+        }
 
         Box(
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = hostModifier,
         ) {
             Box(
                 modifier = Modifier
@@ -126,9 +139,10 @@ fun AdaptiveMaterialScaffold(
                         } else {
                             baseModifier
                         }
-                    },
+                    }
+                    .background(containerColor),
             ) {
-                content(mergedPadding)
+                content(contentPadding)
             }
 
             val topBarModifier = Modifier
@@ -143,19 +157,25 @@ fun AdaptiveMaterialScaffold(
 
             if (backdrop != null && wrapTopBarInMaterialContainer) {
                 CompositionLocalProvider(LocalAdvancedMaterialBackdrop provides backdrop) {
-                    Box(modifier = topBarModifier) {
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .textureBlur(
+                    Box(
+                        modifier = topBarModifier.then(
+                            Modifier
+                                .advancedTextureBlur(
+                                    advancedMaterial = advancedMaterial,
                                     backdrop = backdrop,
                                     shape = AdaptiveMaterialTopBarShape,
-                                    blurRadius = advancedMaterial.blurRadius,
-                                    noiseCoefficient = advancedMaterial.noiseCoefficient,
                                     colors = blurColors,
                                 )
-                                .alpha(topBarMaterialAlpha.coerceIn(0f, 1f)),
+                                .let { blurModifier ->
+                                    val resolvedAlpha = topBarMaterialAlpha.coerceIn(0f, 1f)
+                                    if (resolvedAlpha < 0.999f) {
+                                        blurModifier.alpha(resolvedAlpha)
+                                    } else {
+                                        blurModifier
+                                    }
+                                },
                         )
+                    ) {
                         topBar()
                     }
                 }

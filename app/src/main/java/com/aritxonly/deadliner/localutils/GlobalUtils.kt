@@ -34,6 +34,7 @@ import com.aritxonly.deadliner.model.DisplayScalePreset
 import com.aritxonly.deadliner.model.DeadlineFrequency
 import com.aritxonly.deadliner.model.DeadlineType
 import com.aritxonly.deadliner.model.HabitMetaData
+import com.aritxonly.deadliner.model.ModernColorPalette
 import com.aritxonly.deadliner.model.UiStyle
 import com.aritxonly.deadliner.model.toJson
 import com.aritxonly.deadliner.model.updateNoteWithDate
@@ -281,6 +282,10 @@ object GlobalUtils {
                 AppThemeStyle.Material3
             }
         val seedColor = sharedPreferences.getString("seed_color", null)
+        val modernColorPalette = sharedPreferences
+            .getString("modern_color_palette", ModernColorPalette.HyperOs.key)
+            ?.let(ModernColorPalette::fromKey)
+            ?: ModernColorPalette.HyperOs
         val displayScale = DisplayScalePreset.fromKey(
             sharedPreferences.getString("display_scale_preset", DisplayScalePreset.FollowSystem.key)
         )
@@ -301,6 +306,7 @@ object GlobalUtils {
                 AppearanceColorSource.SeedColor
             },
             seedColorHex = seedColor,
+            modernColorPalette = modernColorPalette,
             displayScalePreset = displayScale,
             customDisplayScaleMultiplier = customDisplayScaleMultiplier,
             usePureMiuixAccent = false,
@@ -325,6 +331,7 @@ object GlobalUtils {
             putBoolean("miuix_material_top_bar", appearance.useMaterialTopAppBarInMiuix)
             putBoolean("advanced_material", appearance.useAdvancedMaterial)
             putString("seed_color", appearance.seedColorHex)
+            putString("modern_color_palette", appearance.modernColorPalette.key)
             putString("display_scale_preset", appearance.displayScalePreset.key)
             putFloat("display_scale_custom_multiplier", appearance.customDisplayScaleMultiplier)
             putString("app_icon_mode", appearance.appIconMode.key)
@@ -595,6 +602,12 @@ object GlobalUtils {
                     seedColorHex = normalized,
                 )
             }
+        }
+
+    var modernColorPalette: ModernColorPalette
+        get() = appearancePreferences.modernColorPalette
+        set(value) {
+            updateAppearance { it.copy(modernColorPalette = value) }
         }
 
     var addDeadlineGuide: Boolean

@@ -70,7 +70,7 @@ fun PromptSettingsScreen(
             contentPadding = padding,
             modifier = Modifier,
         ) {
-            SvgCard(R.drawable.svg_prompt, modifier = Modifier.padding(16.dp))
+            SvgCard(R.drawable.svg_prompt, modifier = Modifier.padding(vertical = 8.dp))
 
             Text(
                 stringResource(R.string.settings_ai_custom_prompt_description),

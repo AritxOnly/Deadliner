@@ -90,6 +90,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -112,8 +113,9 @@ import androidx.compose.ui.unit.Dp
 import com.aritxonly.deadliner.R
 import com.aritxonly.deadliner.localutils.GlobalUtils
 import com.aritxonly.deadliner.ui.base.AdaptiveMaterialScaffold
+import com.aritxonly.deadliner.ui.base.TopAppBar
+import com.aritxonly.deadliner.ui.base.TopAppBarStyle
 import com.aritxonly.deadliner.ui.theme.AppDesignSystem
-import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialBackdrop
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialSpec
 import com.aritxonly.deadliner.ui.theme.LocalAppDesignSystem
 import com.aritxonly.deadliner.ui.base.Scaffold
@@ -121,11 +123,6 @@ import com.aritxonly.deadliner.ui.base.Switch
 import com.aritxonly.deadliner.ui.base.Slider
 import com.aritxonly.deadliner.ui.base.RadioButton
 import com.aritxonly.deadliner.ui.base.OutlinedTextField
-import top.yukonga.miuix.kmp.blur.BlendColorEntry
-import top.yukonga.miuix.kmp.blur.BlurDefaults.blurColors
-import top.yukonga.miuix.kmp.blur.layerBackdrop
-import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
-import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 // region: These codes are referenced from https://github.com/YangDai2003/OpenNote-Compose/
@@ -200,7 +197,7 @@ fun SettingsSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(vertical = 8.dp),
     ) {
         topLabel?.let {
             Text(
@@ -213,7 +210,6 @@ fun SettingsSection(
         Surface(
             shape = MaterialTheme.shapes.large.copy(CornerSize(radiusDimen)),
             color = containerColor
-//                .copy(alpha = 0.6f)
         ) {
             Column(content = content)
         }
@@ -230,7 +226,6 @@ fun SettingsSectionDivider(
 // endregion
 
 private val LocalSettingsTopBarCanScrollState = compositionLocalOf<MutableState<Boolean>?> { null }
-
 @Composable
 fun rememberSettingsScaffoldOuterPaddingValues(paddingValues: PaddingValues): PaddingValues {
     val layoutDirection = LocalLayoutDirection.current
@@ -271,6 +266,7 @@ fun SettingsScrollColumn(
     Column(
         modifier = modifier
             .padding(outerPadding)
+            .padding(horizontal = 16.dp)
             .verticalScroll(scrollState)
     ) {
         Spacer(modifier = Modifier.height(topOverlayPadding))
@@ -301,9 +297,14 @@ fun SettingsLazyColumn(
     }
 
     LazyColumn(
-        modifier = modifier.padding(outerPadding),
+        modifier = modifier
+            .padding(outerPadding),
         state = listState,
-        contentPadding = PaddingValues(top = topOverlayPadding),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = topOverlayPadding,
+            end = 16.dp,
+        ),
         content = content,
     )
 }
@@ -338,23 +339,14 @@ fun CollapsingTopBarScaffold(
                 null
             }
             val overlayTopBar: @Composable () -> Unit = {
-                LargeTopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent,
-                        titleContentColor = titleColor,
-                    ),
-                    title = {
-                        Text(
-                            text = title,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    },
+                TopAppBar(
+                    title = title,
+                    mode = TopAppBarStyle.LARGE,
                     navigationIcon = navigationIcon,
                     actions = actions,
-                    scrollBehavior = scrollBehavior!!,
+                    titleTextStyle = MaterialTheme.typography.headlineMedium,
+                    useParentMaterialContainer = false,
+                    material3ScrollBehavior = scrollBehavior,
                 )
             }
             val legacyTopBar: @Composable () -> Unit = {
@@ -387,8 +379,7 @@ fun CollapsingTopBarScaffold(
                 legacyTopBar = if (useLegacyTopBar) legacyTopBar else ({}),
                 bottomBar = bottomBar,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                advancedMaterialTopBarTintColor = containerColor,
-                topBarMaterialAlpha = 1f,
+                wrapTopBarInMaterialContainer = false,
                 useCurrentTopBarHeightForContentPadding = !useLegacyTopBar,
                 snackbarHost = snackbarHost,
                 content = { paddingValues ->
@@ -408,13 +399,13 @@ fun CollapsingTopBarScaffold(
                 null
             }
             val overlayTopBar: @Composable () -> Unit = {
-                top.yukonga.miuix.kmp.basic.TopAppBar(
+                TopAppBar(
                     title = title,
-                    largeTitle = title,
-                    color = Color.Transparent,
+                    mode = TopAppBarStyle.LARGE,
                     navigationIcon = navigationIcon,
                     actions = actions,
-                    scrollBehavior = scrollBehavior!!
+                    useParentMaterialContainer = false,
+                    miuixScrollBehavior = scrollBehavior,
                 )
             }
             val legacyTopBar: @Composable () -> Unit = {
@@ -437,6 +428,7 @@ fun CollapsingTopBarScaffold(
                 legacyTopBar = if (useLegacyTopBar) legacyTopBar else ({}),
                 bottomBar = bottomBar,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                wrapTopBarInMaterialContainer = false,
                 useCurrentTopBarHeightForContentPadding = !useLegacyTopBar,
                 snackbarHost = snackbarHost,
                 content = { paddingValues ->

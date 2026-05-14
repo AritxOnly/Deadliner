@@ -220,7 +220,7 @@ fun WebSettingsScreen(
                 }
             }
 
-            item { SvgCard(R.drawable.svg_cloud_sync, modifier = Modifier.padding(16.dp)) }
+            item { SvgCard(R.drawable.svg_cloud_sync, modifier = Modifier.padding(vertical = 8.dp)) }
 
             item {
                 Text(

@@ -10,6 +10,7 @@ data class AppearancePreferences(
     val themeStyle: AppThemeStyle = AppThemeStyle.Material3,
     val colorSource: AppearanceColorSource = AppearanceColorSource.SystemDynamic,
     val seedColorHex: String? = null,
+    val modernColorPalette: ModernColorPalette = ModernColorPalette.HyperOs,
     val displayScalePreset: DisplayScalePreset = DisplayScalePreset.FollowSystem,
     val customDisplayScaleMultiplier: Float = 1.00f,
     val usePureMiuixAccent: Boolean = false,

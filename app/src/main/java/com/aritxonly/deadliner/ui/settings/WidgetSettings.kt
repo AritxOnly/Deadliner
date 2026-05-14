@@ -79,7 +79,7 @@ fun WidgetSettingsScreen(
             contentPadding = innerPadding,
             modifier = Modifier,
         ) {
-            SvgCard(R.drawable.svg_space, modifier = Modifier.padding(16.dp))
+            SvgCard(R.drawable.svg_space, modifier = Modifier.padding(vertical = 8.dp))
 
             SettingsSection(topLabel = stringResource(R.string.settings_widget_tasks)) {
                 SettingsDetailSwitchItem(

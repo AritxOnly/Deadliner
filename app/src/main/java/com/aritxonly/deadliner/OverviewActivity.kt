@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.setContent
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,14 +56,15 @@ import com.aritxonly.deadliner.ui.expressiveTypeModifier
 import com.aritxonly.deadliner.ui.overview.DashboardScreen
 import com.aritxonly.deadliner.ui.overview.OverviewStatsScreen
 import com.aritxonly.deadliner.ui.overview.TrendAnalysisScreen
+import com.aritxonly.deadliner.ui.theme.AdvancedMaterialSpec
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialBackdrop
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialSpec
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
+import com.aritxonly.deadliner.ui.theme.advancedTextureBlur
+import com.aritxonly.deadliner.ui.theme.rememberBlurColors
 import androidx.compose.ui.platform.LocalLayoutDirection
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
-import top.yukonga.miuix.kmp.blur.BlurDefaults.blurColors
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
-import top.yukonga.miuix.kmp.blur.textureBlur
 
 class OverviewActivity : DeadlinerComponentActivity() {
 
@@ -119,6 +121,7 @@ fun hashColor(key: String): Color {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OverviewTopBar(
     showNavigationIcon: Boolean = true,
@@ -335,10 +338,9 @@ fun OverviewTopBarWithTabs(
     val surfaceTint = MaterialTheme.colorScheme.surface.copy(alpha = advancedMaterial.topBarTintAlpha)
 
     OverviewHeaderContainer(
+        advancedMaterial = advancedMaterial,
         advancedMaterialBlurred = advancedMaterialBlurred,
         backdrop = backdrop,
-        blurRadius = advancedMaterial.blurRadius,
-        noiseCoefficient = advancedMaterial.noiseCoefficient,
         surfaceTint = surfaceTint,
     ) {
         Column(
@@ -367,23 +369,21 @@ fun OverviewTopBarWithTabs(
 
 @Composable
 private fun OverviewHeaderContainer(
+    advancedMaterial: AdvancedMaterialSpec,
     advancedMaterialBlurred: Boolean,
     backdrop: LayerBackdrop? = null,
-    blurRadius: Float,
-    noiseCoefficient: Float,
     surfaceTint: Color,
     content: @Composable () -> Unit,
 ) {
     if (advancedMaterialBlurred && backdrop != null) {
-        val blurColors = blurColors(blendColors = listOf(BlendColorEntry(surfaceTint)))
+        val blurColors = advancedMaterial.rememberBlurColors(listOf(BlendColorEntry(surfaceTint)))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .textureBlur(
+                .advancedTextureBlur(
+                    advancedMaterial = advancedMaterial,
                     backdrop = backdrop,
                     shape = OverviewHeaderShape,
-                    blurRadius = blurRadius,
-                    noiseCoefficient = noiseCoefficient,
                     colors = blurColors,
                 ),
         ) {

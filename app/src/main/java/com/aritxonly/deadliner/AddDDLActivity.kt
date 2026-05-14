@@ -93,6 +93,8 @@ import com.aritxonly.deadliner.ui.navIconPaddingModifier
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialBackdrop
 import com.aritxonly.deadliner.ui.theme.DeadlinerTheme
 import com.aritxonly.deadliner.ui.theme.LocalAdvancedMaterialSpec
+import com.aritxonly.deadliner.ui.theme.advancedTextureBlur
+import com.aritxonly.deadliner.ui.theme.rememberBlurColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
@@ -105,8 +107,6 @@ import java.util.Locale
 import com.aritxonly.deadliner.ai.AIUtils
 import com.aritxonly.deadliner.ui.iconResource
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
-import top.yukonga.miuix.kmp.blur.BlurDefaults.blurColors
-import top.yukonga.miuix.kmp.blur.textureBlur
 
 @SuppressLint("SimpleDateFormat")
 class AddDDLActivity : DeadlinerAppCompatActivity() {
@@ -604,7 +604,7 @@ class AddDDLActivity : DeadlinerAppCompatActivity() {
         val backdrop = LocalAdvancedMaterialBackdrop.current
         val containerShape = RoundedCornerShape(28.dp)
         val surfaceTint = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = advancedMaterial.topBarTintAlpha)
-        val materialColors = blurColors(blendColors = listOf(BlendColorEntry(surfaceTint)))
+        val materialColors = advancedMaterial.rememberBlurColors(listOf(BlendColorEntry(surfaceTint)))
 
         Box(
             modifier = Modifier
@@ -617,11 +617,10 @@ class AddDDLActivity : DeadlinerAppCompatActivity() {
                     .fillMaxWidth()
                     .then(
                         if (advancedMaterial.enabled && backdrop != null) {
-                            Modifier.textureBlur(
+                            Modifier.advancedTextureBlur(
+                                advancedMaterial = advancedMaterial,
                                 backdrop = backdrop,
                                 shape = containerShape,
-                                blurRadius = advancedMaterial.blurRadius,
-                                noiseCoefficient = advancedMaterial.noiseCoefficient,
                                 colors = materialColors,
                             )
                         } else {

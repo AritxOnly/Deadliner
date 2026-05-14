@@ -96,7 +96,7 @@ fun AppearanceSettingsScreen(
             contentPadding = padding,
             modifier = Modifier,
         ) {
-            SvgCard(R.drawable.svg_interface, modifier = Modifier.padding(16.dp))
+            SvgCard(R.drawable.svg_interface, modifier = Modifier.padding(vertical = 8.dp))
 
             SettingsSection(topLabel = stringResource(R.string.settings_interface_mainscreen)) {
                 SettingsRoute.appearanceThirdRoutes.forEachIndexed { index, route ->

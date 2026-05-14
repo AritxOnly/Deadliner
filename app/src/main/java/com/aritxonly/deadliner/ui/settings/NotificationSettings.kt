@@ -120,7 +120,7 @@ fun NotificationSettingsScreen(
             contentPadding = padding,
             modifier = Modifier,
         ) {
-            SvgCard(R.drawable.svg_notifications, modifier = Modifier.padding(16.dp))
+            SvgCard(R.drawable.svg_notifications, modifier = Modifier.padding(vertical = 8.dp))
 
             SettingsSection(topLabel = stringResource(R.string.settings_nearby_notification_push)) {
                 SettingsDetailSwitchItem(

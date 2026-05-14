@@ -57,7 +57,7 @@ fun BackupSettingsScreen(
             contentPadding = padding,
             modifier = Modifier,
         ) {
-            SvgCard(R.drawable.svg_backup, modifier = Modifier.padding(16.dp))
+            SvgCard(R.drawable.svg_backup, modifier = Modifier.padding(vertical = 8.dp))
 
             SettingsSection {
                 SettingsTextButtonItem(

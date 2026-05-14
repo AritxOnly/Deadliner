@@ -33,6 +33,7 @@ fun DeadlinerTheme(
         colorSource = appearance.colorSource,
         darkTheme = darkTheme,
         dynamicColor = dynamicColor,
+        modernColorPalette = appearance.modernColorPalette,
         usePureMiuixAccent = appearance.usesMiuixTheme && appearance.usePureMiuixAccent,
         useMiuixNeutralSurfaces = appearance.usesMiuixTheme && appearance.useMiuixNeutralSurfaces,
     )
